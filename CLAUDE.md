@@ -131,3 +131,4 @@ You have access to comprehensive Flowbite-Svelte component documentation. Here's
 - Use Flowbite-Svelte components for consistent UI design
 - Validate all code with svelte-autofixer before delivering
 - Keep documentation lookups efficient by fetching multiple sections at once
+- 
