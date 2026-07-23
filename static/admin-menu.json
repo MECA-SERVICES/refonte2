@@ -1,0 +1,170 @@
+{
+	"brand": "MS Shop Admin",
+	"sections": [
+		{
+			"id": "main",
+			"label": null,
+			"items": [
+				{
+					"id": "dashboard",
+					"label": "Tableau de bord",
+					"icon": "chart",
+					"href": "/admin"
+				}
+			]
+		},
+		{
+			"id": "sell",
+			"label": "Vendre",
+			"items": [
+				{
+					"id": "orders",
+					"label": "Commandes",
+					"icon": "shopping-bag",
+					"items": [
+						{ "id": "orders-list", "label": "Commandes", "href": "/admin/orders" },
+						{ "id": "invoices", "label": "Factures", "href": "/admin/invoices" },
+						{ "id": "credit-slips", "label": "Avoirs", "href": "/admin/credit-slips" },
+						{ "id": "delivery-slips", "label": "Bons de livraison", "href": "/admin/delivery-slips" },
+						{ "id": "shopping-carts", "label": "Paniers", "href": "/admin/shopping-carts" }
+					]
+				},
+				{
+					"id": "catalog",
+					"label": "Catalogue",
+					"icon": "grid",
+					"items": [
+						{ "id": "products", "label": "Produits", "href": "/admin/products" },
+						{ "id": "categories", "label": "Catégories", "href": "/admin/categories" },
+						{ "id": "monitoring", "label": "Suivi", "href": "/admin/monitoring" },
+						{ "id": "attributes", "label": "Attributs & Caractéristiques", "href": "/admin/attributes" },
+						{ "id": "manufacturers", "label": "Marques & Fournisseurs", "href": "/admin/manufacturers" },
+						{ "id": "files", "label": "Fichiers", "href": "/admin/files" },
+						{ "id": "discounts", "label": "Réductions", "href": "/admin/discounts" },
+						{ "id": "stock", "label": "Stock", "href": "/admin/stock" }
+					]
+				},
+				{
+					"id": "customers",
+					"label": "Clients",
+					"icon": "users",
+					"items": [
+						{ "id": "customers-list", "label": "Clients", "href": "/admin/customers" },
+						{ "id": "addresses", "label": "Adresses", "href": "/admin/addresses" },
+						{ "id": "outstanding", "label": "Encours autorisé", "href": "/admin/outstanding" }
+					]
+				},
+				{
+					"id": "customer-service",
+					"label": "SAV",
+					"icon": "headset",
+					"items": [
+						{ "id": "customer-service-list", "label": "SAV", "href": "/admin/customer-service" },
+						{ "id": "order-messages", "label": "Messages de commande", "href": "/admin/order-messages" },
+						{ "id": "merchandise-returns", "label": "Retours produits", "href": "/admin/merchandise-returns" }
+					]
+				},
+				{
+					"id": "stats",
+					"label": "Statistiques",
+					"icon": "chart-line",
+					"href": "/admin/stats"
+				}
+			]
+		},
+		{
+			"id": "improve",
+			"label": "Personnaliser",
+			"items": [
+				{
+					"id": "modules",
+					"label": "Modules",
+					"icon": "puzzle",
+					"items": [
+						{ "id": "module-manager", "label": "Gestionnaire de modules", "href": "/admin/modules" },
+						{ "id": "module-catalog", "label": "Catalogue de modules", "href": "/admin/modules/catalog" },
+						{ "id": "notifications", "label": "Notifications", "href": "/admin/notifications" }
+					]
+				},
+				{
+					"id": "design",
+					"label": "Apparence",
+					"icon": "palette",
+					"items": [
+						{ "id": "theme", "label": "Thème & Logo", "href": "/admin/theme" },
+						{ "id": "email-theme", "label": "Thème d'e-mail", "href": "/admin/email-theme" },
+						{ "id": "cms-pages", "label": "Pages", "href": "/admin/cms-pages" },
+						{ "id": "positions", "label": "Positions", "href": "/admin/positions" },
+						{ "id": "image-settings", "label": "Images", "href": "/admin/image-settings" },
+						{ "id": "link-widget", "label": "Liste de liens", "href": "/admin/link-widget" }
+					]
+				},
+				{
+					"id": "shipping",
+					"label": "Livraison",
+					"icon": "truck",
+					"items": [
+						{ "id": "carriers", "label": "Transporteurs", "href": "/admin/carriers" },
+						{ "id": "shipping-preferences", "label": "Préférences", "href": "/admin/shipping-preferences" }
+					]
+				},
+				{
+					"id": "payment",
+					"label": "Paiement",
+					"icon": "credit-card",
+					"items": [
+						{ "id": "payment-methods", "label": "Moyens de paiement", "href": "/admin/payment-methods" },
+						{ "id": "payment-preferences", "label": "Préférences", "href": "/admin/payment-preferences" }
+					]
+				},
+				{
+					"id": "international",
+					"label": "International",
+					"icon": "globe",
+					"items": [
+						{ "id": "localization", "label": "Localisation", "href": "/admin/localization" },
+						{ "id": "locations", "label": "Zones géographiques", "href": "/admin/locations" },
+						{ "id": "taxes", "label": "Taxes", "href": "/admin/taxes" },
+						{ "id": "translations", "label": "Traductions", "href": "/admin/translations" }
+					]
+				}
+			]
+		},
+		{
+			"id": "configure",
+			"label": "Configurer",
+			"items": [
+				{
+					"id": "shop-parameters",
+					"label": "Paramètres de la boutique",
+					"icon": "cog",
+					"items": [
+						{ "id": "preferences", "label": "Préférences", "href": "/admin/shop-parameters" },
+						{ "id": "order-settings", "label": "Commandes", "href": "/admin/order-settings" },
+						{ "id": "product-settings", "label": "Produits", "href": "/admin/product-settings" },
+						{ "id": "customer-settings", "label": "Clients", "href": "/admin/customer-settings" },
+						{ "id": "contact", "label": "Contact", "href": "/admin/contact" },
+						{ "id": "traffic-seo", "label": "Trafic & SEO", "href": "/admin/traffic-seo" },
+						{ "id": "search", "label": "Recherche", "href": "/admin/search" }
+					]
+				},
+				{
+					"id": "advanced",
+					"label": "Paramètres avancés",
+					"icon": "tools",
+					"items": [
+						{ "id": "information", "label": "Informations", "href": "/admin/information" },
+						{ "id": "performance", "label": "Performance", "href": "/admin/performance" },
+						{ "id": "administration", "label": "Administration", "href": "/admin/administration" },
+						{ "id": "email", "label": "E-mail", "href": "/admin/email" },
+						{ "id": "import", "label": "Importer", "href": "/admin/import" },
+						{ "id": "team", "label": "Équipe", "href": "/admin/team" },
+						{ "id": "database", "label": "Base de données", "href": "/admin/database" },
+						{ "id": "logs", "label": "Logs", "href": "/admin/logs" },
+						{ "id": "webservice", "label": "Webservice", "href": "/admin/webservice" }
+					]
+				}
+			]
+		}
+	]
+}

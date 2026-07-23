@@ -1,91 +1,34 @@
 <script lang="ts">
-	import { Button, Card, Heading, P } from 'flowbite-svelte';
-	import {
-		BellOutline,
-		CartOutline,
-		ChartOutline,
-		CogOutline,
-		EditOutline,
-		EnvelopeOutline,
-		HomeOutline,
-		TrashBinOutline,
-		UserCircleSolid
-	} from 'flowbite-svelte-icons';
-	import {
-		ManCarServiceRepairing,
-		ManCarServiceRepairingDark,
-		CreditCardPaymentReceipt,
-		CreditCardPaymentReceiptDark
-	} from 'flowbite-svelte-illustrations';
+	import { Card, Heading, P } from 'flowbite-svelte';
 </script>
 
-<div class="space-y-8 p-8">
-	<Heading tag="h1" class="text-3xl">Admin</Heading>
+<div class="h-full">
+	<Card class="h-full w-full">
+		<Heading tag="h1" class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
+			Tableau de bord
+		</Heading>
 
-	<section class="space-y-4">
-		<Heading tag="h2" class="text-xl">Démo Boutons</Heading>
-		<div class="flex flex-wrap gap-2">
-			<Button>Default</Button>
-			<Button color="alternative">Alternative</Button>
-			<Button color="dark">Dark</Button>
-			<Button color="light">Light</Button>
-			<Button color="blue">Blue</Button>
-			<Button color="green">Green</Button>
-			<Button color="red">Red</Button>
-			<Button color="yellow">Yellow</Button>
-			<Button color="purple">Purple</Button>
-		</div>
-	</section>
+		<div class="space-y-4">
+			<P class="text-gray-700 dark:text-gray-300">
+				Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+			</P>
 
-	<section class="space-y-4">
-		<Heading tag="h2" class="text-xl">Démo Icons</Heading>
-		<div class="flex flex-wrap items-center gap-4 text-gray-700 dark:text-gray-300">
-			<HomeOutline class="h-6 w-6" />
-			<UserCircleSolid class="h-6 w-6" />
-			<CartOutline class="h-6 w-6" />
-			<ChartOutline class="h-6 w-6" />
-			<BellOutline class="h-6 w-6" />
-			<CogOutline class="h-6 w-6" />
-			<EnvelopeOutline class="h-6 w-6" />
-			<EditOutline class="h-6 w-6" />
-			<TrashBinOutline class="h-6 w-6" />
-		</div>
-		<div class="flex flex-wrap gap-2">
-			<Button>
-				<CartOutline class="me-2 h-5 w-5" />
-				Ajouter au panier
-			</Button>
-			<Button color="red" outline>
-				<TrashBinOutline class="me-2 h-5 w-5" />
-				Supprimer
-			</Button>
-		</div>
-	</section>
+			<P class="text-gray-700 dark:text-gray-300">
+				Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+			</P>
 
-	<section class="space-y-4">
-		<Heading tag="h2" class="text-xl">Démo Illustrations</Heading>
-		<div class="flex flex-wrap gap-6">
-			<Card class="items-center p-6">
-				<div class="dark:hidden">
-					<ManCarServiceRepairing />
-				</div>
-				<div class="hidden dark:block">
-					<ManCarServiceRepairingDark />
-				</div>
-				<P class="mt-4 text-center font-medium">Atelier mécanique</P>
-			</Card>
-			<Card class="items-center p-6">
-				<div class="dark:hidden">
-					<CreditCardPaymentReceipt
-						title={{ id: 'paiement-title', title: 'Paiement par carte' }}
-						desc={{ id: 'paiement-desc', desc: 'Illustration de paiement par carte bancaire' }}
-					/>
-				</div>
-				<div class="hidden dark:block">
-					<CreditCardPaymentReceiptDark />
-				</div>
-				<P class="mt-4 text-center font-medium">Paiement sécurisé</P>
-			</Card>
+			<P class="text-gray-700 dark:text-gray-300">
+				Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+			</P>
+
+			<div class="mt-6 rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
+				<Heading tag="h2" class="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
+					Bienvenue dans l'administration
+				</Heading>
+				<P class="text-gray-700 dark:text-gray-300">
+					Cette interface d'administration vous permet de gérer tous les aspects de votre boutique e-commerce. Utilisez le menu de navigation à gauche pour accéder aux différentes sections.
+				</P>
+			</div>
 		</div>
-	</section>
+	</Card>
 </div>
