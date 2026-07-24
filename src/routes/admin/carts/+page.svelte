@@ -16,21 +16,28 @@
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Paniers' }]}
 />
 
+{#snippet idCell(row: CartRow)}
+	<span class="text-gray-500">{row.id}</span>
+{/snippet}
+
 {#snippet customerCell(row: CartRow)}
 	<span class="font-medium text-gray-900 dark:text-white">
 		{row.customerFirstName}
 		{row.customerLastName}
 	</span>
-	<span class="block text-sm text-gray-500 dark:text-gray-400">{row.customerEmail}</span>
+	<span class="block text-xs text-gray-500 dark:text-gray-400">{row.customerEmail}</span>
 {/snippet}
 
 {#snippet activityCell(row: CartRow)}
-	{dateFmt.format(new Date(row.lastActivityAt))}
+	<span class="text-gray-600 dark:text-gray-300">
+		{dateFmt.format(new Date(row.lastActivityAt))}
+	</span>
 {/snippet}
 
 <DataTable
 	rows={data.rows}
 	columns={[
+		{ key: 'id', label: 'ID', cell: idCell },
 		{ key: 'customer', label: 'Client', cell: customerCell },
 		{ key: 'itemCount', label: 'Articles' },
 		{ key: 'activity', label: 'Dernière activité', cell: activityCell }

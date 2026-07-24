@@ -68,12 +68,21 @@
 	{/each}
 </div>
 
+{#snippet idCell(row: OrderRow)}
+	<span class="text-gray-500">{row.id}</span>
+{/snippet}
+
 {#snippet refCell(row: OrderRow)}
 	<span class="font-medium text-gray-900 dark:text-white">{row.reference}</span>
 {/snippet}
 
 {#snippet customerCell(row: OrderRow)}
-	{row.customerFirstName} {row.customerLastName}
+	{#if row.customerFirstName || row.customerLastName}
+		{row.customerFirstName}
+		{row.customerLastName}
+	{:else}
+		<span class="text-gray-400">—</span>
+	{/if}
 {/snippet}
 
 {#snippet stateCell(row: OrderRow)}
@@ -81,7 +90,7 @@
 {/snippet}
 
 {#snippet totalCell(row: OrderRow)}
-	{eur.format(Number(row.totalTtc))}
+	<span class="font-medium text-gray-900 dark:text-white">{eur.format(Number(row.totalTtc))}</span>
 {/snippet}
 
 {#snippet dateCell(row: OrderRow)}
@@ -93,6 +102,7 @@
 	basePath="/admin/orders"
 	params={tableParams}
 	columns={[
+		{ key: 'id', label: 'ID', cell: idCell },
 		{
 			key: 'reference',
 			label: 'Référence',

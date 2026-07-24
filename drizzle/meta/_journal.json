@@ -36,6 +36,13 @@
       "when": 1784910187265,
       "tag": "0004_deep_vance_astro",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784934982960,
+      "tag": "0005_product_created_at_index",
+      "breakpoints": true
     }
   ]
 }

@@ -29,6 +29,8 @@
 
 	const tableParams = $derived({ filters: data.filters, sort: data.sort, dir: data.dir });
 
+	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+
 	/** Conserve les filtres/tri courants dans les liens de pagination. */
 	function pageHref(p: number) {
 		const search = new URLSearchParams();
@@ -58,8 +60,28 @@
 	{/snippet}
 </PageHeader>
 
+{#snippet idCell(row: CustomerRow)}
+	<span class="text-gray-500">{row.id}</span>
+{/snippet}
+
 {#snippet nameCell(row: CustomerRow)}
 	<span class="font-medium text-gray-900 dark:text-white">{row.firstName} {row.lastName}</span>
+{/snippet}
+
+{#snippet emailCell(row: CustomerRow)}
+	<span class="text-gray-600 dark:text-gray-300">{row.email}</span>
+{/snippet}
+
+{#snippet spentCell(row: CustomerRow)}
+	<!-- PrestaShop affiche les ventes cumulées : c'est la colonne qui hiérarchise
+	     les clients dans la liste. -->
+	{#if Number(row.totalSpent) > 0}
+		<span class="font-medium text-gray-900 dark:text-white">
+			{eur.format(Number(row.totalSpent))}
+		</span>
+	{:else}
+		<span class="text-gray-400">—</span>
+	{/if}
 {/snippet}
 
 {#snippet typeCell(row: CustomerRow)}
@@ -79,9 +101,11 @@
 	basePath="/admin/customers"
 	params={tableParams}
 	columns={[
+		{ key: 'id', label: 'ID', cell: idCell },
 		{ key: 'lastName', label: 'Nom', cell: nameCell, filterKey: 'lastName', sortKey: 'lastName' },
-		{ key: 'email', label: 'Email', filterKey: 'email', sortKey: 'email' },
+		{ key: 'email', label: 'Email', cell: emailCell, filterKey: 'email', sortKey: 'email' },
 		{ key: 'phone', label: 'Téléphone', filterKey: 'phone' },
+		{ key: 'company', label: 'Société', cell: companyCell, filterKey: 'companyName' },
 		{
 			key: 'type',
 			label: 'Type',
@@ -90,6 +114,7 @@
 			filterOptions: typeFilterOptions,
 			sortKey: 'type'
 		},
+		{ key: 'totalSpent', label: 'Ventes', cell: spentCell, sortKey: 'totalSpent' },
 		{
 			key: 'status',
 			label: 'Statut',
@@ -97,8 +122,7 @@
 			filterKey: 'status',
 			filterOptions: statusFilterOptions,
 			sortKey: 'status'
-		},
-		{ key: 'company', label: 'Société', cell: companyCell, filterKey: 'companyName' }
+		}
 	]}
 	emptyMessage="Aucun client trouvé."
 	rowHref={(row) => `/admin/customers/${row.id}`}

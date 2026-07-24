@@ -31,8 +31,24 @@
 	{/snippet}
 </PageHeader>
 
+{#snippet idCell(row: CategoryRow)}
+	<span class="text-gray-500">{row.id}</span>
+{/snippet}
+
 {#snippet nameCell(row: CategoryRow)}
 	<span class="font-medium text-gray-900 dark:text-white">{row.name}</span>
+{/snippet}
+
+{#snippet parentCell(row: CategoryRow)}
+	{#if row.parentName}
+		<span class="text-gray-600 dark:text-gray-300">{row.parentName}</span>
+	{:else}
+		<span class="text-xs text-gray-400">Racine</span>
+	{/if}
+{/snippet}
+
+{#snippet slugCell(row: CategoryRow)}
+	<span class="text-xs text-gray-500">{row.slug}</span>
 {/snippet}
 
 {#snippet activeCell(row: CategoryRow)}
@@ -44,9 +60,10 @@
 	basePath="/admin/categories"
 	params={tableParams}
 	columns={[
+		{ key: 'id', label: 'ID', cell: idCell },
 		{ key: 'name', label: 'Nom', cell: nameCell, filterKey: 'name', sortKey: 'name' },
-		{ key: 'parentName', label: 'Parent' },
-		{ key: 'slug', label: 'Slug', filterKey: 'slug' },
+		{ key: 'parentName', label: 'Parent', cell: parentCell },
+		{ key: 'slug', label: 'Slug', cell: slugCell, filterKey: 'slug' },
 		{ key: 'position', label: 'Position', sortKey: 'position' },
 		{ key: 'active', label: 'Statut', cell: activeCell }
 	]}

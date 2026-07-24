@@ -6,6 +6,7 @@
 		FilterableTable,
 		Pagination,
 		ActiveBadge,
+		Thumbnail,
 		listPageHref
 	} from '$lib/components/admin';
 	import type { PageProps } from './$types';
@@ -31,8 +32,20 @@
 	{/snippet}
 </PageHeader>
 
+{#snippet idCell(row: BrandRow)}
+	<span class="text-gray-500">{row.id}</span>
+{/snippet}
+
+{#snippet logoCell(row: BrandRow)}
+	<Thumbnail src={row.logoUrl} alt={row.name} />
+{/snippet}
+
 {#snippet nameCell(row: BrandRow)}
 	<span class="font-medium text-gray-900 dark:text-white">{row.name}</span>
+{/snippet}
+
+{#snippet slugCell(row: BrandRow)}
+	<span class="text-xs text-gray-500">{row.slug}</span>
 {/snippet}
 
 {#snippet activeCell(row: BrandRow)}
@@ -44,8 +57,10 @@
 	basePath="/admin/brands"
 	params={tableParams}
 	columns={[
+		{ key: 'id', label: 'ID', cell: idCell },
+		{ key: 'logo', label: 'Logo', cell: logoCell },
 		{ key: 'name', label: 'Nom', cell: nameCell, filterKey: 'name', sortKey: 'name' },
-		{ key: 'slug', label: 'Slug', filterKey: 'slug' },
+		{ key: 'slug', label: 'Slug', cell: slugCell, filterKey: 'slug' },
 		{ key: 'active', label: 'Statut', cell: activeCell }
 	]}
 	emptyMessage="Aucune marque trouvée."

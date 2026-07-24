@@ -156,7 +156,10 @@ export const product = pgTable(
 		index('product_slug_idx').on(t.slug),
 		index('product_reference_idx').on(t.reference),
 		index('product_brand_idx').on(t.brandId),
-		index('product_category_idx').on(t.categoryId)
+		index('product_category_idx').on(t.categoryId),
+		// Tri par défaut de la liste admin : sans index, Postgres parcourt les
+		// 1,3 M de produits à chaque page.
+		index('product_created_at_idx').on(t.createdAt)
 	]
 );
 

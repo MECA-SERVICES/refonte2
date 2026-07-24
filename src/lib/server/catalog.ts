@@ -277,7 +277,15 @@ export async function listProducts(params: ProductListParams = {}) {
 				priceHt: product.priceHt,
 				stock: product.stock,
 				isActive: product.isActive,
-				brandName: brand.name
+				brandName: brand.name,
+				// Vignette : image de plus petite position. Sous-requête corrélée plutôt
+				// qu'une jointure, qui dupliquerait les produits à plusieurs médias.
+				imageUrl: sql<string | null>`(
+					SELECT m.url FROM ${productMedia} m
+					WHERE m.product_id = ${product.id} AND m.type = 'image'
+					ORDER BY m.position, m.id
+					LIMIT 1
+				)`
 			})
 			.from(product)
 			.leftJoin(brand, eq(product.brandId, brand.id))

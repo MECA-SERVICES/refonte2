@@ -6,6 +6,7 @@
 		FilterableTable,
 		Pagination,
 		ActiveBadge,
+		Thumbnail,
 		listPageHref
 	} from '$lib/components/admin';
 	import type { PageProps } from './$types';
@@ -33,16 +34,35 @@
 	{/snippet}
 </PageHeader>
 
+{#snippet idCell(row: ProductRow)}
+	<span class="text-gray-500">{row.id}</span>
+{/snippet}
+
+{#snippet imageCell(row: ProductRow)}
+	<Thumbnail src={row.imageUrl} alt={row.name} />
+{/snippet}
+
 {#snippet nameCell(row: ProductRow)}
 	<span class="font-medium text-gray-900 dark:text-white">{row.name}</span>
 {/snippet}
 
 {#snippet priceCell(row: ProductRow)}
-	{eur.format(Number(row.priceHt))}
+	<span class="font-medium text-gray-900 dark:text-white">{eur.format(Number(row.priceHt))}</span>
 {/snippet}
 
 {#snippet brandCell(row: ProductRow)}
 	{row.brandName ?? '—'}
+{/snippet}
+
+{#snippet stockCell(row: ProductRow)}
+	<!-- Le stock est l'info que l'on scanne le plus vite : rouge si épuisé. -->
+	<span
+		class="font-medium {row.stock > 0
+			? 'text-gray-900 dark:text-white'
+			: 'text-red-600 dark:text-red-400'}"
+	>
+		{row.stock}
+	</span>
 {/snippet}
 
 {#snippet activeCell(row: ProductRow)}
@@ -54,11 +74,13 @@
 	basePath="/admin/products"
 	params={tableParams}
 	columns={[
+		{ key: 'id', label: 'ID', cell: idCell },
+		{ key: 'image', label: 'Image', cell: imageCell },
 		{ key: 'name', label: 'Nom', cell: nameCell, filterKey: 'name', sortKey: 'name' },
 		{ key: 'reference', label: 'Référence', filterKey: 'reference', sortKey: 'reference' },
 		{ key: 'brand', label: 'Marque', cell: brandCell },
 		{ key: 'priceHt', label: 'Prix HT', cell: priceCell, sortKey: 'priceHt' },
-		{ key: 'stock', label: 'Stock', sortKey: 'stock' },
+		{ key: 'stock', label: 'Stock', cell: stockCell, sortKey: 'stock' },
 		{ key: 'active', label: 'Statut', cell: activeCell }
 	]}
 	emptyMessage="Aucun produit trouvé."
