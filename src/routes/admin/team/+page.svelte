@@ -51,7 +51,14 @@
 	<div class="flex items-center justify-end gap-2">
 		<form method="POST" action="?/setRole" use:enhance class="flex items-center gap-1">
 			<input type="hidden" name="userId" value={u.id} />
-			<Select name="role" value={u.role} items={roleOptions} size="sm" class="w-40" />
+			<Select
+				name="role"
+				placeholder=""
+				value={u.role}
+				items={roleOptions}
+				size="sm"
+				class="w-40"
+			/>
 			<Button type="submit" size="xs" color="alternative">Appliquer</Button>
 		</form>
 		<form method="POST" action="?/toggleBan" use:enhance>

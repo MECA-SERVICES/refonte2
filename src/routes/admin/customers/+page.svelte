@@ -3,33 +3,44 @@
 	import { UserAddOutline } from 'flowbite-svelte-icons';
 	import {
 		PageHeader,
-		DataTable,
+		FilterableTable,
 		Pagination,
 		StatusBadge,
 		CUSTOMER_TYPE_BADGES,
 		CUSTOMER_STATUS_BADGES
 	} from '$lib/components/admin';
-	import { goto } from '$app/navigation';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
 	type CustomerRow = (typeof data.rows)[number];
 
-	// $derived réinscriptible : suit data.search mais reste éditable dans le champ.
-	let search = $derived(data.search);
+	const typeFilterOptions = [
+		{ value: 'particulier', name: 'Particulier' },
+		{ value: 'entreprise', name: 'Entreprise' },
+		{ value: 'collectivite', name: 'Collectivité' }
+	];
 
-	function runSearch(value: string) {
-		const params = new URLSearchParams();
-		if (value) params.set('q', value);
-		goto(`/admin/customers?${params.toString()}`);
-	}
+	const statusFilterOptions = [
+		{ value: 'pending', name: 'En attente' },
+		{ value: 'validated', name: 'Validé' },
+		{ value: 'rejected', name: 'Rejeté' }
+	];
 
+	const tableParams = $derived({ filters: data.filters, sort: data.sort, dir: data.dir });
+
+	/** Conserve les filtres/tri courants dans les liens de pagination. */
 	function pageHref(p: number) {
-		const params = new URLSearchParams();
-		if (data.search) params.set('q', data.search);
-		params.set('page', String(p));
-		return `/admin/customers?${params.toString()}`;
+		const search = new URLSearchParams();
+		for (const [key, value] of Object.entries(data.filters)) {
+			if (value) search.set(`f_${key}`, value);
+		}
+		if (data.sort) {
+			search.set('sort', data.sort);
+			search.set('dir', data.dir);
+		}
+		search.set('page', String(p));
+		return `/admin/customers?${search.toString()}`;
 	}
 </script>
 
@@ -63,18 +74,32 @@
 	{row.companyName ?? '—'}
 {/snippet}
 
-<DataTable
+<FilterableTable
 	rows={data.rows}
+	basePath="/admin/customers"
+	params={tableParams}
 	columns={[
-		{ key: 'name', label: 'Nom', cell: nameCell },
-		{ key: 'email', label: 'Email' },
-		{ key: 'type', label: 'Type', cell: typeCell },
-		{ key: 'status', label: 'Statut', cell: statusCell },
-		{ key: 'company', label: 'Société', cell: companyCell }
+		{ key: 'lastName', label: 'Nom', cell: nameCell, filterKey: 'lastName', sortKey: 'lastName' },
+		{ key: 'email', label: 'Email', filterKey: 'email', sortKey: 'email' },
+		{ key: 'phone', label: 'Téléphone', filterKey: 'phone' },
+		{
+			key: 'type',
+			label: 'Type',
+			cell: typeCell,
+			filterKey: 'type',
+			filterOptions: typeFilterOptions,
+			sortKey: 'type'
+		},
+		{
+			key: 'status',
+			label: 'Statut',
+			cell: statusCell,
+			filterKey: 'status',
+			filterOptions: statusFilterOptions,
+			sortKey: 'status'
+		},
+		{ key: 'company', label: 'Société', cell: companyCell, filterKey: 'companyName' }
 	]}
-	bind:search
-	onsearch={runSearch}
-	searchPlaceholder="Nom, email, société…"
 	emptyMessage="Aucun client trouvé."
 	rowHref={(row) => `/admin/customers/${row.id}`}
 />

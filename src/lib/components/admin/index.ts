@@ -1,5 +1,6 @@
 export { default as PageHeader } from './PageHeader.svelte';
 export { default as DataTable } from './DataTable.svelte';
+export { default as FilterableTable } from './FilterableTable.svelte';
 export { default as Pagination } from './Pagination.svelte';
 export { default as StatusBadge } from './StatusBadge.svelte';
 export { default as ConfirmDialog } from './ConfirmDialog.svelte';

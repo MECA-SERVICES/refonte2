@@ -61,13 +61,14 @@
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
 				<Label for="type" class="mb-2">Type de compte</Label>
-				<Select id="type" name="type" items={typeOptions} bind:value={type} />
+				<Select id="type" name="type" placeholder="" items={typeOptions} bind:value={type} />
 			</div>
 			<div>
 				<Label for="status" class="mb-2">Statut</Label>
 				<Select
 					id="status"
 					name="status"
+					placeholder=""
 					items={statusOptions}
 					value={customer?.status ?? 'validated'}
 				/>

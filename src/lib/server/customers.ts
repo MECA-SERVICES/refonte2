@@ -1,44 +1,90 @@
 import { db } from '$lib/server/db';
 import { customer, address } from '$lib/server/db/schema';
-import { and, count, desc, eq, ilike, or, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or, type SQL, type SQLWrapper } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NewCustomer, NewAddress } from '$lib/server/db/customer.schema';
 
+/**
+ * Colonnes filtrables par saisie libre (input « contient »).
+ * La clé est le nom de filtre exposé dans l'URL ; on ne filtre QUE sur ces colonnes
+ * (liste blanche : pas d'injection de nom de colonne arbitraire).
+ */
+const TEXT_FILTER_COLUMNS: Record<string, PgColumn> = {
+	firstName: customer.firstName,
+	lastName: customer.lastName,
+	email: customer.email,
+	phone: customer.phone,
+	companyName: customer.companyName,
+	siret: customer.siret,
+	vatNumber: customer.vatNumber
+};
+
+/** Colonnes filtrables par égalité stricte (menus déroulants). */
+const EXACT_FILTER_COLUMNS: Record<string, PgColumn> = {
+	type: customer.type,
+	status: customer.status
+};
+
+/** Colonnes autorisées au tri (liste blanche). */
+const SORT_COLUMNS: Record<string, PgColumn> = {
+	firstName: customer.firstName,
+	lastName: customer.lastName,
+	email: customer.email,
+	type: customer.type,
+	status: customer.status,
+	companyName: customer.companyName,
+	totalSpent: customer.totalSpent,
+	createdAt: customer.createdAt
+};
+
 export type CustomerListParams = {
+	/** Recherche globale (tous les champs texte à la fois). */
 	search?: string;
-	type?: string;
-	status?: string;
+	/** Filtres par colonne : { firstName: 'jean', email: '@gmail', type: 'entreprise', ... }. */
+	filters?: Record<string, string>;
+	sort?: string;
+	dir?: 'asc' | 'desc';
 	page?: number;
 	perPage?: number;
 };
 
-/** Liste paginée des clients avec recherche et filtres. */
+/** Liste paginée des clients : recherche globale + filtres par colonne + tri (tout côté serveur). */
 export async function listCustomers(params: CustomerListParams = {}) {
 	const page = Math.max(1, params.page ?? 1);
 	const perPage = Math.min(100, Math.max(1, params.perPage ?? 20));
 
-	const filters: SQL[] = [];
+	const conditions: SQL[] = [];
+
+	// Recherche globale : le terme doit apparaître dans au moins une colonne texte.
 	if (params.search) {
 		const term = `%${params.search}%`;
-		filters.push(
-			or(
-				ilike(customer.firstName, term),
-				ilike(customer.lastName, term),
-				ilike(customer.email, term),
-				ilike(customer.companyName, term)
-			)!
-		);
+		const parts = Object.values(TEXT_FILTER_COLUMNS).map((col) => ilike(col, term));
+		conditions.push(or(...parts)!);
 	}
-	if (params.type) filters.push(eq(customer.type, params.type));
-	if (params.status) filters.push(eq(customer.status, params.status));
 
-	const where = filters.length ? and(...filters) : undefined;
+	// Filtres par colonne.
+	for (const [key, raw] of Object.entries(params.filters ?? {})) {
+		const value = raw.trim();
+		if (!value) continue;
+		if (TEXT_FILTER_COLUMNS[key]) {
+			conditions.push(ilike(TEXT_FILTER_COLUMNS[key], `%${value}%`));
+		} else if (EXACT_FILTER_COLUMNS[key]) {
+			conditions.push(eq(EXACT_FILTER_COLUMNS[key], value));
+		}
+	}
+
+	const where = conditions.length ? and(...conditions) : undefined;
+
+	// Tri : colonne en liste blanche, direction bornée, défaut = plus récents.
+	const sortColumn: SQLWrapper = SORT_COLUMNS[params.sort ?? ''] ?? customer.createdAt;
+	const orderBy = params.dir === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
 	const [rows, [{ total }]] = await Promise.all([
 		db
 			.select()
 			.from(customer)
 			.where(where)
-			.orderBy(desc(customer.createdAt))
+			.orderBy(orderBy)
 			.limit(perPage)
 			.offset((page - 1) * perPage),
 		db.select({ total: count() }).from(customer).where(where)

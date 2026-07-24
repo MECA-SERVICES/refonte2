@@ -1,12 +1,40 @@
 import type { PageServerLoad } from './$types';
 import { listCustomers } from '$lib/server/customers';
 
-export const load: PageServerLoad = async ({ url }) => {
-	const search = url.searchParams.get('q') ?? undefined;
-	const type = url.searchParams.get('type') ?? undefined;
-	const status = url.searchParams.get('status') ?? undefined;
-	const page = Number(url.searchParams.get('page') ?? '1') || 1;
+/** Clés de filtre par colonne lues depuis l'URL (préfixe f_ pour éviter les collisions). */
+const FILTER_KEYS = [
+	'firstName',
+	'lastName',
+	'email',
+	'phone',
+	'companyName',
+	'siret',
+	'vatNumber',
+	'type',
+	'status'
+] as const;
 
-	const result = await listCustomers({ search, type, status, page });
-	return { ...result, search: search ?? '', type: type ?? '', status: status ?? '' };
+export const load: PageServerLoad = async ({ url }) => {
+	const q = url.searchParams;
+
+	const filters: Record<string, string> = {};
+	for (const key of FILTER_KEYS) {
+		const value = q.get(`f_${key}`);
+		if (value) filters[key] = value;
+	}
+
+	const search = q.get('q') ?? undefined;
+	const sort = q.get('sort') ?? undefined;
+	const dir = q.get('dir') === 'asc' ? 'asc' : q.get('dir') === 'desc' ? 'desc' : undefined;
+	const page = Number(q.get('page') ?? '1') || 1;
+
+	const result = await listCustomers({ search, filters, sort, dir, page });
+
+	return {
+		...result,
+		search: search ?? '',
+		filters,
+		sort: sort ?? '',
+		dir: dir ?? 'desc'
+	};
 };
