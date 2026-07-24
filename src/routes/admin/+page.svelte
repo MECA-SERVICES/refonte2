@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { UsersSolid, MapPinAltSolid, ClockSolid } from 'flowbite-svelte-icons';
+	import { UsersSolid, ClockSolid, ArchiveSolid, GridSolid, TagSolid } from 'flowbite-svelte-icons';
 	import { PageHeader, StatCard } from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
@@ -17,11 +17,24 @@
 		icon={UsersSolid}
 		href="/admin/customers"
 	/>
-	<StatCard label="Adresses" value={data.stats.addresses} icon={MapPinAltSolid} />
 	<StatCard
 		label="Comptes en attente"
 		value={data.stats.pending}
 		icon={ClockSolid}
 		href="/admin/customers?status=pending"
 	/>
+	<StatCard
+		label="Produits"
+		value={data.stats.products}
+		icon={ArchiveSolid}
+		href="/admin/products"
+	/>
+	<StatCard
+		label="Catégories"
+		value={data.stats.categories}
+		icon={GridSolid}
+		href="/admin/categories"
+	/>
+	<StatCard label="Marques" value={data.stats.brands} icon={TagSolid} href="/admin/brands" />
+	<StatCard label="Adresses" value={data.stats.addresses} icon={UsersSolid} />
 </div>

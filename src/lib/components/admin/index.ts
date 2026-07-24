@@ -5,7 +5,32 @@ export { default as Pagination } from './Pagination.svelte';
 export { default as StatusBadge } from './StatusBadge.svelte';
 export { default as ConfirmDialog } from './ConfirmDialog.svelte';
 export { default as CustomerForm } from './CustomerForm.svelte';
+export { default as BrandForm } from './BrandForm.svelte';
+export { default as CategoryForm } from './CategoryForm.svelte';
+export { default as ProductForm } from './ProductForm.svelte';
 export { default as StatCard } from './StatCard.svelte';
+export { default as ActiveBadge } from './ActiveBadge.svelte';
+
+/**
+ * Construit un lien de pagination qui conserve les filtres et le tri courants.
+ * Utilisé par toutes les pages liste de l'admin.
+ */
+export function listPageHref(
+	basePath: string,
+	state: { filters: Record<string, string>; sort: string; dir: string },
+	page: number
+): string {
+	const search = new URLSearchParams();
+	for (const [key, value] of Object.entries(state.filters)) {
+		if (value) search.set(`f_${key}`, value);
+	}
+	if (state.sort) {
+		search.set('sort', state.sort);
+		search.set('dir', state.dir);
+	}
+	search.set('page', String(page));
+	return `${basePath}?${search.toString()}`;
+}
 
 type BadgeColor = 'gray' | 'green' | 'yellow' | 'red' | 'blue' | 'indigo' | 'purple';
 

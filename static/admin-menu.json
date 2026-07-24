@@ -36,12 +36,7 @@
 					"items": [
 						{ "id": "products", "label": "Produits", "href": "/admin/products" },
 						{ "id": "categories", "label": "Catégories", "href": "/admin/categories" },
-						{ "id": "monitoring", "label": "Suivi", "href": "/admin/monitoring" },
-						{ "id": "attributes", "label": "Attributs & Caractéristiques", "href": "/admin/attributes" },
-						{ "id": "manufacturers", "label": "Marques & Fournisseurs", "href": "/admin/manufacturers" },
-						{ "id": "files", "label": "Fichiers", "href": "/admin/files" },
-						{ "id": "discounts", "label": "Réductions", "href": "/admin/discounts" },
-						{ "id": "stock", "label": "Stock", "href": "/admin/stock" }
+						{ "id": "brands", "label": "Marques", "href": "/admin/brands" }
 					]
 				},
 				{
