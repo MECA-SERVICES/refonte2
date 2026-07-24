@@ -49,9 +49,7 @@
 					"label": "Clients",
 					"icon": "users",
 					"items": [
-						{ "id": "customers-list", "label": "Clients", "href": "/admin/customers" },
-						{ "id": "addresses", "label": "Adresses", "href": "/admin/addresses" },
-						{ "id": "outstanding", "label": "Encours autorisé", "href": "/admin/outstanding" }
+						{ "id": "customers-list", "label": "Clients", "href": "/admin/customers" }
 					]
 				},
 				{

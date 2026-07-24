@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
+	import { authClient } from '$lib/auth-client';
 	import type { Pathname } from '$app/types';
 	import {
 		Sidebar,
@@ -60,6 +62,13 @@
 
 	// Les liens du menu proviennent du JSON : on les résout en tant que Pathname.
 	const menuHref = (href: string) => resolve(href as Pathname);
+
+	const adminUser = $derived(data.adminUser);
+
+	async function logout() {
+		await authClient.signOut();
+		await goto('/admin/login');
+	}
 
 	const itemIconClass = 'h-5 w-5 shrink-0 text-gray-400 group-hover:text-white';
 </script>
@@ -161,7 +170,7 @@
 							<input
 								type="text"
 								id="topbar-search"
-								class="focus:border-primary-500 focus:ring-primary-500 block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+								class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
 								placeholder="Rechercher..."
 							/>
 						</div>
@@ -182,13 +191,12 @@
 					<Avatar id="avatar-menu" class="cursor-pointer" />
 					<Dropdown simple triggeredBy="#avatar-menu" placement="bottom-end">
 						<DropdownHeader>
-							<span class="block text-sm">Admin User</span>
-							<span class="block truncate text-sm font-medium">admin@msshop.com</span>
+							<span class="block text-sm">{adminUser?.name ?? 'Administrateur'}</span>
+							<span class="block truncate text-sm font-medium">{adminUser?.email ?? ''}</span>
 						</DropdownHeader>
 						<DropdownItem href={resolve('/admin')}>Tableau de bord</DropdownItem>
-						<DropdownItem href={resolve('/admin')}>Paramètres</DropdownItem>
 						<DropdownDivider />
-						<DropdownItem>Déconnexion</DropdownItem>
+						<DropdownItem onclick={logout}>Déconnexion</DropdownItem>
 					</Dropdown>
 				</div>
 			</div>

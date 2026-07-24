@@ -25,9 +25,10 @@ export interface AdminMenu {
 	sections: AdminMenuSection[];
 }
 
-export const load: LayoutLoad = async ({ fetch }) => {
+export const load: LayoutLoad = async ({ fetch, data }) => {
+	// `data` provient de +layout.server.ts (même niveau) et contient adminUser.
 	const response = await fetch('/admin-menu.json');
 	const menu: AdminMenu = await response.json();
 
-	return { menu };
+	return { menu, adminUser: data.adminUser };
 };
