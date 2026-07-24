@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
+	import type { Pathname } from '$app/types';
 	import {
 		Sidebar,
 		SidebarGroup,
@@ -56,18 +58,21 @@
 
 	const activeUrl = $derived(page.url.pathname);
 
-	const itemIconClass =
-		'h-5 w-5 shrink-0 text-gray-400 transition duration-75 group-hover:text-white';
+	// Les liens du menu proviennent du JSON : on les résout en tant que Pathname.
+	const menuHref = (href: string) => resolve(href as Pathname);
+
+	const itemIconClass = 'h-5 w-5 shrink-0 text-gray-400 group-hover:text-white';
 </script>
 
 <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
 	<!-- Sidebar (style PrestaShop : sombre, fixe) -->
 	<Sidebar
 		{activeUrl}
-		bind:isOpen={sidebarOpen}
+		isOpen={sidebarOpen}
 		closeSidebar={() => (sidebarOpen = false)}
 		breakpoint="lg"
 		position="fixed"
+		params={{ x: 0, duration: 0 }}
 		class="h-screen w-64 border-e border-gray-700 bg-gray-800"
 		classes={{
 			div: 'flex h-full flex-col overflow-y-auto bg-gray-800 px-3 py-4',
@@ -78,7 +83,7 @@
 		}}
 	>
 		<!-- Logo -->
-		<a href="/admin" class="mb-4 flex items-center border-b border-gray-700 px-2 pb-4">
+		<a href={resolve('/admin')} class="mb-4 flex items-center border-b border-gray-700 px-2 pb-4">
 			<span class="text-xl font-semibold whitespace-nowrap text-white">
 				{data.menu.brand}
 			</span>
@@ -96,7 +101,7 @@
 						<SidebarDropdownWrapper
 							label={item.label}
 							classes={{
-								btn: 'group flex w-full items-center rounded-md p-2 text-sm font-normal text-gray-300 transition duration-75 hover:bg-gray-700 hover:text-white',
+								btn: 'group flex w-full items-center rounded-md p-2 text-sm font-normal text-gray-300 hover:bg-gray-700 hover:text-white',
 								span: 'ms-3 flex-1 text-left whitespace-nowrap',
 								svg: 'h-3 w-3 text-gray-400',
 								ul: 'space-y-1 py-1'
@@ -107,11 +112,15 @@
 								<Icon class={itemIconClass} />
 							{/snippet}
 							{#each item.items as subItem (subItem.id)}
-								<SidebarItem label={subItem.label} href={subItem.href} spanClass="ms-3 text-sm" />
+								<SidebarItem
+									label={subItem.label}
+									href={menuHref(subItem.href)}
+									spanClass="ms-3 text-sm"
+								/>
 							{/each}
 						</SidebarDropdownWrapper>
 					{:else}
-						<SidebarItem label={item.label} href={item.href}>
+						<SidebarItem label={item.label} href={item.href ? menuHref(item.href) : undefined}>
 							{#snippet icon()}
 								{@const Icon = iconMap[item.icon]}
 								<Icon class={itemIconClass} />
@@ -176,8 +185,8 @@
 							<span class="block text-sm">Admin User</span>
 							<span class="block truncate text-sm font-medium">admin@msshop.com</span>
 						</DropdownHeader>
-						<DropdownItem href="/admin">Tableau de bord</DropdownItem>
-						<DropdownItem href="/admin/administration">Paramètres</DropdownItem>
+						<DropdownItem href={resolve('/admin')}>Tableau de bord</DropdownItem>
+						<DropdownItem href={resolve('/admin')}>Paramètres</DropdownItem>
 						<DropdownDivider />
 						<DropdownItem>Déconnexion</DropdownItem>
 					</Dropdown>
