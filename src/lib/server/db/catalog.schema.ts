@@ -151,8 +151,10 @@ export const product = pgTable(
 		priceUpdatedAt: timestamp('price_updated_at', { withTimezone: true })
 	},
 	(t) => [
-		uniqueIndex('product_slug_idx').on(t.slug),
-		uniqueIndex('product_reference_idx').on(t.reference),
+		// Non-uniques : la source PrestaShop contient des slugs et références en
+		// doublon (~247k). L'unicité stricte casserait l'import.
+		index('product_slug_idx').on(t.slug),
+		index('product_reference_idx').on(t.reference),
 		index('product_brand_idx').on(t.brandId),
 		index('product_category_idx').on(t.categoryId)
 	]
