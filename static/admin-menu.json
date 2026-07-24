@@ -23,10 +23,8 @@
 					"icon": "shopping-bag",
 					"items": [
 						{ "id": "orders-list", "label": "Commandes", "href": "/admin/orders" },
-						{ "id": "invoices", "label": "Factures", "href": "/admin/invoices" },
-						{ "id": "credit-slips", "label": "Avoirs", "href": "/admin/credit-slips" },
-						{ "id": "delivery-slips", "label": "Bons de livraison", "href": "/admin/delivery-slips" },
-						{ "id": "shopping-carts", "label": "Paniers", "href": "/admin/shopping-carts" }
+						{ "id": "shopping-carts", "label": "Paniers", "href": "/admin/carts" },
+						{ "id": "order-states", "label": "États de commande", "href": "/admin/order-states" }
 					]
 				},
 				{

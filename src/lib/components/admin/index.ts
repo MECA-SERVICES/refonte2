@@ -9,8 +9,10 @@ export { default as BrandForm } from './BrandForm.svelte';
 export { default as CategoryForm } from './CategoryForm.svelte';
 export { default as ProductForm } from './ProductForm.svelte';
 export { default as TaxRuleForm } from './TaxRuleForm.svelte';
+export { default as OrderStateForm } from './OrderStateForm.svelte';
 export { default as StatCard } from './StatCard.svelte';
 export { default as ActiveBadge } from './ActiveBadge.svelte';
+export { default as StateBadge } from './StateBadge.svelte';
 
 /**
  * Construit un lien de pagination qui conserve les filtres et le tri courants.

@@ -3,7 +3,6 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { authClient } from '$lib/auth-client';
-	import type { Pathname } from '$app/types';
 	import {
 		Sidebar,
 		SidebarGroup,
@@ -60,8 +59,8 @@
 
 	const activeUrl = $derived(page.url.pathname);
 
-	// Les liens du menu proviennent du JSON : on les résout en tant que Pathname.
-	const menuHref = (href: string) => resolve(href as Pathname);
+	// Les liens du menu proviennent du JSON (chemins internes contrôlés par nous).
+	const menuHref = (href: string) => href;
 
 	const adminUser = $derived(data.adminUser);
 
