@@ -36,7 +36,8 @@
 					"items": [
 						{ "id": "products", "label": "Produits", "href": "/admin/products" },
 						{ "id": "categories", "label": "Catégories", "href": "/admin/categories" },
-						{ "id": "brands", "label": "Marques", "href": "/admin/brands" }
+						{ "id": "brands", "label": "Marques", "href": "/admin/brands" },
+						{ "id": "taxes", "label": "Taux de TVA", "href": "/admin/taxes" }
 					]
 				},
 				{

@@ -7,11 +7,14 @@ import {
 	parseProductForm,
 	activeBrands,
 	allCategories,
+	activeTaxRules,
 	addVariant,
 	deleteVariant,
 	addMedia,
-	deleteMedia
+	deleteMedia,
+	recordStockMovement
 } from '$lib/server/catalog';
+import type { StockMovementType } from '$lib/server/db/catalog.schema';
 
 function idParam(params: { id: string }): number {
 	const id = Number(params.id);
@@ -19,19 +22,27 @@ function idParam(params: { id: string }): number {
 	return id;
 }
 
+const MOVEMENT_TYPES: StockMovementType[] = ['in', 'out', 'adjustment', 'order', 'return'];
+
 export const load: PageServerLoad = async ({ params }) => {
 	const id = idParam(params);
-	const [product, brands, cats] = await Promise.all([
+	const [product, brands, cats, taxes] = await Promise.all([
 		getProductFull(id),
 		activeBrands(),
-		allCategories()
+		allCategories(),
+		activeTaxRules()
 	]);
 	if (!product) throw error(404, 'Produit introuvable');
 
 	return {
 		product,
 		brandOptions: brands.map((b) => ({ value: String(b.id), name: b.name })),
-		categoryOptions: cats.map((c) => ({ value: String(c.id), name: c.name }))
+		categoryOptions: cats.map((c) => ({ value: String(c.id), name: c.name })),
+		taxOptions: taxes.map((t) => ({
+			value: String(t.id),
+			name: `${t.name} (${Number(t.rate)} %)`,
+			rate: Number(t.rate)
+		}))
 	};
 };
 
@@ -41,7 +52,32 @@ export const actions: Actions = {
 		const parsed = parseProductForm(await request.formData());
 		if ('error' in parsed) return fail(400, { message: parsed.error });
 
-		await updateProduct(id, { ...parsed.values, priceUpdatedAt: new Date() });
+		// Le stock n'est pas modifiable ici : il est piloté par les mouvements de stock.
+		const { stock: _ignoredStock, ...values } = parsed.values;
+		await updateProduct(id, { ...values, priceUpdatedAt: new Date() });
+		return { success: true };
+	},
+
+	stockMovement: async ({ request, params, locals }) => {
+		const id = idParam(params);
+		const form = await request.formData();
+		const type = form.get('type')?.toString() as StockMovementType;
+		const quantity = Number(form.get('quantity')?.toString());
+
+		if (!MOVEMENT_TYPES.includes(type) || !Number.isInteger(quantity) || quantity === 0) {
+			return fail(400, { stockError: 'Type et quantité (non nulle) requis.' });
+		}
+
+		// Les sorties/commandes retirent du stock : quantité rendue négative.
+		const delta = type === 'out' || type === 'order' ? -Math.abs(quantity) : quantity;
+
+		await recordStockMovement({
+			productId: id,
+			quantity: delta,
+			type,
+			note: form.get('note')?.toString().trim() || null,
+			createdBy: locals.user?.id ?? null
+		});
 		return { success: true };
 	},
 

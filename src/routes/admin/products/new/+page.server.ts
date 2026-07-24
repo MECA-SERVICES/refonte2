@@ -1,12 +1,27 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { createProduct, activeBrands, allCategories, parseProductForm } from '$lib/server/catalog';
+import {
+	createProduct,
+	activeBrands,
+	allCategories,
+	activeTaxRules,
+	parseProductForm
+} from '$lib/server/catalog';
 
 export const load: PageServerLoad = async () => {
-	const [brands, cats] = await Promise.all([activeBrands(), allCategories()]);
+	const [brands, cats, taxes] = await Promise.all([
+		activeBrands(),
+		allCategories(),
+		activeTaxRules()
+	]);
 	return {
 		brandOptions: brands.map((b) => ({ value: String(b.id), name: b.name })),
-		categoryOptions: cats.map((c) => ({ value: String(c.id), name: c.name }))
+		categoryOptions: cats.map((c) => ({ value: String(c.id), name: c.name })),
+		taxOptions: taxes.map((t) => ({
+			value: String(t.id),
+			name: `${t.name} (${Number(t.rate)} %)`,
+			rate: Number(t.rate)
+		}))
 	};
 };
 

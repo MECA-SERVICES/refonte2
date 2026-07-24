@@ -17,12 +17,29 @@
 		{ value: 'pdf', name: 'PDF (vue éclatée)' }
 	];
 
+	const movementTypeOptions = [
+		{ value: 'in', name: 'Entrée (réappro)' },
+		{ value: 'out', name: 'Sortie' },
+		{ value: 'adjustment', name: 'Ajustement inventaire' },
+		{ value: 'return', name: 'Retour client' }
+	];
+
+	const movementLabels: Record<string, string> = {
+		in: 'Entrée',
+		out: 'Sortie',
+		adjustment: 'Ajustement',
+		order: 'Commande',
+		return: 'Retour'
+	};
+
 	function attrText(attrs: Record<string, string> | null): string {
 		if (!attrs) return '—';
 		return Object.entries(attrs)
 			.map(([k, v]) => `${k}: ${v}`)
 			.join(', ');
 	}
+
+	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
 </script>
 
 <svelte:head><title>{p.name} · Produits</title></svelte:head>
@@ -48,10 +65,71 @@
 	product={p}
 	brandOptions={data.brandOptions}
 	categoryOptions={data.categoryOptions}
+	taxOptions={data.taxOptions}
 	action="?/update"
 	message={form?.message}
 	submitLabel="Enregistrer"
 />
+
+<!-- Stock & mouvements -->
+<Card class="mt-6 max-w-4xl p-6">
+	<div class="mb-4 flex items-center justify-between">
+		<h2 class="text-lg font-semibold text-gray-900 dark:text-white">Stock & mouvements</h2>
+		<span class="text-sm text-gray-500 dark:text-gray-400">
+			Stock actuel : <span class="font-semibold text-gray-900 dark:text-white">{p.stock}</span>
+		</span>
+	</div>
+
+	<!-- Enregistrer un mouvement -->
+	<form method="POST" action="?/stockMovement" use:enhance class="mb-6 grid gap-3 sm:grid-cols-4">
+		{#if form?.stockError}
+			<p class="text-sm text-red-600 sm:col-span-4">{form.stockError}</p>
+		{/if}
+		<div>
+			<Label for="sm-type" class="mb-2">Type</Label>
+			<Select id="sm-type" name="type" placeholder="" items={movementTypeOptions} value="in" />
+		</div>
+		<div>
+			<Label for="sm-qty" class="mb-2">Quantité</Label>
+			<Input id="sm-qty" name="quantity" type="number" value="1" />
+		</div>
+		<div class="sm:col-span-2">
+			<Label for="sm-note" class="mb-2">Note</Label>
+			<Input id="sm-note" name="note" placeholder="ex : réception commande fournisseur" />
+		</div>
+		<div class="sm:col-span-4">
+			<Button type="submit" size="sm">
+				<PlusOutline class="me-1 h-4 w-4" /> Enregistrer le mouvement
+			</Button>
+		</div>
+	</form>
+
+	<!-- Historique -->
+	{#if p.movements.length > 0}
+		<div class="space-y-1">
+			{#each p.movements as mv (mv.id)}
+				<div
+					class="flex items-center justify-between border-b border-gray-100 py-2 text-sm dark:border-gray-800"
+				>
+					<div>
+						<span class="font-medium text-gray-900 dark:text-white">
+							{movementLabels[mv.type] ?? mv.type}
+						</span>
+						<span class={mv.quantity >= 0 ? 'ms-2 text-green-600' : 'ms-2 text-red-600'}>
+							{mv.quantity >= 0 ? '+' : ''}{mv.quantity}
+						</span>
+						{#if mv.note}
+							<span class="ms-2 text-gray-500 dark:text-gray-400">— {mv.note}</span>
+						{/if}
+					</div>
+					<span class="text-gray-400">{dateFmt.format(new Date(mv.createdAt))}</span>
+				</div>
+			{/each}
+		</div>
+	{:else}
+		<p class="text-sm text-gray-500 dark:text-gray-400">Aucun mouvement enregistré.</p>
+	{/if}
+</Card>
 
 <!-- Variantes -->
 <Card class="mt-6 max-w-4xl p-6">

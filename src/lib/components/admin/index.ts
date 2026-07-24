@@ -8,6 +8,7 @@ export { default as CustomerForm } from './CustomerForm.svelte';
 export { default as BrandForm } from './BrandForm.svelte';
 export { default as CategoryForm } from './CategoryForm.svelte';
 export { default as ProductForm } from './ProductForm.svelte';
+export { default as TaxRuleForm } from './TaxRuleForm.svelte';
 export { default as StatCard } from './StatCard.svelte';
 export { default as ActiveBadge } from './ActiveBadge.svelte';
 

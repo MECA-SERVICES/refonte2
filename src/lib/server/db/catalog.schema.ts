@@ -69,6 +69,26 @@ export const category = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Règles de TVA
+// ---------------------------------------------------------------------------
+
+export const taxRule = pgTable('tax_rule', {
+	id: serial('id').primaryKey(),
+	/** Libellé, ex. « Taux normal 20 % ». */
+	name: text('name').notNull(),
+	/** Taux en pourcentage, ex. 20.00, 5.50. */
+	rate: numeric('rate', { precision: 6, scale: 3 }).notNull(),
+	isActive: boolean('is_active').notNull().default(true),
+	/** Taux appliqué par défaut aux nouveaux produits. */
+	isDefault: boolean('is_default').notNull().default(false),
+
+	legacyPsId: integer('legacy_ps_id'),
+
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+// ---------------------------------------------------------------------------
 // Produits
 // ---------------------------------------------------------------------------
 
@@ -102,6 +122,8 @@ export const product = pgTable(
 		/** Prix HT barré (avant remise). */
 		priceHtStrike: numeric('price_ht_strike', { precision: 12, scale: 4 }),
 		purchasePrice: numeric('purchase_price', { precision: 12, scale: 4 }),
+		/** Règle de TVA appliquée (null = pas de TVA / exonéré). */
+		taxRuleId: integer('tax_rule_id').references(() => taxRule.id, { onDelete: 'set null' }),
 
 		// Stock & logistique
 		stock: integer('stock').notNull().default(0),
@@ -167,6 +189,44 @@ export const productVariant = pgTable(
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [index('product_variant_product_idx').on(t.productId)]
+);
+
+// ---------------------------------------------------------------------------
+// Mouvements de stock (inventory) — historique traçable
+// ---------------------------------------------------------------------------
+
+/** Nature d'un mouvement de stock. */
+export const stockMovementType = [
+	'in', // entrée (réapprovisionnement)
+	'out', // sortie manuelle
+	'adjustment', // ajustement d'inventaire (correction)
+	'order', // décrément suite à une commande
+	'return' // incrément suite à un retour
+] as const;
+export type StockMovementType = (typeof stockMovementType)[number];
+
+export const stockMovement = pgTable(
+	'stock_movement',
+	{
+		id: serial('id').primaryKey(),
+		productId: integer('product_id')
+			.notNull()
+			.references(() => product.id, { onDelete: 'cascade' }),
+		/** Variante concernée (null = produit simple). */
+		variantId: integer('variant_id').references(() => productVariant.id, { onDelete: 'cascade' }),
+		/** Quantité du mouvement (positive = entrée, négative = sortie). */
+		quantity: integer('quantity').notNull(),
+		type: text('type').notNull(),
+		note: text('note'),
+		/** Utilisateur à l'origine du mouvement (id better-auth), si applicable. */
+		createdBy: text('created_by'),
+
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		index('stock_movement_product_idx').on(t.productId),
+		index('stock_movement_variant_idx').on(t.variantId)
+	]
 );
 
 // ---------------------------------------------------------------------------
@@ -261,12 +321,26 @@ export const categoryRelations = relations(category, ({ one, many }) => ({
 	products: many(product)
 }));
 
+export const taxRuleRelations = relations(taxRule, ({ many }) => ({
+	products: many(product)
+}));
+
 export const productRelations = relations(product, ({ one, many }) => ({
 	brand: one(brand, { fields: [product.brandId], references: [brand.id] }),
 	category: one(category, { fields: [product.categoryId], references: [category.id] }),
+	taxRule: one(taxRule, { fields: [product.taxRuleId], references: [taxRule.id] }),
 	variants: many(productVariant),
 	media: many(productMedia),
+	movements: many(stockMovement),
 	additionalCategories: many(productCategory)
+}));
+
+export const stockMovementRelations = relations(stockMovement, ({ one }) => ({
+	product: one(product, { fields: [stockMovement.productId], references: [product.id] }),
+	variant: one(productVariant, {
+		fields: [stockMovement.variantId],
+		references: [productVariant.id]
+	})
 }));
 
 export const productVariantRelations = relations(productVariant, ({ one }) => ({
@@ -298,3 +372,7 @@ export type ProductMedia = typeof productMedia.$inferSelect;
 export type NewProductMedia = typeof productMedia.$inferInsert;
 export type ProductRelation = typeof productRelation.$inferSelect;
 export type NewProductRelation = typeof productRelation.$inferInsert;
+export type TaxRule = typeof taxRule.$inferSelect;
+export type NewTaxRule = typeof taxRule.$inferInsert;
+export type StockMovement = typeof stockMovement.$inferSelect;
+export type NewStockMovement = typeof stockMovement.$inferInsert;

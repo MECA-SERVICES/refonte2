@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { Card, Label, Input, Textarea, Select, Toggle, Button, Alert } from 'flowbite-svelte';
 	import type { Product } from '$lib/server/db/catalog.schema';
@@ -7,6 +8,7 @@
 		product,
 		brandOptions,
 		categoryOptions,
+		taxOptions,
 		message,
 		submitLabel = 'Enregistrer',
 		action
@@ -14,6 +16,7 @@
 		product?: Partial<Product>;
 		brandOptions: { value: string; name: string }[];
 		categoryOptions: { value: string; name: string }[];
+		taxOptions: { value: string; name: string; rate: number }[];
 		message?: string;
 		submitLabel?: string;
 		action?: string;
@@ -22,6 +25,18 @@
 	function val(n: number | string | null | undefined): string {
 		return n === null || n === undefined ? '' : String(n);
 	}
+
+	// Prix HT saisi + taux sélectionné → aperçu TTC en direct.
+	// untrack : on ne capture que la valeur initiale (le produit ne change pas pendant l'édition).
+	let priceHt = $state(untrack(() => val(product?.priceHt)));
+	let taxRuleId = $state(untrack(() => val(product?.taxRuleId)));
+
+	const selectedRate = $derived(taxOptions.find((t) => t.value === taxRuleId)?.rate ?? 0);
+	const ttcPreview = $derived(
+		priceHt && !Number.isNaN(Number(priceHt))
+			? (Number(priceHt) * (1 + selectedRate / 100)).toFixed(2)
+			: null
+	);
 </script>
 
 <form method="POST" {action} use:enhance class="space-y-6">
@@ -91,8 +106,29 @@
 					type="number"
 					step="0.01"
 					required
-					value={val(product?.priceHt)}
+					bind:value={priceHt}
 				/>
+			</div>
+			<div>
+				<Label for="taxRuleId" class="mb-2">TVA</Label>
+				<Select
+					id="taxRuleId"
+					name="taxRuleId"
+					placeholder=""
+					bind:value={taxRuleId}
+					items={[
+						{ value: '', name: 'Aucune' },
+						...taxOptions.map((t) => ({ value: t.value, name: t.name }))
+					]}
+				/>
+			</div>
+			<div>
+				<Label class="mb-2">Prix TTC (aperçu)</Label>
+				<div
+					class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+				>
+					{ttcPreview ? `${ttcPreview} €` : '—'}
+				</div>
 			</div>
 			<div>
 				<Label for="priceHtStrike" class="mb-2">Prix barré HT (€)</Label>

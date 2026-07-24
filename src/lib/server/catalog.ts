@@ -5,14 +5,18 @@ import {
 	product,
 	productVariant,
 	productMedia,
-	productRelation
+	productRelation,
+	taxRule,
+	stockMovement
 } from '$lib/server/db/schema';
-import { and, asc, count, desc, eq, ilike, or, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { slugify } from '$lib/server/slug';
 import type {
 	NewBrand,
 	NewCategory,
+	NewTaxRule,
+	StockMovementType,
 	NewProduct,
 	NewProductVariant,
 	NewProductMedia
@@ -292,12 +296,12 @@ export async function getProduct(id: number) {
 	return row;
 }
 
-/** Produit + ses variantes, médias et relations (pour la fiche détail). */
+/** Produit + variantes, médias, relations, mouvements de stock et TVA (fiche détail). */
 export async function getProductFull(id: number) {
 	const row = await getProduct(id);
 	if (!row) return undefined;
 
-	const [variants, media, relations] = await Promise.all([
+	const [variants, media, relations, movements, tax] = await Promise.all([
 		db
 			.select()
 			.from(productVariant)
@@ -308,10 +312,17 @@ export async function getProductFull(id: number) {
 			.from(productMedia)
 			.where(eq(productMedia.productId, id))
 			.orderBy(asc(productMedia.position)),
-		db.select().from(productRelation).where(eq(productRelation.fromProductId, id))
+		db.select().from(productRelation).where(eq(productRelation.fromProductId, id)),
+		db
+			.select()
+			.from(stockMovement)
+			.where(eq(stockMovement.productId, id))
+			.orderBy(desc(stockMovement.createdAt))
+			.limit(50),
+		row.taxRuleId ? getTaxRule(row.taxRuleId) : Promise.resolve(undefined)
 	]);
 
-	return { ...row, variants, media, relations };
+	return { ...row, variants, media, relations, movements, taxRule: tax ?? null };
 }
 
 export async function createProduct(values: NewProduct) {
@@ -362,6 +373,7 @@ export function parseProductForm(form: FormData) {
 	const slugInput = str(form.get('slug'));
 	const brandRaw = form.get('brandId')?.toString().trim();
 	const categoryRaw = form.get('categoryId')?.toString().trim();
+	const taxRaw = form.get('taxRuleId')?.toString().trim();
 
 	return {
 		values: {
@@ -373,6 +385,7 @@ export function parseProductForm(form: FormData) {
 			ean13: str(form.get('ean13')),
 			brandId: brandRaw ? Number(brandRaw) || null : null,
 			categoryId: categoryRaw ? Number(categoryRaw) || null : null,
+			taxRuleId: taxRaw ? Number(taxRaw) || null : null,
 			slug: slugInput ? slugify(slugInput) : slugify(name),
 			shortDescription: str(form.get('shortDescription')),
 			description: str(form.get('description')),
@@ -410,4 +423,124 @@ export async function addMedia(values: NewProductMedia) {
 
 export async function deleteMedia(id: number) {
 	await db.delete(productMedia).where(eq(productMedia.id, id));
+}
+
+// ===========================================================================
+// Règles de TVA
+// ===========================================================================
+
+export function listTaxRules() {
+	return db.select().from(taxRule).orderBy(desc(taxRule.isDefault), asc(taxRule.rate));
+}
+
+export async function getTaxRule(id: number) {
+	const [row] = await db.select().from(taxRule).where(eq(taxRule.id, id)).limit(1);
+	return row;
+}
+
+/** Options actives pour les listes déroulantes (avec le taux affiché). */
+export function activeTaxRules() {
+	return db
+		.select({ id: taxRule.id, name: taxRule.name, rate: taxRule.rate })
+		.from(taxRule)
+		.where(eq(taxRule.isActive, true))
+		.orderBy(asc(taxRule.rate));
+}
+
+export async function createTaxRule(values: NewTaxRule) {
+	// Un seul taux par défaut : on retire le flag des autres si celui-ci l'est.
+	if (values.isDefault) await db.update(taxRule).set({ isDefault: false });
+	const [row] = await db.insert(taxRule).values(values).returning();
+	return row;
+}
+
+export async function updateTaxRule(id: number, values: Partial<NewTaxRule>) {
+	if (values.isDefault) await db.update(taxRule).set({ isDefault: false });
+	const [row] = await db
+		.update(taxRule)
+		.set({ ...values, updatedAt: new Date() })
+		.where(eq(taxRule.id, id))
+		.returning();
+	return row;
+}
+
+export async function deleteTaxRule(id: number) {
+	await db.delete(taxRule).where(eq(taxRule.id, id));
+}
+
+export function parseTaxRuleForm(form: FormData) {
+	const name = str(form.get('name'));
+	const rate = num(form.get('rate'));
+	if (!name || rate === null) {
+		return { error: 'Le libellé et le taux sont requis.' as const };
+	}
+	return {
+		values: {
+			name,
+			rate,
+			isActive: form.get('isActive') != null,
+			isDefault: form.get('isDefault') != null
+		}
+	};
+}
+
+/** Calcule le prix TTC à partir d'un prix HT et d'un taux (%). */
+export function computeTtc(priceHt: string | number, rate: string | number): number {
+	const ht = Number(priceHt);
+	const r = Number(rate);
+	return Math.round(ht * (1 + r / 100) * 100) / 100;
+}
+
+// ===========================================================================
+// Mouvements de stock (inventory)
+// ===========================================================================
+
+export function listStockMovements(productId: number) {
+	return db
+		.select()
+		.from(stockMovement)
+		.where(eq(stockMovement.productId, productId))
+		.orderBy(desc(stockMovement.createdAt));
+}
+
+/**
+ * Enregistre un mouvement de stock ET ajuste la quantité du produit en conséquence.
+ * La quantité passée est le delta (positif = entrée, négatif = sortie).
+ */
+export async function recordStockMovement(input: {
+	productId: number;
+	variantId?: number | null;
+	quantity: number;
+	type: StockMovementType;
+	note?: string | null;
+	createdBy?: string | null;
+}) {
+	return db.transaction(async (tx) => {
+		const [movement] = await tx
+			.insert(stockMovement)
+			.values({
+				productId: input.productId,
+				variantId: input.variantId ?? null,
+				quantity: input.quantity,
+				type: input.type,
+				note: input.note ?? null,
+				createdBy: input.createdBy ?? null
+			})
+			.returning();
+
+		// Ajuste le stock : de la variante si précisée, sinon du produit.
+		if (input.variantId) {
+			await tx
+				.update(productVariant)
+				.set({ stock: sql`${productVariant.stock} + ${input.quantity}` })
+				.where(eq(productVariant.id, input.variantId));
+		} else {
+			await tx
+				.update(product)
+				.set({ stock: sql`${product.stock} + ${input.quantity}` })
+				.where(eq(product.id, input.productId));
+		}
+
+		return movement;
+	});
 }
