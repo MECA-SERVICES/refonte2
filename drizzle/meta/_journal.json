@@ -8,6 +8,13 @@
       "when": 1784897113302,
       "tag": "0000_nebulous_gravity",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784903836495,
+      "tag": "0001_public_jack_flag",
+      "breakpoints": true
     }
   ]
 }
