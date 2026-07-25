@@ -15,7 +15,13 @@
 
 	type ProductRow = (typeof data.rows)[number];
 
-	const tableParams = $derived({ filters: data.filters, sort: data.sort, dir: data.dir });
+	const tableParams = $derived({
+		filters: data.filters,
+		sort: data.sort,
+		dir: data.dir,
+		// Conserve la recherche globale (barre du haut) dans les liens de filtre/tri/pagination.
+		extra: data.q ? { q: data.q } : undefined
+	});
 
 	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 </script>
@@ -24,7 +30,9 @@
 
 <PageHeader
 	title="Produits"
-	subtitle="{data.total} produit{data.total > 1 ? 's' : ''}"
+	subtitle="{data.total} produit{data.total > 1 ? 's' : ''}{data.q
+		? ` · recherche « ${data.q} »`
+		: ''}"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Produits' }]}
 >
 	{#snippet actions()}

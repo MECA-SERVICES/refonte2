@@ -257,6 +257,22 @@ export type ProductListParams = ListParams & {
 	isActive?: boolean;
 };
 
+/**
+ * Total produits sans filtre : estimation du planificateur (entretenue par
+ * autovacuum, exacte à ~0,1 % près) au lieu d'un count(*) qui parcourt les
+ * 1,3 M de lignes à chaque affichage de la liste.
+ */
+async function estimateProductTotal(): Promise<number> {
+	const rows = await db.execute<{ total: string }>(
+		sql`SELECT reltuples::bigint AS total FROM pg_class WHERE oid = 'product'::regclass`
+	);
+	const est = Number(rows[0]?.total ?? -1);
+	if (est >= 0) return est;
+	// reltuples vaut -1 tant que la table n'a jamais été analysée : count exact.
+	const [{ total }] = await db.select({ total: count() }).from(product);
+	return total;
+}
+
 export async function listProducts(params: ProductListParams = {}) {
 	const page = Math.max(1, params.page ?? 1);
 	const perPage = Math.min(100, Math.max(1, params.perPage ?? 20));
@@ -269,7 +285,7 @@ export async function listProducts(params: ProductListParams = {}) {
 	if (typeof params.isActive === 'boolean') conditions.push(eq(product.isActive, params.isActive));
 	const where = conditions.length ? and(...conditions) : undefined;
 
-	const [rows, [{ total }]] = await Promise.all([
+	const [rows, total] = await Promise.all([
 		db
 			.select({
 				id: product.id,
@@ -294,7 +310,13 @@ export async function listProducts(params: ProductListParams = {}) {
 			.orderBy(buildOrderBy(params, PRODUCT_MAPS))
 			.limit(perPage)
 			.offset((page - 1) * perPage),
-		db.select({ total: count() }).from(product).where(where)
+		where
+			? db
+					.select({ total: count() })
+					.from(product)
+					.where(where)
+					.then(([r]) => r.total)
+			: estimateProductTotal()
 	]);
 
 	return { rows, total, page, perPage, pageCount: Math.max(1, Math.ceil(total / perPage)) };

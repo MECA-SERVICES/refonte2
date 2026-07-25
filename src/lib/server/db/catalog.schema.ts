@@ -159,7 +159,13 @@ export const product = pgTable(
 		index('product_category_idx').on(t.categoryId),
 		// Tri par défaut de la liste admin : sans index, Postgres parcourt les
 		// 1,3 M de produits à chaque page.
-		index('product_created_at_idx').on(t.createdAt)
+		index('product_created_at_idx').on(t.createdAt),
+		// Index trigram (pg_trgm) : les filtres admin font des ILIKE '%terme%',
+		// qu'un btree ne peut pas servir — sans eux, chaque recherche scanne 1,3 M de lignes.
+		index('product_name_trgm_idx').using('gin', t.name.op('gin_trgm_ops')),
+		index('product_reference_trgm_idx').using('gin', t.reference.op('gin_trgm_ops')),
+		index('product_supplier_ref_trgm_idx').using('gin', t.supplierReference.op('gin_trgm_ops')),
+		index('product_ean13_trgm_idx').using('gin', t.ean13.op('gin_trgm_ops'))
 	]
 );
 

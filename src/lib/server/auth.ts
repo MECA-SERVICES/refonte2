@@ -11,6 +11,15 @@ export const auth = betterAuth({
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
 	emailAndPassword: { enabled: true },
+	session: {
+		// Session mise en cache dans un cookie signé : évite un aller-retour
+		// base (~30 ms sur Railway) à CHAQUE requête du back-office. Contrepartie :
+		// une révocation de session peut mettre jusqu'à 5 min à prendre effet.
+		cookieCache: {
+			enabled: true,
+			maxAge: 5 * 60
+		}
+	},
 	plugins: [
 		// Rôles : les nouveaux inscrits sont "customer", le personnel est "admin".
 		// Seuls les rôles admin accèdent au back-office. Des rôles plus fins

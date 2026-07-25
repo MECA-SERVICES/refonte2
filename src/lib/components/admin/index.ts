@@ -24,10 +24,18 @@ export { default as CategoryPicker } from './CategoryPicker.svelte';
  */
 export function listPageHref(
 	basePath: string,
-	state: { filters: Record<string, string>; sort: string; dir: string },
+	state: {
+		filters: Record<string, string>;
+		sort: string;
+		dir: string;
+		extra?: Record<string, string>;
+	},
 	page: number
 ): string {
 	const search = new URLSearchParams();
+	for (const [key, value] of Object.entries(state.extra ?? {})) {
+		if (value) search.set(key, value);
+	}
 	for (const [key, value] of Object.entries(state.filters)) {
 		if (value) search.set(`f_${key}`, value);
 	}

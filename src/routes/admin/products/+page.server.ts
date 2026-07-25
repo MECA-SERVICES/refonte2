@@ -12,10 +12,13 @@ export const load: PageServerLoad = async ({ url }) => {
 		if (value) filters[key] = value;
 	}
 
+	// Recherche globale (barre du haut) : nom, référence, réf. fournisseur, EAN13.
+	const search = q.get('q')?.trim() || undefined;
+
 	const sort = q.get('sort') ?? undefined;
 	const dir = q.get('dir') === 'asc' ? 'asc' : q.get('dir') === 'desc' ? 'desc' : undefined;
 	const page = Number(q.get('page') ?? '1') || 1;
 
-	const result = await listProducts({ filters, sort, dir, page });
-	return { ...result, filters, sort: sort ?? '', dir: dir ?? 'desc' };
+	const result = await listProducts({ search, filters, sort, dir, page });
+	return { ...result, filters, sort: sort ?? '', dir: dir ?? 'desc', q: search ?? '' };
 };

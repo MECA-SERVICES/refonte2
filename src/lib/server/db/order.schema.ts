@@ -74,7 +74,11 @@ export const cart = pgTable(
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 		lastActivityAt: timestamp('last_activity_at', { withTimezone: true }).notNull().defaultNow()
 	},
-	(t) => [index('cart_customer_idx').on(t.customerId)]
+	(t) => [
+		index('cart_customer_idx').on(t.customerId),
+		// Tri par défaut de la liste des paniers admin.
+		index('cart_last_activity_idx').on(t.lastActivityAt)
+	]
 );
 
 export const cartItem = pgTable(
@@ -148,7 +152,11 @@ export const order = pgTable(
 	(t) => [
 		uniqueIndex('order_reference_idx').on(t.reference),
 		index('order_customer_idx').on(t.customerId),
-		index('order_state_idx').on(t.stateId)
+		index('order_state_idx').on(t.stateId),
+		// Tri par défaut de la liste admin (plus récentes d'abord).
+		index('order_created_at_idx').on(t.createdAt),
+		// Le filtre référence fait un ILIKE '%terme%' que l'index unique btree ne sert pas.
+		index('order_reference_trgm_idx').using('gin', t.reference.op('gin_trgm_ops'))
 	]
 );
 

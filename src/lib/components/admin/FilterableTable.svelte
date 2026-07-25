@@ -40,8 +40,13 @@
 		columns: Column<Row>[];
 		/** Chemin de base pour la navigation, ex. "/admin/customers". */
 		basePath: string;
-		/** État courant depuis l'URL : filtres, tri, direction. */
-		params: { filters: Record<string, string>; sort: string; dir: string };
+		/** État courant depuis l'URL : filtres, tri, direction (+ paramètres à conserver). */
+		params: {
+			filters: Record<string, string>;
+			sort: string;
+			dir: string;
+			extra?: Record<string, string>;
+		};
 		emptyMessage?: string;
 		rowHref?: (row: Row) => string;
 		debounceMs?: number;
@@ -55,6 +60,9 @@
 	/** Construit l'URL cible à partir des filtres non vides + tri courant. */
 	function buildUrl(next: { sort?: string; dir?: string }): string {
 		const search = new URLSearchParams();
+		for (const [key, value] of Object.entries(params.extra ?? {})) {
+			if (value) search.set(key, value);
+		}
 		for (const [key, value] of Object.entries(filterValues)) {
 			if (value.trim()) search.set(`f_${key}`, value.trim());
 		}

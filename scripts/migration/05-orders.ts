@@ -122,13 +122,12 @@ const unmapped: string[] = [];
 for (const s of srcStatuses) {
 	const psId = s.ps_id != null ? Number(s.ps_id) : null;
 	const code =
-		(psId != null ? PS_ID_TO_CODE[psId] : undefined) ??
-		LEGACY_NAME_TO_CODE[String(s.name)] ??
-		null;
+		(psId != null ? PS_ID_TO_CODE[psId] : undefined) ?? LEGACY_NAME_TO_CODE[String(s.name)] ?? null;
 	if (!code) unmapped.push(`${s.id}:${s.name}`);
 	stateIdBySrcId.set(Number(s.id), stateIdByCode.get(code ?? FALLBACK_CODE)!);
 }
-if (unmapped.length) console.log(`  ⚠ états sans mapping (→ ${FALLBACK_CODE}) : ${unmapped.join(', ')}`);
+if (unmapped.length)
+	console.log(`  ⚠ états sans mapping (→ ${FALLBACK_CODE}) : ${unmapped.join(', ')}`);
 
 // ---------------------------------------------------------------------------
 // 2. Mapping des clients (legacy_ps_id, avec repli par email)
@@ -275,7 +274,10 @@ while (offset < totalToProcess) {
 		const newOrders = await target`
 			SELECT id, legacy_ps_id, state_id FROM "order" WHERE legacy_ps_id = ANY(${legacyIdsInBatch})`;
 		const orderByLegacy = new Map<number, { id: number; stateId: number }>(
-			newOrders.map((r) => [Number(r.legacy_ps_id), { id: Number(r.id), stateId: Number(r.state_id) }])
+			newOrders.map((r) => [
+				Number(r.legacy_ps_id),
+				{ id: Number(r.id), stateId: Number(r.state_id) }
+			])
 		);
 
 		const items = await source`
@@ -290,7 +292,8 @@ while (offset < totalToProcess) {
 			.map((it) => {
 				const o = orderByLegacy.get(Number(it.order_id));
 				if (!o) return null;
-				const productId = it.product_id != null ? (prodByLegacy.get(Number(it.product_id)) ?? null) : null;
+				const productId =
+					it.product_id != null ? (prodByLegacy.get(Number(it.product_id)) ?? null) : null;
 				return {
 					order_id: o.id,
 					product_id: productId,
@@ -340,5 +343,6 @@ while (offset < totalToProcess) {
 p.done(inserted);
 console.log(`  lignes de commande : ${linesInserted}`);
 console.log(`  (${processed - inserted - skippedNoCustomer} déjà importées/ignorées)`);
-if (skippedNoCustomer) console.log(`  ⚠ ${skippedNoCustomer} commande(s) sautée(s) : client introuvable`);
+if (skippedNoCustomer)
+	console.log(`  ⚠ ${skippedNoCustomer} commande(s) sautée(s) : client introuvable`);
 await closeAll();

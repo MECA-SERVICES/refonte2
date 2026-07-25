@@ -159,18 +159,20 @@
 						<BarsOutline class="h-6 w-6" />
 					</button>
 
-					<!-- Recherche -->
-					<form class="hidden lg:block">
-						<label for="topbar-search" class="sr-only">Rechercher</label>
+					<!-- Recherche globale produits (nom, référence, réf. fournisseur, EAN13) -->
+					<form action="/admin/products" method="get" class="hidden lg:block">
+						<label for="topbar-search" class="sr-only">Rechercher un produit</label>
 						<div class="relative lg:w-96">
 							<div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3">
 								<SearchOutline class="h-5 w-5 text-gray-500 dark:text-gray-400" />
 							</div>
 							<input
-								type="text"
+								type="search"
 								id="topbar-search"
+								name="q"
+								value={page.url.searchParams.get('q') ?? ''}
 								class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-								placeholder="Rechercher..."
+								placeholder="Rechercher un produit (nom, référence, EAN)…"
 							/>
 						</div>
 					</form>

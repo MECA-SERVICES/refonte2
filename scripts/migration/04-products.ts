@@ -23,9 +23,13 @@ const brandByLegacy = new Map<number, number>(
 // --- Mapping catégories : categories.id (source PK) → category.id cible ---
 // category.legacy_ps_id = id_category, donc on passe par la table source pour relier id → id_category.
 const srcCats = await source`SELECT id, id_category FROM categories`;
-const idCatBySrcId = new Map<number, number>(srcCats.map((r) => [Number(r.id), Number(r.id_category)]));
+const idCatBySrcId = new Map<number, number>(
+	srcCats.map((r) => [Number(r.id), Number(r.id_category)])
+);
 const catMap = await target`SELECT id, legacy_ps_id FROM category WHERE legacy_ps_id IS NOT NULL`;
-const catByLegacy = new Map<number, number>(catMap.map((r) => [Number(r.legacy_ps_id), Number(r.id)]));
+const catByLegacy = new Map<number, number>(
+	catMap.map((r) => [Number(r.legacy_ps_id), Number(r.id)])
+);
 
 // --- Produits déjà importés (idempotence) ---
 const existing = await target`SELECT legacy_ps_id FROM product WHERE legacy_ps_id IS NOT NULL`;
