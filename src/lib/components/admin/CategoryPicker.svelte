@@ -92,9 +92,9 @@
 	function pathOf(id: number): string {
 		const parts: string[] = [];
 		let cur: Cat | undefined = byId[id];
-		const seen = new Set<number>();
-		while (cur && !seen.has(cur.id)) {
-			seen.add(cur.id);
+		// Garde-fou : une arborescence corrompue (cycle parent/enfant) ne doit pas
+		// boucler à l'infini. Aucune catégorie réelle n'atteint 20 niveaux.
+		for (let depth = 0; cur && depth < 20; depth++) {
 			parts.unshift(cur.name);
 			cur = cur.parentId === null ? undefined : byId[cur.parentId];
 		}
