@@ -14,6 +14,8 @@ export { default as StatCard } from './StatCard.svelte';
 export { default as ActiveBadge } from './ActiveBadge.svelte';
 export { default as StateBadge } from './StateBadge.svelte';
 export { default as Thumbnail } from './Thumbnail.svelte';
+export { default as TabPanel } from './TabPanel.svelte';
+export { default as ProductMediaGrid } from './ProductMediaGrid.svelte';
 
 /**
  * Construit un lien de pagination qui conserve les filtres et le tri courants.
