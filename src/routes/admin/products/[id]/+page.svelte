@@ -270,7 +270,8 @@
 <ProductForm
 	product={p}
 	brandOptions={data.brandOptions}
-	categoryOptions={data.categoryOptions}
+	categoryTree={data.categoryTree}
+	selectedCategoryIds={p.categoryIds}
 	taxOptions={data.taxOptions}
 	action="?/update"
 	message={form?.message}

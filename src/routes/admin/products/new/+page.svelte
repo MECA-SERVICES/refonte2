@@ -18,7 +18,7 @@
 
 <ProductForm
 	brandOptions={data.brandOptions}
-	categoryOptions={data.categoryOptions}
+	categoryTree={data.categoryTree}
 	taxOptions={data.taxOptions}
 	message={form?.message}
 	submitLabel="Créer le produit"

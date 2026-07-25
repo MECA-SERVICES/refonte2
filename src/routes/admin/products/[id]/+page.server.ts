@@ -12,7 +12,8 @@ import {
 	deleteVariant,
 	addMedia,
 	deleteMedia,
-	recordStockMovement
+	recordStockMovement,
+	setProductCategories
 } from '$lib/server/catalog';
 import type { StockMovementType } from '$lib/server/db/catalog.schema';
 
@@ -37,7 +38,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		product,
 		brandOptions: brands.map((b) => ({ value: String(b.id), name: b.name })),
-		categoryOptions: cats.map((c) => ({ value: String(c.id), name: c.name })),
+		categoryTree: cats,
 		taxOptions: taxes.map((t) => ({
 			value: String(t.id),
 			name: `${t.name} (${Number(t.rate)} %)`,
@@ -49,12 +50,22 @@ export const load: PageServerLoad = async ({ params }) => {
 export const actions: Actions = {
 	update: async ({ request, params }) => {
 		const id = idParam(params);
-		const parsed = parseProductForm(await request.formData());
+		const form = await request.formData();
+		const parsed = parseProductForm(form);
 		if ('error' in parsed) return fail(400, { message: parsed.error });
 
 		// Le stock n'est pas modifiable ici : il est piloté par les mouvements de stock.
 		const { stock: _ignoredStock, ...values } = parsed.values;
 		await updateProduct(id, { ...values, priceUpdatedAt: new Date() });
+
+		// Catégories additionnelles : cases à cocher, donc absentes du FormData
+		// lorsqu'elles sont toutes décochées — le tableau vide vide bien la table.
+		const extraCategoryIds = form
+			.getAll('categoryIds')
+			.map((v) => Number(v.toString()))
+			.filter(Number.isInteger);
+		await setProductCategories(id, extraCategoryIds, values.categoryId);
+
 		return { success: true };
 	},
 

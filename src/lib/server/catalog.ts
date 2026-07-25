@@ -6,6 +6,7 @@ import {
 	productVariant,
 	productMedia,
 	productRelation,
+	productCategory,
 	taxRule,
 	stockMovement
 } from '$lib/server/db/schema';
@@ -309,7 +310,7 @@ export async function getProductFull(id: number) {
 	const row = await getProduct(id);
 	if (!row) return undefined;
 
-	const [variants, media, relations, movements, tax] = await Promise.all([
+	const [variants, media, relations, movements, tax, categoryIds] = await Promise.all([
 		db
 			.select()
 			.from(productVariant)
@@ -327,10 +328,43 @@ export async function getProductFull(id: number) {
 			.where(eq(stockMovement.productId, id))
 			.orderBy(desc(stockMovement.createdAt))
 			.limit(50),
-		row.taxRuleId ? getTaxRule(row.taxRuleId) : Promise.resolve(undefined)
+		row.taxRuleId ? getTaxRule(row.taxRuleId) : Promise.resolve(undefined),
+		productCategoryIds(id)
 	]);
 
-	return { ...row, variants, media, relations, movements, taxRule: tax ?? null };
+	return { ...row, variants, media, relations, movements, taxRule: tax ?? null, categoryIds };
+}
+
+/** Identifiants des catégories additionnelles rattachées au produit. */
+export async function productCategoryIds(productId: number): Promise<number[]> {
+	const rows = await db
+		.select({ categoryId: productCategory.categoryId })
+		.from(productCategory)
+		.where(eq(productCategory.productId, productId));
+	return rows.map((r) => r.categoryId);
+}
+
+/**
+ * Remplace l'ensemble des catégories additionnelles du produit.
+ *
+ * La catégorie principale (product.categoryId) est exclue : elle est déjà portée
+ * par le produit, la dupliquer ici créerait un doublon d'affichage en boutique.
+ */
+export async function setProductCategories(
+	productId: number,
+	categoryIds: number[],
+	mainCategoryId?: number | null
+) {
+	const wanted = [...new Set(categoryIds)].filter((cid) => cid !== mainCategoryId);
+
+	await db.transaction(async (tx) => {
+		await tx.delete(productCategory).where(eq(productCategory.productId, productId));
+		if (wanted.length > 0) {
+			await tx
+				.insert(productCategory)
+				.values(wanted.map((categoryId) => ({ productId, categoryId })));
+		}
+	});
 }
 
 export async function createProduct(values: NewProduct) {

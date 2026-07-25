@@ -25,13 +25,15 @@
 		ChartMixedOutline
 	} from 'flowbite-svelte-icons';
 	import TabPanel from './TabPanel.svelte';
+	import CategoryPicker from './CategoryPicker.svelte';
 	import type { Product } from '$lib/server/db/catalog.schema';
 	import type { Snippet } from 'svelte';
 
 	let {
 		product,
 		brandOptions,
-		categoryOptions,
+		categoryTree,
+		selectedCategoryIds: initialCategoryIds = [],
 		taxOptions,
 		message,
 		submitLabel = 'Enregistrer',
@@ -43,7 +45,10 @@
 	}: {
 		product?: Partial<Product>;
 		brandOptions: { value: string; name: string }[];
-		categoryOptions: { value: string; name: string }[];
+		/** Catégories à plat (avec parentId) pour reconstruire l'arborescence. */
+		categoryTree: { id: number; name: string; parentId: number | null }[];
+		/** Catégories additionnelles déjà rattachées au produit. */
+		selectedCategoryIds?: number[];
 		taxOptions: { value: string; name: string; rate: number }[];
 		message?: string;
 		submitLabel?: string;
@@ -70,6 +75,8 @@
 	let taxRuleId = $state(untrack(() => val(product?.taxRuleId)));
 	let purchasePrice = $state(untrack(() => val(product?.purchasePrice)));
 	let isActive = $state(untrack(() => product?.isActive ?? true));
+	let mainCategoryId = $state(untrack(() => val(product?.categoryId)));
+	let selectedCategoryIds = $state(untrack(() => [...initialCategoryIds]));
 
 	const selectedRate = $derived(taxOptions.find((t) => t.value === taxRuleId)?.rate ?? 0);
 	const ttcPreview = $derived(
@@ -243,17 +250,17 @@
 								items={[{ value: '', name: 'Aucune' }, ...brandOptions]}
 							/>
 						</div>
-						<div class="sm:col-span-2">
-							<Label for="categoryId" class="mb-2">Catégorie principale</Label>
-							<Select
-								id="categoryId"
-								name="categoryId"
-								placeholder=""
-								value={val(product?.categoryId)}
-								items={[{ value: '', name: 'Aucune' }, ...categoryOptions]}
-							/>
-						</div>
 					</div>
+				</Card>
+
+				<!-- Rattachement aux catégories, façon PrestaShop : principale + arborescence. -->
+				<Card class="max-w-none p-6">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Catégories</h2>
+					<CategoryPicker
+						categories={categoryTree}
+						bind:mainCategoryId
+						bind:selectedIds={selectedCategoryIds}
+					/>
 				</Card>
 
 				<Card class="max-w-none p-6">
@@ -592,6 +599,12 @@
 							<dd class="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
 								<span class="h-2 w-2 rounded-full {stockTone}"></span>
 								{product?.stock ?? 0}
+							</dd>
+						</div>
+						<div class="flex items-center justify-between">
+							<dt class="text-gray-500 dark:text-gray-400">Catégories</dt>
+							<dd class="font-medium text-gray-900 dark:text-white">
+								{selectedCategoryIds.length + (mainCategoryId ? 1 : 0)}
 							</dd>
 						</div>
 					</dl>

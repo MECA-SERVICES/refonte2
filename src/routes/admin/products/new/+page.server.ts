@@ -5,7 +5,8 @@ import {
 	activeBrands,
 	allCategories,
 	activeTaxRules,
-	parseProductForm
+	parseProductForm,
+	setProductCategories
 } from '$lib/server/catalog';
 
 export const load: PageServerLoad = async () => {
@@ -16,7 +17,7 @@ export const load: PageServerLoad = async () => {
 	]);
 	return {
 		brandOptions: brands.map((b) => ({ value: String(b.id), name: b.name })),
-		categoryOptions: cats.map((c) => ({ value: String(c.id), name: c.name })),
+		categoryTree: cats,
 		taxOptions: taxes.map((t) => ({
 			value: String(t.id),
 			name: `${t.name} (${Number(t.rate)} %)`,
@@ -27,10 +28,20 @@ export const load: PageServerLoad = async () => {
 
 export const actions: Actions = {
 	default: async ({ request }) => {
-		const parsed = parseProductForm(await request.formData());
+		const form = await request.formData();
+		const parsed = parseProductForm(form);
 		if ('error' in parsed) return fail(400, { message: parsed.error });
 
 		const created = await createProduct({ ...parsed.values, priceUpdatedAt: new Date() });
+
+		const extraCategoryIds = form
+			.getAll('categoryIds')
+			.map((v) => Number(v.toString()))
+			.filter(Number.isInteger);
+		if (extraCategoryIds.length > 0) {
+			await setProductCategories(created.id, extraCategoryIds, parsed.values.categoryId);
+		}
+
 		throw redirect(303, `/admin/products/${created.id}`);
 	}
 };
