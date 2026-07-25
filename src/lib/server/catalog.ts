@@ -262,7 +262,7 @@ export type ProductListParams = ListParams & {
  * autovacuum, exacte à ~0,1 % près) au lieu d'un count(*) qui parcourt les
  * 1,3 M de lignes à chaque affichage de la liste.
  */
-async function estimateProductTotal(): Promise<number> {
+export async function estimateProductTotal(): Promise<number> {
 	const rows = await db.execute<{ total: string }>(
 		sql`SELECT reltuples::bigint AS total FROM pg_class WHERE oid = 'product'::regclass`
 	);

@@ -29,6 +29,17 @@
 	--color-secondary-700: #0369a1;
 	--color-secondary-800: #075985;
 	--color-secondary-900: #0c4a6e;
+
+	/* Charte graphique boutique — reprise de mecaservicesshop.fr (thème Angar personnalisé) :
+	   bleu marine (menu, footer, prix listes), rouge (prix fiche produit, ajout panier, téléphone),
+	   orange (titres de sections, newsletter). */
+	--color-shop-blue: #314192;
+	--color-shop-blue-dark: #222d6b;
+	--color-shop-blue-light: #5362b5;
+	--color-shop-red: #e31d27;
+	--color-shop-red-dark: #b8151e;
+	--color-shop-orange: #ec6608;
+	--color-shop-orange-light: #eb853d;
 }
 
 @source '../../node_modules/flowbite-svelte/dist';
