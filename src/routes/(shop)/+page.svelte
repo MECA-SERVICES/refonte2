@@ -74,6 +74,18 @@
 <section
 	class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-shop-blue via-shop-blue to-shop-blue-dark px-6 py-14 text-white sm:px-12 lg:py-20"
 >
+	<!-- Visuel de fond : vue éclatée (bannière slider), fondue dans le bleu -->
+	<div
+		class="pointer-events-none absolute inset-0 bg-cover bg-center opacity-25 mix-blend-luminosity sm:bg-right"
+		style="background-image: url('/static-slider/slide.jpg')"
+		aria-hidden="true"
+	></div>
+	<!-- Voile dégradé : garde le texte lisible côté gauche -->
+	<div
+		class="pointer-events-none absolute inset-0 bg-gradient-to-r from-shop-blue via-shop-blue/80 to-shop-blue/30"
+		aria-hidden="true"
+	></div>
+
 	<!-- Décor -->
 	<div
 		class="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-shop-blue-light/40 blur-3xl"

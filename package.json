@@ -19,6 +19,9 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
+		"migrate:ps": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts",
+		"migrate:ps:dry": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts --dry-run",
+		"migrate:ps:verify": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts --only=verify",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
 	},
 	"devDependencies": {
@@ -46,11 +49,13 @@
 		"flowbite-svelte-illustrations": "^1.0.6",
 		"globals": "^17.6.0",
 		"mdsvex": "^0.12.7",
+		"mysql2": "^3.23.2",
 		"playwright": "^1.60.0",
 		"postgres": "^3.4.9",
 		"prettier": "^3.8.3",
 		"prettier-plugin-svelte": "^4.1.0",
 		"prettier-plugin-tailwindcss": "^0.8.0",
+		"safer-buffer": "^2.1.2",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "^4.3.0",

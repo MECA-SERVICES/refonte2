@@ -53,7 +53,10 @@ export default defineConfig({
 				test: {
 					name: 'server',
 					environment: 'node',
-					include: ['src/**/*.{test,spec}.{js,ts}'],
+					// `scripts/` est inclus : les garde-fous de migration (accès en
+					// lecture seule à la base PrestaShop de production) sont testés
+					// au même titre que le code applicatif.
+					include: ['src/**/*.{test,spec}.{js,ts}', 'scripts/**/*.{test,spec}.{js,ts}'],
 					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
 				}
 			}
