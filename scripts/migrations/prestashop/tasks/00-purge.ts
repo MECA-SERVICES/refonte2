@@ -4,14 +4,43 @@
  * Vide les tables catalogue pour permettre un import propre depuis PrestaShop.
  * Les commandes, clients et comptes ne sont **pas** touchés.
  *
- * `TRUNCATE ... RESTART IDENTITY CASCADE` remet aussi les séquences à zéro :
- * les `id` repartent de 1, ce qui garde des URLs `id-slug` courtes.
+ * ────────────────────────────────────────────────────────────────────────────
+ *  ⚠️ Pourquoi ce n'est plus un `TRUNCATE ... CASCADE`
+ *
+ *  La version initiale faisait `TRUNCATE product, category, … CASCADE`. Vérifié
+ *  sur sakura le 2026-08-08 : **cela aurait détruit les 51 525 lignes de
+ *  `order_line`**, soit l'historique de vente de 27 403 commandes — alors même
+ *  que ce fichier promet de ne pas toucher aux commandes.
+ *
+ *  En effet, `TRUNCATE ... CASCADE` **ignore les règles `ON DELETE`** : il vide
+ *  brutalement toute table qui référence la cible, quelle que soit sa clause.
+ *
+ *  Or le schéma est correct : `order_line.product_id` est `ON DELETE SET NULL`,
+ *  et chaque ligne conserve `product_name` (51 525/51 525) et
+ *  `product_reference` (51 506/51 525). Les commandes sont donc **autonomes** :
+ *  un `DELETE` les préserve intégralement, en mettant seulement le lien à NULL.
+ *
+ *  On utilise donc `DELETE`, plus lent mais qui **respecte les FK**. Les
+ *  séquences sont remises à zéro séparément.
+ * ────────────────────────────────────────────────────────────────────────────
  */
 import type { Task } from '../../../lib/runner.ts';
 import { targetDb } from '../../../lib/target-db.ts';
-import { log, count } from '../../../lib/logger.ts';
+import { log, count, progress } from '../../../lib/logger.ts';
 
-/** Tables vidées, dans un ordre sans importance grâce à CASCADE. */
+/**
+ * Taille des lots de suppression.
+ *
+ * Chaque lot est validé immédiatement : la purge est ainsi **reprenable** et
+ * affiche une progression, au lieu de rester figée plusieurs minutes sur une
+ * transaction unique qu'une interruption annulerait entièrement.
+ */
+const DELETE_BATCH = 20_000;
+
+/**
+ * Tables vidées, **dans l'ordre des dépendances** (enfants avant parents) :
+ * sans CASCADE, l'ordre devient significatif.
+ */
 const TABLES = [
 	'product_relation',
 	'product_category',
@@ -21,6 +50,12 @@ const TABLES = [
 	'product',
 	'category'
 ] as const;
+
+/**
+ * Tables hors périmètre qui référencent le catalogue, et dont les lignes
+ * doivent **survivre** à la purge. Vérifiées avant et après.
+ */
+const PROTECTED = ['order_line', 'cart_item'] as const;
 
 export const purgeTask: Task = {
 	name: 'purge',
@@ -34,22 +69,108 @@ export const purgeTask: Task = {
 			UNION ALL SELECT 'category', COUNT(*)::int FROM category
 			UNION ALL SELECT 'product_media', COUNT(*)::int FROM product_media
 			UNION ALL SELECT 'product_category', COUNT(*)::int FROM product_category
-			UNION ALL SELECT 'product_variant', COUNT(*)::int FROM product_variant`;
+			UNION ALL SELECT 'product_variant', COUNT(*)::int FROM product_variant
+			UNION ALL SELECT 'product_relation', COUNT(*)::int FROM product_relation
+			UNION ALL SELECT 'stock_movement', COUNT(*)::int FROM stock_movement`;
 
 		for (const row of before) log.muted(`${row.table_name.padEnd(18)} ${count(row.n)}`);
 
 		const total = before.reduce((sum, r) => sum + r.n, 0);
 
+		// --- Garde-fou : état des tables à protéger, AVANT ---
+		const protectedBefore = new Map<string, number>();
+		for (const table of PROTECTED) {
+			const [row] = await sql.unsafe<{ n: number }[]>(
+				`SELECT COUNT(*)::int AS n FROM "${table}"`
+			);
+			protectedBefore.set(table, Number(row.n));
+		}
+		log.info('Tables préservées (commandes, paniers) :');
+		for (const [table, n] of protectedBefore) {
+			log.muted(`  ${table.padEnd(18)} ${count(n)} lignes — doivent survivre`);
+		}
+
 		if (dryRun) {
 			log.warn(`Simulation : ${count(total)} lignes auraient été supprimées.`);
+			log.muted('  (DELETE ordonné, pas TRUNCATE CASCADE : les commandes sont conservées)');
 			return { processed: 0, note: 'simulation' };
 		}
 
-		// Un seul TRUNCATE multi-tables : atomique, et évite les contrôles de FK
-		// intermédiaires que ferait une suite de DELETE.
-		await sql.unsafe(`TRUNCATE TABLE ${TABLES.join(', ')} RESTART IDENTITY CASCADE`);
+		// `DELETE` et non `TRUNCATE ... CASCADE` : ce dernier ignore les règles
+		// `ON DELETE` et viderait `order_line` (51 525 lignes).
+		//
+		// ── Par lots, et NON dans une transaction unique ────────────────────
+		//  Une seule transaction sur 1,8 M de lignes n'a aucun point de reprise :
+		//  la moindre interruption (Ctrl+C, coupure réseau, fermeture du
+		//  terminal) annule tout le travail déjà fait. C'est arrivé le
+		//  2026-08-08 après ~9 minutes de suppression, entièrement perdues.
+		//
+		//  Chaque lot est donc validé immédiatement. La purge devient
+		//  **reprenable** : relancer la tâche continue là où elle s'est arrêtée,
+		//  ce qui est sans risque puisque l'objectif est de tout vider.
+		const sizeBefore = new Map(before.map((r) => [String(r.table_name), Number(r.n)]));
+
+		for (const table of TABLES) {
+			let deleted = 0;
+			const bar = progress(table, sizeBefore.get(table) ?? 0);
+			for (;;) {
+				// `ctid` : identifiant physique de ligne, utilisable même sans
+				// clé primaire exploitable, et sans tri coûteux.
+				const result = await sql.unsafe(
+					`DELETE FROM "${table}"
+					  WHERE ctid = ANY(ARRAY(
+					        SELECT ctid FROM "${table}" LIMIT ${DELETE_BATCH}
+					  ))`
+				);
+				if (result.count === 0) break;
+				deleted += result.count;
+				bar.tick(deleted);
+			}
+			bar.done(deleted);
+			log.muted(`  ${table.padEnd(18)} ${count(deleted)} lignes supprimées`);
+		}
+
+		// Séquences remises à 1 : les `id` repartent de zéro, ce qui garde des
+		// URLs `id-slug` courtes. `TRUNCATE` le faisait via RESTART IDENTITY.
+		//
+		// L'existence de la colonne `id` est vérifiée AVANT d'appeler
+		// `pg_get_serial_sequence` : cette fonction lève une erreur si la colonne
+		// n'existe pas, et un `WHERE` ne protège de rien — Postgres l'évalue de
+		// toute façon. `product_category` est une table de liaison pure
+		// (`product_id`, `category_id`) et n'a donc pas d'`id`.
+		for (const table of TABLES) {
+			const [col] = await sql<{ exists: boolean }[]>`
+				SELECT EXISTS (
+					SELECT 1 FROM information_schema.columns
+					 WHERE table_name = ${table} AND column_name = 'id'
+				) AS exists`;
+			if (!col.exists) {
+				log.muted(`  ${table.padEnd(18)} pas de colonne id — aucune séquence à réinitialiser`);
+				continue;
+			}
+
+			await sql.unsafe(
+				`SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), 1, false)`
+			);
+		}
+
+		// --- Garde-fou : les tables protégées ont-elles survécu ? ---
+		for (const table of PROTECTED) {
+			const [row] = await sql.unsafe<{ n: number }[]>(
+				`SELECT COUNT(*)::int AS n FROM "${table}"`
+			);
+			const avant = protectedBefore.get(table) ?? 0;
+			const apres = Number(row.n);
+			if (apres !== avant) {
+				throw new Error(
+					`PURGE ANORMALE : « ${table} » est passée de ${avant} à ${apres} lignes. ` +
+						'Les commandes devaient être préservées — vérifier immédiatement.'
+				);
+			}
+			log.success(`${table} intacte : ${count(apres)} lignes`);
+		}
 
 		log.info(`${count(total)} lignes supprimées, séquences réinitialisées.`);
-		return { processed: total };
+		return { processed: total, note: 'commandes préservées' };
 	}
 };

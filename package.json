@@ -19,6 +19,7 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
+		"check:scripts": "tsc --noEmit -p scripts/tsconfig.json",
 		"migrate:ps": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts",
 		"migrate:ps:dry": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts --dry-run",
 		"migrate:ps:verify": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts --only=verify",

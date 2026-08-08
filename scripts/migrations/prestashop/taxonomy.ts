@@ -644,6 +644,62 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				children: [{ name: 'Jeux & ensembles', keywords: ['JEU', 'ENSEMBLE', 'ENS', 'PIECE'] }]
 			}
 		]
+	},
+	/**
+	 * Outillage à main — arbitrage n°1 du §6.2, tranché le 2026-08-08.
+	 *
+	 * Mesuré sur la source : la feuille KRAMP « Outillage à main » porte à elle
+	 * seule **17 346 produits** qu'aucune règle ne classait — CLE (3 853),
+	 * TOURNEVIS (1 189), PINCE (1 041). Ce sont des outils, pas des pièces
+	 * détachées ; les ranger dans « Structure » ou « Commandes » aurait été faux.
+	 */
+	{
+		name: 'Outillage à main',
+		children: [
+			{
+				name: 'Outillage à main',
+				children: [
+					{
+						name: 'Outils à main',
+						keywords: ['CLE', 'TOURNEVIS', 'PINCE', 'MARTEAU', 'BURIN', 'LIME', 'SCIE']
+					},
+					{ name: 'Douilles & embouts', keywords: ['EMBOUTS'] }
+				]
+			},
+			{
+				name: 'Équipement d’atelier',
+				children: [
+					{ name: 'Soudage', keywords: ['ELECTRODES', 'SOUDURE'] },
+					{ name: 'Peinture & consommables', keywords: ['PEINTURE', 'PINCEAU', 'AEROSOL'] },
+					{ name: 'Lubrifiants & entretien', keywords: ['HUILE', 'GRAISSE', 'NETTOYANT', 'COLLE'] }
+				]
+			}
+		]
+	},
+	/**
+	 * EPI — ~4 700 produits KRAMP (vêtements, gants, chaussures, casques) plus
+	 * les 383 de la branche boutique. Isolés ici pour ne pas polluer les
+	 * familles techniques (§5.2 piège n°3).
+	 */
+	{
+		name: 'Équipement de protection',
+		children: [
+			{
+				name: 'EPI',
+				children: [
+					{
+						name: 'Vêtements de travail',
+						keywords: ['VESTE', 'PANTALON', 'SALOPETTE', 'COMBINAISON', 'T-SHIRT', 'PARKA']
+					},
+					{ name: 'Gants', keywords: ['GANTS', 'GANT'] },
+					{ name: 'Chaussures & bottes', keywords: ['CHAUSSURES', 'CHAUSSURE', 'BOTTES'] },
+					{
+						name: 'Protection de la tête',
+						keywords: ['CASQUE', 'LUNETTES', 'VISIERE', 'MASQUE']
+					}
+				]
+			}
+		]
 	}
 ];
 
@@ -701,11 +757,26 @@ export function buildKeywordIndex(
 /**
  * Normalise le premier mot d'un nom produit pour la comparaison.
  *
- * Les noms sont tronqués à ~30 caractères par l'import, ce qui laisse des
- * virgules et points en fin de mot (`HOSE,` 1 623, `PLATE,` 1 284). Sans ce
- * nettoyage, ces variantes échappent aux règles — ~62 000 produits à elles seules.
+ * Trois nettoyages, chacun mesuré sur la source :
+ *
+ *  1. **Ponctuation finale.** Les noms sont tronqués à ~30 caractères par
+ *     l'import, ce qui laisse des virgules et points (`HOSE,` 1 623,
+ *     `PLATE,` 1 284) — ~62 000 produits.
+ *
+ *  2. **Accents.** Les mots-clés de ce fichier sont écrits sans accents, mais
+ *     la source en contient massivement : `CÂBLE` (5 514), `ÉCROU` (3 137),
+ *     `POIGNÉE` (2 640), `VÉRIN` (2 160), `CHAÎNE` (1 731)… Sans cette
+ *     normalisation, ces produits échappent à leur règle **alors que la règle
+ *     existe**. Mesuré le 2026-08-08 sur les 1 053 957 produits :
+ *     **27 394 produits récupérés**.
+ *
+ *  3. **Casse.** Les libellés mélangent `Remplacé Par` et `REMPLACE PAR`.
  */
 export function firstWord(name: string): string {
 	const raw = (name ?? '').trim().split(/\s+/)[0] ?? '';
-	return raw.toUpperCase().replace(/[.,;:]+$/, '');
+	return raw
+		.normalize('NFD')
+		.replace(/[̀-ͯ]/g, '') // diacritiques combinants
+		.toUpperCase()
+		.replace(/[.,;:]+$/, '');
 }

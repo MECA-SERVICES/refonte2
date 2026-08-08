@@ -434,7 +434,9 @@ scripts/
         ├── 07-verify.ts          # contrôles de recette §7
         ├── 08-taxonomy.ts        # crée l'arbre des pièces (source='rule')
         ├── 09-reclassify.ts      # range les pièces par règles
-        └── 10-product-taxonomy.ts # arbre produits repris, SANS les nœuds-marques
+        ├── 10-product-taxonomy.ts # arbre produits repris, SANS les nœuds-marques
+        ├── 11-compatibility.ts   # arbre « Pièces détachées » → machine_brand/model
+        └── 12-replacements.ts    # REMPLACÉ PAR … → product_relation
 ```
 
 #### Utilisation
@@ -579,7 +581,9 @@ interdire la compatibilité dans l'arbre. C'est ce principe qui est conservé, p
 - **~578 catégories** — 238 pour les pièces (créées par règles), ~338 pour les produits
   (reprises de la source **hors nœuds-marques**), 2 techniques.
 - **4 niveaux** pour les pièces, **jusqu'à 5** pour les produits.
-- **752 049 produits classés, soit 71,4 %** du catalogue.
+- ~~**752 049 produits classés, soit 71,4 %** du catalogue.~~
+  ⚠️ **Estimation démentie par la mesure du 2026-08-08 : 733 822 produits, soit 69,6 %**
+  (702 473 par règle + 31 349 via le mapping KRAMP). Détail et méthode au §6.8.
 - À comparer aux 5 948 catégories sur 12 niveaux actuelles, dont 93 % vides.
 
 > **Lecture — `⊘` = nœud écarté (révision du 2026-08-08).** Les lignes marquées `⊘` sont
@@ -1446,6 +1450,188 @@ conséquence.
 - Le point ouvert n°1 du §9 (KRAMP fondu ou catalogue séparé) reste ouvert ; le pipeline
   actuel le fond dans le tri commun, conformément à la décision du 2026-08-07.
 
+### 6.7 Préparation à l'exécution (2026-08-08) — ce qui manquait encore
+
+Trois manques ont été comblés pour que la migration soit réellement jouable.
+
+#### 1. La compatibilité machine n'était collectée par personne
+
+`0007` créait bien `machine_brand` / `machine_model` / `product_compatibility`, mais
+**aucune tâche ne les remplissait**. Or les tâches de taxonomie écartent la branche
+« Pièces détachées » de l'arbre — à raison, c'est de la compatibilité déguisée en
+rangement. Sans tâche d'extraction, cette information était donc **purement perdue**,
+et le sélecteur « Ma machine » — décrit au §4.1 comme le principal levier de conversion
+du métier — serait resté vide.
+
+`11-compatibility.ts` la récupère : niveau 3 de la branche = marque d'engin (BRIGGS
+STRATTON, ISEKI, HUSQVARNA), sa descendance = modèles, avec extraction des années
+depuis le libellé (`2003-2008`, `DE 2003 A 2008`). Les nœuds structurels répétés sous
+chaque marque (`Options`, `Divers`, `Accessoires`) sont écartés — les prendre pour des
+modèles produirait des milliers de faux engins. Chaque liaison est marquée
+`source = 'legacy'`, ce qui permettra de la rejouer sans écraser le travail manuel.
+
+#### 2. Les obsolètes étaient désactivés mais jamais liés
+
+Le contrôle n°10 exige « désactivés **+ liés** ». `reclassify` ne faisait que la moitié :
+un client arrivant sur une référence obsolète (lien externe, favori, devis) tombait sur
+une fiche morte, sans chemin vers le produit qui la remplace — un manque à vendre direct.
+
+`12-replacements.ts` extrait la référence du remplaçant depuis le nom (`Remplacé Par
+703961 | AL-KO` → `703961`), seul signal fiable : les colonnes custom ne couvrent que
+3 093 lignes sur 18 803 (§5.4). La liaison n'est créée **que si la référence existe
+réellement en cible** — mieux vaut aucune liaison qu'une liaison vers la mauvaise pièce.
+Les libellés sans référence exploitable (`REMPLACE PAR VOIR FICHE`) sont écartés.
+
+#### 3. `--limit` n'était pas respecté — le bug le plus gênant en pratique
+
+`--limit=1000` lisait une page entière de **20 000** et en écrivait 20 000, dans
+`products`, `media` et `reclassify`. Or c'est précisément la commande d'essai prudent
+recommandée avant la migration complète : celle qui doit écrire le moins possible.
+La taille de page est désormais bornée par le reliquat de `--limit`.
+
+`product-categories` fait exception, volontairement : sa clé de curseur est non unique
+et le report du dernier groupe suppose une page pleine. Son `--limit` reste donc arrondi
+à la page — sans conséquence, la tâche étant idempotente.
+
+#### Deux contrôles de recette ajoutés
+
+| #   | Contrôle                       | Pourquoi                                                              |
+| --- | ------------------------------ | --------------------------------------------------------------------- |
+| 11  | Aucune marque en catégorie     | Vérifie en base la règle n°1 — le défaut du §6.6 ne tournait jamais   |
+| 12  | Compatibilité machine peuplée  | Des tables vides seraient un échec **silencieux** : rien ne planterait |
+
+### 6.8 KRAMP supprimé — mesures du 2026-08-08 sur `prod5`
+
+> **Décision client :** « la catégorie KRAMP doit être supprimée, c'est comme une marque ;
+> les catégories à l'intérieur doivent rejoindre le reste de l'arborescence. »
+>
+> Cela **tranche le point ouvert n°1 du §9**. Toutes les mesures ci-dessous ont été prises
+> en lecture seule sur la source, via le garde-fou `assertReadOnly`.
+
+#### Structure réelle du silo (mesurée)
+
+`KRAMP` = `id_category` **7057**, niveau 2, bornes nested-set `nleft 10911` / `nright 11872`.
+**480 catégories** : 5 au niveau 3, 46 au niveau 4, 429 au niveau 5. **169 006 produits.**
+
+Ses 5 branches de niveau 3 : `Atelier & Shop` (73 248), `Hydraulique & Entraînement`
+(49 512), `Agriculture` (30 795), `Tracteur & Pièces de véhicule` (10 547),
+`Machines de travaux publics` (5 493).
+
+#### Pourquoi un mapping, et pas seulement les règles du premier mot
+
+Les règles du premier mot ne classaient que **59,1 %** des produits KRAMP : **68 956
+(40,8 %) seraient partis en « À classer »**. Or le libellé KRAMP est un signal **plus
+fiable que le premier mot**, chaque feuille étant thématiquement homogène :
+
+```
+Vêtements et protection (EPI) > Gants     →  GANTS(701) GANT(53)
+Hydraulique > Coupleurs                   →  COUPLEUR(489) COUPLEURS(65)
+Entraînement > Roulements                 →  ROULEMENTS(626)
+Outillage et équipement d'atelier > …     →  CLÉ(3664) TOURNEVIS(1189) PINCE(1041)
+```
+
+`kramp-mapping.ts` mappe donc **22 sous-familles + 51 feuilles** vers l'arbre commun.
+Le premier mot reste **prioritaire** (il décrit le produit : « COURROIE » → Courroies
+trapézoïdales, là où KRAMP ne dirait que « Entraînement ») ; le mapping n'intervient
+**qu'en repli**. Résultat mesuré :
+
+| KRAMP (169 006 produits) | Avant      | Après          |
+| ------------------------ | ---------- | -------------- |
+| Classés par règle        | 59,1 %     | 71,6 %         |
+| Classés via mapping KRAMP | —         | +18,6 %        |
+| **Total classé**         | **59,1 %** | **90,2 %**     |
+| À classer                | 40,8 %     | **9,8 %**      |
+
+#### Deux découvertes faites au passage
+
+**1. Bug d'accents — 27 394 produits perdus par une ligne de code.** Les mots-clés de
+`taxonomy.ts` sont écrits sans accents, mais `firstWord()` ne les retirait pas. `CÂBLE`
+(5 514), `ÉCROU` (3 137), `POIGNÉE` (2 640), `VÉRIN` (2 160), `CHAÎNE` (1 731)…
+échappaient à leur règle **alors que la règle existait**. Corrigé : +2,6 points de
+couverture sur tout le catalogue.
+
+**2. La couverture réelle était surestimée.** Le §6.3 annonçait 71,4 % de produits classés
+— une estimation. **Mesure réelle : 62,5 %** avec le code d'alors. Après correction des
+accents et mapping KRAMP : **69,6 %**.
+
+#### Couverture finale mesurée (1 053 957 produits)
+
+```
+classés par règle      702 473   66,7 %
+classés via KRAMP       31 349    3,0 %
+──────────────────────────────────────
+TOTAL CLASSÉ           733 822   69,6 %
+obsolètes (désactivés)  18 861
+bruit d'import          11 734
+À classer              289 540   27,5 %
+```
+
+#### Deux familles créées dans la taxonomie
+
+L'arbitrage n°1 du §6.2 (« Outillage à main — à scinder ») est tranché par la mesure :
+
+- **`Outillage à main`** — la seule feuille KRAMP « Outillage à main » porte **17 346
+  produits** qu'aucune règle ne classait (CLE 3 853, TOURNEVIS 1 189, PINCE 1 041). Ce
+  sont des outils, pas des pièces : les ranger dans « Structure » aurait été faux.
+- **`Équipement de protection`** — ~4 700 produits KRAMP (vêtements, gants, chaussures,
+  casques) plus les 383 de la branche boutique, isolés pour ne pas polluer les familles
+  techniques (§5.2 piège n°3).
+
+#### Traçabilité
+
+Nouvelle colonne `product.supplier_category_path` (migration `0009`, additive) : le chemin
+fournisseur d'origine (`Hydraulique > Coupleurs`) est conservé sur chaque produit. Le silo
+disparaît de l'arbre, mais l'information reste — pour le palier 4 et pour d'éventuels
+futurs fournisseurs.
+
+### 6.9 Séquence d'exécution recommandée
+
+> **État au 2026-08-08 : rien de ce qui suit n'a été exécuté.** Les scripts sont écrits,
+> compilent (`tsc` propre) et passent 67 tests, mais **aucune tâche n'a jamais tourné
+> contre les bases**. Ce chantier a déjà produit trois bugs invisibles à la lecture et
+> révélés seulement à l'exécution (curseur en boucle, liaisons N-N perdues en bord de
+> page, `skipped` non déclaré) : les étapes ci-dessous sont donc à jouer **dans l'ordre**,
+> en validant chacune avant la suivante.
+
+```bash
+# 1. Simulation intégrale — AUCUNE écriture, ni source ni cible.
+#    Vérifie surtout que le tunnel SSH et les deux connexions répondent.
+bun run migrate:ps:dry
+
+# 2. Rapport de reclassification — c'est LE livrable à valider (§6.5).
+#    Volume et échantillon par feuille de l'arbre. Toujours sans écriture.
+bun run migrate:ps -- --only=taxonomy,product-taxonomy,reclassify --dry-run
+
+# 3. Schéma — applique 0007 (compatibilité) et 0008 (legacy_category_ps_id).
+#    ⚠️ EN HEURES CREUSES : l'index product_type_idx verrouille product
+#       en écriture pendant sa construction, sur 1,3 M de lignes (§6.4).
+bun run db:migrate
+
+# 4. Essai réel sur un échantillon, AVANT toute purge.
+bun run migrate:ps -- --only=brands,products --limit=1000
+bun run migrate:ps:verify
+
+# 5. Purge — DESTRUCTIF, jamais joué par un lancement par défaut.
+bun run migrate:ps -- --only=purge
+
+# 6. Migration complète.
+bun run migrate:ps
+
+# 7. Contrôles de recette (§7), rejouables à tout moment, lecture seule.
+bun run migrate:ps:verify
+```
+
+**Points de validation bloquants :**
+
+- **Après l'étape 2** — le rapport par règle doit être relu par le métier. C'est le
+  moment, et le seul, où une règle mal orientée coûte une ligne dans `taxonomy.ts`
+  plutôt qu'un reclassement de 700 000 produits.
+- **Après l'étape 4** — les contrôles n°1, 7, 11 et 12 doivent être au vert sur
+  l'échantillon avant d'envisager la purge.
+- **Avant l'étape 5** — la purge est irréversible et l'étape 0 (sauvegarde) a été
+  écartée (§8). La seule sécurité restante est que `prod5` demeure intacte et en
+  lecture seule ; c'est ce qui rend la migration rejouable.
+
 ---
 
 ## 7. Contrôles de recette
@@ -1463,6 +1649,7 @@ conséquence.
 | 9   | Médias rattachés                       | cohérent avec 568 712 images source |
 | 10  | Obsolètes `REMPLACÉ` désactivés + liés | ~18 750                             |
 | 11  | **Aucune marque en catégorie**         | **0** nœud de `brand-nodes.ts` en base |
+| 12  | **Compatibilité machine peuplée**      | > 0 marques / modèles / liaisons    |
 
 Le contrôle n°11 vérifie la règle n°1 du §4.1 directement en base — c'est le défaut
 trouvé le 2026-08-08 (§6.6), où le code de filtrage était juste mais ne tournait pas :
@@ -1513,15 +1700,26 @@ SELECT id, name, legacy_ps_id FROM category
 | 2026-08-08 | Ordre d'exécution                    | `product-taxonomy` **avant** `product-categories` **avant** `reclassify`. C'est l'ordre qui fait la correction : `reclassify` épargne les produits déjà rangés côté machines, ce qui suppose qu'ils l'aient été                                                                                                                                          |
 | 2026-08-08 | `product.legacy_category_ps_id`      | Nouvelle colonne (migration `0008`, additive) : les produits sont importés avant l'arbre propre, `category_id` reste NULL et l'`id_category_default` source est conservé pour que les tâches de taxonomie résolvent le rangement sans retourner sur PrestaShop                                                                                           |
 | 2026-08-08 | Sort des produits sous une marque    | Remontés au premier ancêtre conservé : `EGO POWER+ > TONDEUSES` → `Motoculture > Tondeuses` (le vrai nœud, 272 produits). La marque reste dans `product.brand_id`, axe de navigation à part entière                                                                                                                                                     |
+| 2026-08-08 | **Compatibilité : tâche manquante**  | `0007` créait les 3 tables mais **aucune tâche ne les remplissait**, alors que les tâches de taxonomie écartent la branche qui porte l'information → elle était perdue, et le sélecteur « Ma machine » serait resté vide. `11-compatibility.ts` l'extrait (marque niveau 3 > modèles, années lues dans le libellé, nœuds structurels écartés)          |
+| 2026-08-08 | **Obsolètes : liaison manquante**    | `reclassify` désactivait les 18 803 `REMPLACÉ*` sans jamais les **lier** — le contrôle n°10 exige les deux. `12-replacements.ts` extrait la référence du remplaçant depuis le nom, et ne crée la liaison que si elle existe en cible (une liaison fausse enverrait le client acheter la mauvaise pièce)                                                 |
+| 2026-08-08 | **Bug `--limit`**                    | `--limit=1000` lisait une page entière de 20 000 et en écrivait 20 000 (`products`, `media`, `reclassify`) — or c'est la commande d'essai prudent avant migration. Taille de page désormais bornée par le reliquat. `product-categories` exclu volontairement (clé non unique, report du dernier groupe)                                               |
+| 2026-08-08 | Contrôles n°11 et n°12               | Ajoutés à `07-verify.ts` : « aucune marque en catégorie » (bloquant) et « compatibilité peuplée ». Tous deux couvrent des défauts **silencieux** — du code correct qui ne s'exécute pas ne fait échouer aucun contrôle existant                                                                                                                        |
+| 2026-08-08 | **KRAMP supprimé** (point ouvert n°1) | **Décision client : c'est une marque, le silo disparaît et ses catégories rejoignent l'arbre commun.** Mesuré sur `prod5` : 480 catégories, 169 006 produits (et non 724 427). Les règles du premier mot n'en classaient que 59,1 % → `kramp-mapping.ts` (22 sous-familles + 51 feuilles) porte KRAMP à **90,2 %**. Voir §6.8                          |
+| 2026-08-08 | **Bug d'accents — 27 394 produits**  | `firstWord()` ne retirait pas les accents alors que les mots-clés sont écrits sans : `CÂBLE` (5 514), `ÉCROU` (3 137), `POIGNÉE` (2 640), `VÉRIN` (2 160)… échappaient à leur règle **alors que la règle existait**. Corrigé : +2,6 points sur tout le catalogue                                                                                       |
+| 2026-08-08 | **Couverture réelle mesurée**        | Le §6.3 annonçait 71,4 % — c'était une estimation. **Mesure sur les 1 053 957 produits : 62,5 %** avec le code d'alors ; **69,6 %** après correction des accents et mapping KRAMP (702 473 par règle + 31 349 via KRAMP). 289 540 produits (27,5 %) partent en « À classer », palier 4                                                                 |
+| 2026-08-08 | Arbitrage « Outillage à main »       | Tranché par la mesure (§6.2 point n°1) : la seule feuille KRAMP « Outillage à main » porte 17 346 produits non classés (CLE 3 853, TOURNEVIS 1 189, PINCE 1 041). Deux familles créées — **`Outillage à main`** et **`Équipement de protection`** (~4 700 EPI) — plutôt que de les forcer dans les familles techniques                                 |
+| 2026-08-08 | `product.supplier_category_path`     | Nouvelle colonne (migration `0009`, additive) : conserve le chemin fournisseur d'origine (`Hydraulique > Coupleurs`). Le silo disparaît de l'arbre mais l'information reste, pour le palier 4 et les futurs fournisseurs                                                                                                                               |
 | 2026-08-07 | ⚠️ Index sur 1,3 M de lignes         | `CREATE INDEX product_type_idx` verrouille `product` en écriture pendant sa construction. À appliquer **en heures creuses**, ou en `CREATE INDEX CONCURRENTLY` hors transaction (§6.4)                                                                                                                                                                   |
 
 ---
 
 ## 9. Points ouverts (validation client)
 
-1. **KRAMP** (724 427 produits, 481 catégories) — fondu dans l'arbre commun, ou catalogue
-   fournisseur distinct ? Il duplique déjà des notions existantes (`Roulements`, `Filtres`,
-   `Gants`). _Impact fort sur la taxonomie cible._
+1. ~~**KRAMP** — fondu dans l'arbre commun, ou catalogue fournisseur distinct ?~~
+   ✅ **TRANCHÉ le 2026-08-08 (décision client) : le silo est supprimé, ses catégories
+   rejoignent l'arbre commun.** Mesures et mapping au §6.8. Chiffres corrigés au passage :
+   **169 006 produits** (et non 724 427, qui était le compte fournisseur toutes branches
+   confondues) et **480 catégories**.
 2. **Non-pièces** (emballages, décals, frais de port) — catégorie dédiée ou exclusion de la
    boutique ?
 3. **Produits inactifs** (48 528 à la source) — migrés puis désactivés, ou non migrés ?

@@ -97,7 +97,13 @@ export const cartItem = pgTable(
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
-	(t) => [index('cart_item_cart_idx').on(t.cartId)]
+	(t) => [
+		index('cart_item_cart_idx').on(t.cartId),
+		// Index de FK, même raison que `order_line` ci-dessous : sans eux, toute
+		// suppression de produit scanne la table entière.
+		index('cart_item_product_idx').on(t.productId),
+		index('cart_item_variant_idx').on(t.variantId)
+	]
 );
 
 // ---------------------------------------------------------------------------
@@ -187,7 +193,17 @@ export const orderLine = pgTable(
 
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
-	(t) => [index('order_line_order_idx').on(t.orderId)]
+	(t) => [
+		index('order_line_order_idx').on(t.orderId),
+		// Index de clé étrangère — Postgres n'en crée pas automatiquement.
+		// Sans eux, toute suppression de produit doit scanner l'intégralité de
+		// `order_line` pour appliquer le `ON DELETE SET NULL`. Mesuré sur sakura
+		// le 2026-08-08 : la purge du catalogue (1,3 M de produits) tournait
+		// encore après 9 minutes ; avec ces index, elle passe en quelques
+		// secondes. Vaut aussi pour toute suppression de produit depuis l'admin.
+		index('order_line_product_idx').on(t.productId),
+		index('order_line_variant_idx').on(t.variantId)
+	]
 );
 
 /** Historique des changements d'état d'une commande. */

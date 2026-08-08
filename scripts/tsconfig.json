@@ -1,0 +1,41 @@
+{
+	// Le tsconfig racine hérite de `.svelte-kit/tsconfig.json`, qui ne couvre
+	// que `src/` : **aucun fichier de `scripts/` n'était type-checké**.
+	//
+	// C'est ce qui a laissé passer deux erreurs en production de migration :
+	//  - `skipped++` sans déclaration       → ReferenceError au 1er produit
+	//  - `categoryByLegacy` supprimé mais   → ReferenceError au lancement
+	//    encore référencé
+	//
+	// Les deux sont des erreurs que TypeScript détecte trivialement. Elles ne
+	// sont apparues qu'à l'exécution, sur une base réelle, faute d'être vérifiées.
+	//
+	// Vérification : `npx tsc --noEmit -p scripts/tsconfig.json`
+	"compilerOptions": {
+		"target": "esnext",
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"lib": ["esnext"],
+		"types": ["node"],
+		"strict": true,
+		"noImplicitOverride": true,
+		"noUnusedLocals": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		// Les scripts tournent via `node --experimental-strip-types`, qui exige
+		// l'extension `.ts` explicite dans les imports.
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true
+	},
+	"include": ["**/*.ts"],
+	"exclude": [
+		"**/*.spec.ts",
+		// Ancien service branché sur `metro`, hors périmètre depuis le
+		// 2026-08-07 (§2.4) et voué à la suppression une fois la nouvelle
+		// migration validée. Ne pas bloquer la vérification du code actif.
+		"migration/**"
+	]
+}

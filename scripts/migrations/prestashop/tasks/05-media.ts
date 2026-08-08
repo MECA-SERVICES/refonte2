@@ -32,7 +32,11 @@ const ID_LANG = 1;
 
 const PAGE_SIZE = 20_000;
 
+// `sourceCursor` exige une index signature (contrainte
+// `Record<string, unknown>`) : les lignes MySQL sont indexées par nom
+// de colonne.
 interface SourceImage {
+	[key: string]: unknown;
 	id_image: number;
 	id_product: number;
 	position: number;
@@ -86,7 +90,11 @@ export const mediaTask: Task = {
 				         ON il.id_image = i.id_image AND il.id_lang = ${ID_LANG}
 				 WHERE 1 = 1 {{WHERE}}`;
 
-			for await (const rows of sourceCursor<SourceImage>(select, 'i.id_image', PAGE_SIZE)) {
+			// Page bornée par `--limit`, comme pour `products` : sans cela un essai
+			// à 1 000 en importerait 20 000.
+			const pageSize = limit === null ? PAGE_SIZE : Math.min(PAGE_SIZE, limit);
+
+			for await (const rows of sourceCursor<SourceImage>(select, 'i.id_image', pageSize)) {
 				const batch = rows.map((r) => ({
 					legacy_image: Number(r.id_image),
 					legacy_product: Number(r.id_product),

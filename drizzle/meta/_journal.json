@@ -64,6 +64,20 @@
       "when": 1786193203113,
       "tag": "0008_early_princess_powerful",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786195339590,
+      "tag": "0009_funny_photon",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786197039465,
+      "tag": "0010_first_hannibal_king",
+      "breakpoints": true
     }
   ]
 }

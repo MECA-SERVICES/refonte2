@@ -25,7 +25,11 @@ import { log, count, progress } from '../../../lib/logger.ts';
 
 const PAGE_SIZE = 20_000;
 
+// `sourceCursor` exige une index signature (contrainte
+// `Record<string, unknown>`) : les lignes MySQL sont indexées par nom
+// de colonne.
 interface SourceLink {
+	[key: string]: unknown;
 	id_product: number;
 	id_category: number;
 	position: number;
@@ -75,6 +79,11 @@ export const productCategoriesTask: Task = {
 			// Curseur sur `id_product`, clé **non unique** ici (un produit porte
 			// plusieurs catégories) : d'où le dernier argument, qui empêche le
 			// curseur de perdre les liaisons d'un produit à cheval sur une page.
+			//
+			// Contrairement à `products` et `media`, la page n'est PAS bornée par
+			// `--limit` : le report du dernier groupe suppose une page pleine. Un
+			// `--limit` ici reste donc approximatif (arrondi à la page), ce qui est
+			// sans conséquence — la tâche est idempotente et rejouable.
 			for await (const rows of sourceCursor<SourceLink>(select, 'id_product', PAGE_SIZE, false)) {
 				const batch = rows.map((r) => ({
 					legacy_product: Number(r.id_product),

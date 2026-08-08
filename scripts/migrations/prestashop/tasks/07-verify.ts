@@ -64,7 +64,7 @@ export const verifyTask: Task = {
 			       (SELECT COUNT(*) FROM product_variant)::int                        AS variants`;
 
 		// Profondeur de l'arbre, par parcours récursif.
-		const [{ depth }] = await sql<{ depth: number }>`
+		const [{ depth }] = await sql<{ depth: number }[]>`
 			WITH RECURSIVE tree AS (
 				SELECT id, 1 AS level FROM category WHERE parent_id IS NULL
 				UNION ALL
@@ -73,12 +73,20 @@ export const verifyTask: Task = {
 			SELECT COALESCE(MAX(level), 0)::int AS depth FROM tree`;
 
 		// Catégories actives ne contenant aucun produit, ni en principal ni en N-N.
-		const [{ empty }] = await sql<{ empty: number }>`
+		const [{ empty }] = await sql<{ empty: number }[]>`
 			SELECT COUNT(*)::int AS empty
 			  FROM category c
 			 WHERE c.is_active
 			   AND NOT EXISTS (SELECT 1 FROM product p WHERE p.category_id = c.id)
 			   AND NOT EXISTS (SELECT 1 FROM product_category pc WHERE pc.category_id = c.id)`;
+
+		// Contrôle n°12 — l'axe compatibilité doit être peuplé. La branche
+		// « Pièces détachées » étant écartée de l'arbre, si `compatibility` n'a
+		// pas tourné l'information est simplement perdue, sans erreur visible.
+		const [compat] = await sql<{ brands: number; models: number; links: number }[]>`
+			SELECT (SELECT COUNT(*) FROM machine_brand)::int         AS brands,
+			       (SELECT COUNT(*) FROM machine_model)::int         AS models,
+			       (SELECT COUNT(*) FROM product_compatibility)::int AS links`;
 
 		// Contrôle n°11 — aucune marque ne doit être une catégorie (§4.1 règle n°1).
 		// Vérifié **en base**, pas seulement dans le code : le défaut du 2026-08-08
@@ -190,6 +198,16 @@ export const verifyTask: Task = {
 				// Celui-ci est bloquant sans condition : une marque en catégorie
 				// signifie que l'arbre sale est revenu.
 				pass: brandCategories.length === 0
+			},
+			{
+				n: 12,
+				label: 'Compatibilité machine peuplée',
+				value:
+					`${count(compat.brands)} marques · ${count(compat.models)} modèles · ` +
+					`${count(compat.links)} liaisons`,
+				expected: '> 0 (sélecteur « Ma machine »)',
+				// Sans la tâche `compatibility`, l'info de l'arbre source est perdue.
+				pass: compat.links > 0 ? true : null
 			}
 		];
 

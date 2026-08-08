@@ -192,6 +192,16 @@ export const product = pgTable(
 		 * sans retourner interroger PrestaShop.
 		 */
 		legacyCategoryPsId: integer('legacy_category_ps_id'),
+		/**
+		 * Chemin fournisseur d'origine, ex. `KRAMP > Hydraulique > Coupleurs`.
+		 *
+		 * Le silo KRAMP (480 catégories) n'est pas repris dans l'arbre — c'est une
+		 * marque, pas un rangement (§4.1 règle n°5). Mais son libellé est un
+		 * **signal de classement plus fiable que le premier mot** : mesuré le
+		 * 2026-08-08, il classe 29 956 produits qu'aucune règle n'attrapait.
+		 * On le conserve donc pour la traçabilité et le palier 4.
+		 */
+		supplierCategoryPath: text('supplier_category_path'),
 
 		// Dates
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

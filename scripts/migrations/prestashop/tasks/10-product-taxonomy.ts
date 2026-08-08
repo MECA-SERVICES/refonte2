@@ -30,7 +30,7 @@ import { targetDb } from '../../../lib/target-db.ts';
 import { slugify, uniqueSlug, bool } from '../../../lib/transform.ts';
 import { log, count } from '../../../lib/logger.ts';
 import { PRODUCTS_ROOT } from '../taxonomy.ts';
-import { BRAND_NODES, BRAND_NODE_IDS, PIECES_NODE_IDS } from '../brand-nodes.ts';
+import { BRAND_NODES, BRAND_NODE_IDS } from '../brand-nodes.ts';
 
 /** Langue française dans PrestaShop. */
 const ID_LANG = 1;

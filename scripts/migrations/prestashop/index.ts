@@ -49,6 +49,8 @@ import { verifyTask } from './tasks/07-verify.ts';
 import { taxonomyTask } from './tasks/08-taxonomy.ts';
 import { reclassifyTask } from './tasks/09-reclassify.ts';
 import { productTaxonomyTask } from './tasks/10-product-taxonomy.ts';
+import { compatibilityTask } from './tasks/11-compatibility.ts';
+import { replacementsTask } from './tasks/12-replacements.ts';
 
 /**
  * Ordre d'import, dicté par les dépendances de clés étrangères :
@@ -89,11 +91,25 @@ const tasks = [
 	productTaxonomyTask,
 	productCategoriesTask,
 	reclassifyTask,
+	// La branche « Pièces détachées » est écartée de l'arbre de navigation par
+	// les tâches ci-dessus — à raison, c'est de la compatibilité déguisée en
+	// rangement. Cette tâche la récupère AVANT qu'elle ne soit perdue, et la
+	// convertit en relation N-N : c'est elle qui alimente le sélecteur
+	// « Ma machine » (§4.1 règle n°2).
+	compatibilityTask,
+	// `reclassify` a désactivé les 18 803 obsolètes ; celle-ci les relie à leur
+	// remplaçant, pour que ces fiches ne soient pas des culs-de-sac (§7 n°10).
+	replacementsTask,
 	verifyTask
 ];
 
 /** Tâches destructives, jouables uniquement en `--only`. */
-const guarded = [purgeTask];
+const guarded = [
+	purgeTask,
+	// Import verbatim de l'arbre source : hors migration propre (§6.6), mais
+	// gardée accessible par `--only=categories` à des fins d'analyse.
+	categoriesTask
+];
 
 const requested = process.argv.slice(2);
 const isOnly = requested.some((a) => a.startsWith('--only='));

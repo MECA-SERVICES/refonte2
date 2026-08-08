@@ -29,10 +29,24 @@ import { log, count, progress } from '../../../lib/logger.ts';
 /** Langue française dans PrestaShop. */
 const ID_LANG = 1;
 
+/**
+ * Bornes nested-set du silo KRAMP (`id_category` 7057), mesurées le 2026-08-08
+ * en lecture seule sur `prod5` : 480 catégories, 169 006 produits.
+ *
+ * Le nœud n'est pas repris dans l'arbre (c'est une marque), mais son libellé
+ * sert de signal de classement — voir `kramp-mapping.ts`.
+ */
+const KRAMP_NLEFT = 10911;
+const KRAMP_NRIGHT = 11872;
+
 /** Taille de page de lecture source. Compromis mémoire / aller-retours réseau. */
 const PAGE_SIZE = 5000;
 
+// `sourceCursor` exige une index signature (contrainte
+// `Record<string, unknown>`) : les lignes MySQL sont indexées par nom
+// de colonne.
 interface SourceProduct {
+	[key: string]: unknown;
 	id_product: number;
 	id_manufacturer: number | null;
 	id_category_default: number | null;
@@ -78,19 +92,43 @@ export const productsTask: Task = {
 			SELECT id, legacy_ps_id FROM brand WHERE legacy_ps_id IS NOT NULL`;
 		const brandByLegacy = new Map(brandRows.map((r) => [Number(r.legacy_ps_id), Number(r.id)]));
 
+		// Chemin fournisseur KRAMP, chargé une fois : c'est un signal de
+		// classement plus fiable que le premier mot pour ~30 000 produits, et le
+		// silo KRAMP n'étant pas repris dans l'arbre, l'information serait
+		// autrement perdue (§6.9). ~169 000 entrées : négligeable en mémoire.
+		const krampRows = await sourceQuery<{ id_product: number; chemin: string }>(
+			`SELECT DISTINCT cp.id_product,
+			        CONCAT(COALESCE(p4.name,''), ' > ', COALESCE(cl.name,'')) AS chemin
+			   FROM ps_category c
+			   JOIN ps_category_product cp ON cp.id_category = c.id_category
+			   JOIN ps_category_lang cl ON cl.id_category = c.id_category AND cl.id_lang = ${ID_LANG}
+			   JOIN ps_category cc ON cc.id_category = c.id_category
+			   LEFT JOIN ps_category_lang p4 ON p4.id_category = cc.id_parent AND p4.id_lang = ${ID_LANG}
+			  WHERE c.nleft > ${KRAMP_NLEFT} AND c.nright < ${KRAMP_NRIGHT}`
+		);
+		const krampPathByProduct = new Map<number, string>();
+		for (const r of krampRows) {
+			// Un produit peut apparaître sous plusieurs feuilles KRAMP : on garde
+			// la première, le mapping les traite de façon équivalente.
+			if (!krampPathByProduct.has(Number(r.id_product))) {
+				krampPathByProduct.set(Number(r.id_product), r.chemin);
+			}
+		}
+
 		// La catégorie principale n'est PAS résolue ici : l'arbre propre
 		// (`taxonomy` / `product-taxonomy`) n'existe pas encore à ce stade. On
 		// conserve `id_category_default` tel quel dans `legacy_category_ps_id`,
 		// et ce sont les tâches de taxonomie qui attribueront `category_id`.
 		log.muted(
-			`${count(brandByLegacy.size)} marques mappées — catégorie principale attribuée plus tard`
+			`${count(brandByLegacy.size)} marques mappées, ` +
+				`${count(krampPathByProduct.size)} chemins fournisseur KRAMP — ` +
+				'catégorie principale attribuée plus tard'
 		);
 
-		if (categoryByLegacy.size === 0) {
-			throw new Error(
-				'Aucune catégorie en cible : jouer la tâche « categories » avant « products ».'
-			);
-		}
+		// Note : plus aucun garde-fou « catégories absentes » ici. Il exigeait que
+		// la tâche `categories` ait tourné, or elle est sortie du pipeline (§6.6) :
+		// l'arbre source n'est plus importé verbatim, et la catégorie principale
+		// est attribuée plus tard par `product-taxonomy` / `reclassify`.
 
 		// --- Idempotence : legacy_ps_id déjà présents en cible ---
 		// Un Set de 1,05 M d'entiers ≈ 60 Mo — acceptable, et bien moins coûteux
@@ -134,7 +172,12 @@ export const productsTask: Task = {
 			         ON pl.id_product = p.id_product AND pl.id_lang = ${ID_LANG}
 			 WHERE 1 = 1 {{WHERE}}`;
 
-		for await (const rows of sourceCursor<SourceProduct>(select, 'p.id_product', PAGE_SIZE)) {
+		// La page est bornée par `--limit` : sinon `--limit=1000` lirait et
+		// importerait une page entière de 20 000 produits, alors que c'est la
+		// commande d'essai prudent avant la migration complète.
+		const pageSize = limit === null ? PAGE_SIZE : Math.min(PAGE_SIZE, limit);
+
+		for await (const rows of sourceCursor<SourceProduct>(select, 'p.id_product', pageSize)) {
 			const batch: Record<string, unknown>[] = [];
 
 			for (const r of rows) {
@@ -167,6 +210,7 @@ export const productsTask: Task = {
 					// de taxonomie, sur l'arbre propre.
 					category_id: null,
 					legacy_category_ps_id: legacyCategoryId,
+					supplier_category_path: krampPathByProduct.get(legacyId) ?? null,
 					slug: slugify(r.link_rewrite || name) || `produit-${legacyId}`,
 					short_description: text(r.description_short),
 					description: text(r.description),
