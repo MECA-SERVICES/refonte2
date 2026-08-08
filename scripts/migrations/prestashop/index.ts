@@ -46,6 +46,9 @@ import { productCategoriesTask } from './tasks/04-product-categories.ts';
 import { mediaTask } from './tasks/05-media.ts';
 import { variantsTask } from './tasks/06-variants.ts';
 import { verifyTask } from './tasks/07-verify.ts';
+import { taxonomyTask } from './tasks/08-taxonomy.ts';
+import { reclassifyTask } from './tasks/09-reclassify.ts';
+import { productTaxonomyTask } from './tasks/10-product-taxonomy.ts';
 
 /**
  * Ordre d'import, dicté par les dépendances de clés étrangères :
@@ -58,11 +61,34 @@ import { verifyTask } from './tasks/07-verify.ts';
  */
 const tasks = [
 	brandsTask,
-	categoriesTask,
+	// `categories` (import verbatim des 5 948 nœuds source) est volontairement
+	// ABSENTE de la migration propre : elle réimportait l'arbre avec tous ses
+	// défauts — nœuds-marques (EGO POWER+, OUTILS WOLF…), 1 513 « Vues éclatées »
+	// vides, 481 nœuds KRAMP, 93 % de catégories vides — que `taxonomy` et
+	// `product-taxonomy` reconstruisent ensuite proprement. Les deux arbres
+	// coexistaient alors dans `category`, et `product-categories` rerattachait
+	// les produits aux anciens nœuds, annulant tout le nettoyage.
+	// Elle reste jouable par `--only=categories` à des fins d'analyse.
 	productsTask,
-	productCategoriesTask,
 	mediaTask,
 	variantsTask,
+	// ── Construction de l'arbre propre, dans cet ordre impératif ──────────────
+	//   1. `taxonomy`          crée l'arbre des pièces par règles (source='rule')
+	//   2. `product-taxonomy`  reprend la taxonomie métier produits (source='legacy'),
+	//                          en écartant les nœuds-marques (EGO POWER+, OUTILS
+	//                          WOLF, Pieces MAKITA…) avec toute leur descendance
+	//   3. `product-categories` rattache les liaisons N-N de la source, mais
+	//                          **uniquement** vers les nœuds retenus à l'étape 2
+	//   4. `reclassify`        range les pièces par règles, en épargnant les
+	//                          produits déjà placés aux étapes 2-3
+	//
+	// L'ordre 2 → 3 → 4 est ce qui empêche une tondeuse d'être rangée dans
+	// « Coupe & usure » parce que son nom commence par « TONDEUSE » : `reclassify`
+	// a besoin que les rangements « produits & machines » existent déjà.
+	taxonomyTask,
+	productTaxonomyTask,
+	productCategoriesTask,
+	reclassifyTask,
 	verifyTask
 ];
 

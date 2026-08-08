@@ -62,26 +62,28 @@ interface SourceProduct {
 export const productsTask: Task = {
 	name: 'products',
 	description: 'Produits (ps_product → product)',
-	dependsOn: ['brands', 'categories'],
+	// Plus de dépendance à `categories` : l'arbre source n'est plus importé
+	// verbatim. La catégorie principale est attribuée plus tard, par
+	// `product-taxonomy` (produits finis) puis `reclassify` (pièces), sur
+	// l'arbre propre. Voir l'ordre des tâches dans `index.ts`.
+	dependsOn: ['brands'],
 
 	async run({ dryRun, limit }) {
 		const sql = targetDb();
 
 		// --- Mappings legacy → id cible, chargés une fois en mémoire ---
-		// 1 117 marques et ~5 950 catégories : négligeable en mémoire, et cela
-		// évite une requête par produit sur 1,05 M de lignes.
+		// 1 117 marques : négligeable en mémoire, et cela évite une requête par
+		// produit sur 1,05 M de lignes.
 		const brandRows = await sql<{ id: number; legacy_ps_id: number }[]>`
 			SELECT id, legacy_ps_id FROM brand WHERE legacy_ps_id IS NOT NULL`;
 		const brandByLegacy = new Map(brandRows.map((r) => [Number(r.legacy_ps_id), Number(r.id)]));
 
-		const categoryRows = await sql<{ id: number; legacy_ps_id: number }[]>`
-			SELECT id, legacy_ps_id FROM category WHERE legacy_ps_id IS NOT NULL`;
-		const categoryByLegacy = new Map(
-			categoryRows.map((r) => [Number(r.legacy_ps_id), Number(r.id)])
-		);
-
+		// La catégorie principale n'est PAS résolue ici : l'arbre propre
+		// (`taxonomy` / `product-taxonomy`) n'existe pas encore à ce stade. On
+		// conserve `id_category_default` tel quel dans `legacy_category_ps_id`,
+		// et ce sont les tâches de taxonomie qui attribueront `category_id`.
 		log.muted(
-			`${count(brandByLegacy.size)} marques et ${count(categoryByLegacy.size)} catégories mappées`
+			`${count(brandByLegacy.size)} marques mappées — catégorie principale attribuée plus tard`
 		);
 
 		if (categoryByLegacy.size === 0) {
@@ -139,10 +141,12 @@ export const productsTask: Task = {
 				const legacyId = Number(r.id_product);
 				if (alreadyImported.has(legacyId)) continue;
 
-				const categoryId = r.id_category_default
-					? (categoryByLegacy.get(Number(r.id_category_default)) ?? null)
+				// Catégorie source conservée telle quelle : elle sera résolue sur
+				// l'arbre propre par `product-taxonomy` / `reclassify`.
+				const legacyCategoryId = r.id_category_default
+					? Number(r.id_category_default)
 					: null;
-				if (categoryId === null) withoutCategory++;
+				if (legacyCategoryId === null) withoutCategory++;
 
 				const brandId = r.id_manufacturer
 					? (brandByLegacy.get(Number(r.id_manufacturer)) ?? null)
@@ -159,7 +163,10 @@ export const productsTask: Task = {
 					// ean13 est un varchar(13) : la source contient des valeurs plus longues.
 					ean13: truncate(r.ean13, 13),
 					brand_id: brandId,
-					category_id: categoryId,
+					// `category_id` reste null à l'import : attribué par les tâches
+					// de taxonomie, sur l'arbre propre.
+					category_id: null,
+					legacy_category_ps_id: legacyCategoryId,
 					slug: slugify(r.link_rewrite || name) || `produit-${legacyId}`,
 					short_description: text(r.description_short),
 					description: text(r.description),
@@ -197,19 +204,21 @@ export const productsTask: Task = {
 			log.warn(`Simulation : ${count(read)} produits lus, aucune écriture.`);
 		}
 
-		// Ces deux compteurs sont les indicateurs de recette n°2 et n°7 (§7).
-		// Ils doivent être lus à chaque exécution, pas seulement en cas d'échec.
+		// `withoutBrand` est l'indicateur de recette n°7 (§7), mesurable dès ici.
+		// `withoutCategory` compte les produits **sans catégorie à la source**
+		// (13 attendus sur 1 053 957) : ce n'est PAS le contrôle n°2, qui porte
+		// sur le rangement final et ne se mesure qu'après `reclassify`.
 		const pct = (n: number) => (read > 0 ? ((n / read) * 100).toFixed(2) : '0');
 		log.info(
-			`sans catégorie : ${count(withoutCategory)} (${pct(withoutCategory)} %) — cible < 1 %`
+			`sans catégorie source : ${count(withoutCategory)} (${pct(withoutCategory)} %) — attendu ≈ 13`
 		);
-		log.info(`sans marque    : ${count(withoutBrand)} (${pct(withoutBrand)} %) — cible < 1 %`);
+		log.info(`sans marque           : ${count(withoutBrand)} (${pct(withoutBrand)} %) — cible < 1 %`);
 
 		return {
 			processed: dryRun ? 0 : inserted,
 			note: dryRun
 				? 'simulation'
-				: `${count(withoutCategory)} sans catégorie, ${count(withoutBrand)} sans marque`
+				: `${count(withoutCategory)} sans catégorie source, ${count(withoutBrand)} sans marque`
 		};
 	}
 };

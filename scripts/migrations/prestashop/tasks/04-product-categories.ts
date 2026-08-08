@@ -34,7 +34,11 @@ interface SourceLink {
 export const productCategoriesTask: Task = {
 	name: 'product-categories',
 	description: 'Catégories additionnelles N-N (ps_category_product → product_category)',
-	dependsOn: ['products'],
+	// `product-taxonomy` doit avoir tourné : c'est lui qui crée les catégories
+	// produits retenues (avec leur `legacy_ps_id`). La jointure ci-dessous ne
+	// résout donc QUE les nœuds conservés — les liaisons pointant vers un
+	// nœud-marque ou une branche écartée (KRAMP, Vues éclatées) tombent d'elles-mêmes.
+	dependsOn: ['products', 'product-taxonomy'],
 
 	async run({ dryRun, limit }) {
 		const sql = targetDb();
@@ -110,19 +114,23 @@ export const productCategoriesTask: Task = {
 
 		bar.done(linked);
 
-		// Écart attendu si des produits ou catégories manquent en cible : on le
-		// signale plutôt que de le laisser passer (contrôle de recette n°8).
-		const orphans = read - linked;
-		if (orphans > 0) {
-			log.warn(
-				`${count(orphans)} liaisons non résolues — produit ou catégorie absent en cible, ` +
-					'ou liaison déjà existante.'
+		// L'écart est ici **attendu et voulu** : seules les catégories retenues par
+		// `product-taxonomy` existent en cible. Toutes les liaisons pointant vers
+		// un nœud écarté — nœuds-marques (EGO POWER+…), branche « Pièces
+		// détachées » (compatibilité déguisée), KRAMP, « Vues éclatées » — ne se
+		// résolvent pas, et c'est exactement le nettoyage recherché. Ces produits
+		// sont rangés ensuite par `reclassify`, sur des règles de type de pièce.
+		const dropped = read - linked;
+		if (dropped > 0) {
+			log.muted(
+				`${count(dropped)} liaisons non reprises (nœuds écartés de l'arbre propre) — ` +
+					'attendu : elles relèvent du tri par règles.'
 			);
 		}
 
 		return {
 			processed: linked,
-			note: orphans > 0 ? `${count(orphans)} non résolues` : undefined
+			note: dropped > 0 ? `${count(dropped)} liaisons écartées (nœuds non repris)` : undefined
 		};
 	}
 };

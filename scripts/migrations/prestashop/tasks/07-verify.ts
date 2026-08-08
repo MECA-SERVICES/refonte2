@@ -6,7 +6,7 @@
  * en production, et sert de compte-rendu à consigner au §8.
  *
  * Les contrôles portant sur la taxonomie cible (n°3 à n°6 : fourre-tout,
- * catégories vides, profondeur ≤ 3, ~150 catégories) ne peuvent être satisfaits
+ * catégories vides, profondeur ≤ 5, ~612 catégories) ne peuvent être satisfaits
  * qu'après l'étape 7 (reclassification). Ils sont donc mesurés et affichés, mais
  * signalés « attendu après reclassification » tant que celle-ci n'a pas eu lieu.
  */
@@ -14,6 +14,7 @@ import type { Task } from '../../../lib/runner.ts';
 import { sourceQuery } from '../source-db.ts';
 import { targetDb } from '../../../lib/target-db.ts';
 import { log, count, color } from '../../../lib/logger.ts';
+import { BRAND_NODE_IDS } from '../brand-nodes.ts';
 
 /** Un contrôle évalué, prêt à être affiché. */
 interface Check {
@@ -79,6 +80,13 @@ export const verifyTask: Task = {
 			   AND NOT EXISTS (SELECT 1 FROM product p WHERE p.category_id = c.id)
 			   AND NOT EXISTS (SELECT 1 FROM product_category pc WHERE pc.category_id = c.id)`;
 
+		// Contrôle n°11 — aucune marque ne doit être une catégorie (§4.1 règle n°1).
+		// Vérifié **en base**, pas seulement dans le code : le défaut du 2026-08-08
+		// (§6.6) était précisément un filtrage correct qui ne s'exécutait jamais.
+		const brandCategories = await sql<{ name: string; legacy_ps_id: number }[]>`
+			SELECT name, legacy_ps_id FROM category
+			 WHERE legacy_ps_id = ANY(${[...BRAND_NODE_IDS]})`;
+
 		// Plus grosse catégorie : révèle un fourre-tout résiduel (contrôle n°3).
 		const biggest = await sql<{ name: string; n: number }[]>`
 			SELECT c.name, COUNT(p.id)::int AS n
@@ -132,15 +140,16 @@ export const verifyTask: Task = {
 				n: 5,
 				label: "Profondeur de l'arbre",
 				value: String(depth),
-				expected: '≤ 3',
-				pass: depth <= 3 ? true : null
+				// 4 niveaux pour les pièces, 5 pour les produits (§6.3).
+				expected: '≤ 5',
+				pass: depth <= 5 ? true : null
 			},
 			{
 				n: 6,
 				label: 'Nombre de catégories',
 				value: count(tgt.categories),
-				expected: '~150',
-				pass: tgt.categories <= 200 ? true : null
+				expected: '~578',
+				pass: tgt.categories <= 800 ? true : null
 			},
 			{
 				n: 7,
@@ -169,6 +178,18 @@ export const verifyTask: Task = {
 				value: count(tgt.variants),
 				expected: '~1 318',
 				pass: tgt.variants > 0
+			},
+			{
+				n: 11,
+				label: 'Marques présentes en catégorie',
+				value:
+					brandCategories.length === 0
+						? 'aucune'
+						: brandCategories.map((c) => c.name).join(', ').slice(0, 60),
+				expected: '0',
+				// Celui-ci est bloquant sans condition : une marque en catégorie
+				// signifie que l'arbre sale est revenu.
+				pass: brandCategories.length === 0
 			}
 		];
 

@@ -47,6 +47,21 @@ export const brand = pgTable(
 // Catégories (arborescence via parent_id auto-référent)
 // ---------------------------------------------------------------------------
 
+/**
+ * Origine d'une catégorie — trace *qui* l'a créée.
+ *
+ * Sans cette distinction, impossible de rejouer la taxonomie : on ne saurait
+ * plus séparer les nœuds construits par règles de ceux repris de PrestaShop ou
+ * ajustés à la main. Voir `MIGRATION-CATALOGUE.md` §4.1 règle n°7.
+ */
+export const categorySource = [
+	'rule', // créée par le moteur de reclassification (familles de pièces)
+	'legacy', // reprise telle quelle de PrestaShop (taxonomie produits)
+	'manual', // créée ou corrigée par un humain
+	'supplier' // issue d'un catalogue fournisseur
+] as const;
+export type CategorySource = (typeof categorySource)[number];
+
 export const category = pgTable(
 	'category',
 	{
@@ -59,6 +74,9 @@ export const category = pgTable(
 		description: text('description'),
 		isActive: boolean('is_active').notNull().default(true),
 		position: integer('position').notNull().default(0),
+
+		/** Origine du nœud — voir `categorySource`. */
+		source: text('source').notNull().default('legacy'),
 
 		legacyPsId: integer('legacy_ps_id'),
 
@@ -92,6 +110,23 @@ export const taxRule = pgTable('tax_rule', {
 // Produits
 // ---------------------------------------------------------------------------
 
+/**
+ * Nature d'un produit — la séparation « pièces » / « produits » du catalogue.
+ *
+ * Elle est portée par une **colonne**, pas par la branche de rangement : à la
+ * source, la séparation par l'arbre n'est pas fiable (la branche
+ * « Électroportatif » contient 92 % de pièces, voir `MIGRATION-CATALOGUE.md`
+ * §3.4). Un champ explicite ne peut pas dériver au fil des reclassements, et
+ * rend la distinction interrogeable sans parcourir l'arbre.
+ */
+export const productType = [
+	'part', // pièce détachée — ~99,7 % du catalogue
+	'machine', // machine ou produit fini (tondeuse, tronçonneuse…)
+	'consumable', // consommable (huile, filtre neuf, EPI…)
+	'service' // frais de port, main-d'œuvre, non physique
+] as const;
+export type ProductType = (typeof productType)[number];
+
 export const product = pgTable(
 	'product',
 	{
@@ -99,6 +134,10 @@ export const product = pgTable(
 
 		// Utils
 		isActive: boolean('is_active').notNull().default(true),
+
+		/** Nature du produit — voir `productType`. Défaut `part` : le catalogue
+		 *  est à 99,7 % des pièces, l'exception est la machine. */
+		type: text('type').notNull().default('part'),
 
 		// Identification
 		name: text('name').notNull(),
@@ -143,6 +182,16 @@ export const product = pgTable(
 
 		// Traçabilité import
 		legacyPsId: integer('legacy_ps_id'),
+		/**
+		 * `ps_product.id_category_default` de la source.
+		 *
+		 * L'arbre PrestaShop n'étant plus importé verbatim (il portait les
+		 * nœuds-marques et 93 % de catégories vides), cette valeur est conservée
+		 * telle quelle à l'import : c'est elle qui permet à `product-taxonomy` et
+		 * `reclassify` d'attribuer la catégorie principale sur l'arbre **propre**,
+		 * sans retourner interroger PrestaShop.
+		 */
+		legacyCategoryPsId: integer('legacy_category_ps_id'),
 
 		// Dates
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -157,6 +206,12 @@ export const product = pgTable(
 		index('product_reference_idx').on(t.reference),
 		index('product_brand_idx').on(t.brandId),
 		index('product_category_idx').on(t.categoryId),
+		// Jointure de résolution pendant la migration : `product-taxonomy` et
+		// `reclassify` rattachent les produits par cette clé sur 1,05 M de lignes.
+		index('product_legacy_category_idx').on(t.legacyCategoryPsId),
+		// La boutique sépare pièces et machines sur presque toutes ses vues :
+		// sans index, chaque filtre scannerait les 1,3 M de produits.
+		index('product_type_idx').on(t.type),
 		// Tri par défaut de la liste admin : sans index, Postgres parcourt les
 		// 1,3 M de produits à chaque page.
 		index('product_created_at_idx').on(t.createdAt),
