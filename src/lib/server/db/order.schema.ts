@@ -363,9 +363,104 @@ export const ORDER_STATE_SEED = [
 ] as const;
 
 // ---------------------------------------------------------------------------
+// Factures et paiements — pièces comptables
+// ---------------------------------------------------------------------------
+
+/**
+ * Facture émise pour une commande.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ *  Ces données sont **comptables et légales** : une facture émise ne se
+ *  reconstitue pas après coup. La migration précédente (via `metro`) ne les
+ *  reprenait pas du tout — 24 337 factures et 24 350 paiements étaient
+ *  purement absents de la base, alors qu'ils existent à la source.
+ *
+ *  Le numéro de facture est celui **émis à l'époque** : il ne doit jamais être
+ *  régénéré, sous peine de casser la continuité de la numérotation légale.
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+export const orderInvoice = pgTable(
+	'order_invoice',
+	{
+		id: serial('id').primaryKey(),
+		orderId: integer('order_id')
+			.notNull()
+			.references(() => order.id, { onDelete: 'cascade' }),
+
+		/** Numéro de facture émis à l'époque — jamais recalculé. */
+		number: text('number').notNull(),
+		/** Numéro de bon de livraison, quand il existe. */
+		deliveryNumber: text('delivery_number'),
+		deliveryDate: timestamp('delivery_date', { withTimezone: true }),
+
+		totalHt: numeric('total_ht', { precision: 12, scale: 4 }).notNull().default('0'),
+		totalTtc: numeric('total_ttc', { precision: 12, scale: 4 }).notNull().default('0'),
+		shippingHt: numeric('shipping_ht', { precision: 12, scale: 4 }).notNull().default('0'),
+		shippingTtc: numeric('shipping_ttc', { precision: 12, scale: 4 }).notNull().default('0'),
+		discountHt: numeric('discount_ht', { precision: 12, scale: 4 }).notNull().default('0'),
+		discountTtc: numeric('discount_ttc', { precision: 12, scale: 4 }).notNull().default('0'),
+
+		/** Adresse de la boutique au moment de l'émission (mentions légales). */
+		shopAddress: text('shop_address'),
+		note: text('note'),
+
+		legacyPsId: integer('legacy_ps_id'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		index('order_invoice_order_idx').on(t.orderId),
+		index('order_invoice_number_idx').on(t.number)
+	]
+);
+
+/**
+ * Paiement encaissé pour une commande.
+ *
+ * Une commande peut avoir plusieurs paiements (acompte + solde), d'où une
+ * table séparée plutôt que des colonnes sur `order`.
+ *
+ * ⚠️ Les données de carte bancaire de la source (`card_number`, `card_brand`,
+ * `card_expiration`, `card_holder`) ne sont **volontairement pas reprises** :
+ * les conserver sans nécessité est un risque inutile, et le numéro de
+ * transaction du prestataire suffit au rapprochement comptable.
+ */
+export const orderPayment = pgTable(
+	'order_payment',
+	{
+		id: serial('id').primaryKey(),
+		orderId: integer('order_id')
+			.notNull()
+			.references(() => order.id, { onDelete: 'cascade' }),
+
+		amount: numeric('amount', { precision: 12, scale: 4 }).notNull(),
+		/** Libellé du moyen de paiement (« Paiement par chèque », « CB »…). */
+		method: text('method'),
+		/** Référence chez le prestataire, pour le rapprochement bancaire. */
+		transactionId: text('transaction_id'),
+		currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
+
+		legacyPsId: integer('legacy_ps_id'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [index('order_payment_order_idx').on(t.orderId)]
+);
+
+export const orderInvoiceRelations = relations(orderInvoice, ({ one }) => ({
+	order: one(order, { fields: [orderInvoice.orderId], references: [order.id] })
+}));
+
+export const orderPaymentRelations = relations(orderPayment, ({ one }) => ({
+	order: one(order, { fields: [orderPayment.orderId], references: [order.id] })
+}));
+
+// ---------------------------------------------------------------------------
 // Types inférés
 // ---------------------------------------------------------------------------
 
+export type OrderInvoice = typeof orderInvoice.$inferSelect;
+export type NewOrderInvoice = typeof orderInvoice.$inferInsert;
+export type OrderPayment = typeof orderPayment.$inferSelect;
+export type NewOrderPayment = typeof orderPayment.$inferInsert;
 export type OrderState = typeof orderState.$inferSelect;
 export type NewOrderState = typeof orderState.$inferInsert;
 export type Cart = typeof cart.$inferSelect;

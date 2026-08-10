@@ -1,4 +1,6 @@
-# Migration & réorganisation du catalogue
+# Migration PrestaShop → msshopv2
+
+> Catalogue, commandes, clients — périmètre étendu le 2026-08-10 (§6.9).
 
 > **Cahier des charges et mémoire de travail.**
 > Ce fichier est la source de vérité du chantier « remise à plat du catalogue ».
@@ -1584,7 +1586,72 @@ fournisseur d'origine (`Hydraulique > Coupleurs`) est conservé sur chaque produ
 disparaît de l'arbre, mais l'information reste — pour le palier 4 et pour d'éventuels
 futurs fournisseurs.
 
-### 6.9 Séquence d'exécution recommandée
+### 6.9 Extension du périmètre — commandes et clients (2026-08-10)
+
+> **Décision client :** supprimer les scripts `metro` et migrer **tout PrestaShop**,
+> pas seulement le catalogue.
+
+#### Ce que la chaîne `metro` avait perdu
+
+Mesuré en lecture seule sur `prod5` le 2026-08-10, en comparant à ce qui était en base :
+
+| Donnée         | Source  | En base  | Manquant             |
+| -------------- | ------- | -------- | -------------------- |
+| Commandes      | 28 582  | 27 403   | 1 179                |
+| Lignes         | 53 744  | 51 525   | 2 219                |
+| Clients        | 25 485  | 24 480   | 1 005                |
+| Adresses       | 38 445  | 23 867   | **14 578 (38 %)**    |
+| Statuts        | 32      | 14       | 18                   |
+| **Historique** | 149 597 | 27 403   | **122 194**          |
+| **Factures**   | 24 337  | **0**    | **toutes**           |
+| **Paiements**  | 24 350  | **0**    | **tous**             |
+
+Deux constats graves : l'historique réduit à **une ligne par commande** faisait perdre
+le *parcours* de chaque commande (quand payée, expédiée, remboursée) ; et **aucune pièce
+comptable** n'avait été migrée. C'est le même mode de défaillance que pour le catalogue —
+la chaîne `prod5 → metro → sakura` perdait des données à chaque saut.
+
+#### Scripts `metro` supprimés
+
+`scripts/migration/` (861 lignes, 7 fichiers) est supprimé. Outre son obsolescence, son
+`_shared.ts` contenait un **mot de passe de production en dur** (ligne 14).
+
+> ⚠️ **Le secret reste dans l'historique git.** La suppression du fichier ne le retire pas
+> des commits passés. Le mot de passe de la base `metro` doit être considéré comme
+> compromis et **révoqué**, indépendamment de ce chantier.
+
+#### Trois tâches ajoutées
+
+| Tâche          | Contenu                                                        |
+| -------------- | -------------------------------------------------------------- |
+| `customers`    | clients + adresses, création des comptes `user` (better-auth)  |
+| `order-states` | les 32 statuts (contre 14 auparavant)                          |
+| `orders`       | commandes, lignes, historique, **factures**, **paiements**     |
+
+Deux tables créées (migration `0012`, additive) : `order_invoice` et `order_payment`.
+
+#### Décisions de conception
+
+**Les adresses sont figées dans la commande**, pas référencées. `order.shipping_address`
+et `billing_address` sont des colonnes JSON : une commande doit conserver l'adresse **telle
+qu'elle était à l'achat**, même si le client déménage ensuite.
+
+**Les lignes gardent le libellé du produit.** `product_name` et `product_reference` sont
+copiés depuis la source ; le lien `product_id` n'est posé que s'il se résout. Un produit
+retiré du catalogue ne doit pas vider l'historique de vente.
+
+**47 emails en doublon** à la source (`user.email` est unique) : le premier client garde
+son email, les suivants reçoivent un suffixe traçable `+psID`. Les écarter ferait perdre
+leurs commandes.
+
+**Les données de carte bancaire ne sont pas reprises** (`card_number`, `card_brand`,
+`card_holder`, `card_expiration`). Les conserver sans nécessité est un risque inutile ; le
+numéro de transaction suffit au rapprochement comptable.
+
+**5 commandes source pointent un client inexistant** : elles sont écartées et signalées,
+plutôt que rattachées arbitrairement.
+
+### 6.10 Séquence d'exécution recommandée
 
 > **État au 2026-08-08 : rien de ce qui suit n'a été exécuté.** Les scripts sont écrits,
 > compilent (`tsc` propre) et passent 67 tests, mais **aucune tâche n'a jamais tourné
@@ -1708,6 +1775,12 @@ SELECT id, name, legacy_ps_id FROM category
 | 2026-08-08 | **Bug d'accents — 27 394 produits**  | `firstWord()` ne retirait pas les accents alors que les mots-clés sont écrits sans : `CÂBLE` (5 514), `ÉCROU` (3 137), `POIGNÉE` (2 640), `VÉRIN` (2 160)… échappaient à leur règle **alors que la règle existait**. Corrigé : +2,6 points sur tout le catalogue                                                                                       |
 | 2026-08-08 | **Couverture réelle mesurée**        | Le §6.3 annonçait 71,4 % — c'était une estimation. **Mesure sur les 1 053 957 produits : 62,5 %** avec le code d'alors ; **69,6 %** après correction des accents et mapping KRAMP (702 473 par règle + 31 349 via KRAMP). 289 540 produits (27,5 %) partent en « À classer », palier 4                                                                 |
 | 2026-08-08 | Arbitrage « Outillage à main »       | Tranché par la mesure (§6.2 point n°1) : la seule feuille KRAMP « Outillage à main » porte 17 346 produits non classés (CLE 3 853, TOURNEVIS 1 189, PINCE 1 041). Deux familles créées — **`Outillage à main`** et **`Équipement de protection`** (~4 700 EPI) — plutôt que de les forcer dans les familles techniques                                 |
+| 2026-08-10 | **Périmètre étendu à tout PrestaShop** | Décision client : les scripts `metro` sont supprimés et la migration couvre désormais **commandes, clients, adresses, statuts, factures, paiements**, pas seulement le catalogue. 3 tâches ajoutées (`customers`, `order-states`, `orders`), 2 tables créées (`order_invoice`, `order_payment`, migration `0012`). Voir §6.9 |
+| 2026-08-10 | Pertes de la chaîne `metro` mesurées | Comparaison source/cible : **122 194 entrées d'historique**, **24 337 factures** et **24 350 paiements** totalement absents ; 14 578 adresses (38 %), 1 179 commandes, 1 005 clients manquants. L'historique était réduit à 1 ligne par commande — le parcours réel était perdu |
+| 2026-08-10 | ⚠️ **Secret en dur dans git**        | `scripts/migration/_shared.ts` contenait le mot de passe de production de `metro` en clair. Le fichier est supprimé, **mais le secret demeure dans l'historique git** : ce mot de passe doit être considéré comme compromis et **révoqué** |
+| 2026-08-10 | Adresses figées dans la commande     | `order.shipping_address` / `billing_address` en JSON plutôt qu'en FK : une commande doit conserver l'adresse **telle qu'elle était à l'achat**, et rester lisible si le client déménage ou est supprimé |
+| 2026-08-10 | Données bancaires écartées           | `card_number`, `card_brand`, `card_holder`, `card_expiration` **non repris** : les conserver sans nécessité est un risque inutile. Le `transaction_id` suffit au rapprochement comptable |
+| 2026-08-10 | 47 emails en doublon                 | `user.email` est unique, la source contient 47 doublons (`mickael-40@live.fr` ×3…). Le premier client garde l'email, les suivants reçoivent un suffixe traçable `+psID` — les écarter ferait perdre leurs commandes |
 | 2026-08-08 | `product.supplier_category_path`     | Nouvelle colonne (migration `0009`, additive) : conserve le chemin fournisseur d'origine (`Hydraulique > Coupleurs`). Le silo disparaît de l'arbre mais l'information reste, pour le palier 4 et les futurs fournisseurs                                                                                                                               |
 | 2026-08-07 | ⚠️ Index sur 1,3 M de lignes         | `CREATE INDEX product_type_idx` verrouille `product` en écriture pendant sa construction. À appliquer **en heures creuses**, ou en `CREATE INDEX CONCURRENTLY` hors transaction (§6.4)                                                                                                                                                                   |
 
