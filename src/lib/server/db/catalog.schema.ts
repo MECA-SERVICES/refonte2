@@ -163,6 +163,15 @@ export const product = pgTable(
 		purchasePrice: numeric('purchase_price', { precision: 12, scale: 4 }),
 		/** Règle de TVA appliquée (null = pas de TVA / exonéré). */
 		taxRuleId: integer('tax_rule_id').references(() => taxRule.id, { onDelete: 'set null' }),
+		/**
+		 * Éco-participation (DEEE), en euros TTC, à afficher et facturer en plus
+		 * du prix.
+		 *
+		 * **Obligation légale** : le montant doit être affiché distinctement du
+		 * prix de vente. Mesuré sur la source le 2026-08-08 : 1 673 produits
+		 * concernés, de 0,42 € à 2,08 €.
+		 */
+		ecotax: numeric('ecotax', { precision: 10, scale: 2 }).notNull().default('0'),
 
 		// Stock & logistique
 		stock: integer('stock').notNull().default(0),
@@ -171,6 +180,19 @@ export const product = pgTable(
 		widthCm: numeric('width_cm', { precision: 10, scale: 2 }),
 		heightCm: numeric('height_cm', { precision: 10, scale: 2 }),
 		shippingExtraFee: numeric('shipping_extra_fee', { precision: 10, scale: 2 }),
+		/**
+		 * Le produit peut-il être **commandé** ?
+		 *
+		 * Distinct de `isActive`, qui contrôle la visibilité : un produit peut
+		 * rester consultable (fiche, recherche, référencement) sans être
+		 * commandable en ligne — sur devis, en rupture définitive, réservé au
+		 * comptoir. Mettre ces produits à `isActive = false` les ferait
+		 * disparaître du site, ce qui n'est pas ce que la source exprime.
+		 *
+		 * Mesuré le 2026-08-08 : **36 235 produits non commandables** en source.
+		 * Sans cette colonne, ils seraient tous vendables à tort.
+		 */
+		availableForOrder: boolean('available_for_order').notNull().default(true),
 		/** Transporteur forcé — FK à brancher quand le domaine livraison existera. */
 		forcedCarrierId: integer('forced_carrier_id'),
 		/** Fournisseur — FK à brancher quand le domaine fournisseurs existera. */

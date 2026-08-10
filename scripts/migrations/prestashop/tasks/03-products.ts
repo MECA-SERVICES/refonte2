@@ -63,6 +63,8 @@ interface SourceProduct {
 	additional_shipping_cost: string | null;
 	active: number;
 	quantity: number | null;
+	ecotax: string | null;
+	available_for_order: number;
 	date_add: Date | null;
 	date_upd: Date | null;
 	name: string | null;
@@ -164,6 +166,7 @@ export const productsTask: Task = {
 			       p.reference, p.supplier_reference, p.ean13,
 			       p.price, p.wholesale_price, p.weight, p.width, p.height, p.depth,
 			       p.additional_shipping_cost, p.active, p.quantity,
+			       p.ecotax, p.available_for_order,
 			       p.date_add, p.date_upd,
 			       pl.name, pl.description, pl.description_short, pl.link_rewrite,
 			       pl.meta_title, pl.meta_description
@@ -225,6 +228,13 @@ export const productsTask: Task = {
 					width_cm: money(r.width, null),
 					height_cm: money(r.height, null),
 					shipping_extra_fee: money(r.additional_shipping_cost, null),
+					// Éco-participation (DEEE) : obligation légale d'affichage.
+					// 1 673 produits concernés ; `NOT NULL DEFAULT 0` en cible,
+					// d'où le repli sur '0' plutôt que null.
+					ecotax: money(r.ecotax, '0'),
+					// Commandable ou non — distinct de `is_active` (visibilité).
+					// 36 235 produits non commandables en source.
+					available_for_order: bool(r.available_for_order),
 					supplier_id: r.id_supplier ? Number(r.id_supplier) : null,
 					is_active: bool(r.active),
 					legacy_ps_id: legacyId,
