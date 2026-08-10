@@ -1651,6 +1651,48 @@ numéro de transaction suffit au rapprochement comptable.
 **5 commandes source pointent un client inexistant** : elles sont écartées et signalées,
 plutôt que rattachées arbitrairement.
 
+#### Purge du domaine commandes — `--with-orders`
+
+Sans purge préalable, rejouer `customers` / `orders` ne produirait **pas** de doublons de
+commandes (l'idempotence par `legacy_ps_id` les reconnaîtrait), mais quelque chose de pire :
+un **mélange**. Les 27 403 commandes dégradées de `metro` seraient conservées, et seules
+les 1 179 manquantes importées proprement — deux qualités de données dans la même table,
+impossibles à distinguer ensuite.
+
+Et deux vrais doublons apparaîtraient :
+
+- **`order_state`** — les 14 statuts existants n'ont **aucun `legacy_ps_id`**. Les 32 de la
+  source s'ajouteraient → **46 statuts**, dont 14 orphelins auxquels les anciennes commandes
+  resteraient rattachées.
+- **`order_state_history`** — la table n'a pas de colonne `legacy_ps_id` : les 27 403 entrées
+  tronquées seraient conservées au lieu des 149 597 réelles.
+
+D'où le drapeau `--with-orders`, qui étend la purge à `order_payment`, `order_invoice`,
+`order_state_history`, `order_line`, `cart_item`, `cart`, `order`, `address`, `customer`,
+`order_state` — **155 692 lignes** au total.
+
+#### `user` — suppression ciblée des comptes clients
+
+Premier réflexe : ne jamais toucher à `user`, qui porte les comptes better-auth. **La
+mesure a montré que c'était faux.**
+
+Les 24 480 comptes clients créés par `metro` ont des ids **aléatoires**
+(`XoTIf9rfz7kPRuSneTBOBQ5dYhTBgVFz`), et non le format déterministe `ps-<id_customer>`
+qu'utilise `customers`. Les conserver produirait :
+
+- **~50 000 comptes** dont la moitié orphelins, sans fiche client ;
+- pire : leurs emails étant déjà pris, la déduplication suffixerait **tous** les clients
+  réimportés en `+psID` — chaque adresse deviendrait fausse, et plus personne ne pourrait
+  se connecter ni recevoir un email.
+
+La purge supprime donc les comptes **rattachés à un `customer`**, et préserve tout le reste
+(admins, comptes internes, comptes sans fiche client). Les ids sont relevés **avant** que
+`customer` ne soit vidée — après, l'information qui distingue un client d'un admin serait
+perdue. Un contrôle final échoue s'il ne reste aucun compte admin : un back-office
+inaccessible serait pire que la purge elle-même.
+
+Mesuré : **24 480 comptes clients supprimés, 1 admin conservé.**
+
 ### 6.10 Séquence d'exécution recommandée
 
 > **État au 2026-08-08 : rien de ce qui suit n'a été exécuté.** Les scripts sont écrits,
@@ -1679,7 +1721,11 @@ bun run migrate:ps -- --only=brands,products --limit=1000
 bun run migrate:ps:verify
 
 # 5. Purge — DESTRUCTIF, jamais joué par un lancement par défaut.
-bun run migrate:ps -- --only=purge
+#    --with-orders étend la purge au domaine commandes (155 692 lignes) :
+#    indispensable avant de rejouer `customers` / `orders`, sinon les
+#    27 403 commandes dégradées de `metro` sont conservées (§6.9).
+#    « user » n'est jamais purgée (comptes better-auth, dont les admins).
+bun run migrate:ps -- --only=purge --with-orders
 
 # 6. Migration complète.
 bun run migrate:ps
