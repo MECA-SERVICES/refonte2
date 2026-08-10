@@ -31,11 +31,5 @@
 		"verbatimModuleSyntax": true
 	},
 	"include": ["**/*.ts"],
-	"exclude": [
-		"**/*.spec.ts",
-		// Ancien service branché sur `metro`, hors périmètre depuis le
-		// 2026-08-07 (§2.4) et voué à la suppression une fois la nouvelle
-		// migration validée. Ne pas bloquer la vérification du code actif.
-		"migration/**"
-	]
+	"exclude": ["**/*.spec.ts"]
 }
