@@ -124,9 +124,11 @@ export const ordersTask: Task = {
 		log.muted(`${count(prodByLegacy.size)} produits résolus (lien facultatif)`);
 
 		// --- Idempotence ---
-		const existing = await sql<{ legacy_ps_id: number }[]>`
-			SELECT legacy_ps_id FROM "order" WHERE legacy_ps_id IS NOT NULL`;
+		const existing = await sql<{ legacy_ps_id: number; reference: string }[]>`
+			SELECT legacy_ps_id, reference FROM "order" WHERE legacy_ps_id IS NOT NULL`;
 		const already = new Set(existing.map((r) => Number(r.legacy_ps_id)));
+		// Charger les références déjà en base pour éviter les conflits
+		const existingRefs = new Set(existing.map((r) => r.reference));
 		if (already.size > 0) log.muted(`${count(already.size)} commandes déjà importées — ignorées`);
 
 		// --- Adresses source, pour le figement ---
@@ -151,6 +153,27 @@ export const ordersTask: Task = {
 
 		const toCreate = orders.filter((o) => !already.has(Number(o.id_order)));
 		let skippedNoCustomer = 0;
+
+		// Détection des références en doublon pour les dédupliquer
+		// Inclure les références déjà en base pour éviter les conflits
+		const refCount = new Map<string, number>();
+		const refSeen = new Map<string, number>();
+		for (const o of toCreate) {
+			const ref = text(o.reference) ?? `PS-${o.id_order}`;
+			refCount.set(ref, (refCount.get(ref) ?? 0) + 1);
+			// Si cette référence existe déjà en base, la marquer comme doublon
+			if (existingRefs.has(ref)) {
+				refCount.set(ref, (refCount.get(ref) ?? 0) + 1);
+			}
+		}
+		const duplicateRefs = Array.from(refCount.entries())
+			.filter(([, c]) => c > 1)
+			.map(([ref]) => ref);
+		if (duplicateRefs.length > 0) {
+			log.warn(
+				`${count(duplicateRefs.length)} références en doublon — suffixées (+psID) pour rester importables`
+			);
+		}
 
 		if (dryRun) {
 			log.warn(`Simulation : ${count(toCreate.length)} commandes auraient été importées.`);
@@ -180,8 +203,21 @@ export const ordersTask: Task = {
 					}
 					const ttc = Number(money(o.total_paid_tax_incl, '0'));
 					const ht = Number(money(o.total_paid_tax_excl, '0'));
+
+					// Générer référence avec déduplication si nécessaire
+					let ref = text(o.reference) ?? `PS-${o.id_order}`;
+					// Si la référence est en doublon OU existe déjà en base, suffixer
+					if ((refCount.get(ref) ?? 0) > 1 || existingRefs.has(ref)) {
+						const occurrence = (refSeen.get(ref) ?? 0) + 1;
+						refSeen.set(ref, occurrence);
+						// Si c'est un doublon dans toCreate OU si la ref existe déjà, suffixer
+						if (occurrence > 1 || existingRefs.has(ref)) {
+							ref = `${ref}+ps${o.id_order}`;
+						}
+					}
+
 					return {
-						reference: text(o.reference) ?? `PS-${o.id_order}`,
+						reference: ref,
 						customer_id: customerId,
 						state_id: stateByLegacy.get(Number(o.current_state)) ?? Number(fallbackState.id),
 						total_ht: String(ht),

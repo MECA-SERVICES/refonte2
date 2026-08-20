@@ -34,11 +34,26 @@ export function uniqueSlug(base: string, used: Set<string>): string {
 	return result;
 }
 
-/** Convertit une valeur source en décimal Postgres, ou `fallback` si invalide. */
+/**
+ * Convertit une valeur source en décimal Postgres, ou `fallback` si invalide.
+ *
+ * Limite à 99 999 999.9999 (max pour numeric(12,4)) pour éviter les
+ * "numeric field overflow" lors de l'insertion. Les valeurs aberrantes
+ * (souvent des erreurs de saisie dans PrestaShop) sont plafonnées.
+ */
 export function money(value: unknown, fallback: string | null = '0'): string | null {
 	if (value === null || value === undefined || value === '') return fallback;
 	const n = Number(value);
-	return Number.isFinite(n) ? String(n) : fallback;
+	if (!Number.isFinite(n)) return fallback;
+
+	// Limite PostgreSQL numeric(12,4) : 8 chiffres avant la virgule, 4 après
+	const MAX_NUMERIC = 99999999.9999;
+	if (Math.abs(n) > MAX_NUMERIC) {
+		// Valeur aberrante : on retourne le fallback plutôt que de planter
+		return fallback;
+	}
+
+	return String(n);
 }
 
 /** Normalise un booléen MySQL (`0`/`1`, `'0'`/`'1'`, buffer) en booléen JS. */

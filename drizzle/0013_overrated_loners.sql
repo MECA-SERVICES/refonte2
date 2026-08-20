@@ -1,0 +1,1 @@
+CREATE INDEX "product_media_legacy_idx" ON "product_media" USING btree ("legacy_ps_id");
