@@ -8,7 +8,7 @@
  *  ⚠️ Pourquoi ce n'est plus un `TRUNCATE ... CASCADE`
  *
  *  La version initiale faisait `TRUNCATE product, category, … CASCADE`. Vérifié
- *  sur sakura le 2026-08-08 : **cela aurait détruit les 51 525 lignes de
+ *  sur altaria le 2026-08-08 : **cela aurait détruit les 51 525 lignes de
  *  `order_line`**, soit l'historique de vente de 27 403 commandes — alors même
  *  que ce fichier promet de ne pas toucher aux commandes.
  *

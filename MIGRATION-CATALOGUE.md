@@ -18,14 +18,14 @@
 
 ## 1. Objectif
 
-Supprimer les produits de la base projet (`DATABASE_URL` / sakura) et rejouer une migration
+Supprimer les produits de la base projet (`DATABASE_URL` / altaria) et rejouer une migration
 **propre et directe** depuis la base PrestaShop d'origine (`prod5`), en reconstruisant au
 passage une taxonomie exploitable pour les produits et les pièces détachées.
 
 Le chantier ne consiste **pas** à rattraper les données dégradées de la base cible actuelle,
 mais à reprendre la source et à appliquer une réorganisation pendant l'import.
 
-En une phrase : **`prod5` (PrestaShop) → `DATABASE_URL` (sakura), en direct, sans passer par
+En une phrase : **`prod5` (PrestaShop) → `DATABASE_URL` (altaria), en direct, sans passer par
 `metro`** — avec purge préalable des produits et ajout des tables de compatibilité.
 
 ---
@@ -70,7 +70,7 @@ MySQL 9.x local — le binaire `mysql` échoue avec `ERROR 2059`. Passer par le 
 | Paramètre | Valeur                                                          |
 | --------- | --------------------------------------------------------------- |
 | SGBD      | PostgreSQL                                                      |
-| Hôte      | `sakura.proxy.rlwy.net:22586`, base `railway`                   |
+| Hôte      | `altaria.proxy.rlwy.net`, base `railway`                        |
 | Connexion | `DATABASE_URL` dans `.env`                                      |
 | Schéma    | Drizzle — `src/lib/server/db/catalog.schema.ts`                 |
 | Tables    | 21 (nommage anglais : `product`, `category`, `brand`, `order`…) |
@@ -84,7 +84,7 @@ MySQL 9.x local — le binaire `mysql` échoue avec `ERROR 2059`. Passer par le 
 ### 2.3 Sens de la migration
 
 ```
-PrestaShop prod5 (MariaDB, via SSH)  ──────►  DATABASE_URL / sakura (PostgreSQL)
+PrestaShop prod5 (MariaDB, via SSH)  ──────►  DATABASE_URL / altaria (PostgreSQL)
         LECTURE SEULE                          purge + nouvelles tables + import
 ```
 
@@ -364,7 +364,7 @@ Bruit identifié à écarter des règles : `HIGH` (4 289), `PLUS` (1 602), `(C)`
 
 ## 6. Plan d'exécution
 
-Toutes les étapes d'écriture ci-dessous s'appliquent à **`DATABASE_URL` (sakura)**, jamais à
+Toutes les étapes d'écriture ci-dessous s'appliquent à **`DATABASE_URL` (altaria)**, jamais à
 `prod5` (lecture seule) ni à `metro` (hors périmètre).
 
 - [x] **Étape 0 — Sauvegarde.** ~~Dump de `DATABASE_URL` avant toute suppression.~~
@@ -1609,7 +1609,7 @@ Mesuré en lecture seule sur `prod5` le 2026-08-10, en comparant à ce qui étai
 Deux constats graves : l'historique réduit à **une ligne par commande** faisait perdre
 le *parcours* de chaque commande (quand payée, expédiée, remboursée) ; et **aucune pièce
 comptable** n'avait été migrée. C'est le même mode de défaillance que pour le catalogue —
-la chaîne `prod5 → metro → sakura` perdait des données à chaque saut.
+la chaîne `prod5 → metro → altaria` perdait des données à chaque saut.
 
 #### Scripts `metro` supprimés
 
@@ -1780,8 +1780,8 @@ SELECT id, name, legacy_ps_id FROM category
 | Date       | Sujet                                | Décision / mesure                                                                                                                                                                                                                                                                                                                                        |
 | ---------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-08-07 | Analyse source                       | Source = MariaDB `prod5` via tunnel SSH, en lecture seule stricte                                                                                                                                                                                                                                                                                        |
-| 2026-08-07 | **Base cible**                       | **`DATABASE_URL` / sakura (base projet msshopv2)** — c'est là qu'on purge, qu'on ajoute les tables et qu'on importe. Migration **directe** `prod5` → `DATABASE_URL`, sans intermédiaire. _(Décision client, corrige une erreur de la v1 de ce document qui proposait d'abandonner la mauvaise base.)_                                                    |
-| 2026-08-07 | `metro`                              | Hors périmètre : ni lue ni écrite par le nouveau service. Vérifié serveur distinct de sakura (`system_identifier` différents), 87 tables en français vs 21 en anglais. Scripts existants qui en dépendent → à remplacer                                                                                                                                  |
+| 2026-08-07 | **Base cible**                       | **`DATABASE_URL` / altaria (base projet msshopv2)** — c'est là qu'on purge, qu'on ajoute les tables et qu'on importe. Migration **directe** `prod5` → `DATABASE_URL`, sans intermédiaire. _(Décision client, corrige une erreur de la v1 de ce document qui proposait d'abandonner la mauvaise base.)_                                                   |
+| 2026-08-07 | `metro`                              | Hors périmètre : ni lue ni écrite par le nouveau service. Vérifié serveur distinct de altaria (`system_identifier` différents), 87 tables en français vs 21 en anglais. Scripts existants qui en dépendent → à remplacer                                                                                                                                 |
 | 2026-08-07 | Cause des orphelins                  | Bug de migration (double mapping + N-N non migrée), pas un défaut de données source                                                                                                                                                                                                                                                                      |
 | 2026-08-07 | Fourre-tout                          | 838 987 produits sans autre catégorie → reclassification par règles obligatoire                                                                                                                                                                                                                                                                          |
 | 2026-08-07 | Stratégie                            | Repartir de la source + réorganiser pendant l'import (décision client)                                                                                                                                                                                                                                                                                   |

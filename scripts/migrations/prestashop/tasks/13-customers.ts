@@ -4,7 +4,7 @@
  * ────────────────────────────────────────────────────────────────────────────
  *  Pourquoi cette tâche existe
  *
- *  Les clients présents en base viennent de la chaîne `prod5 → metro → sakura`,
+ *  Les clients présents en base viennent de la chaîne `prod5 → metro → altaria`,
  *  qui a perdu des données à chaque saut. Mesuré le 2026-08-10 :
  *
  *      clients   25 485 en source  →  24 480 en base   (1 005 manquants)

@@ -1,5 +1,5 @@
 /**
- * Connexion à la base **cible** du projet (`DATABASE_URL` — sakura).
+ * Connexion à la base **cible** du projet (`DATABASE_URL` — altaria).
  *
  * C'est la seule base que les scripts sont autorisés à écrire.
  * Voir `MIGRATION-CATALOGUE.md` §2.2.

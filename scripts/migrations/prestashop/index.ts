@@ -2,7 +2,7 @@
  * Service de migration PrestaShop → base projet — **étape 4** du cahier des
  * charges (`MIGRATION-CATALOGUE.md`).
  *
- *     prod5 (MariaDB, via tunnel SSH)  ──►  DATABASE_URL / sakura (PostgreSQL)
+ *     prod5 (MariaDB, via tunnel SSH)  ──►  DATABASE_URL / altaria (PostgreSQL)
  *            LECTURE SEULE                        purge + import
  *
  * Remplace `scripts/migration/`, qui lisait la base intermédiaire `metro`

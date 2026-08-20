@@ -197,7 +197,7 @@ export const orderLine = pgTable(
 		index('order_line_order_idx').on(t.orderId),
 		// Index de clé étrangère — Postgres n'en crée pas automatiquement.
 		// Sans eux, toute suppression de produit doit scanner l'intégralité de
-		// `order_line` pour appliquer le `ON DELETE SET NULL`. Mesuré sur sakura
+		// `order_line` pour appliquer le `ON DELETE SET NULL`. Mesuré sur altaria
 		// le 2026-08-08 : la purge du catalogue (1,3 M de produits) tournait
 		// encore après 9 minutes ; avec ces index, elle passe en quelques
 		// secondes. Vaut aussi pour toute suppression de produit depuis l'admin.
