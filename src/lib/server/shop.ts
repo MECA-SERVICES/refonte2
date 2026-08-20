@@ -11,6 +11,7 @@ import {
 } from '$lib/server/db/schema';
 import { and, asc, count, desc, eq, exists, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type { Category } from '$lib/server/db/catalog.schema';
+import { cached } from './cache';
 
 /**
  * Domaine « Vitrine » — requêtes publiques de la boutique.
@@ -87,33 +88,28 @@ function menuLevel<T extends { id: number; parentId: number | null }>(rows: T[])
 	return { level, skipped };
 }
 
-/** Catégories de navigation actives + leurs enfants directs (barre de navigation). */
-export async function getShopMenu(): Promise<ShopMenuEntry[]> {
-	const rows = await db
-		.select({
-			id: category.id,
-			name: category.name,
-			slug: category.slug,
-			parentId: category.parentId
-		})
-		.from(category)
-		.where(eq(category.isActive, true))
-		.orderBy(asc(category.position), asc(category.name));
-
-	const { level } = menuLevel(rows);
-	return level.map((root) => ({
-		id: root.id,
-		name: root.name,
-		slug: root.slug,
-		children: rows
-			.filter((c) => c.parentId === root.id)
-			.map(({ id, name, slug }) => ({ id, name, slug }))
-	}));
-}
-
 /** Toutes les catégories actives (une seule requête, table de petite taille). */
 async function activeCategories() {
-	return db.select().from(category).where(eq(category.isActive, true));
+	return cached('active-categories', async () => {
+		return db.select().from(category).where(eq(category.isActive, true));
+	}, 600); // 10 minutes
+}
+
+/** Catégories de navigation actives + leurs enfants directs (barre de navigation). */
+export async function getShopMenu(): Promise<ShopMenuEntry[]> {
+	return cached('shop-menu', async () => {
+		const rows = await activeCategories(); // Utilise le cache
+
+		const { level } = menuLevel(rows);
+		return level.map((root) => ({
+			id: root.id,
+			name: root.name,
+			slug: root.slug,
+			children: rows
+				.filter((c) => c.parentId === root.id)
+				.map(({ id, name, slug }) => ({ id, name, slug }))
+		}));
+	}, 600); // 10 minutes
 }
 
 /** Ids d'une catégorie et de toute sa descendance (parcours en mémoire). */
@@ -135,6 +131,16 @@ function ancestorsOf(all: Category[], leaf: Category): Category[] {
 		current = current.parentId != null ? byId.get(current.parentId) : undefined;
 	}
 	return chain;
+}
+
+/** Récupère une catégorie et construit son fil d'Ariane (optimisé pour fiche produit). */
+async function getCategoryBreadcrumb(categoryId: number) {
+	const all = await activeCategories();
+	const cat = all.find((c) => c.id === categoryId);
+	if (!cat) return [];
+
+	const { skipped } = menuLevel(all);
+	return ancestorsOf(all, cat).filter((c) => !skipped.has(c.id));
 }
 
 /** Une catégorie active par slug, avec enfants, ancêtres et ids de sa descendance. */
@@ -210,20 +216,30 @@ export async function listShopProducts(params: ShopListParams = {}) {
 
 	const where = and(...conditions);
 
-	const [rows, [{ total }]] = await Promise.all([
-		db
-			.select(productCardFields)
-			.from(product)
-			.leftJoin(brand, eq(product.brandId, brand.id))
-			.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
-			.where(where)
-			.orderBy(shopOrderBy(params.sort), desc(product.id))
-			.limit(perPage)
-			.offset((page - 1) * perPage),
-		db.select({ total: count() }).from(product).where(where)
-	]);
+	// Charger perPage + 1 pour savoir s'il y a une page suivante (évite COUNT coûteux)
+	const rows = await db
+		.select(productCardFields)
+		.from(product)
+		.leftJoin(brand, eq(product.brandId, brand.id))
+		.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
+		.where(where)
+		.orderBy(shopOrderBy(params.sort), desc(product.id))
+		.limit(perPage + 1)
+		.offset((page - 1) * perPage);
 
-	return { rows, total, page, perPage, pageCount: Math.max(1, Math.ceil(total / perPage)) };
+	// S'il y a plus de résultats que demandé, il y a une page suivante
+	const hasNextPage = rows.length > perPage;
+	const items = hasNextPage ? rows.slice(0, perPage) : rows;
+
+	return {
+		rows: items,
+		page,
+		perPage,
+		hasNextPage,
+		// Total estimé basé sur les résultats (pour compatibilité)
+		total: hasNextPage ? (page * perPage) + 1 : (page - 1) * perPage + items.length,
+		pageCount: hasNextPage ? page + 1 : page
+	};
 }
 
 /** Marques actives mises en avant sur l'accueil (celles avec logo d'abord). */
@@ -286,7 +302,7 @@ export async function getShopProduct(id: number) {
 
 	if (!row) return undefined;
 
-	const [media, variants, related, allCats] = await Promise.all([
+	const [media, variants, related, breadcrumb] = await Promise.all([
 		db
 			.select()
 			.from(productMedia)
@@ -305,17 +321,14 @@ export async function getShopProduct(id: number) {
 			.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
 			.where(and(eq(productRelation.fromProductId, id), eq(product.isActive, true)))
 			.orderBy(asc(productRelation.position)),
-		activeCategories()
+		row.categoryId != null ? getCategoryBreadcrumb(row.categoryId) : Promise.resolve([])
 	]);
-
-	const cat = row.categoryId != null ? allCats.find((c) => c.id === row.categoryId) : undefined;
-	const { skipped } = menuLevel(allCats);
 
 	return {
 		...row,
 		media,
 		variants,
 		related,
-		breadcrumb: cat ? ancestorsOf(allCats, cat).filter((c) => !skipped.has(c.id)) : []
+		breadcrumb
 	};
 }
