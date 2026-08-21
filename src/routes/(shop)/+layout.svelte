@@ -4,8 +4,6 @@
 		Badge,
 		Button,
 		Drawer,
-		Dropdown,
-		DropdownItem,
 		Footer,
 		FooterCopyright,
 		Input
@@ -13,7 +11,6 @@
 	import {
 		BarsOutline,
 		CartSolid,
-		ChevronDownOutline,
 		LockSolid,
 		PhoneSolid,
 		SearchOutline,
@@ -21,10 +18,12 @@
 		ToolsOutline,
 		UserCircleOutline
 	} from 'flowbite-svelte-icons';
+	import CategoryMenu from '$lib/components/CategoryMenu.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
 
+	let categoryMenuOpen = $state(false);
 	let mobileMenuOpen = $state(false);
 
 	const categoryHref = (slug: string) => resolve('/(shop)/categorie/[slug]', { slug });
@@ -65,8 +64,17 @@
 			</div>
 		</div>
 
-		<!-- Ligne principale : logo, recherche, panier -->
+		<!-- Ligne principale : bouton catégories, logo, recherche, panier -->
 		<div class="flex w-full flex-wrap items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+			<!-- Bouton "Toutes nos catégories" (desktop) -->
+			<Button
+				class="hidden shrink-0 bg-shop-blue px-6 py-3 text-sm font-bold uppercase focus-within:ring-shop-blue-light hover:bg-shop-blue-dark lg:flex"
+				onclick={() => (categoryMenuOpen = true)}
+			>
+				<BarsOutline class="me-2 h-5 w-5" />
+				Toutes nos catégories
+			</Button>
+
 			<a href={resolve('/')} class="shrink-0">
 				<span class="block text-2xl leading-none font-black tracking-tight text-shop-blue">
 					MECA <span class="text-shop-red">SERVICES</span>
@@ -104,53 +112,22 @@
 			</Button>
 		</div>
 
-		<!-- Barre de navigation catégories (bleu marine, comme l'ancienne boutique) -->
-		<nav class="bg-shop-blue" aria-label="Catégories">
-			<div class="w-full px-4 sm:px-6 lg:px-8">
-				<!-- Mobile : bouton menu -->
+		<!-- Mobile : bouton menu -->
+		<div class="bg-shop-blue lg:hidden">
+			<div class="w-full px-4 sm:px-6">
 				<button
 					type="button"
-					class="flex items-center gap-2 py-3 text-sm font-medium text-white lg:hidden"
+					class="flex items-center gap-2 py-3 text-sm font-medium text-white"
 					onclick={() => (mobileMenuOpen = true)}
 				>
 					<BarsOutline class="h-5 w-5" /> Menu
 				</button>
-
-				<!-- Desktop : catégories racines + sous-catégories en menu déroulant -->
-				<ul class="hidden flex-wrap lg:flex">
-					{#each data.menu as entry (entry.id)}
-						<li>
-							{#if entry.children.length > 0}
-								<button
-									type="button"
-									id="shopnav-{entry.id}"
-									class="flex items-center gap-1 px-4 py-3 text-sm font-medium text-white uppercase hover:bg-shop-blue-light"
-								>
-									{entry.name}
-									<ChevronDownOutline class="h-4 w-4" />
-								</button>
-								<Dropdown simple triggeredBy="#shopnav-{entry.id}" class="min-w-56">
-									<DropdownItem href={categoryHref(entry.slug)} class="font-semibold">
-										Tout « {entry.name} »
-									</DropdownItem>
-									{#each entry.children as child (child.id)}
-										<DropdownItem href={categoryHref(child.slug)}>{child.name}</DropdownItem>
-									{/each}
-								</Dropdown>
-							{:else}
-								<a
-									href={categoryHref(entry.slug)}
-									class="block px-4 py-3 text-sm font-medium text-white uppercase hover:bg-shop-blue-light"
-								>
-									{entry.name}
-								</a>
-							{/if}
-						</li>
-					{/each}
-				</ul>
 			</div>
-		</nav>
+		</div>
 	</header>
+
+	<!-- Menu catégories desktop (style Amazon/KingVert) -->
+	<CategoryMenu menu={data.menu} bind:open={categoryMenuOpen} onClose={() => (categoryMenuOpen = false)} />
 
 	<!-- Menu mobile -->
 	<Drawer bind:open={mobileMenuOpen} placement="left" class="w-72">
