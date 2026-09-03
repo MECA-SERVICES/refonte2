@@ -198,46 +198,18 @@
 							{/each}
 						</div>
 					{:else}
-						<!-- Mode PRODUITS : Cartes visuelles 3 colonnes AVEC images -->
-						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+						<!-- Mode PRODUITS : cartes en 3 colonnes -->
+						<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 							{#each currentChildren as category (category.id)}
 								{@const hasChildren = category.children && category.children.length > 0}
 								<button
 									type="button"
-									class="group flex items-start gap-4 rounded-lg border-2 border-gray-200 bg-white p-4 text-left transition-all hover:border-shop-blue hover:shadow-lg"
+									class="group flex items-center gap-4 rounded-lg border-2 border-gray-200 bg-white p-4 text-left transition-all hover:border-shop-blue hover:shadow-lg"
 									onclick={() =>
 										hasChildren
 											? drillDown(category)
 											: (window.location.href = categoryHref(category.slug))}
 								>
-									<!-- Image produit -->
-									<div
-										class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100"
-									>
-										{#if category.imageUrl}
-											<img
-												src={category.imageUrl}
-												alt={category.name}
-												class="h-full w-full object-contain"
-												loading="lazy"
-											/>
-										{:else}
-											<svg
-												class="h-10 w-10 text-gray-400"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-											>
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="1.5"
-													d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-												></path>
-											</svg>
-										{/if}
-									</div>
-
 									<!-- Nom + chevron -->
 									<div class="flex flex-1 items-center justify-between">
 										<span

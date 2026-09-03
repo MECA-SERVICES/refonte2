@@ -72,7 +72,6 @@ export type ShopMenuChild = {
 	id: number;
 	name: string;
 	slug: string;
-	imageUrl?: string | null;
 	children?: ShopMenuChild[];
 };
 export type ShopMenuEntry = ShopMenuChild & { children: ShopMenuChild[] };
@@ -105,54 +104,15 @@ async function activeCategories() {
 	); // 10 minutes
 }
 
-/** Récupère TOUTES les images de catégories en une seule requête optimisée. */
-async function getCategoryImages(allCategories: Category[]): Promise<Map<number, string>> {
-	const categoryIds = allCategories.map((c) => c.id);
-
-	// Requête optimisée : DISTINCT ON pour avoir 1 image par catégorie
-	const images = await db
-		.selectDistinctOn([product.categoryId], {
-			categoryId: product.categoryId,
-			url: productMedia.url
-		})
-		.from(product)
-		.innerJoin(productMedia, eq(productMedia.productId, product.id))
-		.where(
-			and(
-				eq(product.isActive, true),
-				eq(productMedia.type, 'image'),
-				inArray(product.categoryId, categoryIds)
-			)
-		)
-		.orderBy(product.categoryId, asc(productMedia.position));
-
-	// Créer une Map categoryId -> imageUrl
-	const imageMap = new Map<number, string>();
-	for (const img of images) {
-		if (img.categoryId) {
-			imageMap.set(img.categoryId, img.url);
-		}
-	}
-
-	return imageMap;
-}
-
-/** Construit récursivement l'arborescence complète des catégories avec images */
-function buildCategoryTree(
-	rows: Category[],
-	imageMap: Map<number, string>,
-	parentId: number | null = null,
-	depth: number = 0
-): ShopMenuChild[] {
+/** Construit récursivement l'arborescence complète des catégories. */
+function buildCategoryTree(rows: Category[], parentId: number | null = null): ShopMenuChild[] {
 	const children = rows.filter((c) => c.parentId === parentId);
 
 	return children.map((cat) => ({
 		id: cat.id,
 		name: cat.name,
 		slug: cat.slug,
-		// Charger les images à tous les niveaux (sauf racine depth 0)
-		imageUrl: depth > 0 ? (imageMap.get(cat.id) ?? null) : null,
-		children: buildCategoryTree(rows, imageMap, cat.id, depth + 1)
+		children: buildCategoryTree(rows, cat.id)
 	}));
 }
 
@@ -162,7 +122,6 @@ export async function getShopMenu(): Promise<ShopMenuEntry[]> {
 		'shop-menu',
 		async () => {
 			const rows = await activeCategories(); // Utilise le cache
-			const imageMap = await getCategoryImages(rows); // UNE SEULE requête pour toutes les images
 
 			const { level } = menuLevel(rows);
 			// Construire l'arbre complet pour chaque catégorie racine
@@ -170,8 +129,7 @@ export async function getShopMenu(): Promise<ShopMenuEntry[]> {
 				id: root.id,
 				name: root.name,
 				slug: root.slug,
-				imageUrl: null, // Pas d'images pour les catégories racines
-				children: buildCategoryTree(rows, imageMap, root.id, 1) // depth = 1 pour les enfants
+				children: buildCategoryTree(rows, root.id)
 			}));
 		},
 		600
