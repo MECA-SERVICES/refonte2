@@ -11,6 +11,7 @@
 	} from 'flowbite-svelte';
 	import { SortOutline, CaretUpSolid, CaretDownSolid } from 'flowbite-svelte-icons';
 	import { goto } from '$app/navigation';
+	import type { Pathname } from '$app/types';
 	import type { Snippet } from 'svelte';
 
 	type SelectOption = { value: string; name: string };
@@ -39,7 +40,7 @@
 		rows: Row[];
 		columns: Column<Row>[];
 		/** Chemin de base pour la navigation, ex. "/admin/customers". */
-		basePath: string;
+		basePath: Pathname;
 		/** État courant depuis l'URL : filtres, tri, direction (+ paramètres à conserver). */
 		params: {
 			filters: Record<string, string>;
@@ -48,7 +49,7 @@
 			extra?: Record<string, string>;
 		};
 		emptyMessage?: string;
-		rowHref?: (row: Row) => string;
+		rowHref?: (row: Row) => Pathname;
 		debounceMs?: number;
 	} = $props();
 
@@ -57,39 +58,64 @@
 
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
-	/** Construit l'URL cible à partir des filtres non vides + tri courant. */
-	function buildUrl(next: { sort?: string; dir?: string }): string {
-		const search = new URLSearchParams();
+	/**
+	 * Construit le chemin cible à partir des filtres non vides et du tri courant.
+	 *
+	 * Les chemins portent une query string : `resolve()` n'accepte que des
+	 * identifiants de route littéraux, et l'application ne définit pas de
+	 * `paths.base` — il n'y a donc rien à préfixer.
+	 */
+	function buildUrl(next: { sort?: string; dir?: string }): Pathname {
+		// Paires clé/valeur assemblées à la main : la query string est construite
+		// puis consommée immédiatement, sans lecture réactive.
+		const pairs: [string, string][] = [];
 		for (const [key, value] of Object.entries(params.extra ?? {})) {
-			if (value) search.set(key, value);
+			if (value) pairs.push([key, value]);
 		}
 		for (const [key, value] of Object.entries(filterValues)) {
-			if (value.trim()) search.set(`f_${key}`, value.trim());
+			if (value.trim()) pairs.push([`f_${key}`, value.trim()]);
 		}
 		const sort = next.sort ?? params.sort;
 		const dir = next.dir ?? params.dir;
 		if (sort) {
-			search.set('sort', sort);
-			search.set('dir', dir);
+			pairs.push(['sort', sort]);
+			pairs.push(['dir', dir]);
 		}
-		const qs = search.toString();
-		return qs ? `${basePath}?${qs}` : basePath;
+		const qs = pairs.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+		return (qs ? `${basePath}?${qs}` : basePath) as Pathname;
 	}
 
 	function onFilterInput(filterKey: string, e: Event) {
 		const value = (e.currentTarget as HTMLInputElement).value;
 		filterValues[filterKey] = value;
 		clearTimeout(timer);
+		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
+		// de route littéraux, et l'application ne définit pas de `paths.base`.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		timer = setTimeout(() => goto(buildUrl({}), { keepFocus: true, noScroll: true }), debounceMs);
 	}
 
 	function onFilterSelect(filterKey: string, e: Event) {
 		filterValues[filterKey] = (e.currentTarget as HTMLSelectElement).value;
+		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
+		// de route littéraux, et l'application ne définit pas de `paths.base`.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(buildUrl({}), { keepFocus: true, noScroll: true });
+	}
+
+	/** Navigue vers la fiche de la ligne cliquée, si `rowHref` est fourni. */
+	function openRow(row: Row) {
+		if (!rowHref) return;
+		// Chemin déjà complet, sans `paths.base` à préfixer : voir la note de `buildUrl`.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto(rowHref(row));
 	}
 
 	function toggleSort(sortKey: string) {
 		const dir = params.sort === sortKey && params.dir === 'asc' ? 'desc' : 'asc';
+		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
+		// de route littéraux, et l'application ne définit pas de `paths.base`.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(buildUrl({ sort: sortKey, dir }), { keepFocus: true, noScroll: true });
 	}
 </script>
@@ -158,7 +184,7 @@
 			{#each rows as row (row.id)}
 				<TableBodyRow
 					class={rowHref ? 'cursor-pointer' : ''}
-					onclick={rowHref ? () => goto(rowHref(row)) : undefined}
+					onclick={rowHref ? () => openRow(row) : undefined}
 				>
 					{#each columns as col (col.key)}
 						<TableBodyCell>

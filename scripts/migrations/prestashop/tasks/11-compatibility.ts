@@ -105,11 +105,7 @@ const STRUCTURAL_NODES = new Set([
 ]);
 
 export function isStructural(name: string): boolean {
-	const normalized = (name ?? '')
-		.normalize('NFD')
-		.replace(/[̀-ͯ]/g, '')
-		.toUpperCase()
-		.trim();
+	const normalized = (name ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
 	return STRUCTURAL_NODES.has(normalized);
 }
 

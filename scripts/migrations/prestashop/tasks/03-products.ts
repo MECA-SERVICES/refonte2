@@ -189,9 +189,7 @@ export const productsTask: Task = {
 
 				// Catégorie source conservée telle quelle : elle sera résolue sur
 				// l'arbre propre par `product-taxonomy` / `reclassify`.
-				const legacyCategoryId = r.id_category_default
-					? Number(r.id_category_default)
-					: null;
+				const legacyCategoryId = r.id_category_default ? Number(r.id_category_default) : null;
 				if (legacyCategoryId === null) withoutCategory++;
 
 				const brandId = r.id_manufacturer
@@ -266,7 +264,9 @@ export const productsTask: Task = {
 		log.info(
 			`sans catégorie source : ${count(withoutCategory)} (${pct(withoutCategory)} %) — attendu ≈ 13`
 		);
-		log.info(`sans marque           : ${count(withoutBrand)} (${pct(withoutBrand)} %) — cible < 1 %`);
+		log.info(
+			`sans marque           : ${count(withoutBrand)} (${pct(withoutBrand)} %) — cible < 1 %`
+		);
 
 		return {
 			processed: dryRun ? 0 : inserted,

@@ -5,6 +5,15 @@
 
 import postgres from 'postgres';
 
+/** Erreur renvoyée par Postgres : le code SQLSTATE permet de distinguer les cas. */
+function asPgError(err: unknown): { code?: string; message: string } {
+	const e = err as { code?: unknown; message?: unknown };
+	return {
+		code: typeof e?.code === 'string' ? e.code : undefined,
+		message: typeof e?.message === 'string' ? e.message : String(err)
+	};
+}
+
 const sql = postgres(process.env.DATABASE_URL!, {
 	max: 1,
 	onnotice: () => {} // Ignorer les NOTICE
@@ -43,11 +52,12 @@ for (const idx of indexes) {
 		await sql.unsafe(idx.sql);
 		const duration = ((Date.now() - start) / 1000).toFixed(1);
 		console.log(`✓ ${idx.name} créé en ${duration}s\n`);
-	} catch (err: any) {
-		if (err.code === '42P07') {
+	} catch (err: unknown) {
+		const pgError = asPgError(err);
+		if (pgError.code === '42P07') {
 			console.log(`  → Index déjà existant, skipped\n`);
 		} else {
-			console.error(`✗ Erreur: ${err.message}\n`);
+			console.error(`✗ Erreur: ${pgError.message}\n`);
 			throw err;
 		}
 	}

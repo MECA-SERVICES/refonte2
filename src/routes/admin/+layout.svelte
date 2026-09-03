@@ -66,7 +66,7 @@
 
 	async function logout() {
 		await authClient.signOut();
-		await goto('/admin/login');
+		await goto(resolve('/admin/login'));
 	}
 
 	const itemIconClass = 'h-5 w-5 shrink-0 text-gray-400 group-hover:text-white';

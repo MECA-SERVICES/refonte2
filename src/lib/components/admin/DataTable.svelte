@@ -11,6 +11,7 @@
 	} from 'flowbite-svelte';
 	import { SearchOutline } from 'flowbite-svelte-icons';
 	import { goto } from '$app/navigation';
+	import type { Pathname } from '$app/types';
 	import type { Snippet } from 'svelte';
 
 	type Column<R> = {
@@ -34,12 +35,20 @@
 		searchPlaceholder?: string;
 		onsearch?: (value: string) => void;
 		emptyMessage?: string;
-		rowHref?: (row: Row) => string;
+		rowHref?: (row: Row) => Pathname;
 	} = $props();
 
 	function submitSearch(e: SubmitEvent) {
 		e.preventDefault();
 		onsearch?.(search);
+	}
+
+	/** Navigue vers la fiche de la ligne cliquée, si `rowHref` est fourni. */
+	function openRow(row: Row) {
+		if (!rowHref) return;
+		// Chemin déjà complet, sans `paths.base` à préfixer : voir la note de `buildUrl`.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto(rowHref(row));
 	}
 </script>
 
@@ -72,7 +81,7 @@
 				{#each rows as row (row.id)}
 					<TableBodyRow
 						class={rowHref ? 'cursor-pointer' : ''}
-						onclick={rowHref ? () => goto(rowHref(row)) : undefined}
+						onclick={rowHref ? () => openRow(row) : undefined}
 					>
 						{#each columns as col (col.key)}
 							<TableBodyCell>

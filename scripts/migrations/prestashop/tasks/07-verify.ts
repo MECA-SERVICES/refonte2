@@ -193,7 +193,10 @@ export const verifyTask: Task = {
 				value:
 					brandCategories.length === 0
 						? 'aucune'
-						: brandCategories.map((c) => c.name).join(', ').slice(0, 60),
+						: brandCategories
+								.map((c) => c.name)
+								.join(', ')
+								.slice(0, 60),
 				expected: '0',
 				// Celui-ci est bloquant sans condition : une marque en catégorie
 				// signifie que l'arbre sale est revenu.

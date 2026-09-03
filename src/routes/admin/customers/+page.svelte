@@ -7,7 +7,8 @@
 		Pagination,
 		StatusBadge,
 		CUSTOMER_TYPE_BADGES,
-		CUSTOMER_STATUS_BADGES
+		CUSTOMER_STATUS_BADGES,
+		listPageHref
 	} from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
@@ -33,16 +34,11 @@
 
 	/** Conserve les filtres/tri courants dans les liens de pagination. */
 	function pageHref(p: number) {
-		const search = new URLSearchParams();
-		for (const [key, value] of Object.entries(data.filters)) {
-			if (value) search.set(`f_${key}`, value);
-		}
-		if (data.sort) {
-			search.set('sort', data.sort);
-			search.set('dir', data.dir);
-		}
-		search.set('page', String(p));
-		return `/admin/customers?${search.toString()}`;
+		return listPageHref(
+			'/admin/customers',
+			{ filters: data.filters, sort: data.sort, dir: data.dir },
+			p
+		);
 	}
 </script>
 

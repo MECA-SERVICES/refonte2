@@ -129,9 +129,7 @@ export const productTaxonomyTask: Task = {
 
 		// Les nœuds vides ne sont pas repris : le §7 contrôle n°4 exige zéro
 		// catégorie vide visible, et la source en compte 93 %.
-		const kept = rows.filter(
-			(r) => !excluded.has(Number(r.id_category)) && Number(r.total) > 0
-		);
+		const kept = rows.filter((r) => !excluded.has(Number(r.id_category)) && Number(r.total) > 0);
 		log.muted(`${count(kept.length)} catégories retenues (non vides, hors marques)`);
 
 		// --- Idempotence ---

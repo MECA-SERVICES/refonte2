@@ -12,9 +12,13 @@
 
 	let { menu, open = $bindable(), onClose }: CategoryMenuProps = $props();
 
-	// Navigation en profondeur
+	// Navigation en profondeur : seule la pile est un état, le niveau affiché s'en
+	// déduit. Cela évite de recopier `menu` dans un état local, qui n'aurait
+	// capturé que sa valeur initiale.
 	let navigationStack = $state<ShopMenuChild[]>([]);
-	let currentChildren = $state<ShopMenuChild[]>(menu);
+	const currentChildren = $derived(
+		navigationStack.length > 0 ? (navigationStack[navigationStack.length - 1].children ?? []) : menu
+	);
 
 	const categoryHref = (slug: string) => resolve('/(shop)/categorie/[slug]', { slug });
 
@@ -27,23 +31,17 @@
 	function drillDown(category: ShopMenuChild) {
 		if (category.children && category.children.length > 0) {
 			navigationStack = [...navigationStack, category];
-			currentChildren = category.children;
 		}
 	}
 
 	// Navigation : remonter d'un niveau
 	function goBack() {
 		navigationStack = navigationStack.slice(0, -1);
-		currentChildren =
-			navigationStack.length > 0
-				? navigationStack[navigationStack.length - 1].children || []
-				: menu;
 	}
 
 	// Réinitialise la navigation quand le menu se ferme
 	function handleClose() {
 		navigationStack = [];
-		currentChildren = menu;
 		onClose();
 	}
 
@@ -61,7 +59,7 @@
 		{child.name}
 	</a>
 	{#if child.children && child.children.length > 0}
-		<ul class="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 pl-3">
+		<ul class="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-3">
 			{#each child.children as subChild (subChild.id)}
 				<li>
 					{@render categoryItem(subChild, level + 1)}
@@ -82,7 +80,9 @@
 
 	<!-- Sidebar LARGE avec 2 colonnes -->
 	<div
-		class="fixed left-0 top-0 z-50 flex h-screen bg-white shadow-2xl {navigationStack.length === 0 ? 'w-80' : 'w-full lg:w-[90vw] xl:w-[1200px]'}"
+		class="fixed top-0 left-0 z-50 flex h-screen bg-white shadow-2xl {navigationStack.length === 0
+			? 'w-80'
+			: 'w-full lg:w-[90vw] xl:w-[1200px]'}"
 		transition:fly={{ x: -1200, duration: 400, easing: quintOut }}
 	>
 		<!-- COLONNE GAUCHE FIXE : Catégories racines -->
@@ -107,7 +107,6 @@
 								onclick={() => {
 									if (hasChildren) {
 										navigationStack = [category];
-										currentChildren = category.children;
 									} else {
 										window.location.href = categoryHref(category.slug);
 									}
@@ -190,77 +189,84 @@
 				<!-- Contenu -->
 				<div class="h-[calc(100vh-81px)] flex-1 overflow-y-auto p-8">
 					{#if isPiecesCategory(navigationStack[0].name)}
-					<!-- Mode PIÈCES DÉTACHÉES : Liste complète déroulée en 2 colonnes -->
-					<div class="columns-2 gap-8">
-						{#each currentChildren as category (category.id)}
-							<div class="mb-4 break-inside-avoid">
-								{@render categoryItem(category, 0)}
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<!-- Mode PRODUITS : Cartes visuelles 3 colonnes AVEC images -->
-					<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-						{#each currentChildren as category (category.id)}
-							{@const hasChildren = category.children && category.children.length > 0}
-							<button
-								type="button"
-								class="group flex items-start gap-4 rounded-lg border-2 border-gray-200 bg-white p-4 text-left transition-all hover:border-shop-blue hover:shadow-lg"
-								onclick={() => (hasChildren ? drillDown(category) : (window.location.href = categoryHref(category.slug)))}
-							>
-								<!-- Image produit -->
-								<div class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
-									{#if category.imageUrl}
-										<img
-											src={category.imageUrl}
-											alt={category.name}
-											class="h-full w-full object-contain"
-											loading="lazy"
-										/>
-									{:else}
-										<svg
-											class="h-10 w-10 text-gray-400"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="1.5"
-												d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-											></path>
-										</svg>
-									{/if}
+						<!-- Mode PIÈCES DÉTACHÉES : Liste complète déroulée en 2 colonnes -->
+						<div class="columns-2 gap-8">
+							{#each currentChildren as category (category.id)}
+								<div class="mb-4 break-inside-avoid">
+									{@render categoryItem(category, 0)}
 								</div>
+							{/each}
+						</div>
+					{:else}
+						<!-- Mode PRODUITS : Cartes visuelles 3 colonnes AVEC images -->
+						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+							{#each currentChildren as category (category.id)}
+								{@const hasChildren = category.children && category.children.length > 0}
+								<button
+									type="button"
+									class="group flex items-start gap-4 rounded-lg border-2 border-gray-200 bg-white p-4 text-left transition-all hover:border-shop-blue hover:shadow-lg"
+									onclick={() =>
+										hasChildren
+											? drillDown(category)
+											: (window.location.href = categoryHref(category.slug))}
+								>
+									<!-- Image produit -->
+									<div
+										class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100"
+									>
+										{#if category.imageUrl}
+											<img
+												src={category.imageUrl}
+												alt={category.name}
+												class="h-full w-full object-contain"
+												loading="lazy"
+											/>
+										{:else}
+											<svg
+												class="h-10 w-10 text-gray-400"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="1.5"
+													d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+												></path>
+											</svg>
+										{/if}
+									</div>
 
-								<!-- Nom + chevron -->
-								<div class="flex flex-1 items-center justify-between">
-									<span class="font-semibold text-gray-900 transition-colors group-hover:text-shop-blue">
-										{category.name}
-									</span>
-									{#if hasChildren}
-										<svg
-											class="h-5 w-5 text-gray-400 transition-all group-hover:translate-x-1 group-hover:text-shop-blue"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
+									<!-- Nom + chevron -->
+									<div class="flex flex-1 items-center justify-between">
+										<span
+											class="font-semibold text-gray-900 transition-colors group-hover:text-shop-blue"
 										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M9 5l7 7-7 7"
-											></path>
-										</svg>
-									{/if}
-								</div>
-							</button>
-						{/each}
-					</div>
-				{/if}
+											{category.name}
+										</span>
+										{#if hasChildren}
+											<svg
+												class="h-5 w-5 text-gray-400 transition-all group-hover:translate-x-1 group-hover:text-shop-blue"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M9 5l7 7-7 7"
+												></path>
+											</svg>
+										{/if}
+									</div>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
 			</div>
-		</div>
 		{/if}
 	</div>
 {/if}

@@ -2,7 +2,13 @@
 	import { Button, Select, Badge } from 'flowbite-svelte';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { PageHeader, DataTable, StatusBadge, ROLE_BADGES } from '$lib/components/admin';
+	import {
+		PageHeader,
+		DataTable,
+		StatusBadge,
+		ROLE_BADGES,
+		listFilterHref
+	} from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -17,9 +23,10 @@
 	];
 
 	function runSearch(value: string) {
-		const params = new URLSearchParams();
-		if (value) params.set('q', value);
-		goto(`/admin/team?${params.toString()}`);
+		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
+		// de route littéraux, et l'application ne définit pas de `paths.base`.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto(listFilterHref('/admin/team', [['q', value]]));
 	}
 </script>
 

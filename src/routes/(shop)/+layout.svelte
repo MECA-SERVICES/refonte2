@@ -1,13 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import {
-		Badge,
-		Button,
-		Drawer,
-		Footer,
-		FooterCopyright,
-		Input
-	} from 'flowbite-svelte';
+	import { Badge, Button, Drawer, Footer, FooterCopyright, Input } from 'flowbite-svelte';
 	import {
 		BarsOutline,
 		CartSolid,
@@ -127,7 +120,11 @@
 	</header>
 
 	<!-- Menu catégories desktop (style Amazon/KingVert) -->
-	<CategoryMenu menu={data.menu} bind:open={categoryMenuOpen} onClose={() => (categoryMenuOpen = false)} />
+	<CategoryMenu
+		menu={data.menu}
+		bind:open={categoryMenuOpen}
+		onClose={() => (categoryMenuOpen = false)}
+	/>
 
 	<!-- Menu mobile -->
 	<Drawer bind:open={mobileMenuOpen} placement="left" class="w-72">

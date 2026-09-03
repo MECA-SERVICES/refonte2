@@ -356,7 +356,9 @@ export const productMedia = pgTable(
 		index('product_media_product_idx').on(t.productId),
 		// Contrainte unique pour ON CONFLICT lors de la migration (idempotence)
 		// Doit être un uniqueIndex (partial) car legacy_ps_id peut être NULL pour les médias créés après migration
-		uniqueIndex('product_media_legacy_unique_idx').on(t.legacyPsId).where(sql`legacy_ps_id IS NOT NULL`)
+		uniqueIndex('product_media_legacy_unique_idx')
+			.on(t.legacyPsId)
+			.where(sql`legacy_ps_id IS NOT NULL`)
 	]
 );
 

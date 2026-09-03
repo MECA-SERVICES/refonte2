@@ -254,9 +254,7 @@ export const purgeTask: Task = {
 				continue;
 			}
 
-			await sql.unsafe(
-				`SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), 1, false)`
-			);
+			await sql.unsafe(`SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), 1, false)`);
 		}
 
 		// --- Garde-fou : les tables protégées ont-elles survécu ? ---
@@ -289,9 +287,7 @@ export const purgeTask: Task = {
 						'Le back-office serait inaccessible — vérifier immédiatement.'
 				);
 			}
-			log.success(
-				`${count(Number(u.n))} comptes conservés, dont ${count(Number(a.n))} admin(s)`
-			);
+			log.success(`${count(Number(u.n))} comptes conservés, dont ${count(Number(a.n))} admin(s)`);
 		}
 
 		log.info(`${count(total)} lignes supprimées, séquences réinitialisées.`);

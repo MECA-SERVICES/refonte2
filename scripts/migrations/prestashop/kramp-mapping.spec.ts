@@ -40,10 +40,7 @@ describe('cibles du mapping', () => {
 	});
 
 	it('ont toutes exactement trois niveaux', () => {
-		for (const path of [
-			...Object.values(KRAMP_SUBFAMILY_MAP),
-			...Object.values(KRAMP_LEAF_MAP)
-		]) {
+		for (const path of [...Object.values(KRAMP_SUBFAMILY_MAP), ...Object.values(KRAMP_LEAF_MAP)]) {
 			expect(() => splitTarget(path), `« ${path} »`).not.toThrow();
 		}
 	});

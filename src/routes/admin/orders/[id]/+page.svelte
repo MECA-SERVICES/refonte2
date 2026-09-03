@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import {
 		Button,
 		Card,
@@ -164,7 +165,10 @@
 					{o.customer.lastName}
 				</p>
 				<p class="text-sm text-gray-500 dark:text-gray-400">{o.customer.email}</p>
-				<a href="/admin/customers/{o.customer.id}" class="mt-2 inline-block text-sm text-cyan-600">
+				<a
+					href={resolve('/admin/customers/[id]', { id: String(o.customer.id) })}
+					class="mt-2 inline-block text-sm text-cyan-600"
+				>
 					Voir la fiche client
 				</a>
 			{:else}

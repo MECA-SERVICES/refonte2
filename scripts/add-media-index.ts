@@ -6,6 +6,15 @@
 import postgres from 'postgres';
 import { config } from 'dotenv';
 
+/** Erreur renvoyée par Postgres : le code SQLSTATE permet de distinguer les cas. */
+function asPgError(err: unknown): { code?: string; message: string } {
+	const e = err as { code?: unknown; message?: unknown };
+	return {
+		code: typeof e?.code === 'string' ? e.code : undefined,
+		message: typeof e?.message === 'string' ? e.message : String(err)
+	};
+}
+
 config({ path: '.env.local' });
 
 if (!process.env.DATABASE_URL) {
@@ -25,7 +34,7 @@ const index = {
 	desc: 'Images produits triées par position (menu catégories)'
 };
 
-console.log('📊 Création de l\'index pour les images de menu...\n');
+console.log("📊 Création de l'index pour les images de menu...\n");
 console.log(`⏳ ${index.desc} (${index.name})...`);
 
 const start = Date.now();
@@ -34,11 +43,12 @@ try {
 	await sql.unsafe(index.sql);
 	const duration = ((Date.now() - start) / 1000).toFixed(1);
 	console.log(`✓ ${index.name} créé en ${duration}s\n`);
-} catch (err: any) {
-	if (err.code === '42P07') {
+} catch (err: unknown) {
+	const pgError = asPgError(err);
+	if (pgError.code === '42P07') {
 		console.log(`  → Index déjà existant, skipped\n`);
 	} else {
-		console.error(`✗ Erreur: ${err.message}\n`);
+		console.error(`✗ Erreur: ${pgError.message}\n`);
 		throw err;
 	}
 }

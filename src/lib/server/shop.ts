@@ -9,7 +9,7 @@ import {
 	productVariant,
 	taxRule
 } from '$lib/server/db/schema';
-import { and, asc, count, desc, eq, exists, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type { Category } from '$lib/server/db/catalog.schema';
 import { cached } from './cache';
 
@@ -96,9 +96,13 @@ function menuLevel<T extends { id: number; parentId: number | null }>(rows: T[])
 
 /** Toutes les catégories actives (une seule requête, table de petite taille). */
 async function activeCategories() {
-	return cached('active-categories', async () => {
-		return db.select().from(category).where(eq(category.isActive, true));
-	}, 600); // 10 minutes
+	return cached(
+		'active-categories',
+		async () => {
+			return db.select().from(category).where(eq(category.isActive, true));
+		},
+		600
+	); // 10 minutes
 }
 
 /** Récupère TOUTES les images de catégories en une seule requête optimisée. */
@@ -154,20 +158,24 @@ function buildCategoryTree(
 
 /** Catégories de navigation actives + TOUTE leur arborescence (multi-niveaux). */
 export async function getShopMenu(): Promise<ShopMenuEntry[]> {
-	return cached('shop-menu', async () => {
-		const rows = await activeCategories(); // Utilise le cache
-		const imageMap = await getCategoryImages(rows); // UNE SEULE requête pour toutes les images
+	return cached(
+		'shop-menu',
+		async () => {
+			const rows = await activeCategories(); // Utilise le cache
+			const imageMap = await getCategoryImages(rows); // UNE SEULE requête pour toutes les images
 
-		const { level } = menuLevel(rows);
-		// Construire l'arbre complet pour chaque catégorie racine
-		return level.map((root) => ({
-			id: root.id,
-			name: root.name,
-			slug: root.slug,
-			imageUrl: null, // Pas d'images pour les catégories racines
-			children: buildCategoryTree(rows, imageMap, root.id, 1) // depth = 1 pour les enfants
-		}));
-	}, 600); // 10 minutes
+			const { level } = menuLevel(rows);
+			// Construire l'arbre complet pour chaque catégorie racine
+			return level.map((root) => ({
+				id: root.id,
+				name: root.name,
+				slug: root.slug,
+				imageUrl: null, // Pas d'images pour les catégories racines
+				children: buildCategoryTree(rows, imageMap, root.id, 1) // depth = 1 pour les enfants
+			}));
+		},
+		600
+	); // 10 minutes
 }
 
 /** Ids d'une catégorie et de toute sa descendance (parcours en mémoire). */
@@ -295,7 +303,7 @@ export async function listShopProducts(params: ShopListParams = {}) {
 		perPage,
 		hasNextPage,
 		// Total estimé basé sur les résultats (pour compatibilité)
-		total: hasNextPage ? (page * perPage) + 1 : (page - 1) * perPage + items.length,
+		total: hasNextPage ? page * perPage + 1 : (page - 1) * perPage + items.length,
 		pageCount: hasNextPage ? page + 1 : page
 	};
 }

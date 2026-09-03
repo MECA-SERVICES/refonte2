@@ -61,10 +61,10 @@ export const KRAMP_SUBFAMILY_MAP: Record<string, string> = {
 	// « Entraînement » couvre roulements, cardans, chaînes et courroies : on
 	// vise le nœud le plus général de la transmission, le premier mot
 	// affinera quand il le peut.
-	'Entraînement': 'Transmission > Arbres & cardans > Arbres',
+	Entraînement: 'Transmission > Arbres & cardans > Arbres',
 
 	// ── Électrique ─────────────────────────────────────────────────────────
-	'Électronique': 'Électrique > Câblage > Câbles',
+	Électronique: 'Électrique > Câblage > Câbles',
 	'Électronique embarquée': 'Électrique > Câblage > Faisceaux',
 
 	// ── Coupe & usure ──────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ export const KRAMP_SUBFAMILY_MAP: Record<string, string> = {
 	'Fertilisation & lisier': 'Réservoirs & contenants > Réservoirs > Réservoirs & cuves',
 
 	// ── Refroidissement / éclairage ────────────────────────────────────────
-	'Éclairage': 'Électrique > Éclairage > Phares & feux',
+	Éclairage: 'Électrique > Éclairage > Phares & feux',
 
 	// ── Outillage à main ───────────────────────────────────────────────────
 	// Le plus gros reliquat mesuré (17 346 produits) : CLE(3853),
@@ -136,7 +136,7 @@ export const KRAMP_LEAF_MAP: Record<string, string> = {
 	'Batteries et accessoires': 'Électrique > Énergie > Batteries',
 	'Composants électriques d’atelier': 'Électrique > Câblage > Câbles',
 	"Composants électriques d'atelier": 'Électrique > Câblage > Câbles',
-	'Éclairages': 'Électrique > Éclairage > Phares & feux',
+	Éclairages: 'Électrique > Éclairage > Phares & feux',
 	Charrues: 'Coupe & usure > Dents & socs > Socs',
 	Cultivateurs: 'Coupe & usure > Dents & socs > Dents',
 	Herses: 'Coupe & usure > Dents & socs > Dents',

@@ -1,3 +1,5 @@
+import type { Pathname } from '$app/types';
+
 export { default as PageHeader } from './PageHeader.svelte';
 export { default as DataTable } from './DataTable.svelte';
 export { default as FilterableTable } from './FilterableTable.svelte';
@@ -19,11 +21,32 @@ export { default as ProductMediaGrid } from './ProductMediaGrid.svelte';
 export { default as CategoryPicker } from './CategoryPicker.svelte';
 
 /**
+ * Assemble une query string à partir de paires clé/valeur, en ignorant les
+ * valeurs vides.
+ *
+ * Construite à la main plutôt qu'avec `URLSearchParams` : la valeur est
+ * consommée immédiatement, jamais relue de façon réactive, et l'usage de
+ * `URLSearchParams` dans un composant Svelte est signalé comme source de bugs
+ * de réactivité.
+ */
+function toQueryString(pairs: [string, string | number | null | undefined][]): string {
+	return pairs
+		.filter(([, value]) => value !== null && value !== undefined && String(value) !== '')
+		.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+		.join('&');
+}
+
+/** Concatène un chemin et une query string, en omettant le `?` si elle est vide. */
+export function withQuery(basePath: Pathname, query: string): Pathname {
+	return (query ? `${basePath}?${query}` : basePath) as Pathname;
+}
+
+/**
  * Construit un lien de pagination qui conserve les filtres et le tri courants.
  * Utilisé par toutes les pages liste de l'admin.
  */
 export function listPageHref(
-	basePath: string,
+	basePath: Pathname,
 	state: {
 		filters: Record<string, string>;
 		sort: string;
@@ -31,20 +54,27 @@ export function listPageHref(
 		extra?: Record<string, string>;
 	},
 	page: number
-): string {
-	const search = new URLSearchParams();
-	for (const [key, value] of Object.entries(state.extra ?? {})) {
-		if (value) search.set(key, value);
-	}
-	for (const [key, value] of Object.entries(state.filters)) {
-		if (value) search.set(`f_${key}`, value);
-	}
+): Pathname {
+	const pairs: [string, string | number][] = [];
+	for (const [key, value] of Object.entries(state.extra ?? {})) pairs.push([key, value]);
+	for (const [key, value] of Object.entries(state.filters)) pairs.push([`f_${key}`, value]);
 	if (state.sort) {
-		search.set('sort', state.sort);
-		search.set('dir', state.dir);
+		pairs.push(['sort', state.sort]);
+		pairs.push(['dir', state.dir]);
 	}
-	search.set('page', String(page));
-	return `${basePath}?${search.toString()}`;
+	pairs.push(['page', page]);
+	return withQuery(basePath, toQueryString(pairs));
+}
+
+/**
+ * Construit un lien de liste filtré sur un seul critère, en repartant de zéro.
+ * Utilisé par les raccourcis de filtrage (tuiles de statistiques, recherche).
+ */
+export function listFilterHref(
+	basePath: Pathname,
+	pairs: [string, string | number | null | undefined][]
+): Pathname {
+	return withQuery(basePath, toQueryString(pairs));
 }
 
 type BadgeColor = 'gray' | 'green' | 'yellow' | 'red' | 'blue' | 'indigo' | 'purple';

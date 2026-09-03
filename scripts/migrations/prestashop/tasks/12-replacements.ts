@@ -44,10 +44,7 @@ export function parseReplacement(name: string): string | null {
 
 	// Normalisation : accents et casse varient d'un import à l'autre
 	// (`Remplacé Par`, `REMPLACE PAR`, `REMPLACÉ PAR`).
-	const normalized = raw
-		.normalize('NFD')
-		.replace(/[̀-ͯ]/g, '')
-		.toUpperCase();
+	const normalized = raw.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
 
 	const match = normalized.match(/^REMPLACE(?:E)?\s+PAR\s+(.+)$/);
 	if (!match) return null;

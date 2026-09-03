@@ -4,7 +4,8 @@
 		FilterableTable,
 		Pagination,
 		StateBadge,
-		listPageHref
+		listPageHref,
+		listFilterHref
 	} from '$lib/components/admin';
 	import { goto } from '$app/navigation';
 	import type { PageProps } from './$types';
@@ -18,21 +19,23 @@
 	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' });
 
 	function filterByState(id: number | null) {
-		const params = new URLSearchParams();
-		if (id) params.set('state', String(id));
-		goto(`/admin/orders?${params.toString()}`);
+		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
+		// de route littéraux, et l'application ne définit pas de `paths.base`.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto(listFilterHref('/admin/orders', [['state', id]]));
 	}
 
 	function pageHref(p: number) {
-		const params = new URLSearchParams();
-		for (const [k, v] of Object.entries(data.filters)) if (v) params.set(`f_${k}`, v);
-		if (data.stateId) params.set('state', String(data.stateId));
-		if (data.sort) {
-			params.set('sort', data.sort);
-			params.set('dir', data.dir);
-		}
-		params.set('page', String(p));
-		return `/admin/orders?${params.toString()}`;
+		return listPageHref(
+			'/admin/orders',
+			{
+				filters: data.filters,
+				sort: data.sort,
+				dir: data.dir,
+				extra: data.stateId ? { state: String(data.stateId) } : undefined
+			},
+			p
+		);
 	}
 </script>
 
