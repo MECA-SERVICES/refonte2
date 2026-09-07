@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Button, Input, Label } from 'flowbite-svelte';
+	import { Input, Label } from 'flowbite-svelte';
+	import ShopButton from '$lib/components/shop/ShopButton.svelte';
+	import Heading from '$lib/components/shop/Heading.svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import Panel from '$lib/components/shop/Panel.svelte';
 	import type { PageProps } from './$types';
@@ -17,7 +19,7 @@
 <div class="mx-auto grid max-w-4xl gap-8 md:grid-cols-2 md:gap-10">
 	<!-- ================= Connexion ================= -->
 	<Panel padded={false} class="p-6 sm:p-8">
-		<h1 class="font-display text-xl font-extrabold tracking-tight text-shop-ink">Je me connecte</h1>
+		<Heading as="h1" size="section" class="text-xl sm:text-xl">Je me connecte</Heading>
 		<p class="mt-1 text-sm text-shop-muted">Accédez à votre compte et à vos commandes.</p>
 
 		{#if form?.message}
@@ -39,6 +41,8 @@
 					required
 					value={form?.email ?? ''}
 					placeholder="vous@exemple.fr"
+					class="rounded-none"
+					wrapperClass="rounded-none"
 				/>
 			</div>
 
@@ -50,10 +54,12 @@
 					type="password"
 					autocomplete="current-password"
 					required
+					class="rounded-none"
+					wrapperClass="rounded-none"
 				/>
 			</div>
 
-			<Button type="submit" size="lg" class="w-full">Se connecter</Button>
+			<ShopButton type="submit" size="lg" block>Se connecter</ShopButton>
 		</form>
 
 		<p class="mt-4 text-xs text-shop-muted">
@@ -67,9 +73,7 @@
 
 	<!-- ================= Création de compte ================= -->
 	<Panel padded={false} class="p-6 sm:p-8">
-		<h2 class="font-display text-xl font-extrabold tracking-tight text-shop-ink">
-			Je crée mon compte
-		</h2>
+		<Heading size="section" class="text-xl sm:text-xl">Je crée mon compte</Heading>
 		<p class="mt-1 text-sm text-shop-muted">
 			Suivez vos commandes, retrouvez vos factures et gagnez du temps à chaque achat.
 		</p>
@@ -80,8 +84,8 @@
 			<li>· Comptes professionnels et collectivités : tarifs HT et mandat administratif</li>
 		</ul>
 
-		<Button href="/inscription" size="lg" color="alternative" class="mt-6 w-full">
+		<ShopButton href="/inscription" variant="outline" size="lg" block class="mt-6">
 			Créer un compte
-		</Button>
+		</ShopButton>
 	</Panel>
 </div>

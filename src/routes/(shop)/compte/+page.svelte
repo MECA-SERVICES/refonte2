@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { Button } from 'flowbite-svelte';
 	import { ArrowRightToBracketOutline } from 'flowbite-svelte-icons';
+	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import Panel from '$lib/components/shop/Panel.svelte';
+	import DescriptionItem from '$lib/components/shop/DescriptionItem.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import type { PageProps } from './$types';
 
@@ -48,47 +49,26 @@
 
 		{#if data.profile}
 			<dl class="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-				<div>
-					<dt class="text-xs tracking-wide text-shop-muted uppercase">Nom</dt>
-					<dd class="mt-0.5 font-semibold text-shop-ink">
-						{data.profile.firstName}
-						{data.profile.lastName}
-					</dd>
-				</div>
-				<div>
-					<dt class="text-xs tracking-wide text-shop-muted uppercase">Email</dt>
-					<dd class="mt-0.5 font-semibold break-all text-shop-ink">{data.account.email}</dd>
-				</div>
+				<DescriptionItem label="Nom"
+					>{data.profile.firstName}
+					{data.profile.lastName}</DescriptionItem
+				>
+				<DescriptionItem label="Email">{data.account.email}</DescriptionItem>
 				{#if data.profile.phone}
-					<div>
-						<dt class="text-xs tracking-wide text-shop-muted uppercase">Téléphone</dt>
-						<dd class="mt-0.5 font-semibold text-shop-ink">{data.profile.phone}</dd>
-					</div>
+					<DescriptionItem label="Téléphone">{data.profile.phone}</DescriptionItem>
 				{/if}
-				<div>
-					<dt class="text-xs tracking-wide text-shop-muted uppercase">Type de compte</dt>
-					<dd class="mt-0.5 font-semibold text-shop-ink">
-						{TYPE_LABELS[data.profile.type] ?? data.profile.type}
-					</dd>
-				</div>
+				<DescriptionItem label="Type de compte"
+					>{TYPE_LABELS[data.profile.type] ?? data.profile.type}</DescriptionItem
+				>
 
 				{#if data.profile.companyName}
-					<div>
-						<dt class="text-xs tracking-wide text-shop-muted uppercase">Raison sociale</dt>
-						<dd class="mt-0.5 font-semibold text-shop-ink">{data.profile.companyName}</dd>
-					</div>
+					<DescriptionItem label="Raison sociale">{data.profile.companyName}</DescriptionItem>
 				{/if}
 				{#if data.profile.siret}
-					<div>
-						<dt class="text-xs tracking-wide text-shop-muted uppercase">SIRET</dt>
-						<dd class="mt-0.5 font-semibold text-shop-ink">{data.profile.siret}</dd>
-					</div>
+					<DescriptionItem label="SIRET">{data.profile.siret}</DescriptionItem>
 				{/if}
 				{#if data.profile.collectivityName}
-					<div>
-						<dt class="text-xs tracking-wide text-shop-muted uppercase">Collectivité</dt>
-						<dd class="mt-0.5 font-semibold text-shop-ink">{data.profile.collectivityName}</dd>
-					</div>
+					<DescriptionItem label="Collectivité">{data.profile.collectivityName}</DescriptionItem>
 				{/if}
 			</dl>
 
@@ -136,9 +116,9 @@
 
 		<form method="POST" action="/deconnexion" class="mt-5">
 			<input type="hidden" name="redirectTo" value="/" />
-			<Button type="submit" color="alternative" size="sm" class="w-full">
+			<ShopButton type="submit" variant="outline" size="sm" block>
 				<ArrowRightToBracketOutline class="me-2 h-4 w-4" /> Déconnexion
-			</Button>
+			</ShopButton>
 		</form>
 	</Panel>
 </div>

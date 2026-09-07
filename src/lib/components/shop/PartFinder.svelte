@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Button, Label, Select } from 'flowbite-svelte';
+	import { Label, Select } from 'flowbite-svelte';
+	import ShopButton from './ShopButton.svelte';
 
 	/**
 	 * Sélecteur de pièce en trois temps : marque → type de machine → modèle.
@@ -84,12 +85,9 @@
 		<!-- La recherche part sur le libellé complet de la machine. -->
 		<input type="hidden" name="q" value="{brand} {model}" />
 
-		<Button
-			type="submit"
-			class="mt-1.5 w-full rounded-none bg-shop-red py-3.5 font-display text-[15px] font-bold focus-within:ring-shop-red hover:bg-shop-red-dark sm:col-span-3"
-		>
+		<ShopButton type="submit" variant="buy" size="lg" block class="mt-1.5 sm:col-span-3">
 			Ouvrir la vue éclatée
-		</Button>
+		</ShopButton>
 	</form>
 
 	<p class="mt-3 text-[13px] text-shop-muted">

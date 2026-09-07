@@ -7,6 +7,7 @@
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
 	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
+	import SummaryRow from '$lib/components/shop/SummaryRow.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
 	import type { PageProps } from './$types';
 
@@ -267,24 +268,14 @@
 			<Heading size="card" class="mb-4">Récapitulatif</Heading>
 
 			<dl class="text-[14.5px] text-shop-ink-soft">
-				<div class="flex justify-between gap-3 py-1.5">
-					<dt>
-						Sous-total ({shownTotals.itemCount} article{shownTotals.itemCount > 1 ? 's' : ''})
-					</dt>
-					<dd class="font-bold text-shop-ink">{formatPrice(shownTotals.subtotalHt)} HT</dd>
-				</div>
-				<div class="flex justify-between gap-3 py-1.5">
-					<dt>TVA</dt>
-					<dd class="font-bold text-shop-ink">{formatPrice(shownTotals.tax)}</dd>
-				</div>
-				<div class="flex justify-between gap-3 py-1.5">
-					<dt>Livraison</dt>
-					<dd class="text-shop-muted">Calculée à l'étape suivante</dd>
-				</div>
-				<div class="flex justify-between gap-3 py-1.5">
-					<dt>Préparation</dt>
-					<dd class="font-bold text-shop-ink">24 h ouvrées</dd>
-				</div>
+				<SummaryRow
+					label="Sous-total ({shownTotals.itemCount} article{shownTotals.itemCount > 1 ? 's' : ''})"
+				>
+					{formatPrice(shownTotals.subtotalHt)} HT
+				</SummaryRow>
+				<SummaryRow label="TVA">{formatPrice(shownTotals.tax)}</SummaryRow>
+				<SummaryRow label="Livraison" muted>Calculée à l'étape suivante</SummaryRow>
+				<SummaryRow label="Préparation">24 h ouvrées</SummaryRow>
 			</dl>
 
 			<div class="mt-3 flex justify-between gap-3 border-t-[1.5px] border-shop-border pt-3.5">

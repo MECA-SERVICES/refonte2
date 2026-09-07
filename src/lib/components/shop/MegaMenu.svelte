@@ -29,6 +29,13 @@
 	/** Nombre de sous-familles listées sous chaque famille. */
 	const SUB_LIMIT = 6;
 
+	/** Accès directs, à droite de la barre. */
+	const shortcuts = [
+		{ label: 'Vues éclatées', href: 'https://doc.mecaservicesshop.fr' },
+		{ label: 'Promos', href: '/recherche' },
+		{ label: 'SAV & atelier', href: '/compte' }
+	];
+
 	const toggle = (id: string) => (openId = openId === id ? null : id);
 	const close = () => (openId = null);
 
@@ -69,24 +76,14 @@
 		</div>
 
 		<div class="flex flex-wrap items-center gap-0.5">
-			<a
-				href="https://doc.mecaservicesshop.fr"
-				class="px-3.5 py-4 font-display text-[13px] font-semibold tracking-[0.04em] text-white uppercase hover:underline"
-			>
-				Vues éclatées
-			</a>
-			<a
-				href="/recherche"
-				class="px-3.5 py-4 font-display text-[13px] font-semibold tracking-[0.04em] text-white uppercase hover:underline"
-			>
-				Promos
-			</a>
-			<a
-				href="/compte"
-				class="px-3.5 py-4 font-display text-[13px] font-semibold tracking-[0.04em] text-white uppercase hover:underline"
-			>
-				SAV &amp; atelier
-			</a>
+			{#each shortcuts as shortcut (shortcut.href)}
+				<a
+					href={shortcut.href}
+					class="px-3.5 py-4 font-display text-[13px] font-semibold tracking-[0.04em] text-white uppercase hover:underline"
+				>
+					{shortcut.label}
+				</a>
+			{/each}
 		</div>
 	</div>
 

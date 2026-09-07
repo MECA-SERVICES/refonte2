@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Button, Checkbox, Helper, Input, Label } from 'flowbite-svelte';
+	import { Checkbox, Helper, Input, Label, Radio } from 'flowbite-svelte';
+	import ShopButton from '$lib/components/shop/ShopButton.svelte';
+	import Heading from '$lib/components/shop/Heading.svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import type { PageProps } from './$types';
 
@@ -49,9 +51,7 @@
 	<form method="POST" class="mt-7 space-y-7">
 		<!-- ================= Type de compte ================= -->
 		<fieldset>
-			<legend class="font-display text-sm font-bold tracking-wide text-shop-ink uppercase">
-				Type de compte
-			</legend>
+			<Heading as="p" size="label">Type de compte</Heading>
 			<div class="mt-3 grid gap-3 sm:grid-cols-3">
 				{#each accountTypes as option (option.value)}
 					<label
@@ -60,17 +60,15 @@
 							? 'border-shop-blue bg-primary-50'
 							: 'border-shop-border bg-white hover:border-shop-blue/50'}"
 					>
-						<span class="flex items-center gap-2">
-							<input
-								type="radio"
-								name="type"
-								value={option.value}
-								checked={type === option.value}
-								onchange={() => (type = option.value)}
-								class="h-4 w-4 border-shop-border text-shop-blue focus:ring-shop-blue"
-							/>
-							<span class="text-sm font-semibold text-shop-ink">{option.label}</span>
-						</span>
+						<Radio
+							name="type"
+							value={option.value}
+							bind:group={type}
+							class="text-sm font-semibold text-shop-ink"
+							inputClass="border-shop-border text-shop-blue focus:ring-shop-blue"
+						>
+							{option.label}
+						</Radio>
 						<span class="mt-1 ps-6 text-xs text-shop-muted">{option.hint}</span>
 					</label>
 				{/each}
@@ -93,6 +91,8 @@
 						required
 						value={values?.firstName ?? ''}
 						color={errors.firstName ? 'red' : undefined}
+						class="rounded-none"
+						wrapperClass="rounded-none"
 					/>
 					{#if errors.firstName}<Helper class="mt-1" color="red">{errors.firstName}</Helper>{/if}
 				</div>
@@ -106,6 +106,8 @@
 						required
 						value={values?.lastName ?? ''}
 						color={errors.lastName ? 'red' : undefined}
+						class="rounded-none"
+						wrapperClass="rounded-none"
 					/>
 					{#if errors.lastName}<Helper class="mt-1" color="red">{errors.lastName}</Helper>{/if}
 				</div>
@@ -122,6 +124,8 @@
 					value={values?.email ?? ''}
 					color={errors.email ? 'red' : undefined}
 					placeholder="vous@exemple.fr"
+					class="rounded-none"
+					wrapperClass="rounded-none"
 				/>
 				{#if errors.email}<Helper class="mt-1" color="red">{errors.email}</Helper>{/if}
 			</div>
@@ -130,7 +134,15 @@
 				<Label for="phone" class="mb-1.5"
 					>Téléphone <span class="text-shop-muted">(facultatif)</span></Label
 				>
-				<Input id="phone" name="phone" type="tel" autocomplete="tel" value={values?.phone ?? ''} />
+				<Input
+					id="phone"
+					name="phone"
+					type="tel"
+					autocomplete="tel"
+					value={values?.phone ?? ''}
+					class="rounded-none"
+					wrapperClass="rounded-none"
+				/>
 			</div>
 		</fieldset>
 
@@ -149,6 +161,8 @@
 						autocomplete="organization"
 						value={values?.companyName ?? ''}
 						color={errors.companyName ? 'red' : undefined}
+						class="rounded-none"
+						wrapperClass="rounded-none"
 					/>
 					{#if errors.companyName}<Helper class="mt-1" color="red">{errors.companyName}</Helper
 						>{/if}
@@ -164,6 +178,8 @@
 							value={values?.siret ?? ''}
 							color={errors.siret ? 'red' : undefined}
 							placeholder="14 chiffres"
+							class="rounded-none"
+							wrapperClass="rounded-none"
 						/>
 						{#if errors.siret}<Helper class="mt-1" color="red">{errors.siret}</Helper>{/if}
 					</div>
@@ -178,6 +194,8 @@
 							value={values?.vatNumber ?? ''}
 							color={errors.vatNumber ? 'red' : undefined}
 							placeholder="FR12345678901"
+							class="rounded-none"
+							wrapperClass="rounded-none"
 						/>
 						{#if errors.vatNumber}<Helper class="mt-1" color="red">{errors.vatNumber}</Helper>{/if}
 					</div>
@@ -204,6 +222,8 @@
 						value={values?.collectivityName ?? ''}
 						color={errors.collectivityName ? 'red' : undefined}
 						placeholder="Commune de…"
+						class="rounded-none"
+						wrapperClass="rounded-none"
 					/>
 					{#if errors.collectivityName}
 						<Helper class="mt-1" color="red">{errors.collectivityName}</Helper>
@@ -218,9 +238,7 @@
 
 		<!-- ================= Mot de passe ================= -->
 		<fieldset>
-			<legend class="font-display text-sm font-bold tracking-wide text-shop-ink uppercase">
-				Votre mot de passe
-			</legend>
+			<Heading as="p" size="label">Votre mot de passe</Heading>
 			<div class="mt-3">
 				<Label for="password" class="mb-1.5">Mot de passe</Label>
 				<Input
@@ -231,6 +249,8 @@
 					required
 					minlength={8}
 					color={errors.password ? 'red' : undefined}
+					class="rounded-none"
+					wrapperClass="rounded-none"
 				/>
 				{#if errors.password}
 					<Helper class="mt-1" color="red">{errors.password}</Helper>
@@ -246,6 +266,6 @@
 			</span>
 		</Checkbox>
 
-		<Button type="submit" size="lg" class="w-full sm:w-auto">Créer mon compte</Button>
+		<ShopButton type="submit" size="lg" class="w-full sm:w-auto">Créer mon compte</ShopButton>
 	</form>
 </div>

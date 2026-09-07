@@ -294,16 +294,20 @@
 	</main>
 
 	<!-- Pied de page -->
+	{#snippet footerTitle(label: string)}
+		<h2
+			class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
+		>
+			{label}
+		</h2>
+	{/snippet}
+
 	<Footer class="rounded-none bg-primary-800 text-white">
 		<div
 			class="mx-auto grid w-full max-w-[1360px] gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8"
 		>
 			<div>
-				<h2
-					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
-				>
-					MS Shop
-				</h2>
+				{@render footerTitle('MS Shop')}
 				<p class="text-xs font-semibold tracking-wide text-primary-200 uppercase">Hotline</p>
 				<a href="tel:0950922336" class="mt-1 block text-2xl font-extrabold text-white">
 					09 50 92 23 36
@@ -315,11 +319,7 @@
 				</p>
 			</div>
 			<div>
-				<h2
-					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
-				>
-					Informations
-				</h2>
+				{@render footerTitle('Informations')}
 				<FooterLinkGroup class="space-y-2 text-sm text-primary-200">
 					{#each infoLinks as label (label)}
 						<FooterLink href={resolve('/')} class="hover:text-white hover:underline">
@@ -329,11 +329,7 @@
 				</FooterLinkGroup>
 			</div>
 			<div>
-				<h2
-					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
-				>
-					Nos rayons
-				</h2>
+				{@render footerTitle('Nos rayons')}
 				<FooterLinkGroup class="space-y-2 text-sm text-primary-200">
 					{#each data.menu.slice(0, 6) as entry (entry.id)}
 						<FooterLink href="/categorie/{entry.slug}" class="hover:text-white hover:underline">
@@ -343,11 +339,7 @@
 				</FooterLinkGroup>
 			</div>
 			<div>
-				<h2
-					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
-				>
-					Nos univers marques
-				</h2>
+				{@render footerTitle('Nos univers marques')}
 				<ul class="space-y-2 text-sm text-primary-200">
 					<li>EGO Power+ — Outils sans fil 56V</li>
 					<li>Navimow Segway — Robots tondeuses</li>
