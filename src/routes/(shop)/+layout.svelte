@@ -20,6 +20,7 @@
 		SearchOutline
 	} from 'flowbite-svelte-icons';
 	import MegaMenu from '$lib/components/shop/MegaMenu.svelte';
+	import NavigationIndicator from '$lib/components/shop/NavigationIndicator.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -55,8 +56,10 @@
 	];
 </script>
 
+<NavigationIndicator />
+
 <div class="flex min-h-screen flex-col bg-shop-subtle">
-	<header class="sticky top-0 z-30">
+	<header class="sticky top-0 z-50">
 		<!-- Bandeau utilitaire : ancrage local à gauche, contacts et accès à droite -->
 		<div class="hidden bg-shop-blue-dark text-[13px] text-shop-on-dark sm:block">
 			<div

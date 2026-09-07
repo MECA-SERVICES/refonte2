@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import type { ShopMenuChild } from '$lib/server/shop';
 
 	/**
@@ -30,6 +31,15 @@
 
 	const toggle = (id: string) => (openId = openId === id ? null : id);
 	const close = () => (openId = null);
+
+	/**
+	 * Le panneau se referme dès que l'URL change : la navigation SvelteKit ne
+	 * recharge pas la page, il resterait donc ouvert par-dessus la destination.
+	 */
+	const location = $derived(page.url.pathname + page.url.search);
+	$effect(() => {
+		if (location) close();
+	});
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && close()} />

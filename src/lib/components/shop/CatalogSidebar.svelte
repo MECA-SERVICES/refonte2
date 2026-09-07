@@ -61,7 +61,14 @@
 		'flex w-full items-center justify-between gap-2 border-l-[3px] px-2.5 py-1.5 text-left text-sm transition-colors';
 </script>
 
-<aside class="border-[1.5px] border-shop-border bg-white lg:sticky lg:top-32">
+<!--
+	Le décalage `top` reprend la hauteur de l'en-tête collant : sans lui, la
+	colonne glisserait sous la barre de navigation au défilement. `max-h` et le
+	défilement interne évitent qu'une longue liste de marques ne dépasse l'écran.
+-->
+<aside
+	class="border-[1.5px] border-shop-border bg-white lg:sticky lg:top-[12.5rem] lg:max-h-[calc(100vh-13.5rem)] lg:overflow-y-auto"
+>
 	{#if tree.length > 0}
 		<div class="border-b border-shop-border-soft p-4">
 			<p
