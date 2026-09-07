@@ -10,7 +10,8 @@ export const auth = betterAuth({
 	baseURL: env.ORIGIN,
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
-	emailAndPassword: { enabled: true },
+	// Longueur minimale imposée par la règle R11 de la section 07 du CDC.
+	emailAndPassword: { enabled: true, minPasswordLength: 8 },
 	session: {
 		// Session mise en cache dans un cookie signé : évite un aller-retour
 		// base (~30 ms sur Railway) à CHAQUE requête du back-office. Contrepartie :

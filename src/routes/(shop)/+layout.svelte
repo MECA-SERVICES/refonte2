@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import {
 		CloseButton,
 		Drawer,
 		Accordion,
 		AccordionItem,
+		Dropdown,
 		Footer,
 		FooterCopyright,
 		FooterLink,
@@ -20,6 +22,7 @@
 		ToolsOutline,
 		UserCircleOutline
 	} from 'flowbite-svelte-icons';
+	import { ArrowRightToBracketOutline } from 'flowbite-svelte-icons';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -74,21 +77,57 @@
 			</a>
 
 			<div class="flex shrink-0 items-center gap-2 sm:gap-5">
-				<a href={resolve('/admin/login')} class="group flex items-center gap-3">
-					<span
-						class="flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
-					>
-						<UserCircleOutline class="h-5 w-5 text-shop-ink" />
-					</span>
-					<span class="hidden text-left lg:block">
-						<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
-							Bonjour
+				{#if data.shopUser}
+					<!-- Client connecté : le bloc ouvre le menu du compte. -->
+					<button type="button" class="group flex items-center gap-3">
+						<span
+							class="flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
+						>
+							<UserCircleOutline class="h-5 w-5 text-shop-ink" />
 						</span>
-						<span class="block text-sm leading-tight font-bold text-shop-ink">
-							{data.shopUser ? data.shopUser.name : 'Mon compte'}
+						<span class="hidden text-left lg:block">
+							<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
+								Bonjour
+							</span>
+							<span class="block max-w-32 truncate text-sm leading-tight font-bold text-shop-ink">
+								{data.shopUser.name}
+							</span>
 						</span>
-					</span>
-				</a>
+					</button>
+					<Dropdown simple class="w-52 p-1">
+						<a
+							href="/compte"
+							class="block rounded-lg px-3 py-2 text-sm font-medium text-shop-ink hover:bg-shop-subtle"
+						>
+							Mon compte
+						</a>
+						<!-- Formulaire hors DropdownItem : celui-ci rend un lien, qui ne peut
+						     pas contenir de bouton de soumission. -->
+						<form method="POST" action="/deconnexion" class="block">
+							<input type="hidden" name="redirectTo" value={page.url.pathname} />
+							<button
+								type="submit"
+								class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-shop-ink hover:bg-shop-subtle"
+							>
+								<ArrowRightToBracketOutline class="h-4 w-4" /> Déconnexion
+							</button>
+						</form>
+					</Dropdown>
+				{:else}
+					<a href="/connexion" class="group flex items-center gap-3">
+						<span
+							class="flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
+						>
+							<UserCircleOutline class="h-5 w-5 text-shop-ink" />
+						</span>
+						<span class="hidden text-left lg:block">
+							<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
+								Bonjour
+							</span>
+							<span class="block text-sm leading-tight font-bold text-shop-ink">Mon compte</span>
+						</span>
+					</a>
+				{/if}
 
 				<a href="/panier" class="group flex items-center gap-3">
 					<span
