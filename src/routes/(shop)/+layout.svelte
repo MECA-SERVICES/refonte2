@@ -30,20 +30,17 @@
 	const categoryHref = (slug: string) => `/categorie/${slug}`;
 
 	/**
-	 * Sections du méga-menu. Les trois entrées de la maquette sont alimentées par
-	 * l'arborescence réelle : « Pièces détachées » et « Produits » pointent sur
-	 * les deux racines du catalogue, « Marques » reste à brancher sur la table
-	 * des marques une fois la navigation par marque en place.
+	 * Sections du méga-menu : une par racine du catalogue. Chaque famille de
+	 * second niveau devient une colonne, ses sous-familles les liens dessous.
 	 */
 	const megaSections = $derived(
 		data.menu.map((root) => ({
 			id: root.slug,
 			label: root.name,
-			columns: ['Famille', 'Sous-famille', 'Catégorie', 'Détail', 'Référence'],
-			cta: `Voir ${root.name.toLowerCase()}`,
-			ctaHref: categoryHref(root.slug),
-			hint: 'Affinez de famille en famille — la référence d’origine se trouve au bout du parcours.',
-			roots: root.children
+			href: categoryHref(root.slug),
+			cta: `Voir tout ${root.name.toLowerCase()}`,
+			hint: '',
+			families: root.children
 		}))
 	);
 

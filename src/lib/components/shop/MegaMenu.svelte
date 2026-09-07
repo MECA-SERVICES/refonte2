@@ -4,76 +4,37 @@
 	/**
 	 * Navigation principale en méga-menu.
 	 *
-	 * Chaque section ouvre un panneau où l'on descend l'arborescence colonne
-	 * après colonne : choisir une entrée fait apparaître ses enfants à droite,
-	 * jusqu'à cinq niveaux. Sur un catalogue de plus d'un million de références,
-	 * c'est ce parcours par affinages successifs qui permet d'atteindre la pièce
-	 * sans passer par la recherche.
+	 * Le panneau affiche d'emblée toutes les familles du rayon, en colonnes, avec
+	 * leurs sous-familles listées dessous. Aucune n'est masquée derrière un clic :
+	 * le visiteur embrasse l'offre d'un regard et atteint sa destination en une
+	 * seule action — le titre de colonne, un sous-lien, ou le « Voir tout ».
 	 */
 
 	type Section = {
 		id: string;
 		label: string;
-		/** Intitulé de chaque colonne, du plus général au plus précis. */
-		columns: string[];
+		href: string;
 		cta: string;
-		ctaHref: string;
 		hint: string;
-		roots: ShopMenuChild[];
+		families: ShopMenuChild[];
 	};
 
 	let { sections }: { sections: Section[] } = $props();
 
 	/** Section ouverte ; `null` quand le panneau est replié. */
 	let openId = $state<string | null>(null);
-	/** Chemin sélectionné dans la section ouverte, un libellé par niveau. */
-	let path = $state<ShopMenuChild[]>([]);
-
 	const active = $derived(sections.find((s) => s.id === openId) ?? null);
 
-	/** Colonnes à afficher : la racine, puis les enfants de chaque choix. */
-	const columns = $derived.by(() => {
-		if (!active) return [];
-		const result: { title: string; items: ShopMenuChild[] }[] = [];
-		let level = active.roots;
+	/** Nombre de sous-familles listées sous chaque famille. */
+	const SUB_LIMIT = 6;
 
-		for (let depth = 0; depth <= path.length && depth < active.columns.length; depth++) {
-			if (level.length === 0) break;
-			result.push({ title: active.columns[depth] ?? '', items: level });
-			const picked = path[depth];
-			if (!picked) break;
-			level = picked.children ?? [];
-		}
-		return result;
-	});
-
-	const trail = $derived(
-		path.length > 0
-			? path.map((entry) => entry.name).join('  ›  ')
-			: 'Choisissez pour affiner — 5 niveaux disponibles'
-	);
-
-	function toggle(id: string) {
-		openId = openId === id ? null : id;
-		path = [];
-	}
-
-	function close() {
-		openId = null;
-		path = [];
-	}
-
-	/** Sélectionne une entrée à un niveau donné et tronque le chemin au-delà. */
-	function pick(depth: number, entry: ShopMenuChild) {
-		path = [...path.slice(0, depth), entry];
-	}
-
-	const isSelected = (depth: number, entry: ShopMenuChild) => path[depth]?.id === entry.id;
+	const toggle = (id: string) => (openId = openId === id ? null : id);
+	const close = () => (openId = null);
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && close()} />
 
-<div class="relative z-40 bg-shop-blue">
+<nav class="relative z-40 bg-shop-blue" aria-label="Navigation du catalogue" onmouseleave={close}>
 	<div
 		class="mx-auto flex w-full max-w-[1360px] flex-wrap items-stretch justify-between gap-0.5 px-4 sm:px-6 lg:px-8"
 	>
@@ -82,6 +43,7 @@
 				<button
 					type="button"
 					onclick={() => toggle(section.id)}
+					onmouseenter={() => (openId = section.id)}
 					aria-expanded={openId === section.id}
 					class="px-4 py-4 font-display text-sm font-bold tracking-[0.04em] text-white uppercase transition-colors {openId ===
 					section.id
@@ -120,86 +82,63 @@
 
 	{#if active}
 		<div
-			class="absolute inset-x-0 top-full border-b-[3px] border-shop-blue bg-white shadow-[0_18px_40px_rgba(30,36,54,0.18)]"
+			class="absolute inset-x-0 top-full max-h-[70vh] overflow-y-auto border-b-[3px] border-shop-blue bg-white shadow-[0_18px_40px_rgba(30,36,54,0.18)]"
 		>
-			<div class="mx-auto w-full max-w-[1360px] px-4 sm:px-6 lg:px-8">
-				<!-- Fil du parcours en cours, et sortie vers la liste complète -->
-				<div
-					class="flex flex-wrap items-center justify-between gap-3 border-b border-shop-border py-3.5"
-				>
-					<p class="min-w-0 text-[13.5px] text-shop-muted">
-						<span
-							class="font-display text-[12.5px] font-extrabold tracking-[0.06em] text-shop-blue uppercase"
-						>
-							{active.label}
-						</span>
-						<span class="mx-2 text-shop-faint">›</span>{trail}
-					</p>
-					<div class="flex items-center gap-2.5">
-						<a
-							href={active.ctaHref}
-							class="font-display text-[13.5px] font-bold text-shop-red hover:underline"
-						>
-							{active.cta} →
-						</a>
-						<button
-							type="button"
-							onclick={close}
-							class="border-[1.5px] border-shop-border bg-shop-subtle px-2.5 py-1.5 text-[13px] font-bold text-shop-muted hover:border-shop-ink"
-						>
-							Fermer ✕
-						</button>
-					</div>
-				</div>
-
-				<!-- Colonnes en cascade : un niveau de l'arborescence par colonne -->
-				<div class="flex gap-px overflow-x-auto bg-shop-border">
-					{#each columns as column, depth (column.title + depth)}
-						<div class="min-w-[196px] flex-1 shrink-0 basis-52 bg-white">
-							<p
-								class="px-3.5 pt-3.5 pb-2 font-display text-[11px] font-extrabold tracking-[0.12em] text-shop-faint uppercase"
+			<div class="mx-auto w-full max-w-[1360px] px-4 py-6 sm:px-6 lg:px-8">
+				<!--
+					Toutes les familles côte à côte. Le titre de colonne mène à la
+					famille entière, les liens en dessous aux sous-familles.
+				-->
+				<div class="grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+					{#each active.families as family (family.id)}
+						{@const subs = family.children ?? []}
+						<div class="min-w-0">
+							<a
+								href="/categorie/{family.slug}"
+								class="block font-display text-[15px] font-extrabold text-shop-ink hover:text-shop-blue"
 							>
-								{column.title}
-							</p>
-							<div class="max-h-[352px] overflow-y-auto pb-3">
-								{#each column.items as entry (entry.id)}
-									{@const deeper = (entry.children?.length ?? 0) > 0}
-									{@const selected = isSelected(depth, entry)}
-									{#if deeper}
-										<button
-											type="button"
-											onclick={() => pick(depth, entry)}
-											class="flex w-full items-center justify-between gap-2.5 border-l-[3px] px-3.5 py-2 text-left text-sm {selected
-												? 'border-shop-red bg-shop-border-soft font-bold text-shop-ink'
-												: 'border-transparent text-shop-ink-soft hover:bg-shop-subtle'}"
-										>
-											<span class="min-w-0 truncate">{entry.name}</span>
-											<span
-												class="shrink-0 text-[15px] font-bold {selected
-													? 'text-shop-blue'
-													: 'text-shop-faint'}"
+								{family.name}
+								<span aria-hidden="true" class="text-shop-faint">→</span>
+							</a>
+
+							{#if subs.length > 0}
+								<ul class="mt-2 space-y-1">
+									{#each subs.slice(0, SUB_LIMIT) as sub (sub.id)}
+										<li>
+											<a
+												href="/categorie/{sub.slug}"
+												class="block truncate text-[13.5px] text-shop-ink-soft hover:text-shop-blue hover:underline"
 											>
-												›
-											</span>
-										</button>
-									{:else}
-										<a
-											href="/categorie/{entry.slug}"
-											class="flex w-full items-center justify-between gap-2.5 border-l-[3px] border-transparent px-3.5 py-2 text-left text-sm text-shop-ink-soft hover:bg-shop-subtle"
-										>
-											<span class="min-w-0 truncate">{entry.name}</span>
-										</a>
+												{sub.name}
+											</a>
+										</li>
+									{/each}
+
+									{#if subs.length > SUB_LIMIT}
+										<li>
+											<a
+												href="/categorie/{family.slug}"
+												class="block text-[13.5px] font-bold text-shop-blue hover:underline"
+											>
+												Tout {family.name.toLowerCase()} ({subs.length})
+											</a>
+										</li>
 									{/if}
-								{/each}
-							</div>
+								</ul>
+							{/if}
 						</div>
 					{/each}
 				</div>
 
 				<div
-					class="flex flex-wrap items-center justify-between gap-4 py-3 text-[13px] text-shop-muted"
+					class="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-shop-border pt-4 text-[13px] text-shop-muted"
 				>
-					<span>{active.hint}</span>
+					<a
+						href={active.href}
+						class="font-display text-[13.5px] font-bold text-shop-red hover:underline"
+					>
+						{active.cta} →
+					</a>
 					<span>
 						Besoin d'aide pour identifier une pièce ?
 						<a href="tel:0950922336" class="font-bold text-shop-red hover:underline">
@@ -209,14 +148,5 @@
 				</div>
 			</div>
 		</div>
-
-		<!-- Cliquer à côté referme le panneau. -->
-		<button
-			type="button"
-			onclick={close}
-			aria-label="Fermer le menu"
-			class="fixed inset-0 -z-10 cursor-default"
-			tabindex="-1"
-		></button>
 	{/if}
-</div>
+</nav>
