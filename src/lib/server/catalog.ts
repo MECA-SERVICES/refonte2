@@ -141,7 +141,7 @@ export function parseBrandForm(form: FormData) {
 /** Toutes les marques actives (pour les listes déroulantes). */
 export function activeBrands() {
 	return db
-		.select({ id: brand.id, name: brand.name })
+		.select({ id: brand.id, name: brand.name, slug: brand.slug })
 		.from(brand)
 		.where(eq(brand.isActive, true))
 		.orderBy(asc(brand.name));

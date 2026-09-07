@@ -1,7 +1,15 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getShopCategory, listShopProducts, type ShopSort } from '$lib/server/shop';
+import {
+	getShopCategory,
+	listShopProducts,
+	shopBrandFacets,
+	shopStockFacet,
+	type ShopListParams,
+	type ShopSort
+} from '$lib/server/shop';
 import { sanitizeHtml } from '$lib/server/sanitize';
+import { activeBrands } from '$lib/server/catalog';
 
 const SORTS: ShopSort[] = ['new', 'price_asc', 'price_desc', 'name'];
 
@@ -13,7 +21,27 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const triRaw = url.searchParams.get('tri') as ShopSort | null;
 	const sort: ShopSort = triRaw && SORTS.includes(triRaw) ? triRaw : 'new';
 
-	const products = await listShopProducts({ categoryIds: category.subtreeIds, sort, page });
+	// Filtres portés par l'URL : partageables et utilisables sans JavaScript.
+	const brandSlugs = url.searchParams.getAll('marque');
+	const inStockOnly = url.searchParams.get('stock') === '1';
+
+	const brands = await activeBrands();
+	const selected = brands.filter((b) => brandSlugs.includes(b.slug));
+
+	const filters: ShopListParams = {
+		categoryIds: category.subtreeIds,
+		brandIds: selected.length > 0 ? selected.map((b) => b.id) : undefined,
+		inStockOnly
+	};
+
+	const [products, brandFacets, inStockTotal] = await Promise.all([
+		listShopProducts({ ...filters, sort, page }),
+		shopBrandFacets(filters),
+		shopStockFacet(filters)
+	]);
+
+	// Les facettes portent l'id de marque ; l'URL, le slug, plus lisible.
+	const byId = new Map(brands.map((b) => [b.id, b]));
 
 	return {
 		category: {
@@ -25,6 +53,16 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		breadcrumb: category.breadcrumb.map((c) => ({ name: c.name, slug: c.slug })),
 		children: category.children.map((c) => ({ id: c.id, name: c.name, slug: c.slug })),
 		products,
-		sort
+		sort,
+		facets: {
+			brands: brandFacets
+				.map((f) => ({ value: byId.get(f.id)?.slug ?? '', label: f.name, total: f.total }))
+				.filter((f) => f.value),
+			inStockTotal
+		},
+		selected: {
+			brands: selected.map((b) => ({ value: b.slug, label: b.name })),
+			inStockOnly
+		}
 	};
 };

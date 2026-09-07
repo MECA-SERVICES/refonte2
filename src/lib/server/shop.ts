@@ -206,16 +206,17 @@ export type ShopListParams = {
 	categoryIds?: number[];
 	/** Recherche plein texte : nom, référence, réf. fournisseur, EAN13. */
 	search?: string;
+	/** Restreint aux marques retenues (ids). */
+	brandIds?: number[];
+	/** Ne garde que les articles disponibles immédiatement. */
+	inStockOnly?: boolean;
 	sort?: ShopSort;
 	page?: number;
 	perPage?: number;
 };
 
-/** Liste paginée publique : produits actifs uniquement, prix TTC. */
-export async function listShopProducts(params: ShopListParams = {}) {
-	const page = Math.max(1, params.page ?? 1);
-	const perPage = Math.min(60, Math.max(1, params.perPage ?? SHOP_PAGE_SIZE));
-
+/** Conditions communes au listing et au calcul des facettes. */
+function listConditions(params: ShopListParams): SQL[] {
 	const conditions: SQL[] = [eq(product.isActive, true)];
 
 	if (params.categoryIds?.length) {
@@ -249,7 +250,50 @@ export async function listShopProducts(params: ShopListParams = {}) {
 		);
 	}
 
-	const where = and(...conditions);
+	if (params.brandIds?.length) conditions.push(inArray(product.brandId, params.brandIds));
+	if (params.inStockOnly) conditions.push(gt(product.stock, 0));
+
+	return conditions;
+}
+
+/**
+ * Facettes du listing : marques présentes dans le périmètre courant, avec leur
+ * nombre d'articles. Le décompte ignore la sélection de marques déjà faite,
+ * afin que les autres options restent visibles et cliquables.
+ */
+export async function shopBrandFacets(params: ShopListParams, limit = 12) {
+	const conditions = listConditions({ ...params, brandIds: undefined });
+
+	return db
+		.select({
+			id: brand.id,
+			name: brand.name,
+			total: sql<number>`count(*)::int`
+		})
+		.from(product)
+		.innerJoin(brand, eq(product.brandId, brand.id))
+		.where(and(...conditions))
+		.groupBy(brand.id, brand.name)
+		.orderBy(desc(sql`count(*)`))
+		.limit(limit);
+}
+
+/** Nombre d'articles disponibles immédiatement dans le périmètre courant. */
+export async function shopStockFacet(params: ShopListParams) {
+	const conditions = listConditions({ ...params, inStockOnly: false });
+	const [row] = await db
+		.select({ total: sql<number>`count(*) filter (where ${product.stock} > 0)::int` })
+		.from(product)
+		.where(and(...conditions));
+	return row?.total ?? 0;
+}
+
+/** Liste paginée publique : produits actifs uniquement, prix TTC. */
+export async function listShopProducts(params: ShopListParams = {}) {
+	const page = Math.max(1, params.page ?? 1);
+	const perPage = Math.min(60, Math.max(1, params.perPage ?? SHOP_PAGE_SIZE));
+
+	const where = and(...listConditions(params));
 
 	// Charger perPage + 1 pour savoir s'il y a une page suivante (évite COUNT coûteux)
 	const rows = await db
