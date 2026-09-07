@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { createAddToCart } from '$lib/components/shop/cart-actions.svelte';
+	import ShopButton from '$lib/components/shop/ShopButton.svelte';
+	import Heading from '$lib/components/shop/Heading.svelte';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
@@ -28,6 +31,14 @@
 		product.priceTtcStrike ? Number(product.priceTtcStrike) - Number(product.priceTtc) : 0
 	);
 	const available = $derived(product.stock > 0);
+
+	/** Ajout au panier sans rechargement : compteur d'en-tête et bandeau à jour. */
+	let pending = $state(false);
+
+	const addToCart = createAddToCart(
+		() => product.name,
+		(value) => (pending = value)
+	);
 
 	const crumbs = $derived([
 		...product.breadcrumb.map((c) => ({ label: c.name, href: `/categorie/${c.slug}` })),
@@ -170,7 +181,7 @@
 			<form
 				method="POST"
 				action="?/add"
-				use:enhance
+				use:enhance={addToCart}
 				class="mt-4 flex flex-wrap items-stretch gap-2.5"
 			>
 				<input type="hidden" name="productId" value={product.id} />
@@ -207,13 +218,19 @@
 					</button>
 				</div>
 
-				<button
+				<ShopButton
 					type="submit"
-					disabled={!available}
-					class="flex-1 basis-52 bg-shop-red px-5 py-3.5 font-display text-base font-bold text-white transition-colors hover:bg-shop-red-dark disabled:cursor-not-allowed disabled:bg-shop-border disabled:text-shop-muted"
+					variant="buy"
+					size="lg"
+					disabled={!available || pending}
+					class="flex-1 basis-52"
 				>
-					{available ? 'Ajouter au panier' : 'Nous consulter'}
-				</button>
+					{#if pending}
+						Ajout…
+					{:else}
+						{available ? 'Ajouter au panier' : 'Nous consulter'}
+					{/if}
+				</ShopButton>
 			</form>
 
 			{#if form?.message}
@@ -249,18 +266,12 @@
 				avant que vous commandiez.
 			</p>
 			<div class="flex flex-wrap gap-2">
-				<a
-					href="tel:0950922336"
-					class="border-[1.5px] border-shop-ink bg-white px-3.5 py-2.5 text-sm font-bold text-shop-ink hover:bg-shop-subtle"
-				>
+				<ShopButton href="tel:0950922336" variant="outline" size="sm">
 					Vérifier ma compatibilité
-				</a>
-				<a
-					href="https://doc.mecaservicesshop.fr"
-					class="border-[1.5px] border-shop-ink bg-white px-3.5 py-2.5 text-sm font-bold text-shop-ink hover:bg-shop-subtle"
-				>
+				</ShopButton>
+				<ShopButton href="https://doc.mecaservicesshop.fr" variant="outline" size="sm">
 					Voir la vue éclatée
-				</a>
+				</ShopButton>
 			</div>
 		</div>
 
@@ -314,9 +325,7 @@
 
 				{#if documents.length > 0}
 					<div class="mt-4">
-						<p class="font-display text-sm font-bold tracking-wide text-shop-ink uppercase">
-							Documents techniques
-						</p>
+						<Heading as="p" size="label">Documents techniques</Heading>
 						<ul class="mt-2 space-y-1.5">
 							{#each documents as doc (doc.id)}
 								<li>
@@ -349,9 +358,7 @@
 
 {#if product.variants.length > 0}
 	<section class="mt-12">
-		<h2 class="font-display text-xl font-extrabold tracking-wide text-shop-ink uppercase">
-			Déclinaisons
-		</h2>
+		<Heading size="block">Déclinaisons</Heading>
 		<ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each product.variants as variant (variant.id)}
 				<li class="border-[1.5px] border-shop-border bg-white p-4">
@@ -370,9 +377,7 @@
 
 {#if product.related.length > 0}
 	<section class="mt-12 border-t border-shop-border pt-8">
-		<h2 class="mb-5 font-display text-xl font-extrabold tracking-wide text-shop-ink uppercase">
-			Vous aimerez aussi
-		</h2>
+		<Heading size="block" class="mb-5">Vous aimerez aussi</Heading>
 		<div class="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-6">
 			{#each product.related as item (item.id)}
 				<ProductCard product={item} />

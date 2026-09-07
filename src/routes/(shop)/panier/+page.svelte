@@ -1,8 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import { ExclamationCircleOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
+	import { refreshAfterSubmit } from '$lib/components/shop/cart-actions.svelte';
+	import ShopButton from '$lib/components/shop/ShopButton.svelte';
+	import Heading from '$lib/components/shop/Heading.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
 	import type { PageProps } from './$types';
 
@@ -11,14 +16,95 @@
 	const cart = $derived(data.cart);
 	const lines = $derived(cart.lines);
 
+	type Line = (typeof lines)[number];
+
 	/** Un article inactif ou en rupture empêche de commander (règle R7). */
-	const isBlocking = (line: (typeof lines)[number]) => !line.isActive || line.stock <= 0;
+	const isBlocking = (line: Line) => !line.isActive || line.stock <= 0;
 
 	/** Écart entre le prix du jour et celui de l'ajout (règle R11). */
-	function priceDrift(line: (typeof lines)[number]) {
+	function priceDrift(line: Line) {
 		if (!line.priceHtAtAdd) return 0;
 		return Number(line.priceHt) - Number(line.priceHtAtAdd);
 	}
+
+	// -----------------------------------------------------------------------
+	// Quantités : affichage optimiste, envoi « dernier clic gagne »
+	//
+	// Chaque clic met l'affichage à jour immédiatement ; l'envoi au serveur
+	// part après une courte pause, et seuls le dernier clic d'une rafale et sa
+	// réponse comptent. Sans cela, des clics rapides repartaient tous de la
+	// même valeur serveur périmée et la page figeait le temps d'un rechargement
+	// complet par clic.
+	// -----------------------------------------------------------------------
+
+	/** Quantités affichées en avance sur le serveur, par ligne. */
+	let optimistic = $state<Record<number, number>>({});
+
+	const shownQuantity = (line: Line) => optimistic[line.id] ?? line.quantity;
+
+	/** Totaux recalculés sur les quantités affichées : le récapitulatif suit le clic. */
+	const shownTotals = $derived.by(() => {
+		let subtotalHt = 0;
+		let totalTtc = 0;
+		let itemCount = 0;
+		for (const line of lines) {
+			const quantity = shownQuantity(line);
+			subtotalHt += Number(line.priceHt) * quantity;
+			totalTtc += Number(line.priceTtc) * quantity;
+			itemCount += quantity;
+		}
+		return { subtotalHt, tax: totalTtc - subtotalHt, totalTtc, itemCount };
+	});
+
+	// Minuteries et jetons d'envoi par ligne : simple comptabilité interne,
+	// jamais affichée — des objets nus suffisent.
+	const timers: Record<number, ReturnType<typeof setTimeout>> = {};
+	const tickets: Record<number, number> = {};
+	let nextTicket = 0;
+
+	/**
+	 * Intercepte la soumission du formulaire de quantité. Sans JavaScript, le
+	 * formulaire poste normalement et la page se recharge — le parcours reste
+	 * fonctionnel, simplement moins fluide.
+	 */
+	const queueQuantity: SubmitFunction = ({ formData, cancel }) => {
+		cancel();
+
+		const lineId = Number(formData.get('lineId'));
+		const quantity = Math.max(0, Number(formData.get('quantity')));
+		optimistic[lineId] = quantity;
+
+		clearTimeout(timers[lineId]);
+		// Une quantité nulle supprime la ligne (règle R5) : on l'envoie sans délai.
+		const delay = quantity === 0 ? 0 : 300;
+		timers[lineId] = setTimeout(() => void sendQuantity(lineId, quantity), delay);
+	};
+
+	async function sendQuantity(lineId: number, quantity: number) {
+		const ticket = ++nextTicket;
+		tickets[lineId] = ticket;
+
+		const body = new FormData();
+		body.set('lineId', String(lineId));
+		body.set('quantity', String(quantity));
+
+		try {
+			await fetch('?/update', {
+				method: 'POST',
+				headers: { 'x-sveltekit-action': 'true' },
+				body
+			});
+		} finally {
+			// Un clic plus récent est reparti : sa réponse fera la réconciliation.
+			if (tickets[lineId] === ticket) {
+				await invalidateAll();
+				delete optimistic[lineId];
+			}
+		}
+	}
+
+	// Les envois en attente ne survivent pas à la page.
+	$effect(() => () => Object.values(timers).forEach((timer) => clearTimeout(timer)));
 
 	/**
 	 * Étapes du tunnel. Seule la première est active : livraison et paiement
@@ -69,12 +155,7 @@
 		<p class="mt-2 text-sm text-shop-muted">
 			Parcourez le catalogue pour trouver la pièce ou le matériel qu'il vous faut.
 		</p>
-		<a
-			href="/recherche"
-			class="mt-6 inline-block bg-shop-blue px-6 py-3.5 font-display text-[15px] font-bold text-white hover:bg-shop-blue-dark"
-		>
-			Découvrir le catalogue
-		</a>
+		<ShopButton href="/recherche" size="lg" class="mt-6">Découvrir le catalogue</ShopButton>
 	</div>
 {:else}
 	<div class="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
@@ -82,9 +163,10 @@
 		<div class="min-w-0 border-[1.5px] border-shop-border bg-white">
 			{#each lines as line (line.id)}
 				{@const drift = priceDrift(line)}
+				{@const quantity = shownQuantity(line)}
 				<div class="flex flex-wrap items-center gap-4 border-b border-shop-border-soft p-5">
 					<a
-						href={shopProductPath(line)}
+						href={shopProductPath({ id: line.productId, slug: line.slug })}
 						class="flex h-24 w-24 shrink-0 items-center justify-center border border-shop-border bg-white p-1.5"
 					>
 						{#if line.imageUrl}
@@ -106,7 +188,7 @@
 							</p>
 						{/if}
 						<a
-							href={shopProductPath(line)}
+							href={shopProductPath({ id: line.productId, slug: line.slug })}
 							class="mt-0.5 block font-display text-base font-bold text-shop-ink hover:text-shop-blue"
 						>
 							{line.name}
@@ -127,16 +209,17 @@
 						{/if}
 					</div>
 
-					<!-- Quantité : envoi immédiat, sans bouton de confirmation -->
-					<form method="POST" action="?/update" use:enhance class="shrink-0">
+					<!-- Quantité : réponse immédiate, envoi différé (dernier clic gagne) -->
+					<form method="POST" action="?/update" use:enhance={queueQuantity} class="shrink-0">
 						<input type="hidden" name="lineId" value={line.id} />
 						<div class="flex border-[1.5px] border-shop-border bg-shop-subtle">
 							<button
 								type="submit"
 								name="quantity"
-								value={line.quantity - 1}
+								value={quantity - 1}
+								disabled={quantity <= 0}
 								aria-label="Diminuer la quantité"
-								class="px-3.5 text-[17px] text-shop-ink hover:bg-white"
+								class="px-3.5 text-[17px] text-shop-ink hover:bg-white disabled:opacity-40"
 							>
 								−
 							</button>
@@ -144,13 +227,13 @@
 								class="min-w-8 px-1 py-2.5 text-center font-display font-bold text-shop-ink"
 								aria-label="Quantité"
 							>
-								{line.quantity}
+								{quantity}
 							</span>
 							<button
 								type="submit"
 								name="quantity"
-								value={line.quantity + 1}
-								disabled={line.quantity >= line.stock}
+								value={quantity + 1}
+								disabled={quantity >= line.stock}
 								aria-label="Augmenter la quantité"
 								class="px-3.5 text-[17px] text-shop-ink hover:bg-white disabled:opacity-40"
 							>
@@ -161,12 +244,12 @@
 
 					<div class="ms-auto shrink-0 text-right whitespace-nowrap">
 						<p class="font-display text-lg font-extrabold text-shop-ink">
-							{formatPrice(Number(line.priceTtc) * line.quantity)}
+							{formatPrice(Number(line.priceTtc) * quantity)}
 						</p>
 						<p class="text-xs text-shop-muted">
 							TTC · {formatPrice(line.priceTtc)} l'unité
 						</p>
-						<form method="POST" action="?/remove" use:enhance class="mt-1">
+						<form method="POST" action="?/remove" use:enhance={refreshAfterSubmit} class="mt-1">
 							<input type="hidden" name="lineId" value={line.id} />
 							<button
 								type="submit"
@@ -189,22 +272,18 @@
 
 		<!-- ================= Récapitulatif ================= -->
 		<aside class="border-[1.5px] border-shop-ink bg-white p-5 lg:sticky lg:top-[12.5rem]">
-			<h2
-				class="mb-4 font-display text-base font-extrabold tracking-[0.02em] text-shop-ink uppercase"
-			>
-				Récapitulatif
-			</h2>
+			<Heading size="card" class="mb-4">Récapitulatif</Heading>
 
 			<dl class="text-[14.5px] text-shop-ink-soft">
 				<div class="flex justify-between gap-3 py-1.5">
 					<dt>
-						Sous-total ({cart.totals.itemCount} article{cart.totals.itemCount > 1 ? 's' : ''})
+						Sous-total ({shownTotals.itemCount} article{shownTotals.itemCount > 1 ? 's' : ''})
 					</dt>
-					<dd class="font-bold text-shop-ink">{formatPrice(cart.totals.subtotalHt)} HT</dd>
+					<dd class="font-bold text-shop-ink">{formatPrice(shownTotals.subtotalHt)} HT</dd>
 				</div>
 				<div class="flex justify-between gap-3 py-1.5">
 					<dt>TVA</dt>
-					<dd class="font-bold text-shop-ink">{formatPrice(cart.totals.tax)}</dd>
+					<dd class="font-bold text-shop-ink">{formatPrice(shownTotals.tax)}</dd>
 				</div>
 				<div class="flex justify-between gap-3 py-1.5">
 					<dt>Livraison</dt>
@@ -219,7 +298,7 @@
 			<div class="mt-3 flex justify-between gap-3 border-t-[1.5px] border-shop-border pt-3.5">
 				<span class="font-display text-[17px] font-extrabold text-shop-ink">Total TTC</span>
 				<span class="font-display text-[22px] font-extrabold text-shop-ink">
-					{formatPrice(cart.totals.totalTtc)}
+					{formatPrice(shownTotals.totalTtc)}
 				</span>
 			</div>
 
@@ -229,13 +308,7 @@
 				</p>
 			{/if}
 
-			<button
-				type="button"
-				disabled
-				class="mt-4 w-full bg-shop-blue px-4 py-3.5 font-display text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:bg-shop-border disabled:text-shop-muted"
-			>
-				Passer à la livraison
-			</button>
+			<ShopButton disabled block class="mt-4">Passer à la livraison</ShopButton>
 			<p class="mt-2 text-center text-xs text-shop-muted">
 				Le tunnel de commande sera disponible prochainement.
 			</p>
@@ -249,7 +322,7 @@
 		</aside>
 	</div>
 
-	<form method="POST" action="?/clear" use:enhance class="mt-4">
+	<form method="POST" action="?/clear" use:enhance={refreshAfterSubmit} class="mt-4">
 		<button
 			type="submit"
 			class="text-sm font-medium text-shop-muted underline underline-offset-4 hover:text-shop-red"

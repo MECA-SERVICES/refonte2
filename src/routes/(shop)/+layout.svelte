@@ -21,6 +21,9 @@
 	} from 'flowbite-svelte-icons';
 	import MegaMenu from '$lib/components/shop/MegaMenu.svelte';
 	import NavigationIndicator from '$lib/components/shop/NavigationIndicator.svelte';
+	import CartToast from '$lib/components/shop/CartToast.svelte';
+	import ShopButton from '$lib/components/shop/ShopButton.svelte';
+	import { cartFeedback } from '$lib/components/shop/cart-feedback.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -57,6 +60,7 @@
 </script>
 
 <NavigationIndicator />
+<CartToast bind:message={cartFeedback.message} />
 
 <div class="flex min-h-screen flex-col bg-shop-subtle">
 	<header class="sticky top-0 z-50">
@@ -130,7 +134,7 @@
 					/>
 					<button
 						type="submit"
-						class="shrink-0 bg-shop-blue px-5 font-display text-sm font-bold text-shop-subtle transition-colors hover:bg-shop-blue-dark"
+						class="shrink-0 bg-shop-blue px-5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
 					>
 						<SearchOutline class="inline h-4 w-4 sm:hidden" />
 						<span class="hidden sm:inline">Rechercher</span>
@@ -173,19 +177,19 @@
 						</a>
 					{/if}
 
-					<a
-						href="/inscription"
-						class="hidden border-[1.5px] border-shop-ink bg-white px-3.5 py-2.5 text-sm font-bold text-shop-ink lg:block"
-					>
+					<ShopButton href="/inscription" variant="outline" size="sm" class="hidden lg:inline-flex">
 						Demander un devis
-					</a>
+					</ShopButton>
 
 					<a
 						href="/panier"
 						class="bg-shop-blue px-4 py-2.5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
 					>
 						<CartOutline class="me-1 inline h-4 w-4" />
-						Panier · {data.cartCount}
+						Panier ·
+						{#key data.cartCount}
+							<span class="inline-block animate-[cart-bump_0.4s_ease-out]">{data.cartCount}</span>
+						{/key}
 					</a>
 				</div>
 			</div>
@@ -377,3 +381,19 @@
 		</div>
 	</Footer>
 </div>
+
+<style>
+	/* Le compteur du panier rebondit à chaque changement : signal bref, mais
+	   suffisant pour rattacher l'ajout à l'icône du panier. */
+	@keyframes cart-bump {
+		0% {
+			transform: scale(1);
+		}
+		40% {
+			transform: scale(1.5);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+</style>

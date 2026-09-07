@@ -2,6 +2,8 @@
 	import { Button } from 'flowbite-svelte';
 	import { ArrowRightToBracketOutline } from 'flowbite-svelte-icons';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
+	import Panel from '$lib/components/shop/Panel.svelte';
+	import Heading from '$lib/components/shop/Heading.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -41,10 +43,8 @@
 
 <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_300px] lg:items-start">
 	<!-- ================= Coordonnées ================= -->
-	<section class="border-[1.5px] border-shop-border bg-white p-6">
-		<h2 class="font-display text-base font-extrabold tracking-wide text-shop-ink uppercase">
-			Mes informations
-		</h2>
+	<Panel padded={false} class="p-6">
+		<Heading size="card">Mes informations</Heading>
 
 		{#if data.profile}
 			<dl class="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
@@ -113,13 +113,11 @@
 		<p class="mt-6 text-xs text-shop-muted">
 			La modification de vos informations et le carnet d'adresses arrivent prochainement.
 		</p>
-	</section>
+	</Panel>
 
 	<!-- ================= Actions ================= -->
-	<aside class="border-[1.5px] border-shop-border bg-white p-6">
-		<h2 class="font-display text-base font-extrabold tracking-wide text-shop-ink uppercase">
-			Raccourcis
-		</h2>
+	<Panel padded={false} class="p-6">
+		<Heading size="card">Raccourcis</Heading>
 
 		<div class="mt-4 space-y-2">
 			<a
@@ -142,5 +140,5 @@
 				<ArrowRightToBracketOutline class="me-2 h-4 w-4" /> Déconnexion
 			</Button>
 		</form>
-	</aside>
+	</Panel>
 </div>

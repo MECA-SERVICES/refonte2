@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Button, Input, Label } from 'flowbite-svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
+	import Panel from '$lib/components/shop/Panel.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -15,7 +16,7 @@
 
 <div class="mx-auto grid max-w-4xl gap-8 md:grid-cols-2 md:gap-10">
 	<!-- ================= Connexion ================= -->
-	<section class="border-[1.5px] border-shop-border bg-white p-6 sm:p-8">
+	<Panel padded={false} class="p-6 sm:p-8">
 		<h1 class="font-display text-xl font-extrabold tracking-tight text-shop-ink">Je me connecte</h1>
 		<p class="mt-1 text-sm text-shop-muted">Accédez à votre compte et à vos commandes.</p>
 
@@ -62,10 +63,10 @@
 				09 50 92 23 36
 			</a>.
 		</p>
-	</section>
+	</Panel>
 
 	<!-- ================= Création de compte ================= -->
-	<section class="border-[1.5px] border-shop-border bg-white p-6 sm:p-8">
+	<Panel padded={false} class="p-6 sm:p-8">
 		<h2 class="font-display text-xl font-extrabold tracking-tight text-shop-ink">
 			Je crée mon compte
 		</h2>
@@ -82,5 +83,5 @@
 		<Button href="/inscription" size="lg" color="alternative" class="mt-6 w-full">
 			Créer un compte
 		</Button>
-	</section>
+	</Panel>
 </div>
