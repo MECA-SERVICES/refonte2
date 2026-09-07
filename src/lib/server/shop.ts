@@ -215,26 +215,37 @@ export type ShopListParams = {
 	perPage?: number;
 };
 
-/** Conditions communes au listing et au calcul des facettes. */
-function listConditions(params: ShopListParams): SQL[] {
+/**
+ * Conditions communes au listing et au calcul des facettes.
+ *
+ * `secondaryCategories` élargit la sélection aux rattachements multiples
+ * (table `product_category`). Ce sous-`EXISTS` empêche Postgres d'utiliser
+ * l'index de facettes et fait passer un décompte de 0,3 s à plus de 7 s ; on
+ * ne le paie donc que sur le listing, où il concerne quelques centaines de
+ * produits, jamais sur les compteurs.
+ */
+function listConditions(params: ShopListParams & { secondaryCategories?: boolean }): SQL[] {
 	const conditions: SQL[] = [eq(product.isActive, true)];
 
 	if (params.categoryIds?.length) {
+		const direct = inArray(product.categoryId, params.categoryIds);
 		conditions.push(
-			or(
-				inArray(product.categoryId, params.categoryIds),
-				exists(
-					db
-						.select({ one: sql`1` })
-						.from(productCategory)
-						.where(
-							and(
-								eq(productCategory.productId, product.id),
-								inArray(productCategory.categoryId, params.categoryIds)
-							)
+			params.secondaryCategories === false
+				? direct
+				: or(
+						direct,
+						exists(
+							db
+								.select({ one: sql`1` })
+								.from(productCategory)
+								.where(
+									and(
+										eq(productCategory.productId, product.id),
+										inArray(productCategory.categoryId, params.categoryIds)
+									)
+								)
 						)
-				)
-			)!
+					)!
 		);
 	}
 
@@ -262,7 +273,11 @@ function listConditions(params: ShopListParams): SQL[] {
  * afin que les autres options restent visibles et cliquables.
  */
 export async function shopBrandFacets(params: ShopListParams, limit = 12) {
-	const conditions = listConditions({ ...params, brandIds: undefined });
+	const conditions = listConditions({
+		...params,
+		brandIds: undefined,
+		secondaryCategories: false
+	});
 
 	return db
 		.select({
@@ -280,7 +295,11 @@ export async function shopBrandFacets(params: ShopListParams, limit = 12) {
 
 /** Nombre d'articles disponibles immédiatement dans le périmètre courant. */
 export async function shopStockFacet(params: ShopListParams) {
-	const conditions = listConditions({ ...params, inStockOnly: false });
+	const conditions = listConditions({
+		...params,
+		inStockOnly: false,
+		secondaryCategories: false
+	});
 	const [row] = await db
 		.select({ total: sql<number>`count(*) filter (where ${product.stock} > 0)::int` })
 		.from(product)
