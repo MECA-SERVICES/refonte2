@@ -23,9 +23,6 @@
 	];
 
 	function runSearch(value: string) {
-		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
-		// de route littéraux, et l'application ne définit pas de `paths.base`.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(listFilterHref('/admin/team', [['q', value]]));
 	}
 </script>

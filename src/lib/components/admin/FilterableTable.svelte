@@ -89,33 +89,22 @@
 		const value = (e.currentTarget as HTMLInputElement).value;
 		filterValues[filterKey] = value;
 		clearTimeout(timer);
-		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
-		// de route littéraux, et l'application ne définit pas de `paths.base`.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		timer = setTimeout(() => goto(buildUrl({}), { keepFocus: true, noScroll: true }), debounceMs);
 	}
 
 	function onFilterSelect(filterKey: string, e: Event) {
 		filterValues[filterKey] = (e.currentTarget as HTMLSelectElement).value;
-		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
-		// de route littéraux, et l'application ne définit pas de `paths.base`.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(buildUrl({}), { keepFocus: true, noScroll: true });
 	}
 
 	/** Navigue vers la fiche de la ligne cliquée, si `rowHref` est fourni. */
 	function openRow(row: Row) {
 		if (!rowHref) return;
-		// Chemin déjà complet, sans `paths.base` à préfixer : voir la note de `buildUrl`.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(rowHref(row));
 	}
 
 	function toggleSort(sortKey: string) {
 		const dir = params.sort === sortKey && params.dir === 'asc' ? 'desc' : 'asc';
-		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
-		// de route littéraux, et l'application ne définit pas de `paths.base`.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(buildUrl({ sort: sortKey, dir }), { keepFocus: true, noScroll: true });
 	}
 </script>

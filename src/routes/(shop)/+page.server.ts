@@ -4,7 +4,7 @@ import { estimateProductTotal } from '$lib/server/catalog';
 
 export const load: PageServerLoad = async () => {
 	const [latest, productTotal, brands] = await Promise.all([
-		latestShopProducts(8),
+		latestShopProducts(12),
 		estimateProductTotal(),
 		featuredBrands(12)
 	]);

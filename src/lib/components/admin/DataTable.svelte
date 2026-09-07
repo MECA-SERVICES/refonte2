@@ -46,8 +46,6 @@
 	/** Navigue vers la fiche de la ligne cliquée, si `rowHref` est fourni. */
 	function openRow(row: Row) {
 		if (!rowHref) return;
-		// Chemin déjà complet, sans `paths.base` à préfixer : voir la note de `buildUrl`.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(rowHref(row));
 	}
 </script>

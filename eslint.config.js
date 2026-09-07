@@ -45,8 +45,14 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		files: ['**/*.svelte'],
+		rules: {
+			// `resolve()` de SvelteKit n'accepte que des identifiants de route
+			// littéraux : il ne peut pas typer un chemin construit dynamiquement
+			// (slug de catégorie, chemin renvoyé par un helper). L'application ne
+			// définit par ailleurs aucun `paths.base` à préfixer — la règle est
+			// donc sans objet ici.
+			'svelte/no-navigation-without-resolve': 'off'
+		}
 	}
 );

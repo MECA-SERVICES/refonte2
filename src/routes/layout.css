@@ -7,17 +7,22 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-	--color-primary-50: #eff6ff;
-	--color-primary-100: #dbeafe;
-	--color-primary-200: #bfdbfe;
-	--color-primary-300: #93c5fd;
-	--color-primary-400: #60a5fa;
-	--color-primary-500: #3b82f6;
-	--color-primary-600: #2563eb;
-	--color-primary-700: #1d4ed8;
-	--color-primary-800: #1e40af;
-	--color-primary-900: #1e3a8a;
-	--color-primary-950: #172554;
+	/* ------------------------------------------------------------------
+	   Palette « primary » de Flowbite alignée sur le bleu de la charte
+	   (#314192). Tous les composants de la librairie — boutons, anneaux de
+	   focus, éléments actifs — adoptent ainsi la marque sans surcharge.
+	   ------------------------------------------------------------------ */
+	--color-primary-50: #f2f4fb;
+	--color-primary-100: #e2e7f6;
+	--color-primary-200: #cbd3ee;
+	--color-primary-300: #a6b3e1;
+	--color-primary-400: #7c8dd0;
+	--color-primary-500: #5a6cc0;
+	--color-primary-600: #4453ab;
+	--color-primary-700: #314192;
+	--color-primary-800: #222d6b;
+	--color-primary-900: #1e2757;
+	--color-primary-950: #141a3a;
 
 	--color-secondary-50: #f0f9ff;
 	--color-secondary-100: #e0f2fe;
@@ -30,9 +35,14 @@
 	--color-secondary-800: #075985;
 	--color-secondary-900: #0c4a6e;
 
-	/* Charte graphique boutique — reprise de mecaservicesshop.fr (thème Angar personnalisé) :
-	   bleu marine (menu, footer, prix listes), rouge (prix fiche produit, ajout panier, téléphone),
-	   orange (titres de sections, newsletter). */
+	/* ------------------------------------------------------------------
+	   Charte boutique — chaque accent garde UN rôle, pour que le client
+	   apprenne à le lire :
+
+	     bleu   → marque, navigation, éléments actifs
+	     rouge  → achat, uniquement (prix, ajout au panier)
+	     orange → commercial, uniquement (promotions, déstockage)
+	   ------------------------------------------------------------------ */
 	--color-shop-blue: #314192;
 	--color-shop-blue-dark: #222d6b;
 	--color-shop-blue-light: #5362b5;
@@ -40,6 +50,16 @@
 	--color-shop-red-dark: #b8151e;
 	--color-shop-orange: #ec6608;
 	--color-shop-orange-light: #eb853d;
+	/* Orange assourdi pour les aplats larges : la teinte pure ne tient que
+	   sur les petits éléments (badges, pilules). */
+	--color-shop-orange-deep: #c05408;
+
+	/* Neutres légèrement teintés du bleu de marque : les gris froids de
+	   Tailwind vibrent contre ce bleu violacé, ceux-ci s'y accordent. */
+	--color-shop-ink: #1d2233;
+	--color-shop-muted: #666c80;
+	--color-shop-border: #e4e7ef;
+	--color-shop-subtle: #f4f6fb;
 }
 
 @source '../../node_modules/flowbite-svelte/dist';

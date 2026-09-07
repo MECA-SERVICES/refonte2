@@ -19,9 +19,6 @@
 	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' });
 
 	function filterByState(id: number | null) {
-		// Chemin porteur d'une query string : `resolve()` n'accepte que des identifiants
-		// de route littéraux, et l'application ne définit pas de `paths.base`.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(listFilterHref('/admin/orders', [['state', id]]));
 	}
 
