@@ -34,14 +34,22 @@
 		<div class="h-full w-1/3 animate-[loading_1.1s_ease-in-out_infinite] bg-shop-red"></div>
 	</div>
 
-	<!-- Pastille discrète : le contenu reste lisible pendant le chargement -->
+	<!--
+		Voile centré : un léger fond translucide isole l'indicateur du contenu,
+		qui reste visible derrière. Placé au centre de l'écran, il est vu sans
+		avoir à chercher — en bas de page, il passait inaperçu.
+	-->
 	<div
-		class="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2.5 border-[1.5px] border-shop-ink bg-white px-4 py-2.5 shadow-lg"
+		class="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-shop-ink/10"
 		role="status"
 		aria-live="polite"
 	>
-		<Spinner size="5" color="red" />
-		<span class="font-display text-sm font-bold text-shop-ink">Chargement…</span>
+		<div
+			class="flex items-center gap-3 border-[1.5px] border-shop-ink bg-white px-6 py-4 shadow-xl"
+		>
+			<Spinner size="6" color="red" />
+			<span class="font-display text-[15px] font-bold text-shop-ink">Chargement…</span>
+		</div>
 	</div>
 {/if}
 
