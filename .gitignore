@@ -29,5 +29,10 @@ project.inlang/cache/
 
 # IDE
 .idea
+.agents
+.claude
+.vscode
+CLAUDE.md
+
 
 

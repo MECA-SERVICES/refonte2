@@ -1,14 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button } from 'flowbite-svelte';
-	import {
-		ArrowRightOutline,
-		ExclamationCircleOutline,
-		TrashBinOutline
-	} from 'flowbite-svelte-icons';
+	import { ExclamationCircleOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
-	import QuantityStepper from '$lib/components/shop/QuantityStepper.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
 	import type { PageProps } from './$types';
 
@@ -25,6 +19,16 @@
 		if (!line.priceHtAtAdd) return 0;
 		return Number(line.priceHt) - Number(line.priceHtAtAdd);
 	}
+
+	/**
+	 * Étapes du tunnel. Seule la première est active : livraison et paiement
+	 * attendent les sections 20 et 21 du cahier des charges.
+	 */
+	const steps = [
+		{ n: 1, label: 'Mon panier', done: true },
+		{ n: 2, label: 'Livraison', done: false },
+		{ n: 3, label: 'Paiement', done: false }
+	];
 </script>
 
 <svelte:head>
@@ -34,13 +38,25 @@
 
 <Breadcrumb items={[{ label: 'Mon panier' }]} />
 
-<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]">
-	Mon panier
-</h1>
+<!-- ================= Étapes du tunnel ================= -->
+<ol class="mb-7 flex flex-wrap gap-2" aria-label="Étapes de la commande">
+	{#each steps as step (step.n)}
+		<li>
+			<span
+				aria-current={step.done ? 'step' : undefined}
+				class="block border-[1.5px] border-shop-ink px-4 py-2.5 font-display text-sm font-bold {step.done
+					? 'bg-shop-ink text-shop-subtle'
+					: 'bg-transparent text-shop-ink opacity-45'}"
+			>
+				{step.n} · {step.label}
+			</span>
+		</li>
+	{/each}
+</ol>
 
 {#if form?.message}
 	<p
-		class="mt-4 border-[1.5px] border-shop-border bg-white px-4 py-3 text-sm font-medium text-shop-ink"
+		class="mb-5 border-[1.5px] border-shop-border bg-white px-4 py-3 text-sm font-medium text-shop-ink"
 	>
 		{form.message}
 	</p>
@@ -48,166 +64,161 @@
 
 {#if lines.length === 0}
 	<!-- Panier vide : on renvoie vers le catalogue (parcours 5.7). -->
-	<div class="mt-8 border-[1.5px] border-shop-border bg-white px-6 py-14 text-center">
-		<p class="text-lg font-bold text-shop-ink">Votre panier est vide.</p>
+	<div class="border-[1.5px] border-shop-border bg-white px-6 py-14 text-center">
+		<p class="font-display text-lg font-extrabold text-shop-ink">Votre panier est vide.</p>
 		<p class="mt-2 text-sm text-shop-muted">
 			Parcourez le catalogue pour trouver la pièce ou le matériel qu'il vous faut.
 		</p>
-		<Button size="lg" href="/recherche" class="mt-6">
-			Découvrir le catalogue <ArrowRightOutline class="ms-2 h-4 w-4" />
-		</Button>
+		<a
+			href="/recherche"
+			class="mt-6 inline-block bg-shop-blue px-6 py-3.5 font-display text-[15px] font-bold text-white hover:bg-shop-blue-dark"
+		>
+			Découvrir le catalogue
+		</a>
 	</div>
 {:else}
-	<div class="mt-8 grid gap-8 lg:grid-cols-[1fr_340px] lg:items-start">
+	<div class="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
 		<!-- ================= Lignes ================= -->
-		<div>
-			<div
-				class="hidden border-b border-shop-border pb-2 text-xs font-semibold tracking-wide text-shop-muted uppercase sm:flex"
-			>
-				<span class="flex-1">Article</span>
-				<span class="w-28 text-center">Prix unitaire</span>
-				<span class="w-32 text-center">Quantité</span>
-				<span class="w-28 text-right">Total</span>
-			</div>
+		<div class="min-w-0 border-[1.5px] border-shop-border bg-white">
+			{#each lines as line (line.id)}
+				{@const drift = priceDrift(line)}
+				<div class="flex flex-wrap items-center gap-4 border-b border-shop-border-soft p-5">
+					<a
+						href={shopProductPath(line)}
+						class="flex h-24 w-24 shrink-0 items-center justify-center border border-shop-border bg-white p-1.5"
+					>
+						{#if line.imageUrl}
+							<img
+								src={line.imageUrl}
+								alt={line.name}
+								loading="lazy"
+								class="max-h-full max-w-full object-contain"
+							/>
+						{:else}
+							<ImagePlaceholder label="Produit" class="border-0" />
+						{/if}
+					</a>
 
-			<ul class="divide-y divide-shop-border border-b border-shop-border">
-				{#each lines as line (line.id)}
-					{@const drift = priceDrift(line)}
-					<li class="flex gap-4 py-5">
-						<a href={shopProductPath(line)} class="w-20 shrink-0 sm:w-24">
-							{#if line.imageUrl}
-								<img
-									src={line.imageUrl}
-									alt={line.name}
-									loading="lazy"
-									class="aspect-square w-full border border-shop-border bg-white object-contain p-1.5"
-								/>
-							{:else}
-								<ImagePlaceholder label="Photo" class="aspect-square" />
-							{/if}
-						</a>
-
-						<div class="flex min-w-0 flex-1 flex-col">
-							{#if line.brandName}
-								<p class="text-xs font-medium tracking-wide text-shop-muted uppercase">
-									{line.brandName}
-								</p>
-							{/if}
-							<a
-								href={shopProductPath(line)}
-								class="text-[15px] leading-snug font-bold text-shop-ink hover:text-shop-blue"
-							>
-								{line.name}
-							</a>
-							<p class="mt-0.5 text-xs text-shop-muted">Réf. {line.reference}</p>
-
-							{#if isBlocking(line)}
-								<p
-									class="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-shop-red"
-								>
-									<ExclamationCircleOutline class="h-4 w-4" />
-									Article indisponible — à retirer pour commander
-								</p>
-							{:else if drift > 0}
-								<p class="mt-2 text-xs text-shop-orange">
-									Le prix de cet article a augmenté depuis son ajout.
-								</p>
-							{:else if drift < 0}
-								<p class="mt-2 text-xs text-green-600">
-									Bonne nouvelle : le prix a baissé depuis son ajout.
-								</p>
-							{/if}
-
-							<form method="POST" action="?/remove" use:enhance class="mt-3">
-								<input type="hidden" name="lineId" value={line.id} />
-								<button
-									type="submit"
-									class="inline-flex items-center gap-1.5 text-xs font-medium text-shop-muted hover:text-shop-red"
-								>
-									<TrashBinOutline class="h-4 w-4" /> Retirer
-								</button>
-							</form>
-						</div>
-
-						<!-- Prix unitaire : colonne dédiée sur écran large. -->
-						<div class="hidden w-28 shrink-0 text-center sm:block">
-							<p class="text-sm font-semibold text-shop-ink">{formatPrice(line.priceTtc)}</p>
-							<p class="text-xs text-shop-muted">TTC</p>
-						</div>
-
-						<div class="hidden w-32 shrink-0 justify-center sm:flex">
-							<form method="POST" action="?/update" use:enhance>
-								<input type="hidden" name="lineId" value={line.id} />
-								<QuantityStepper
-									id="qty-{line.id}"
-									value={line.quantity}
-									min={0}
-									max={line.stock}
-									submitOnChange
-								/>
-							</form>
-						</div>
-
-						<div class="w-28 shrink-0 text-right">
-							<p class="text-base font-bold text-shop-red">
-								{formatPrice(Number(line.priceTtc) * line.quantity)}
+					<div class="min-w-0 flex-1 basis-52">
+						{#if line.brandName}
+							<p class="text-xs font-bold tracking-[0.1em] text-shop-muted uppercase">
+								{line.brandName}
 							</p>
-							<p class="text-xs text-shop-muted">TTC</p>
-							<!-- Sur mobile, le sélecteur suit le total faute de colonne dédiée. -->
-							<form
-								method="POST"
-								action="?/update"
-								use:enhance
-								class="mt-2 flex justify-end sm:hidden"
-							>
-								<input type="hidden" name="lineId" value={line.id} />
-								<QuantityStepper
-									id="qty-mobile-{line.id}"
-									value={line.quantity}
-									min={0}
-									max={line.stock}
-									submitOnChange
-								/>
-							</form>
-						</div>
-					</li>
-				{/each}
-			</ul>
+						{/if}
+						<a
+							href={shopProductPath(line)}
+							class="mt-0.5 block font-display text-base font-bold text-shop-ink hover:text-shop-blue"
+						>
+							{line.name}
+						</a>
+						<p class="mt-0.5 text-[13px] text-shop-muted">
+							Réf. {line.reference} · {line.stock > 0 ? `En stock (${line.stock})` : 'Sur commande'}
+						</p>
 
-			<form method="POST" action="?/clear" use:enhance class="mt-4">
-				<button
-					type="submit"
-					class="text-sm font-medium text-shop-muted underline underline-offset-4 hover:text-shop-red"
-				>
-					Vider le panier
-				</button>
-			</form>
+						{#if isBlocking(line)}
+							<p class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold text-shop-red">
+								<ExclamationCircleOutline class="h-4 w-4" />
+								Indisponible — à retirer pour commander
+							</p>
+						{:else if drift > 0}
+							<p class="mt-1.5 text-xs text-shop-orange">Le prix a augmenté depuis l'ajout.</p>
+						{:else if drift < 0}
+							<p class="mt-1.5 text-xs text-green-700">Le prix a baissé depuis l'ajout.</p>
+						{/if}
+					</div>
+
+					<!-- Quantité : envoi immédiat, sans bouton de confirmation -->
+					<form method="POST" action="?/update" use:enhance class="shrink-0">
+						<input type="hidden" name="lineId" value={line.id} />
+						<div class="flex border-[1.5px] border-shop-border bg-shop-subtle">
+							<button
+								type="submit"
+								name="quantity"
+								value={line.quantity - 1}
+								aria-label="Diminuer la quantité"
+								class="px-3.5 text-[17px] text-shop-ink hover:bg-white"
+							>
+								−
+							</button>
+							<span
+								class="min-w-8 px-1 py-2.5 text-center font-display font-bold text-shop-ink"
+								aria-label="Quantité"
+							>
+								{line.quantity}
+							</span>
+							<button
+								type="submit"
+								name="quantity"
+								value={line.quantity + 1}
+								disabled={line.quantity >= line.stock}
+								aria-label="Augmenter la quantité"
+								class="px-3.5 text-[17px] text-shop-ink hover:bg-white disabled:opacity-40"
+							>
+								+
+							</button>
+						</div>
+					</form>
+
+					<div class="ms-auto shrink-0 text-right whitespace-nowrap">
+						<p class="font-display text-lg font-extrabold text-shop-ink">
+							{formatPrice(Number(line.priceTtc) * line.quantity)}
+						</p>
+						<p class="text-xs text-shop-muted">
+							TTC · {formatPrice(line.priceTtc)} l'unité
+						</p>
+						<form method="POST" action="?/remove" use:enhance class="mt-1">
+							<input type="hidden" name="lineId" value={line.id} />
+							<button
+								type="submit"
+								class="inline-flex items-center gap-1 text-xs font-medium text-shop-muted hover:text-shop-red"
+							>
+								<TrashBinOutline class="h-3.5 w-3.5" /> Retirer
+							</button>
+						</form>
+					</div>
+				</div>
+			{/each}
+
+			<div class="flex flex-wrap justify-between gap-3 p-5 text-sm">
+				<a href="/recherche" class="font-semibold text-shop-blue hover:underline">
+					← Continuer mes achats
+				</a>
+				<span class="text-shop-muted">Préparation atelier : 24 h ouvrées</span>
+			</div>
 		</div>
 
 		<!-- ================= Récapitulatif ================= -->
-		<aside class="border-[1.5px] border-shop-ink bg-white p-6 lg:sticky lg:top-28">
-			<h2 class="font-display text-base font-extrabold tracking-wide text-shop-ink uppercase">
+		<aside class="border-[1.5px] border-shop-ink bg-white p-5 lg:sticky lg:top-[12.5rem]">
+			<h2
+				class="mb-4 font-display text-base font-extrabold tracking-[0.02em] text-shop-ink uppercase"
+			>
 				Récapitulatif
 			</h2>
 
-			<dl class="mt-4 space-y-2 text-sm">
-				<div class="flex justify-between">
-					<dt class="text-shop-muted">Sous-total HT</dt>
-					<dd class="font-semibold text-shop-ink">{formatPrice(cart.totals.subtotalHt)}</dd>
+			<dl class="text-[14.5px] text-shop-ink-soft">
+				<div class="flex justify-between gap-3 py-1.5">
+					<dt>
+						Sous-total ({cart.totals.itemCount} article{cart.totals.itemCount > 1 ? 's' : ''})
+					</dt>
+					<dd class="font-bold text-shop-ink">{formatPrice(cart.totals.subtotalHt)} HT</dd>
 				</div>
-				<div class="flex justify-between">
-					<dt class="text-shop-muted">TVA</dt>
-					<dd class="font-semibold text-shop-ink">{formatPrice(cart.totals.tax)}</dd>
+				<div class="flex justify-between gap-3 py-1.5">
+					<dt>TVA</dt>
+					<dd class="font-bold text-shop-ink">{formatPrice(cart.totals.tax)}</dd>
 				</div>
-				<div class="flex justify-between">
-					<dt class="text-shop-muted">Frais de port</dt>
-					<dd class="text-shop-muted">Estimés à l'étape suivante</dd>
+				<div class="flex justify-between gap-3 py-1.5">
+					<dt>Livraison</dt>
+					<dd class="text-shop-muted">Calculée à l'étape suivante</dd>
+				</div>
+				<div class="flex justify-between gap-3 py-1.5">
+					<dt>Préparation</dt>
+					<dd class="font-bold text-shop-ink">24 h ouvrées</dd>
 				</div>
 			</dl>
 
-			<div class="mt-4 flex items-baseline justify-between border-t border-shop-border pt-4">
-				<span class="font-bold text-shop-ink">Total TTC</span>
-				<span class="text-2xl font-extrabold text-shop-red">
+			<div class="mt-3 flex justify-between gap-3 border-t-[1.5px] border-shop-border pt-3.5">
+				<span class="font-display text-[17px] font-extrabold text-shop-ink">Total TTC</span>
+				<span class="font-display text-[22px] font-extrabold text-shop-ink">
 					{formatPrice(cart.totals.totalTtc)}
 				</span>
 			</div>
@@ -218,19 +229,32 @@
 				</p>
 			{/if}
 
-			<Button size="lg" disabled class="mt-5 w-full">
-				Passer commande <ArrowRightOutline class="ms-2 h-4 w-4" />
-			</Button>
+			<button
+				type="button"
+				disabled
+				class="mt-4 w-full bg-shop-blue px-4 py-3.5 font-display text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:bg-shop-border disabled:text-shop-muted"
+			>
+				Passer à la livraison
+			</button>
 			<p class="mt-2 text-center text-xs text-shop-muted">
 				Le tunnel de commande sera disponible prochainement.
 			</p>
 
-			<a
-				href="/recherche"
-				class="mt-4 block text-center text-sm font-semibold text-shop-blue hover:underline"
+			<p
+				class="mt-4 border-t border-shop-border-soft pt-4 text-[13px] leading-relaxed text-shop-muted"
 			>
-				Continuer mes achats
-			</a>
+				Collectivité ou administration ? Payez sur
+				<strong class="text-shop-ink">mandat administratif</strong> (Chorus Pro), sans carte bancaire.
+			</p>
 		</aside>
 	</div>
+
+	<form method="POST" action="?/clear" use:enhance class="mt-4">
+		<button
+			type="submit"
+			class="text-sm font-medium text-shop-muted underline underline-offset-4 hover:text-shop-red"
+		>
+			Vider le panier
+		</button>
+	</form>
 {/if}
