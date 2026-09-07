@@ -35,7 +35,7 @@
 	d'attente indique le format attendu.
 -->
 <section
-	class="relative overflow-hidden rounded-2xl bg-shop-subtle"
+	class="relative overflow-hidden bg-shop-subtle"
 	aria-roledescription="carrousel"
 	aria-label="Mises en avant"
 	onmouseenter={() => (paused = true)}
@@ -73,13 +73,13 @@
 	{#if slides.length > 1}
 		<!-- Pagination en pilule, comme un compteur : ‹ 1 / 3 › -->
 		<div
-			class="absolute right-6 bottom-5 flex items-center gap-1 rounded-full bg-white px-2 py-1 shadow-sm lg:right-8"
+			class="absolute right-6 bottom-5 flex items-center gap-1 border-[1.5px] border-shop-ink bg-white px-2 py-1 lg:right-8"
 		>
 			<button
 				type="button"
 				onclick={previous}
 				aria-label="Diapositive précédente"
-				class="flex h-7 w-7 items-center justify-center rounded-full text-shop-muted transition hover:bg-shop-subtle hover:text-shop-ink"
+				class="flex h-7 w-7 items-center justify-center text-shop-muted transition hover:bg-shop-subtle hover:text-shop-ink"
 			>
 				<svg
 					class="h-3.5 w-3.5"
@@ -103,7 +103,7 @@
 				type="button"
 				onclick={next}
 				aria-label="Diapositive suivante"
-				class="flex h-7 w-7 items-center justify-center rounded-full text-shop-muted transition hover:bg-shop-subtle hover:text-shop-ink"
+				class="flex h-7 w-7 items-center justify-center text-shop-muted transition hover:bg-shop-subtle hover:text-shop-ink"
 			>
 				<svg
 					class="h-3.5 w-3.5"

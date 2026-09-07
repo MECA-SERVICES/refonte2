@@ -26,10 +26,14 @@
 
 <Breadcrumb items={[{ label: 'Mon compte' }]} />
 
-<h1 class="text-2xl font-extrabold tracking-tight text-shop-ink sm:text-3xl">Mon compte</h1>
+<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]">
+	Mon compte
+</h1>
 
 {#if data.justRegistered}
-	<p class="mt-5 rounded-xl bg-primary-50 px-4 py-3 text-sm font-medium text-primary-800">
+	<p
+		class="mt-5 border border-shop-blue bg-primary-50 px-4 py-3 text-sm font-medium text-primary-800"
+	>
 		Votre compte est créé. Notre équipe vérifie vos informations avant de vous donner accès aux
 		conditions tarifaires dédiées ; vous pouvez déjà commander aux tarifs standard.
 	</p>
@@ -37,8 +41,10 @@
 
 <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_300px] lg:items-start">
 	<!-- ================= Coordonnées ================= -->
-	<section class="rounded-2xl border border-shop-border bg-white p-6">
-		<h2 class="text-base font-extrabold tracking-wide text-shop-ink uppercase">Mes informations</h2>
+	<section class="border-[1.5px] border-shop-border bg-white p-6">
+		<h2 class="font-display text-base font-extrabold tracking-wide text-shop-ink uppercase">
+			Mes informations
+		</h2>
 
 		{#if data.profile}
 			<dl class="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
@@ -88,8 +94,8 @@
 
 			{#if data.profile.type !== 'particulier'}
 				<p
-					class="mt-5 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold {data
-						.profile.status === 'validated'
+					class="mt-5 inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold {data.profile
+						.status === 'validated'
 						? 'bg-green-50 text-green-700'
 						: data.profile.status === 'rejected'
 							? 'bg-red-50 text-shop-red'
@@ -110,19 +116,21 @@
 	</section>
 
 	<!-- ================= Actions ================= -->
-	<aside class="rounded-2xl bg-shop-subtle p-6">
-		<h2 class="text-base font-extrabold tracking-wide text-shop-ink uppercase">Raccourcis</h2>
+	<aside class="border-[1.5px] border-shop-border bg-white p-6">
+		<h2 class="font-display text-base font-extrabold tracking-wide text-shop-ink uppercase">
+			Raccourcis
+		</h2>
 
 		<div class="mt-4 space-y-2">
 			<a
 				href="/panier"
-				class="block rounded-xl bg-white px-4 py-3 text-sm font-semibold text-shop-ink hover:text-shop-blue"
+				class="block border border-shop-border bg-white px-4 py-3 text-sm font-semibold text-shop-ink hover:text-shop-blue"
 			>
 				Mon panier
 			</a>
 			<a
 				href="/recherche"
-				class="block rounded-xl bg-white px-4 py-3 text-sm font-semibold text-shop-ink hover:text-shop-blue"
+				class="block border border-shop-border bg-white px-4 py-3 text-sm font-semibold text-shop-ink hover:text-shop-blue"
 			>
 				Continuer mes achats
 			</a>

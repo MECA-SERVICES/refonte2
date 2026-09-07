@@ -32,14 +32,16 @@
 <Breadcrumb items={[{ label: 'Connexion', href: '/connexion' }, { label: 'Créer un compte' }]} />
 
 <div class="mx-auto max-w-2xl">
-	<h1 class="text-2xl font-extrabold tracking-tight text-shop-ink">Créer mon compte</h1>
+	<h1 class="font-display text-2xl font-extrabold tracking-tight text-shop-ink">
+		Créer mon compte
+	</h1>
 	<p class="mt-1 text-sm text-shop-muted">
 		Déjà client ?
 		<a href="/connexion" class="font-semibold text-shop-blue hover:underline">Connectez-vous</a>.
 	</p>
 
 	{#if errors.form}
-		<p class="mt-5 rounded-xl bg-shop-subtle px-4 py-3 text-sm font-medium text-shop-red">
+		<p class="mt-5 border border-shop-red bg-white px-4 py-3 text-sm font-medium text-shop-red">
 			{errors.form}
 		</p>
 	{/if}
@@ -47,13 +49,13 @@
 	<form method="POST" class="mt-7 space-y-7">
 		<!-- ================= Type de compte ================= -->
 		<fieldset>
-			<legend class="text-sm font-bold tracking-wide text-shop-ink uppercase">
+			<legend class="font-display text-sm font-bold tracking-wide text-shop-ink uppercase">
 				Type de compte
 			</legend>
 			<div class="mt-3 grid gap-3 sm:grid-cols-3">
 				{#each accountTypes as option (option.value)}
 					<label
-						class="flex cursor-pointer flex-col rounded-xl border px-4 py-3 transition-colors {type ===
+						class="flex cursor-pointer flex-col border-[1.5px] px-4 py-3 transition-colors {type ===
 						option.value
 							? 'border-shop-blue bg-primary-50'
 							: 'border-shop-border bg-white hover:border-shop-blue/50'}"
@@ -77,7 +79,7 @@
 
 		<!-- ================= Identité ================= -->
 		<fieldset class="space-y-4">
-			<legend class="text-sm font-bold tracking-wide text-shop-ink uppercase"
+			<legend class="font-display text-sm font-bold tracking-wide text-shop-ink uppercase"
 				>Vos coordonnées</legend
 			>
 
@@ -134,7 +136,7 @@
 
 		<!-- ================= Champs professionnels ================= -->
 		{#if type === 'pro'}
-			<fieldset class="space-y-4 rounded-xl bg-shop-subtle p-5">
+			<fieldset class="space-y-4 border-[1.5px] border-shop-border bg-shop-subtle p-5">
 				<legend class="px-1 text-sm font-bold tracking-wide text-shop-ink uppercase">
 					Votre entreprise
 				</legend>
@@ -189,7 +191,7 @@
 
 		<!-- ================= Champs collectivité ================= -->
 		{#if type === 'collectivite'}
-			<fieldset class="space-y-4 rounded-xl bg-shop-subtle p-5">
+			<fieldset class="space-y-4 border-[1.5px] border-shop-border bg-shop-subtle p-5">
 				<legend class="px-1 text-sm font-bold tracking-wide text-shop-ink uppercase">
 					Votre collectivité
 				</legend>
@@ -216,7 +218,7 @@
 
 		<!-- ================= Mot de passe ================= -->
 		<fieldset>
-			<legend class="text-sm font-bold tracking-wide text-shop-ink uppercase">
+			<legend class="font-display text-sm font-bold tracking-wide text-shop-ink uppercase">
 				Votre mot de passe
 			</legend>
 			<div class="mt-3">

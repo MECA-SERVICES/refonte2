@@ -18,7 +18,7 @@
 	}
 
 	const linkClass =
-		'inline-flex items-center gap-2 rounded-lg border border-shop-border px-4 py-2 text-sm font-semibold text-shop-ink transition-colors hover:border-shop-blue hover:text-shop-blue';
+		'inline-flex items-center gap-2 border-[1.5px] border-shop-border bg-white px-4 py-2 font-display text-sm font-bold text-shop-ink transition-colors hover:border-shop-ink';
 </script>
 
 {#if page > 1 || hasNextPage}

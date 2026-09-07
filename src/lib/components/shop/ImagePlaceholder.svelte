@@ -19,7 +19,7 @@
 </script>
 
 <div
-	class="flex h-full w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-shop-border bg-shop-subtle text-shop-muted {className}"
+	class="flex h-full w-full flex-col items-center justify-center gap-2 border border-dashed border-shop-border bg-shop-subtle text-shop-muted {className}"
 	role="img"
 	aria-label={label}
 >

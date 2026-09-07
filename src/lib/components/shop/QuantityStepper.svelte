@@ -40,7 +40,7 @@
 	`input` nommé afin que le formulaire fonctionne sans JavaScript.
 -->
 <div
-	class="inline-flex items-center rounded-lg border border-shop-border bg-white {disabled
+	class="inline-flex items-center border-[1.5px] border-shop-border bg-white {disabled
 		? 'opacity-60'
 		: ''}"
 >

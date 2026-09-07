@@ -32,5 +32,11 @@
 
 <label class="flex items-center gap-2 text-sm text-shop-muted">
 	<span class="shrink-0">Trier par</span>
-	<Select {items} value={sort} onchange={apply} size="sm" class="w-44" />
+	<Select
+		{items}
+		value={sort}
+		onchange={apply}
+		size="sm"
+		class="w-44 rounded-none border-shop-border"
+	/>
 </label>

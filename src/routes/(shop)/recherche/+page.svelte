@@ -18,7 +18,9 @@
 <Breadcrumb items={[{ label: data.q ? 'Recherche' : 'Catalogue' }]} />
 
 <header class="border-b border-shop-border pb-5">
-	<h1 class="text-2xl font-extrabold tracking-tight text-shop-ink sm:text-3xl">{title}</h1>
+	<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]">
+		{title}
+	</h1>
 	{#if !data.q}
 		<p class="mt-2 text-sm text-shop-muted">
 			Les dernières références ajoutées à notre catalogue. Utilisez la recherche ou les rayons pour
@@ -37,7 +39,7 @@
 </div>
 
 {#if data.products.rows.length === 0}
-	<div class="mt-10 rounded-2xl bg-shop-subtle px-6 py-12 text-center">
+	<div class="mt-10 border-[1.5px] border-shop-border bg-white px-6 py-12 text-center">
 		<p class="font-semibold text-shop-ink">
 			{#if data.q}
 				Aucun résultat pour « {data.q} ».

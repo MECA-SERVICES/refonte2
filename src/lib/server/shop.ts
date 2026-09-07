@@ -9,7 +9,7 @@ import {
 	productVariant,
 	taxRule
 } from '$lib/server/db/schema';
-import { and, asc, desc, eq, exists, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, gt, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type { Category } from '$lib/server/db/catalog.schema';
 import { cached } from './cache';
 
@@ -273,6 +273,21 @@ export function featuredBrands(limit = 12) {
 		.from(brand)
 		.where(eq(brand.isActive, true))
 		.orderBy(sql`${brand.logoUrl} IS NULL`, asc(brand.name))
+		.limit(limit);
+}
+
+/**
+ * Produits disponibles immédiatement — l'immense majorité du catalogue est en
+ * commande fournisseur, ce qui rend cette sélection utile sur l'accueil.
+ */
+export function inStockShopProducts(limit = 12) {
+	return db
+		.select(productCardFields)
+		.from(product)
+		.leftJoin(brand, eq(product.brandId, brand.id))
+		.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
+		.where(and(eq(product.isActive, true), gt(product.stock, 0)))
+		.orderBy(desc(product.updatedAt), desc(product.id))
 		.limit(limit);
 }
 

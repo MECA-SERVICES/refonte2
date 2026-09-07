@@ -1,12 +1,16 @@
 import type { PageServerLoad } from './$types';
-import { featuredBrands, latestShopProducts } from '$lib/server/shop';
+import { featuredBrands, inStockShopProducts, latestShopProducts } from '$lib/server/shop';
 import { estimateProductTotal } from '$lib/server/catalog';
 
+// L'en-tête Cache-Control est posé par le layout boutique, qui porte le panier :
+// le redéfinir ici lèverait une erreur (« header is already set »).
 export const load: PageServerLoad = async () => {
-	const [latest, productTotal, brands] = await Promise.all([
+	const [inStock, latest, productTotal, brands] = await Promise.all([
+		inStockShopProducts(12),
 		latestShopProducts(12),
 		estimateProductTotal(),
 		featuredBrands(12)
 	]);
-	return { latest, productTotal, brands };
+
+	return { inStock, latest, productTotal, brands };
 };

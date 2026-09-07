@@ -28,7 +28,7 @@
 <Breadcrumb items={crumbs} />
 
 <header class="border-b border-shop-border pb-5">
-	<h1 class="text-2xl font-extrabold tracking-tight text-shop-ink sm:text-3xl">
+	<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]">
 		{data.category.name}
 	</h1>
 	{#if data.category.description}
@@ -45,7 +45,7 @@
 		{#each data.children as child (child.id)}
 			<a
 				href="/categorie/{child.slug}"
-				class="rounded-full border border-shop-border bg-white px-4 py-1.5 text-sm font-medium text-shop-ink transition-colors hover:border-shop-blue hover:text-shop-blue"
+				class="border-[1.5px] border-shop-border bg-white px-4 py-2 text-sm font-medium text-shop-ink transition-colors hover:border-shop-ink"
 			>
 				{child.name}
 			</a>
@@ -63,7 +63,9 @@
 </div>
 
 {#if data.products.rows.length === 0}
-	<p class="mt-10 rounded-2xl bg-shop-subtle px-6 py-12 text-center text-shop-muted">
+	<p
+		class="mt-10 border-[1.5px] border-shop-border bg-white px-6 py-12 text-center text-shop-muted"
+	>
 		Aucun produit dans ce rayon pour le moment.
 		{#if data.children.length > 0}
 			Explorez les sous-rayons ci-dessus.

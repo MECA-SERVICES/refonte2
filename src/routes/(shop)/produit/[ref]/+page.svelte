@@ -54,7 +54,7 @@
 <div class="grid gap-8 lg:grid-cols-2 lg:gap-12">
 	<!-- ================= Galerie ================= -->
 	<div>
-		<div class="overflow-hidden rounded-2xl border border-shop-border bg-white p-4">
+		<div class="overflow-hidden border-[1.5px] border-shop-border bg-white p-4">
 			{#if images.length > 0}
 				<img
 					src={images[activeIndex]?.url}
@@ -62,7 +62,7 @@
 					class="aspect-square w-full object-contain"
 				/>
 			{:else}
-				<ImagePlaceholder label="Photo produit" class="aspect-square border-0" />
+				<ImagePlaceholder label="Photo produit" class="aspect-square rounded-none border-0" />
 			{/if}
 		</div>
 
@@ -74,7 +74,7 @@
 						onclick={() => (selected = { id: product.id, index: i })}
 						aria-label="Voir l'image {i + 1}"
 						aria-current={i === activeIndex}
-						class="overflow-hidden rounded-xl border bg-white p-1.5 transition-colors {i ===
+						class="overflow-hidden border-[1.5px] bg-white p-1.5 transition-colors {i ===
 						activeIndex
 							? 'border-shop-blue'
 							: 'border-shop-border hover:border-shop-blue/50'}"
@@ -102,7 +102,9 @@
 			</a>
 		{/if}
 
-		<h1 class="mt-1 text-2xl font-extrabold tracking-tight text-shop-ink sm:text-3xl">
+		<h1
+			class="mt-1 font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]"
+		>
 			{product.name}
 		</h1>
 
@@ -127,9 +129,11 @@
 		{/if}
 
 		<!-- Bloc prix : le rouge est le signal d'achat de la charte -->
-		<div class="mt-6 rounded-2xl bg-shop-subtle p-5">
+		<div class="mt-6 border-[1.5px] border-shop-ink bg-white p-5">
 			<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-				<span class="text-3xl font-extrabold text-shop-red">{formatPrice(product.priceTtc)}</span>
+				<span class="font-display text-3xl font-extrabold text-shop-blue"
+					>{formatPrice(product.priceTtc)}</span
+				>
 				<span class="text-sm font-medium text-shop-muted">TTC</span>
 				{#if product.priceTtcStrike}
 					<span class="text-base text-shop-muted line-through">
@@ -138,7 +142,7 @@
 				{/if}
 				{#if saved > 0}
 					<span
-						class="rounded-lg bg-shop-orange px-2.5 py-1 text-xs font-bold tracking-wide text-white uppercase"
+						class="bg-shop-orange px-2.5 py-1 text-xs font-bold tracking-wide text-white uppercase"
 					>
 						Économisez {formatPrice(saved)}
 					</span>
@@ -177,7 +181,7 @@
 
 			{#if form?.message}
 				<p
-					class="mt-3 rounded-xl px-3 py-2 text-sm font-medium {form.added
+					class="mt-3 border px-3 py-2 text-sm font-medium {form.added
 						? 'bg-primary-50 text-primary-800'
 						: 'bg-shop-subtle text-shop-red'}"
 					role="status"
@@ -207,7 +211,7 @@
 
 		{#if documents.length > 0}
 			<div class="mt-6">
-				<h2 class="text-sm font-bold tracking-wide text-shop-ink uppercase">
+				<h2 class="font-display text-sm font-bold tracking-wide text-shop-ink uppercase">
 					Documents techniques
 				</h2>
 				<ul class="mt-2 space-y-1.5">
@@ -232,10 +236,12 @@
 
 {#if product.variants.length > 0}
 	<section class="mt-12">
-		<h2 class="text-xl font-extrabold tracking-wide text-shop-ink uppercase">Déclinaisons</h2>
+		<h2 class="font-display text-xl font-extrabold tracking-wide text-shop-ink uppercase">
+			Déclinaisons
+		</h2>
 		<ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each product.variants as variant (variant.id)}
-				<li class="rounded-xl border border-shop-border bg-white p-4">
+				<li class="border-[1.5px] border-shop-border bg-white p-4">
 					<p class="font-semibold text-shop-ink">{variant.name}</p>
 					{#if variant.reference}
 						<p class="mt-0.5 text-xs text-shop-muted">Réf. {variant.reference}</p>
@@ -251,7 +257,9 @@
 
 {#if product.description}
 	<section class="mt-12 border-t border-shop-border pt-8">
-		<h2 class="text-xl font-extrabold tracking-wide text-shop-ink uppercase">Description</h2>
+		<h2 class="font-display text-xl font-extrabold tracking-wide text-shop-ink uppercase">
+			Description
+		</h2>
 		<div class="mt-4 max-w-4xl text-sm leading-6 text-shop-muted">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- assaini côté serveur -->
 			{@html product.description}
@@ -261,7 +269,9 @@
 
 {#if product.related.length > 0}
 	<section class="mt-12 border-t border-shop-border pt-8">
-		<h2 class="text-xl font-extrabold tracking-wide text-shop-ink uppercase">Vous aimerez aussi</h2>
+		<h2 class="font-display text-xl font-extrabold tracking-wide text-shop-ink uppercase">
+			Vous aimerez aussi
+		</h2>
 		<div class="mt-5 grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
 			{#each product.related as item (item.id)}
 				<ProductCard product={item} />

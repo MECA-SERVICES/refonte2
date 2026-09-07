@@ -15,12 +15,12 @@
 
 <div class="mx-auto grid max-w-4xl gap-8 md:grid-cols-2 md:gap-10">
 	<!-- ================= Connexion ================= -->
-	<section class="rounded-2xl border border-shop-border bg-white p-6 sm:p-8">
-		<h1 class="text-xl font-extrabold tracking-tight text-shop-ink">Je me connecte</h1>
+	<section class="border-[1.5px] border-shop-border bg-white p-6 sm:p-8">
+		<h1 class="font-display text-xl font-extrabold tracking-tight text-shop-ink">Je me connecte</h1>
 		<p class="mt-1 text-sm text-shop-muted">Accédez à votre compte et à vos commandes.</p>
 
 		{#if form?.message}
-			<p class="mt-4 rounded-xl bg-shop-subtle px-4 py-3 text-sm font-medium text-shop-red">
+			<p class="mt-4 border border-shop-red bg-white px-4 py-3 text-sm font-medium text-shop-red">
 				{form.message}
 			</p>
 		{/if}
@@ -65,8 +65,10 @@
 	</section>
 
 	<!-- ================= Création de compte ================= -->
-	<section class="rounded-2xl bg-shop-subtle p-6 sm:p-8">
-		<h2 class="text-xl font-extrabold tracking-tight text-shop-ink">Je crée mon compte</h2>
+	<section class="border-[1.5px] border-shop-border bg-white p-6 sm:p-8">
+		<h2 class="font-display text-xl font-extrabold tracking-tight text-shop-ink">
+			Je crée mon compte
+		</h2>
 		<p class="mt-1 text-sm text-shop-muted">
 			Suivez vos commandes, retrouvez vos factures et gagnez du temps à chaque achat.
 		</p>

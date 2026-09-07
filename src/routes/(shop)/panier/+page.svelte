@@ -34,17 +34,21 @@
 
 <Breadcrumb items={[{ label: 'Mon panier' }]} />
 
-<h1 class="text-2xl font-extrabold tracking-tight text-shop-ink sm:text-3xl">Mon panier</h1>
+<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]">
+	Mon panier
+</h1>
 
 {#if form?.message}
-	<p class="mt-4 rounded-xl bg-shop-subtle px-4 py-3 text-sm font-medium text-shop-ink">
+	<p
+		class="mt-4 border-[1.5px] border-shop-border bg-white px-4 py-3 text-sm font-medium text-shop-ink"
+	>
 		{form.message}
 	</p>
 {/if}
 
 {#if lines.length === 0}
 	<!-- Panier vide : on renvoie vers le catalogue (parcours 5.7). -->
-	<div class="mt-8 rounded-2xl bg-shop-subtle px-6 py-14 text-center">
+	<div class="mt-8 border-[1.5px] border-shop-border bg-white px-6 py-14 text-center">
 		<p class="text-lg font-bold text-shop-ink">Votre panier est vide.</p>
 		<p class="mt-2 text-sm text-shop-muted">
 			Parcourez le catalogue pour trouver la pièce ou le matériel qu'il vous faut.
@@ -76,7 +80,7 @@
 									src={line.imageUrl}
 									alt={line.name}
 									loading="lazy"
-									class="aspect-square w-full rounded-xl border border-shop-border bg-white object-contain p-1.5"
+									class="aspect-square w-full border border-shop-border bg-white object-contain p-1.5"
 								/>
 							{:else}
 								<ImagePlaceholder label="Photo" class="aspect-square" />
@@ -181,8 +185,10 @@
 		</div>
 
 		<!-- ================= Récapitulatif ================= -->
-		<aside class="rounded-2xl bg-shop-subtle p-6 lg:sticky lg:top-28">
-			<h2 class="text-base font-extrabold tracking-wide text-shop-ink uppercase">Récapitulatif</h2>
+		<aside class="border-[1.5px] border-shop-ink bg-white p-6 lg:sticky lg:top-28">
+			<h2 class="font-display text-base font-extrabold tracking-wide text-shop-ink uppercase">
+				Récapitulatif
+			</h2>
 
 			<dl class="mt-4 space-y-2 text-sm">
 				<div class="flex justify-between">
@@ -207,7 +213,7 @@
 			</div>
 
 			{#if cart.hasBlockingLine}
-				<p class="mt-4 rounded-xl bg-white px-3 py-2 text-xs font-medium text-shop-red">
+				<p class="mt-4 border border-shop-red px-3 py-2 text-xs font-medium text-shop-red">
 					Retirez les articles indisponibles pour poursuivre.
 				</p>
 			{/if}

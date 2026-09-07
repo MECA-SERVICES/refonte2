@@ -13,16 +13,12 @@
 		FooterLinkGroup
 	} from 'flowbite-svelte';
 	import {
+		ArrowRightToBracketOutline,
 		BarsOutline,
 		CartOutline,
-		LockSolid,
 		PhoneSolid,
-		SearchOutline,
-		ShieldCheckSolid,
-		ToolsOutline,
-		UserCircleOutline
+		SearchOutline
 	} from 'flowbite-svelte-icons';
-	import { ArrowRightToBracketOutline } from 'flowbite-svelte-icons';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -44,189 +40,188 @@
 	];
 </script>
 
-<div class="flex min-h-screen flex-col bg-white">
-	<header class="sticky top-0 z-30 bg-white">
-		<!-- Bandeau utilitaire : hotline à gauche, horaires à droite -->
-		<div class="hidden border-b border-shop-border/70 sm:block">
+<div class="flex min-h-screen flex-col bg-shop-subtle">
+	<header class="sticky top-0 z-30">
+		<!-- Bandeau utilitaire : ancrage local à gauche, contacts et accès à droite -->
+		<div class="hidden bg-shop-blue-dark text-[13px] text-shop-on-dark sm:block">
 			<div
-				class="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-4 py-2 text-xs sm:px-6 lg:px-8"
+				class="mx-auto flex w-full max-w-[1360px] flex-wrap items-center justify-between gap-4 px-4 py-2.5 sm:px-6 lg:px-8"
 			>
-				<div class="flex items-center gap-3">
-					<span class="rounded-full bg-shop-subtle px-3 py-1 font-medium text-shop-ink">
-						Hotline
-					</span>
-					<a href="tel:0950922336" class="font-bold text-shop-ink hover:text-shop-blue">
-						<PhoneSolid class="me-1 inline h-3.5 w-3.5 text-shop-blue" /> 09 50 92 23 36
+				<span>
+					Atelier &amp; expédition à Carantilly (50) — Normandie · Commandes préparées sous 24 h
+				</span>
+				<div class="flex flex-wrap items-center gap-5">
+					<a href="tel:0950922336" class="font-display font-bold text-white hover:underline">
+						<PhoneSolid class="me-1 inline h-3.5 w-3.5" /> 09 50 92 23 36
 					</a>
+					<a href="/compte" class="hover:text-white">Suivre ma commande</a>
+					<a href="/inscription" class="hover:text-white">Compte pro &amp; collectivités</a>
 				</div>
-				<p class="text-shop-muted">9h/12h – 14h/18h · Fermé samedi et dimanche</p>
 			</div>
 		</div>
 
-		<!-- Ligne principale : logo à gauche, compte et panier à droite -->
-		<div
-			class="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8"
-		>
-			<a href={resolve('/')} class="shrink-0">
-				<span class="block text-2xl leading-none font-black tracking-tight text-shop-blue">
-					MECA <span class="text-shop-red">SERVICES</span>
-				</span>
-				<span class="text-[11px] tracking-widest text-shop-muted uppercase">
-					Motoculture · Pièces détachées
-				</span>
-			</a>
-
-			<div class="flex shrink-0 items-center gap-2 sm:gap-5">
-				{#if data.shopUser}
-					<!-- Client connecté : le bloc ouvre le menu du compte. -->
-					<button type="button" class="group flex items-center gap-3">
-						<span
-							class="flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
-						>
-							<UserCircleOutline class="h-5 w-5 text-shop-ink" />
-						</span>
-						<span class="hidden text-left lg:block">
-							<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
-								Bonjour
-							</span>
-							<span class="block max-w-32 truncate text-sm leading-tight font-bold text-shop-ink">
-								{data.shopUser.name}
-							</span>
-						</span>
-					</button>
-					<Dropdown simple class="w-52 p-1">
-						<a
-							href="/compte"
-							class="block rounded-lg px-3 py-2 text-sm font-medium text-shop-ink hover:bg-shop-subtle"
-						>
-							Mon compte
-						</a>
-						<!-- Formulaire hors DropdownItem : celui-ci rend un lien, qui ne peut
-						     pas contenir de bouton de soumission. -->
-						<form method="POST" action="/deconnexion" class="block">
-							<input type="hidden" name="redirectTo" value={page.url.pathname} />
-							<button
-								type="submit"
-								class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-shop-ink hover:bg-shop-subtle"
-							>
-								<ArrowRightToBracketOutline class="h-4 w-4" /> Déconnexion
-							</button>
-						</form>
-					</Dropdown>
-				{:else}
-					<a href="/connexion" class="group flex items-center gap-3">
-						<span
-							class="flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
-						>
-							<UserCircleOutline class="h-5 w-5 text-shop-ink" />
-						</span>
-						<span class="hidden text-left lg:block">
-							<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
-								Bonjour
-							</span>
-							<span class="block text-sm leading-tight font-bold text-shop-ink">Mon compte</span>
-						</span>
-					</a>
-				{/if}
-
-				<a href="/panier" class="group flex items-center gap-3">
+		<!-- Ligne principale : identité, recherche catégorisée, actions -->
+		<div class="border-b border-shop-border bg-shop-subtle">
+			<div
+				class="mx-auto flex w-full max-w-[1360px] flex-wrap items-center gap-5 px-4 py-4 sm:px-6 lg:px-8"
+			>
+				<a href={resolve('/')} class="flex shrink-0 items-center gap-3">
 					<span
-						class="relative flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
+						class="flex h-[46px] w-[46px] items-center justify-center bg-shop-blue font-display text-[17px] font-extrabold tracking-[-0.02em] text-shop-subtle"
 					>
-						<CartOutline class="h-5 w-5 text-shop-ink" />
-						{#if data.cartCount > 0}
-							<span
-								class="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-shop-red px-1 text-[11px] font-bold text-white"
-							>
-								{data.cartCount}
-							</span>
-						{/if}
+						MS
 					</span>
-					<span class="hidden text-left lg:block">
-						<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
-							Panier
+					<span class="leading-[1.05]">
+						<span
+							class="block font-display text-[19px] font-extrabold tracking-[-0.01em] text-shop-ink"
+						>
+							MECA SERVICES
 						</span>
-						<span class="block text-sm leading-tight font-bold text-shop-ink">
-							{data.cartCount} article{data.cartCount > 1 ? 's' : ''}
+						<span class="block text-[11px] tracking-[0.16em] text-shop-muted uppercase">
+							Motoculture &amp; pièces détachées
 						</span>
 					</span>
 				</a>
-			</div>
-		</div>
 
-		<!-- Barre bleue : recherche en pilule (rayons intégrés) + réassurance -->
-		<div class="bg-shop-blue">
-			<div
-				class="mx-auto flex w-full max-w-screen-2xl items-center gap-8 px-4 py-3 sm:px-6 lg:px-8"
-			>
-				<form action="/recherche" method="get" class="min-w-0 flex-1 lg:max-w-3xl">
-					<div class="flex h-11 items-center rounded-full bg-white p-1">
-						<button
-							type="button"
-							class="flex h-full shrink-0 items-center gap-2 rounded-full px-4 text-sm font-bold text-shop-ink transition-colors hover:bg-shop-subtle"
-							onclick={() => (menuOpen = true)}
-						>
-							<BarsOutline class="h-4 w-4" />
-							<span class="hidden sm:inline">Tous nos rayons</span>
-						</button>
-						<span class="h-5 w-px shrink-0 bg-shop-border" aria-hidden="true"></span>
-						<input
-							type="search"
-							name="q"
-							placeholder="Rechercher une pièce, une référence, un EAN…"
-							class="h-full w-full min-w-0 border-0 bg-transparent px-4 text-sm text-shop-ink placeholder:text-shop-muted focus:ring-0"
-						/>
-						<button
-							type="submit"
-							class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-shop-blue text-white transition-colors hover:bg-shop-blue-dark"
-							aria-label="Rechercher"
-						>
-							<SearchOutline class="h-4 w-4" />
-						</button>
-					</div>
+				<!-- Recherche : le rayon se choisit avant de saisir, comme sur les
+				     catalogues techniques où le même mot existe dans dix familles. -->
+				<form
+					action="/recherche"
+					method="get"
+					class="flex min-w-0 flex-1 basis-[340px] border-[1.5px] border-shop-ink bg-white"
+				>
+					<label class="sr-only" for="search-scope">Périmètre de recherche</label>
+					<select
+						id="search-scope"
+						name="rayon"
+						class="hidden border-0 border-r-[1.5px] border-shop-ink bg-shop-border-soft py-0 pr-8 pl-3 text-sm text-shop-ink focus:ring-0 sm:block"
+					>
+						<option value="">Tout le catalogue</option>
+						{#each data.menu as entry (entry.id)}
+							<option value={entry.slug}>{entry.name}</option>
+						{/each}
+					</select>
+
+					<label class="sr-only" for="search-q">Rechercher</label>
+					<input
+						id="search-q"
+						type="search"
+						name="q"
+						placeholder="Référence, marque, modèle — ex. 587 42 07-01 ou Husqvarna 550 XP"
+						class="min-w-0 flex-1 border-0 px-3.5 py-3 text-sm text-shop-ink placeholder:text-shop-muted focus:ring-0"
+					/>
+					<button
+						type="submit"
+						class="shrink-0 bg-shop-blue px-5 font-display text-sm font-bold text-shop-subtle transition-colors hover:bg-shop-blue-dark"
+					>
+						<SearchOutline class="inline h-4 w-4 sm:hidden" />
+						<span class="hidden sm:inline">Rechercher</span>
+					</button>
 				</form>
 
-				<div
-					class="hidden shrink-0 items-center gap-8 text-xs font-semibold tracking-wide text-white uppercase xl:flex"
-				>
-					<span class="flex items-center gap-2">
-						<ShieldCheckSolid class="h-4 w-4" /> Pièces 100 % origine
-					</span>
-					<span class="flex items-center gap-2">
-						<ToolsOutline class="h-4 w-4" /> S.A.V toutes marques
-					</span>
-					<span class="flex items-center gap-2">
-						<LockSolid class="h-4 w-4" /> Paiement sécurisé
-					</span>
-				</div>
-			</div>
-		</div>
-
-		<!-- Raccourcis rayons -->
-		<nav class="hidden border-b border-shop-border/70 lg:block" aria-label="Navigation principale">
-			<div
-				class="mx-auto flex w-full max-w-screen-2xl items-center gap-0.5 overflow-x-auto px-4 py-1.5 sm:px-6 lg:px-8"
-			>
-				{#each data.menu as entry (entry.id)}
-					{#if isClearance(entry.slug)}
-						<a
-							href={categoryHref(entry.slug)}
-							class="ms-1 rounded-full bg-shop-orange px-3 py-1 text-[13px] font-semibold whitespace-nowrap text-white transition hover:bg-shop-orange-light"
+				<div class="flex shrink-0 items-center gap-2.5">
+					{#if data.shopUser}
+						<button
+							type="button"
+							class="max-w-40 truncate border-[1.5px] border-shop-border px-3.5 py-2.5 text-sm font-medium text-shop-ink"
 						>
-							{entry.name}
-						</a>
+							{data.shopUser.name}
+						</button>
+						<Dropdown simple class="w-52 rounded-none p-1">
+							<a
+								href="/compte"
+								class="block px-3 py-2 text-sm font-medium text-shop-ink hover:bg-shop-subtle"
+							>
+								Mon compte
+							</a>
+							<!-- Formulaire hors DropdownItem : celui-ci rend un lien, qui ne
+							     peut pas contenir de bouton de soumission. -->
+							<form method="POST" action="/deconnexion" class="block">
+								<input type="hidden" name="redirectTo" value={page.url.pathname} />
+								<button
+									type="submit"
+									class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-shop-ink hover:bg-shop-subtle"
+								>
+									<ArrowRightToBracketOutline class="h-4 w-4" /> Déconnexion
+								</button>
+							</form>
+						</Dropdown>
 					{:else}
 						<a
-							href={categoryHref(entry.slug)}
-							class="rounded-md px-3 py-1 text-[13px] font-medium whitespace-nowrap text-shop-ink transition hover:bg-shop-subtle hover:text-shop-blue"
+							href="/connexion"
+							class="hidden border-[1.5px] border-shop-border px-3.5 py-2.5 text-sm font-medium text-shop-ink hover:border-shop-ink sm:block"
 						>
-							{entry.name}
+							Mon compte
 						</a>
 					{/if}
-				{/each}
+
+					<a
+						href="/inscription"
+						class="hidden border-[1.5px] border-shop-ink bg-white px-3.5 py-2.5 text-sm font-bold text-shop-ink lg:block"
+					>
+						Demander un devis
+					</a>
+
+					<a
+						href="/panier"
+						class="bg-shop-blue px-4 py-2.5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
+					>
+						<CartOutline class="me-1 inline h-4 w-4" />
+						Panier · {data.cartCount}
+					</a>
+				</div>
 			</div>
-		</nav>
+
+			<!-- Univers : accès direct aux grandes familles du catalogue -->
+			<nav
+				class="mx-auto flex w-full max-w-[1360px] flex-wrap items-center gap-x-6 gap-y-2 px-4 pb-3.5 sm:px-6 lg:px-8"
+				aria-label="Univers"
+			>
+				<button
+					type="button"
+					onclick={() => (menuOpen = true)}
+					class="flex items-center gap-2 font-display text-[13.5px] font-semibold tracking-[0.02em] text-shop-ink uppercase lg:hidden"
+				>
+					<BarsOutline class="h-4 w-4" /> Tous nos rayons
+				</button>
+
+				{#each data.menu.flatMap((entry) => entry.children).slice(0, 7) as entry (entry.id)}
+					<a
+						href={categoryHref(entry.slug)}
+						class="font-display text-[13.5px] font-semibold tracking-[0.02em] uppercase {isClearance(
+							entry.slug
+						)
+							? 'text-shop-orange'
+							: 'text-shop-ink hover:text-shop-blue'}"
+					>
+						{entry.name}
+					</a>
+				{/each}
+
+				<a
+					href="https://doc.mecaservicesshop.fr"
+					class="font-display text-[13.5px] font-semibold tracking-[0.02em] text-shop-red uppercase hover:underline"
+				>
+					Vues éclatées
+				</a>
+			</nav>
+		</div>
 	</header>
+
+	<!-- Bandeau promotionnel : une opération commerciale à la fois. -->
+	<div class="border-b border-shop-border bg-shop-promo">
+		<div
+			class="mx-auto flex w-full max-w-[1360px] flex-wrap justify-between gap-2.5 px-4 py-2.5 text-sm text-shop-ink sm:px-6 lg:px-8"
+		>
+			<span>
+				<strong class="font-display">Préparation d'hiver</strong>
+				— 15 % sur les fraises à neige et les produits de dégivrage jusqu'au 30 novembre.
+			</span>
+			<a href="/recherche" class="font-semibold text-shop-blue hover:underline">
+				Voir la sélection →
+			</a>
+		</div>
+	</div>
 
 	<!-- Menu latéral des rayons (mobile et desktop) -->
 	<Drawer bind:open={menuOpen} placement="left" class="w-80 p-0 sm:w-96">
@@ -281,7 +276,7 @@
 
 			<a
 				href="/recherche"
-				class="mt-4 block rounded-lg bg-shop-subtle px-4 py-3 text-center text-sm font-semibold text-shop-blue hover:bg-primary-100"
+				class="mt-4 block border border-shop-border bg-shop-subtle px-4 py-3 text-center text-sm font-semibold text-shop-blue hover:bg-primary-100"
 				onclick={() => (menuOpen = false)}
 			>
 				Voir tout le catalogue
@@ -290,17 +285,21 @@
 	</Drawer>
 
 	<!-- Contenu de la page -->
-	<main class="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+	<main class="mx-auto w-full max-w-[1360px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
 		{@render children()}
 	</main>
 
 	<!-- Pied de page -->
 	<Footer class="rounded-none bg-primary-800 text-white">
 		<div
-			class="mx-auto grid w-full max-w-screen-2xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8"
+			class="mx-auto grid w-full max-w-[1360px] gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8"
 		>
 			<div>
-				<h2 class="mb-3 text-sm font-bold tracking-wider text-white uppercase">MS Shop</h2>
+				<h2
+					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
+				>
+					MS Shop
+				</h2>
 				<p class="text-xs font-semibold tracking-wide text-primary-200 uppercase">Hotline</p>
 				<a href="tel:0950922336" class="mt-1 block text-2xl font-extrabold text-white">
 					09 50 92 23 36
@@ -312,7 +311,11 @@
 				</p>
 			</div>
 			<div>
-				<h2 class="mb-3 text-sm font-bold tracking-wider text-white uppercase">Informations</h2>
+				<h2
+					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
+				>
+					Informations
+				</h2>
 				<FooterLinkGroup class="space-y-2 text-sm text-primary-200">
 					{#each infoLinks as label (label)}
 						<FooterLink href={resolve('/')} class="hover:text-white hover:underline">
@@ -322,7 +325,11 @@
 				</FooterLinkGroup>
 			</div>
 			<div>
-				<h2 class="mb-3 text-sm font-bold tracking-wider text-white uppercase">Nos rayons</h2>
+				<h2
+					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
+				>
+					Nos rayons
+				</h2>
 				<FooterLinkGroup class="space-y-2 text-sm text-primary-200">
 					{#each data.menu.slice(0, 6) as entry (entry.id)}
 						<FooterLink href="/categorie/{entry.slug}" class="hover:text-white hover:underline">
@@ -332,7 +339,9 @@
 				</FooterLinkGroup>
 			</div>
 			<div>
-				<h2 class="mb-3 text-sm font-bold tracking-wider text-white uppercase">
+				<h2
+					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
+				>
 					Nos univers marques
 				</h2>
 				<ul class="space-y-2 text-sm text-primary-200">
@@ -347,7 +356,7 @@
 		</div>
 		<div class="border-t border-white/10">
 			<div
-				class="mx-auto flex w-full max-w-screen-2xl flex-col items-center justify-between gap-3 px-4 py-4 sm:flex-row sm:px-6 lg:px-8"
+				class="mx-auto flex w-full max-w-[1360px] flex-col items-center justify-between gap-3 px-4 py-4 sm:flex-row sm:px-6 lg:px-8"
 			>
 				<FooterCopyright
 					href={resolve('/')}

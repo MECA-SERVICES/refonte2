@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { clearCart, getCart, removeLine, updateLineQuantity } from '$lib/server/cart';
+import { addToCart, clearCart, getCart, removeLine, updateLineQuantity } from '$lib/server/cart';
 import { resolveCartOwner } from '$lib/server/cart-session';
 
 export const load: PageServerLoad = async (event) => {
@@ -20,6 +20,30 @@ export const load: PageServerLoad = async (event) => {
 };
 
 export const actions: Actions = {
+	/** Ajout depuis une carte produit (listes, carrousels d'accueil). */
+	add: async (event) => {
+		// Un visiteur obtient ici son jeton de panier : c'est son premier article.
+		const owner = await resolveCartOwner(event, { create: true });
+		if (!owner) return fail(400, { message: 'Panier indisponible.' });
+
+		const form = await event.request.formData();
+		const productId = Number(form.get('productId'));
+		const quantity = Number(form.get('quantity') ?? 1);
+		if (!Number.isInteger(productId)) return fail(400, { message: 'Produit invalide.' });
+
+		const result = await addToCart(owner, { productId, quantity });
+		if (!result.ok) {
+			return fail(409, {
+				message:
+					result.reason === 'unavailable'
+						? 'Cet article n’est plus disponible à la vente.'
+						: 'Produit introuvable.'
+			});
+		}
+
+		return { message: 'Article ajouté à votre panier.' };
+	},
+
 	/** Modification de la quantité d'une ligne. */
 	update: async (event) => {
 		const owner = await resolveCartOwner(event);

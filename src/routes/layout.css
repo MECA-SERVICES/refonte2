@@ -55,11 +55,31 @@
 	--color-shop-orange-deep: #c05408;
 
 	/* Neutres légèrement teintés du bleu de marque : les gris froids de
-	   Tailwind vibrent contre ce bleu violacé, ceux-ci s'y accordent. */
-	--color-shop-ink: #1d2233;
-	--color-shop-muted: #666c80;
-	--color-shop-border: #e4e7ef;
-	--color-shop-subtle: #f4f6fb;
+	   Tailwind vibrent contre ce bleu violacé, ceux-ci s'y accordent.
+	   Valeurs reprises de la maquette « Refonte MS SHOP ». */
+	--color-shop-ink: #1e2436;
+	--color-shop-ink-soft: #3b4258;
+	--color-shop-muted: #5b6480;
+	--color-shop-faint: #8a93ae;
+	--color-shop-border: #d6dcea;
+	--color-shop-border-soft: #e7ebf5;
+	--color-shop-subtle: #f4f6fa;
+	/* Bleus clairs employés sur les aplats foncés (texte secondaire). */
+	--color-shop-on-dark: #c7cee8;
+	--color-shop-on-dark-dim: #a6b0dc;
+	--color-shop-rule-dark: #39447e;
+	/* Fond du bandeau promotionnel. */
+	--color-shop-promo: #fceada;
+
+	/* ------------------------------------------------------------------
+	   Typographie de la maquette :
+	     Archivo    → titres, boutons, libellés (voix affirmée)
+	     Karla      → texte courant
+	     Newsreader → citations en italique, uniquement
+	   ------------------------------------------------------------------ */
+	--font-sans: Karla, system-ui, sans-serif;
+	--font-display: Archivo, system-ui, sans-serif;
+	--font-quote: Newsreader, Georgia, serif;
 }
 
 @source '../../node_modules/flowbite-svelte/dist';
