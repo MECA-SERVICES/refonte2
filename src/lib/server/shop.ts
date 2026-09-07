@@ -104,15 +104,26 @@ async function activeCategories() {
 	); // 10 minutes
 }
 
-/** Construit récursivement l'arborescence complète des catégories. */
-function buildCategoryTree(rows: Category[], parentId: number | null = null): ShopMenuChild[] {
+/**
+ * Construit l'arborescence des catégories jusqu'à une profondeur donnée.
+ *
+ * L'arbre complet pèse près de 600 entrées, sérialisées dans chaque page :
+ * on s'arrête aux niveaux réellement parcourus par le menu, les suivants
+ * étant atteints depuis la page de catégorie.
+ */
+function buildCategoryTree(
+	rows: Category[],
+	parentId: number | null = null,
+	depth = 3
+): ShopMenuChild[] {
+	if (depth <= 0) return [];
 	const children = rows.filter((c) => c.parentId === parentId);
 
 	return children.map((cat) => ({
 		id: cat.id,
 		name: cat.name,
 		slug: cat.slug,
-		children: buildCategoryTree(rows, cat.id)
+		children: buildCategoryTree(rows, cat.id, depth - 1)
 	}));
 }
 

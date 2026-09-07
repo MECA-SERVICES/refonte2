@@ -19,6 +19,7 @@
 		PhoneSolid,
 		SearchOutline
 	} from 'flowbite-svelte-icons';
+	import MegaMenu from '$lib/components/shop/MegaMenu.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -27,7 +28,24 @@
 	let menuOpen = $state(false);
 
 	const categoryHref = (slug: string) => `/categorie/${slug}`;
-	const isClearance = (slug: string) => slug.includes('destockage');
+
+	/**
+	 * Sections du méga-menu. Les trois entrées de la maquette sont alimentées par
+	 * l'arborescence réelle : « Pièces détachées » et « Produits » pointent sur
+	 * les deux racines du catalogue, « Marques » reste à brancher sur la table
+	 * des marques une fois la navigation par marque en place.
+	 */
+	const megaSections = $derived(
+		data.menu.map((root) => ({
+			id: root.slug,
+			label: root.name,
+			columns: ['Famille', 'Sous-famille', 'Catégorie', 'Détail', 'Référence'],
+			cta: `Voir ${root.name.toLowerCase()}`,
+			ctaHref: categoryHref(root.slug),
+			hint: 'Affinez de famille en famille — la référence d’origine se trouve au bout du parcours.',
+			roots: root.children
+		}))
+	);
 
 	/** Liens d'information du footer (pages CMS à venir — placeholders du squelette). */
 	const infoLinks = [
@@ -172,39 +190,21 @@
 				</div>
 			</div>
 
-			<!-- Univers : accès direct aux grandes familles du catalogue -->
-			<nav
-				class="mx-auto flex w-full max-w-[1360px] flex-wrap items-center gap-x-6 gap-y-2 px-4 pb-3.5 sm:px-6 lg:px-8"
-				aria-label="Univers"
-			>
+			<!-- Accès au catalogue sur petit écran : le méga-menu cède la place
+			     au tiroir latéral, plus praticable au doigt. -->
+			<div class="px-4 pb-3.5 sm:px-6 lg:hidden lg:px-8">
 				<button
 					type="button"
 					onclick={() => (menuOpen = true)}
-					class="flex items-center gap-2 font-display text-[13.5px] font-semibold tracking-[0.02em] text-shop-ink uppercase lg:hidden"
+					class="flex items-center gap-2 font-display text-[13.5px] font-semibold tracking-[0.02em] text-shop-ink uppercase"
 				>
 					<BarsOutline class="h-4 w-4" /> Tous nos rayons
 				</button>
-
-				{#each data.menu.flatMap((entry) => entry.children).slice(0, 7) as entry (entry.id)}
-					<a
-						href={categoryHref(entry.slug)}
-						class="font-display text-[13.5px] font-semibold tracking-[0.02em] uppercase {isClearance(
-							entry.slug
-						)
-							? 'text-shop-orange'
-							: 'text-shop-ink hover:text-shop-blue'}"
-					>
-						{entry.name}
-					</a>
-				{/each}
-
-				<a
-					href="https://doc.mecaservicesshop.fr"
-					class="font-display text-[13.5px] font-semibold tracking-[0.02em] text-shop-red uppercase hover:underline"
-				>
-					Vues éclatées
-				</a>
-			</nav>
+			</div>
+		</div>
+		<!-- Navigation principale : méga-menu du catalogue (écrans larges) -->
+		<div class="hidden lg:block">
+			<MegaMenu sections={megaSections} />
 		</div>
 	</header>
 
