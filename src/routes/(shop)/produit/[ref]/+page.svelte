@@ -11,6 +11,7 @@
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
+	import QuantityStepper from '$lib/components/shop/QuantityStepper.svelte';
 	import { formatPrice } from '$lib/shop';
 	import type { PageProps } from './$types';
 
@@ -160,16 +161,11 @@
 
 			<form method="POST" action="?/add" use:enhance class="mt-5 flex flex-wrap items-center gap-3">
 				<input type="hidden" name="productId" value={product.id} />
-				<label class="sr-only" for="quantity">Quantité</label>
-				<input
-					id="quantity"
-					name="quantity"
-					type="number"
-					min="1"
+				<QuantityStepper
+					value={1}
+					min={1}
 					max={Math.max(1, product.stock)}
-					value="1"
 					disabled={product.stock <= 0}
-					class="h-12 w-20 rounded-lg border border-shop-border text-center font-semibold text-shop-ink focus:border-shop-blue focus:ring-shop-blue disabled:bg-shop-subtle"
 				/>
 				<Button type="submit" size="lg" disabled={product.stock <= 0} class="grow sm:grow-0">
 					<CartPlusSolid class="me-2 h-5 w-5" /> Ajouter au panier

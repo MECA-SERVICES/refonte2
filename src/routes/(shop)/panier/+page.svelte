@@ -8,6 +8,7 @@
 	} from 'flowbite-svelte-icons';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
+	import QuantityStepper from '$lib/components/shop/QuantityStepper.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
 	import type { PageProps } from './$types';
 
@@ -56,7 +57,16 @@
 	<div class="mt-8 grid gap-8 lg:grid-cols-[1fr_340px] lg:items-start">
 		<!-- ================= Lignes ================= -->
 		<div>
-			<ul class="divide-y divide-shop-border border-y border-shop-border">
+			<div
+				class="hidden border-b border-shop-border pb-2 text-xs font-semibold tracking-wide text-shop-muted uppercase sm:flex"
+			>
+				<span class="flex-1">Article</span>
+				<span class="w-28 text-center">Prix unitaire</span>
+				<span class="w-32 text-center">Quantité</span>
+				<span class="w-28 text-right">Total</span>
+			</div>
+
+			<ul class="divide-y divide-shop-border border-b border-shop-border">
 				{#each lines as line (line.id)}
 					{@const drift = priceDrift(line)}
 					<li class="flex gap-4 py-5">
@@ -104,45 +114,57 @@
 								</p>
 							{/if}
 
-							<div class="mt-3 flex flex-wrap items-center gap-3">
-								<!-- Quantité : envoi immédiat, sans bouton de confirmation. -->
-								<form method="POST" action="?/update" use:enhance class="flex items-center gap-2">
-									<input type="hidden" name="lineId" value={line.id} />
-									<label class="sr-only" for="qty-{line.id}">Quantité</label>
-									<input
-										id="qty-{line.id}"
-										name="quantity"
-										type="number"
-										min="0"
-										max={line.stock}
-										value={line.quantity}
-										onchange={(e) => e.currentTarget.form?.requestSubmit()}
-										class="h-9 w-20 rounded-lg border border-shop-border text-center text-sm font-semibold text-shop-ink focus:border-shop-blue focus:ring-shop-blue"
-									/>
-								</form>
-
-								<form method="POST" action="?/remove" use:enhance>
-									<input type="hidden" name="lineId" value={line.id} />
-									<button
-										type="submit"
-										class="inline-flex items-center gap-1.5 text-xs font-medium text-shop-muted hover:text-shop-red"
-									>
-										<TrashBinOutline class="h-4 w-4" /> Retirer
-									</button>
-								</form>
-							</div>
+							<form method="POST" action="?/remove" use:enhance class="mt-3">
+								<input type="hidden" name="lineId" value={line.id} />
+								<button
+									type="submit"
+									class="inline-flex items-center gap-1.5 text-xs font-medium text-shop-muted hover:text-shop-red"
+								>
+									<TrashBinOutline class="h-4 w-4" /> Retirer
+								</button>
+							</form>
 						</div>
 
-						<div class="shrink-0 text-right">
+						<!-- Prix unitaire : colonne dédiée sur écran large. -->
+						<div class="hidden w-28 shrink-0 text-center sm:block">
+							<p class="text-sm font-semibold text-shop-ink">{formatPrice(line.priceTtc)}</p>
+							<p class="text-xs text-shop-muted">TTC</p>
+						</div>
+
+						<div class="hidden w-32 shrink-0 justify-center sm:flex">
+							<form method="POST" action="?/update" use:enhance>
+								<input type="hidden" name="lineId" value={line.id} />
+								<QuantityStepper
+									id="qty-{line.id}"
+									value={line.quantity}
+									min={0}
+									max={line.stock}
+									submitOnChange
+								/>
+							</form>
+						</div>
+
+						<div class="w-28 shrink-0 text-right">
 							<p class="text-base font-bold text-shop-red">
 								{formatPrice(Number(line.priceTtc) * line.quantity)}
 							</p>
 							<p class="text-xs text-shop-muted">TTC</p>
-							{#if line.quantity > 1}
-								<p class="mt-1 text-xs text-shop-muted">
-									{formatPrice(line.priceTtc)} / unité
-								</p>
-							{/if}
+							<!-- Sur mobile, le sélecteur suit le total faute de colonne dédiée. -->
+							<form
+								method="POST"
+								action="?/update"
+								use:enhance
+								class="mt-2 flex justify-end sm:hidden"
+							>
+								<input type="hidden" name="lineId" value={line.id} />
+								<QuantityStepper
+									id="qty-mobile-{line.id}"
+									value={line.quantity}
+									min={0}
+									max={line.stock}
+									submitOnChange
+								/>
+							</form>
 						</div>
 					</li>
 				{/each}
