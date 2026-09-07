@@ -5,7 +5,6 @@
 	import { ExclamationCircleOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
-	import { refreshAfterSubmit } from '$lib/components/shop/cart-actions.svelte';
 	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
@@ -30,11 +29,16 @@
 	// -----------------------------------------------------------------------
 	// Quantités : affichage optimiste, envoi « dernier clic gagne »
 	//
-	// Chaque clic met l'affichage à jour immédiatement ; l'envoi au serveur
-	// part après une courte pause, et seuls le dernier clic d'une rafale et sa
-	// réponse comptent. Sans cela, des clics rapides repartaient tous de la
-	// même valeur serveur périmée et la page figeait le temps d'un rechargement
-	// complet par clic.
+	// Le chiffre affiché change au clic, sans attendre le serveur. L'envoi part
+	// après une courte pause, et seul le dernier clic d'une rafale est transmis.
+	//
+	// Volontairement, on NE recharge PAS la page après coup : le serveur ne fait
+	// que confirmer une valeur déjà à l'écran, et un rechargement ferait sauter
+	// le chiffre. Les données ne sont rafraîchies qu'au retrait d'une ligne, où
+	// la structure de la liste change réellement.
+	//
+	// La quantité minimale est 1 : pour retirer un article, on passe par le
+	// bouton « Retirer », plus explicite qu'un décrément jusqu'à zéro.
 	// -----------------------------------------------------------------------
 
 	/** Quantités affichées en avance sur le serveur, par ligne. */
@@ -56,11 +60,8 @@
 		return { subtotalHt, tax: totalTtc - subtotalHt, totalTtc, itemCount };
 	});
 
-	// Minuteries et jetons d'envoi par ligne : simple comptabilité interne,
-	// jamais affichée — des objets nus suffisent.
+	/** Minuteries d'envoi par ligne : comptabilité interne, jamais affichée. */
 	const timers: Record<number, ReturnType<typeof setTimeout>> = {};
-	const tickets: Record<number, number> = {};
-	let nextTicket = 0;
 
 	/**
 	 * Intercepte la soumission du formulaire de quantité. Sans JavaScript, le
@@ -71,36 +72,27 @@
 		cancel();
 
 		const lineId = Number(formData.get('lineId'));
-		const quantity = Math.max(0, Number(formData.get('quantity')));
+		const quantity = Math.max(1, Number(formData.get('quantity')));
 		optimistic[lineId] = quantity;
 
 		clearTimeout(timers[lineId]);
-		// Une quantité nulle supprime la ligne (règle R5) : on l'envoie sans délai.
-		const delay = quantity === 0 ? 0 : 300;
-		timers[lineId] = setTimeout(() => void sendQuantity(lineId, quantity), delay);
+		timers[lineId] = setTimeout(() => void sendQuantity(lineId, quantity), 400);
 	};
 
 	async function sendQuantity(lineId: number, quantity: number) {
-		const ticket = ++nextTicket;
-		tickets[lineId] = ticket;
-
 		const body = new FormData();
 		body.set('lineId', String(lineId));
 		body.set('quantity', String(quantity));
 
-		try {
-			await fetch('?/update', {
-				method: 'POST',
-				headers: { 'x-sveltekit-action': 'true' },
-				body
-			});
-		} finally {
-			// Un clic plus récent est reparti : sa réponse fera la réconciliation.
-			if (tickets[lineId] === ticket) {
-				await invalidateAll();
-				delete optimistic[lineId];
-			}
-		}
+		await fetch('?/update', {
+			method: 'POST',
+			headers: { 'x-sveltekit-action': 'true' },
+			body
+		});
+
+		// Recharge les données (dont le compteur d'en-tête). L'affichage optimiste
+		// couvre l'attente : le chiffre à l'écran ne bouge pas pendant ce temps.
+		await invalidateAll();
 	}
 
 	// Les envois en attente ne survivent pas à la page.
@@ -217,9 +209,9 @@
 								type="submit"
 								name="quantity"
 								value={quantity - 1}
-								disabled={quantity <= 0}
+								disabled={quantity <= 1}
 								aria-label="Diminuer la quantité"
-								class="px-3.5 text-[17px] text-shop-ink hover:bg-white disabled:opacity-40"
+								class="px-3.5 text-[17px] text-shop-ink hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
 							>
 								−
 							</button>
@@ -249,7 +241,7 @@
 						<p class="text-xs text-shop-muted">
 							TTC · {formatPrice(line.priceTtc)} l'unité
 						</p>
-						<form method="POST" action="?/remove" use:enhance={refreshAfterSubmit} class="mt-1">
+						<form method="POST" action="?/remove" use:enhance class="mt-1">
 							<input type="hidden" name="lineId" value={line.id} />
 							<button
 								type="submit"
@@ -322,7 +314,7 @@
 		</aside>
 	</div>
 
-	<form method="POST" action="?/clear" use:enhance={refreshAfterSubmit} class="mt-4">
+	<form method="POST" action="?/clear" use:enhance class="mt-4">
 		<button
 			type="submit"
 			class="text-sm font-medium text-shop-muted underline underline-offset-4 hover:text-shop-red"

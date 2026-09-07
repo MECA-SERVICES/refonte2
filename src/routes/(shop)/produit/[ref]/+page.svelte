@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { createAddToCart } from '$lib/components/shop/cart-actions.svelte';
+	import { notifyAddedToCart } from '$lib/components/shop/cart-feedback.svelte';
 	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
@@ -32,13 +32,22 @@
 	);
 	const available = $derived(product.stock > 0);
 
-	/** Ajout au panier sans rechargement : compteur d'en-tête et bandeau à jour. */
-	let pending = $state(false);
-
-	const addToCart = createAddToCart(
-		() => product.name,
-		(value) => (pending = value)
-	);
+	/**
+	 * `use:enhance` sans argument recharge déjà les données après l'action — donc
+	 * le compteur d'en-tête. On ajoute seulement la confirmation visuelle.
+	 */
+	const addToCart = () => {
+		return async ({
+			result,
+			update
+		}: {
+			result: { type: string };
+			update: () => Promise<void>;
+		}) => {
+			await update();
+			if (result.type === 'success') notifyAddedToCart(`« ${product.name} » ajouté au panier.`);
+		};
+	};
 
 	const crumbs = $derived([
 		...product.breadcrumb.map((c) => ({ label: c.name, href: `/categorie/${c.slug}` })),
@@ -222,14 +231,10 @@
 					type="submit"
 					variant="buy"
 					size="lg"
-					disabled={!available || pending}
+					disabled={!available}
 					class="flex-1 basis-52"
 				>
-					{#if pending}
-						Ajout…
-					{:else}
-						{available ? 'Ajouter au panier' : 'Nous consulter'}
-					{/if}
+					{available ? 'Ajouter au panier' : 'Nous consulter'}
 				</ShopButton>
 			</form>
 

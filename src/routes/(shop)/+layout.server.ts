@@ -4,12 +4,11 @@ import { countCartItems } from '$lib/server/cart';
 import { resolveCartOwner } from '$lib/server/cart-session';
 
 export const load: LayoutServerLoad = async (event) => {
-	const { locals, setHeaders } = event;
+	const { locals } = event;
 
-	// Le menu change rarement : mise en cache navigateur 5 minutes. Le compteur
-	// de panier étant propre à chaque visiteur, la réponse reste privée.
-	setHeaders({ 'Cache-Control': 'private, max-age=300' });
-
+	// Pas de cache HTTP ici : la réponse porte le compteur de panier, qui doit
+	// refléter l'état courant à chaque navigation. Le menu, lui, est mis en
+	// cache côté serveur par `getShopMenu`.
 	const owner = await resolveCartOwner(event);
 
 	return {

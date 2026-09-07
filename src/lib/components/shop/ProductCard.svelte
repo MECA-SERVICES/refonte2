@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { createAddToCart } from './cart-actions.svelte';
+	import { notifyAddedToCart } from './cart-feedback.svelte';
 	import ShopButton from './ShopButton.svelte';
 	import ImagePlaceholder from './ImagePlaceholder.svelte';
 	import { formatPrice, shopProductPath, type ProductCard as ProductCardData } from '$lib/shop';
@@ -14,13 +14,23 @@
 
 	const available = $derived(product.stock > 0);
 
-	/** Ajout en place : le compteur de l'en-tête se met à jour, sans quitter la liste. */
-	let pending = $state(false);
-
-	const addToCart = createAddToCart(
-		() => product.name,
-		(value) => (pending = value)
-	);
+	/**
+	 * `use:enhance` sans argument fait déjà le nécessaire : il poste l'action,
+	 * recharge les données (donc le compteur d'en-tête) et met à jour la page.
+	 * On se contente d'annoncer la confirmation.
+	 */
+	const addToCart = () => {
+		return async ({
+			result,
+			update
+		}: {
+			result: { type: string };
+			update: () => Promise<void>;
+		}) => {
+			await update();
+			if (result.type === 'success') notifyAddedToCart(`« ${product.name} » ajouté au panier.`);
+		};
+	};
 </script>
 
 <!--
@@ -103,12 +113,8 @@
 			<form method="POST" action="/panier?/add" use:enhance={addToCart}>
 				<input type="hidden" name="productId" value={product.id} />
 				<input type="hidden" name="quantity" value="1" />
-				<ShopButton type="submit" variant="buy" size="sm" block disabled={!available || pending}>
-					{#if pending}
-						Ajout…
-					{:else}
-						{available ? 'Ajouter au panier' : 'Nous consulter'}
-					{/if}
+				<ShopButton type="submit" variant="buy" size="sm" block disabled={!available}>
+					{available ? 'Ajouter au panier' : 'Nous consulter'}
 				</ShopButton>
 			</form>
 		</div>
