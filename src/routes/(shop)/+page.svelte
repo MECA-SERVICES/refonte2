@@ -8,19 +8,15 @@
 		FireOutline,
 		GridOutline,
 		LayersOutline,
-		LockSolid,
 		PhoneSolid,
-		ShieldCheckSolid,
 		SunOutline,
 		TagOutline,
 		ToolsOutline,
-		TruckOutline,
 		UserHeadsetOutline
 	} from 'flowbite-svelte-icons';
 	import type { Component } from 'svelte';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import HomeSlider from '$lib/components/shop/HomeSlider.svelte';
-	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
 	import type { Slide } from '$lib/components/shop/hero-slider';
 	import type { PageProps } from './$types';
 
@@ -46,45 +42,25 @@
 	const clearance = $derived(data.menu.find((entry) => entry.slug.includes('destockage')));
 	const clearanceHref = $derived(clearance ? `/categorie/${clearance.slug}` : '/recherche');
 
-	const slides: Slide[] = $derived([
+	const slides: Slide[] = [
 		{
-			eyebrow: '30 ans d’expérience',
-			title: 'La bonne pièce, du premier coup.',
-			text: `Plus de ${totalMillions} million de références de pièces détachées et de matériels de motoculture, 100 % origine.`,
-			cta: 'Découvrir le catalogue',
 			href: '/recherche',
-			imageLabel: 'Photo d’ambiance : atelier ou matériel en situation',
-			imageHint: '1200 × 640'
+			image: '/slider/iseki-sa250-remise.jpg',
+			imageLabel:
+				'Motobineuse ISEKI SA250 en stock : remise de 309 €, 1 540 € TTC au lieu de 1 849 € TTC'
 		},
 		{
-			eyebrow: 'Robots tondeuses',
-			title: 'Votre pelouse, sans y penser.',
-			text: 'Navimow by Segway : installation, paramétrage et S.A.V assurés par nos soins.',
-			cta: 'Voir les robots',
 			href: '/recherche',
-			imageLabel: 'Photo : robot tondeuse en situation',
-			imageHint: '1200 × 640'
+			image: '/slider/iseki-sra-950fa-promotion.jpg',
+			imageLabel:
+				'Tondeuse autoportée ISEKI SRA 950FA en promotion : 11 999 € TTC au lieu de 15 226,80 €'
 		},
 		{
-			eyebrow: 'Professionnels & collectivités',
-			title: 'Un compte pro, des avantages dédiés.',
-			text: 'Tarifs HT, mandat administratif, paiement Chorus : un interlocuteur unique pour vos parcs.',
-			cta: 'Nous contacter',
-			href: 'tel:0950922336',
-			imageLabel: 'Photo : parc de matériel professionnel',
-			imageHint: '1200 × 640'
+			href: '/recherche',
+			image: '/slider/robots-tondeuses-bientot-disponible.jpg',
+			imageLabel:
+				'Robots tondeuses bientôt disponibles : LIDAR, 4x4, NRTK, jusqu’à 24 000 m² de tonte'
 		}
-	]);
-
-	const usps = [
-		{ icon: TruckOutline, title: 'Expédition rapide', text: 'Partout en France métropolitaine' },
-		{
-			icon: ShieldCheckSolid,
-			title: 'Pièces 100 % origine',
-			text: 'Toutes nos pièces sont de marque'
-		},
-		{ icon: ToolsOutline, title: 'S.A.V toutes marques', text: 'Atelier et experts motoculture' },
-		{ icon: LockSolid, title: 'Paiement sécurisé', text: 'CB, 3 ou 4 fois, mandat Chorus' }
 	];
 </script>
 
@@ -101,70 +77,162 @@
 <!-- ================= Carrousel d'accueil ================= -->
 <HomeSlider {slides} />
 
-<!-- ================= Réassurance ================= -->
-<section class="mt-4 rounded-2xl bg-shop-subtle px-6 py-5" aria-label="Nos garanties">
-	<div class="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
-		{#each usps as usp (usp.title)}
-			{@const Icon = usp.icon}
-			<div class="flex items-center gap-3">
-				<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
-					<Icon class="h-5 w-5 text-shop-blue" />
-				</span>
-				<div>
-					<p class="text-sm font-semibold text-shop-ink">{usp.title}</p>
-					<p class="mt-0.5 hidden text-xs text-shop-muted sm:block">{usp.text}</p>
-				</div>
+<!-- ================= Bento promotions ================= -->
+<!-- Grille d'emplacements promotionnels : une grande vitrine et trois tuiles. -->
+<section
+	class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:auto-rows-[200px] lg:grid-cols-4"
+	aria-label="Promotions en cours"
+>
+	<!-- Grande vitrine promotionnelle -->
+	<a
+		href={clearanceHref}
+		class="group flex flex-col overflow-hidden rounded-2xl border border-shop-border bg-white sm:col-span-2 lg:row-span-2"
+	>
+		<div class="min-h-[220px] flex-1 overflow-hidden p-3 pb-0">
+			<img
+				src="/promo/ego-tondeuse-sans-fil.png"
+				alt="Tonte avec une tondeuse sans fil EGO Power+ 56V"
+				loading="lazy"
+				class="h-full w-full rounded-xl object-cover"
+			/>
+		</div>
+		<div class="flex items-center justify-between gap-4 p-5">
+			<div>
+				<p class="text-xs font-semibold tracking-wide text-shop-orange uppercase">Promo à la une</p>
+				<h2 class="mt-1 text-lg font-bold text-shop-ink">Votre offre du moment</h2>
 			</div>
-		{/each}
+			<ArrowRightOutline
+				class="h-5 w-5 shrink-0 text-shop-muted transition-transform group-hover:translate-x-1 group-hover:text-shop-blue"
+			/>
+		</div>
+	</a>
+
+	<!-- Déstockage : l'orange est le signal commercial de la charte -->
+	<a
+		href={clearanceHref}
+		class="group flex flex-col justify-between rounded-2xl bg-shop-orange-deep p-6 text-white transition-colors hover:bg-shop-orange sm:col-span-2 lg:col-span-2"
+	>
+		<div>
+			<TagOutline class="h-7 w-7 text-white/80" />
+			<h2 class="mt-2 text-xl font-bold">Déstockage & promotions</h2>
+			<p class="mt-1 text-sm text-white/85">
+				Matériels et pièces à prix réduits, dans la limite des stocks.
+			</p>
+		</div>
+		<span class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold">
+			J'en profite
+			<ArrowRightOutline class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+		</span>
+	</a>
+
+	<!-- Emplacement promo secondaire : tuile sombre, accent orange -->
+	<a
+		href={clearanceHref}
+		class="group flex flex-col justify-between overflow-hidden rounded-2xl bg-shop-ink p-5 text-white"
+	>
+		<div>
+			<h2 class="text-lg leading-snug font-bold">
+				Offre <span class="text-shop-orange">marque</span>
+			</h2>
+			<p class="mt-1 text-xs text-white/60">Emplacement promo — visuel 600 × 400 à fournir</p>
+		</div>
+		<span
+			class="mt-3 w-fit text-xs font-semibold tracking-wide uppercase underline underline-offset-4"
+		>
+			Découvrir
+		</span>
+	</a>
+
+	<!-- Conseil : le bleu porte le service et la confiance -->
+	<div class="flex flex-col justify-between rounded-2xl bg-primary-800 p-5 text-white">
+		<div>
+			<UserHeadsetOutline class="h-6 w-6 text-white/80" />
+			<h2 class="mt-2 text-base leading-snug font-bold">Un doute sur une référence ?</h2>
+			<p class="mt-1 text-xs text-primary-200">Nos experts vous guident.</p>
+		</div>
+		<Button
+			size="sm"
+			href="tel:0950922336"
+			class="mt-3 w-fit bg-white text-primary-800 hover:bg-primary-50"
+		>
+			<PhoneSolid class="me-1.5 h-3.5 w-3.5" /> 09 50 92 23 36
+		</Button>
 	</div>
 </section>
 
-<!-- ================= Rayons ================= -->
-{#if data.menu.length > 0}
-	<section class="mt-14">
-		<div class="mb-6 flex items-end justify-between gap-4">
-			<div>
-				<h2 class="text-2xl font-bold tracking-tight text-shop-ink">Explorez nos rayons</h2>
-				<p class="mt-1 text-sm text-shop-muted">
-					Matériel et pièces détachées, classés par univers
-				</p>
-			</div>
-			<a
-				href="/recherche"
-				class="hidden shrink-0 items-center gap-1 text-sm font-semibold text-shop-blue hover:underline sm:flex"
-			>
-				Tout le catalogue <ArrowRightOutline class="h-4 w-4" />
-			</a>
-		</div>
-		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-			{#each data.menu as entry, i (entry.id)}
-				{@const Icon = categoryIcons[i % categoryIcons.length]}
-				<a
-					href="/categorie/{entry.slug}"
-					class="group rounded-xl border border-shop-border bg-white p-5 transition-colors hover:border-primary-300 hover:bg-shop-subtle"
-				>
-					<span
-						class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-primary-100"
-					>
-						<Icon class="h-5 w-5 text-primary-700" />
-					</span>
-					<h3 class="mt-3 text-sm font-semibold text-shop-ink">{entry.name}</h3>
-					<p class="mt-1 text-xs text-shop-muted">
-						{entry.children.length > 0
-							? `${entry.children.length} sous-catégorie${entry.children.length > 1 ? 's' : ''}`
-							: 'Voir le rayon'}
-					</p>
+<!-- ================= Marques & top catégories ================= -->
+<section class="mt-14 grid gap-12 lg:grid-cols-2 lg:gap-8">
+	{#if data.brands.length > 0}
+		<div>
+			<div class="mb-5 flex items-end justify-between gap-4 border-b border-shop-border pb-3">
+				<h2 class="text-lg font-extrabold tracking-wide text-shop-ink uppercase">Nos marques</h2>
+				<a href="/recherche" class="text-sm font-semibold text-shop-blue hover:underline">
+					Voir tout
 				</a>
-			{/each}
+			</div>
+			<div class="grid grid-cols-3 gap-3">
+				{#each data.brands.slice(0, 9) as brandItem (brandItem.id)}
+					<div
+						class="flex h-20 items-center justify-center rounded-xl border border-shop-border/70 bg-white p-3"
+					>
+						{#if brandItem.logoUrl}
+							<img
+								src={brandItem.logoUrl}
+								alt={brandItem.name}
+								loading="lazy"
+								class="max-h-full max-w-full object-contain"
+							/>
+						{:else}
+							<span
+								class="text-center text-xs font-semibold tracking-wide text-shop-muted uppercase"
+							>
+								{brandItem.name}
+							</span>
+						{/if}
+					</div>
+				{/each}
+			</div>
 		</div>
-	</section>
-{/if}
+	{/if}
+
+	{#if data.menu.length > 0}
+		<div>
+			<div class="mb-5 flex items-end justify-between gap-4 border-b border-shop-border pb-3">
+				<h2 class="text-lg font-extrabold tracking-wide text-shop-ink uppercase">Top catégories</h2>
+				<a href="/recherche" class="text-sm font-semibold text-shop-blue hover:underline">
+					Tout le catalogue
+				</a>
+			</div>
+			<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+				{#each data.menu.slice(0, 6) as entry, i (entry.id)}
+					{@const Icon = categoryIcons[i % categoryIcons.length]}
+					<a
+						href="/categorie/{entry.slug}"
+						class="group flex flex-col items-center rounded-xl bg-shop-subtle px-3 py-5 text-center transition-colors hover:bg-primary-100"
+					>
+						<span class="flex h-11 w-11 items-center justify-center rounded-full bg-white">
+							<Icon class="h-5 w-5 text-primary-700" />
+						</span>
+						<span class="mt-2.5 text-sm leading-tight font-semibold text-shop-ink">
+							{entry.name}
+						</span>
+						<span class="mt-0.5 text-xs text-shop-muted">
+							{entry.children.length > 0 ? `${entry.children.length} sous-cat.` : 'Voir'}
+						</span>
+					</a>
+				{/each}
+			</div>
+		</div>
+	{/if}
+</section>
 
 <!-- ================= Nouveaux produits ================= -->
 <section class="mt-14">
 	<div class="mb-6 flex items-end justify-between gap-4">
 		<div>
-			<h2 class="text-2xl font-bold tracking-tight text-shop-ink">Nouveaux produits</h2>
+			<h2 class="text-xl font-extrabold tracking-wide text-shop-ink uppercase">
+				Nouveaux produits
+			</h2>
 			<p class="mt-1 text-sm text-shop-muted">Les dernières références ajoutées au catalogue</p>
 		</div>
 		<a
@@ -181,71 +249,25 @@
 	</div>
 </section>
 
-<!-- ================= Bandeaux promo & conseil ================= -->
-<section class="mt-14 grid gap-4 lg:grid-cols-2">
-	<!-- Déstockage : l'orange est le signal commercial de la charte -->
-	<a
-		href={clearanceHref}
-		class="group flex flex-col justify-between rounded-2xl bg-shop-orange-deep p-8 text-white transition-colors hover:bg-shop-orange"
-	>
-		<div>
-			<TagOutline class="h-8 w-8 text-white/80" />
-			<h2 class="mt-3 text-2xl font-bold">Déstockage & promotions</h2>
-			<p class="mt-2 text-sm text-white/85">
-				Matériels et pièces à prix réduits, dans la limite des stocks disponibles.
-			</p>
-		</div>
-		<span class="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold">
-			J'en profite
-			<ArrowRightOutline class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+<!-- ================= Professionnels ================= -->
+<section
+	class="mt-14 flex flex-col items-center justify-between gap-4 rounded-2xl bg-primary-700 px-6 py-5 text-white sm:flex-row sm:px-8"
+	aria-label="Professionnels et collectivités"
+>
+	<p class="text-center text-sm sm:text-left">
+		<span class="font-bold">Professionnels & collectivités</span>
+		<span class="text-primary-200">
+			— tarifs HT, mandat administratif et paiement Chorus, avec un interlocuteur dédié.
 		</span>
-	</a>
-
-	<!-- Conseil : le bleu porte le service et la confiance -->
-	<div class="flex flex-col justify-between rounded-2xl bg-primary-800 p-8 text-white">
-		<div>
-			<UserHeadsetOutline class="h-8 w-8 text-white/80" />
-			<h2 class="mt-3 text-2xl font-bold">Besoin d'aide pour trouver une pièce ?</h2>
-			<p class="mt-2 text-sm text-primary-200">
-				Vues éclatées, références constructeur : nos experts vous guident du lundi au vendredi,
-				9h-12h et 14h-18h.
-			</p>
-		</div>
-		<Button href="tel:0950922336" class="mt-6 w-fit bg-white text-primary-800 hover:bg-primary-50">
-			<PhoneSolid class="me-2 h-4 w-4" /> 09 50 92 23 36
-		</Button>
-	</div>
+	</p>
+	<Button
+		size="sm"
+		href="tel:0950922336"
+		class="shrink-0 bg-white text-primary-800 hover:bg-primary-50"
+	>
+		Nous contacter
+	</Button>
 </section>
-
-<!-- ================= Marques ================= -->
-{#if data.brands.length > 0}
-	<section class="mt-14">
-		<div class="mb-6">
-			<h2 class="text-2xl font-bold tracking-tight text-shop-ink">Nos marques partenaires</h2>
-			<p class="mt-1 text-sm text-shop-muted">
-				Plus de 1&nbsp;000 marques distribuées — pièces et matériels d'origine
-			</p>
-		</div>
-		<div class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-			{#each data.brands as brandItem (brandItem.id)}
-				<div
-					class="flex h-24 items-center justify-center rounded-xl border border-shop-border bg-white p-4"
-				>
-					{#if brandItem.logoUrl}
-						<img
-							src={brandItem.logoUrl}
-							alt={brandItem.name}
-							loading="lazy"
-							class="max-h-full max-w-full object-contain"
-						/>
-					{:else}
-						<ImagePlaceholder label="Logo {brandItem.name}" class="border-0 bg-transparent" />
-					{/if}
-				</div>
-			{/each}
-		</div>
-	</section>
-{/if}
 
 <!-- ================= Newsletter ================= -->
 <section class="mt-14 rounded-2xl bg-shop-subtle px-6 py-10 sm:px-10" aria-label="Newsletter">
@@ -253,7 +275,9 @@
 		<span class="flex h-12 w-12 items-center justify-center rounded-full bg-white">
 			<EnvelopeOutline class="h-6 w-6 text-shop-blue" />
 		</span>
-		<h2 class="mt-4 text-2xl font-bold tracking-tight text-shop-ink">Restez informé</h2>
+		<h2 class="mt-4 text-xl font-extrabold tracking-wide text-shop-ink uppercase">
+			Restez informé
+		</h2>
 		<p class="mt-2 max-w-md text-sm text-shop-muted">
 			Nouveautés, arrivages et offres de déstockage : une fois par mois, rien de plus.
 		</p>
@@ -315,5 +339,27 @@
 				<dd class="text-3xl font-extrabold sm:text-4xl">30+</dd>
 			</div>
 		</dl>
+	</div>
+</section>
+
+<!-- ================= Texte éditorial ================= -->
+<section class="mt-14 border-t border-shop-border pt-8 pb-2">
+	<h2 class="text-base font-extrabold tracking-wide text-shop-ink uppercase">
+		MS Shop — le spécialiste motoculture en ligne
+	</h2>
+	<div class="mt-3 max-w-4xl space-y-3 text-sm leading-6 text-shop-muted">
+		<p>
+			Depuis plus de trente ans, Meca Services accompagne particuliers, professionnels et
+			collectivités dans l'entretien de leurs espaces verts. Notre boutique en ligne donne accès à
+			l'un des plus grands catalogues de pièces détachées de motoculture de France : tondeuses,
+			robots, débroussailleuses, tronçonneuses et micro-tracteurs des plus grandes marques —
+			toujours en pièces d'origine.
+		</p>
+		<p>
+			Basés à Carantilly, dans la Manche, nous assurons également le S.A.V et la réparation en
+			atelier de tous les matériels que nous distribuons. Vues éclatées, références constructeur,
+			conseils par téléphone : notre équipe vous aide à identifier la bonne pièce du premier coup,
+			et l'expédie partout en France métropolitaine.
+		</p>
 	</div>
 </section>

@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import {
-		Badge,
-		Button,
 		CloseButton,
 		Drawer,
 		Accordion,
@@ -10,14 +8,14 @@
 		Footer,
 		FooterCopyright,
 		FooterLink,
-		FooterLinkGroup,
-		Search
+		FooterLinkGroup
 	} from 'flowbite-svelte';
 	import {
 		BarsOutline,
 		CartOutline,
 		LockSolid,
 		PhoneSolid,
+		SearchOutline,
 		ShieldCheckSolid,
 		ToolsOutline,
 		UserCircleOutline
@@ -44,40 +42,27 @@
 </script>
 
 <div class="flex min-h-screen flex-col bg-white">
-	<header class="sticky top-0 z-30 border-b border-shop-border bg-white">
-		<!-- Bandeau utilitaire : contact et réassurance -->
-		<div class="hidden border-b border-shop-border/70 bg-shop-subtle sm:block">
+	<header class="sticky top-0 z-30 bg-white">
+		<!-- Bandeau utilitaire : hotline à gauche, horaires à droite -->
+		<div class="hidden border-b border-shop-border/70 sm:block">
 			<div
-				class="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-4 py-1.5 text-xs text-shop-muted sm:px-6 lg:px-8"
+				class="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-4 py-2 text-xs sm:px-6 lg:px-8"
 			>
-				<div class="flex items-center gap-4">
-					<a
-						href="tel:0950922336"
-						class="flex items-center gap-1.5 font-semibold text-shop-blue hover:underline"
-					>
-						<PhoneSolid class="h-3.5 w-3.5" /> 09 50 92 23 36
+				<div class="flex items-center gap-3">
+					<span class="rounded-full bg-shop-subtle px-3 py-1 font-medium text-shop-ink">
+						Hotline
+					</span>
+					<a href="tel:0950922336" class="font-bold text-shop-ink hover:text-shop-blue">
+						<PhoneSolid class="me-1 inline h-3.5 w-3.5 text-shop-blue" /> 09 50 92 23 36
 					</a>
-					<span class="hidden md:inline">9h/12h – 14h/18h · Fermé sam. dim.</span>
 				</div>
-				<div class="flex items-center gap-5">
-					<span class="hidden items-center gap-1.5 lg:flex">
-						<ShieldCheckSolid class="h-3.5 w-3.5 text-shop-blue" /> Pièces 100 % origine
-					</span>
-					<span class="hidden items-center gap-1.5 lg:flex">
-						<ToolsOutline class="h-3.5 w-3.5 text-shop-blue" /> S.A.V toutes marques
-					</span>
-					<span class="flex items-center gap-1.5">
-						<LockSolid class="h-3.5 w-3.5 text-shop-blue" /> Paiement sécurisé
-					</span>
-				</div>
+				<p class="text-shop-muted">9h/12h – 14h/18h · Fermé samedi et dimanche</p>
 			</div>
 		</div>
 
-		<!-- Ligne principale : logo, recherche, compte, panier.
-		     Sur 1,3 M de références la recherche est le premier geste : elle
-		     occupe le centre et la plus grande largeur. -->
+		<!-- Ligne principale : logo à gauche, compte et panier à droite -->
 		<div
-			class="mx-auto flex w-full max-w-screen-2xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3.5 sm:px-6 lg:px-8"
+			class="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8"
 		>
 			<a href={resolve('/')} class="shrink-0">
 				<span class="block text-2xl leading-none font-black tracking-tight text-shop-blue">
@@ -88,64 +73,109 @@
 				</span>
 			</a>
 
-			<form
-				action="/recherche"
-				method="get"
-				class="order-3 w-full min-w-0 flex-1 md:order-none md:mx-auto md:w-auto lg:max-w-2xl"
-			>
-				<Search
-					name="q"
-					size="md"
-					placeholder="Rechercher une pièce, une référence, un EAN…"
-					class="border-shop-border bg-shop-subtle focus:border-primary-600 focus:bg-white"
-				/>
-			</form>
-
-			<div class="ms-auto flex shrink-0 items-center gap-2 md:ms-0">
-				<a
-					href={resolve('/admin/login')}
-					class="hidden items-center gap-2.5 rounded-lg px-3 py-2 transition hover:bg-shop-subtle sm:flex"
-				>
-					<UserCircleOutline class="h-7 w-7 text-shop-muted" />
+			<div class="flex shrink-0 items-center gap-2 sm:gap-5">
+				<a href={resolve('/admin/login')} class="group flex items-center gap-3">
+					<span
+						class="flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
+					>
+						<UserCircleOutline class="h-5 w-5 text-shop-ink" />
+					</span>
 					<span class="hidden text-left lg:block">
-						<span class="block text-xs text-shop-muted">Bonjour</span>
-						<span class="block text-sm leading-tight font-semibold text-shop-ink">
+						<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
+							Bonjour
+						</span>
+						<span class="block text-sm leading-tight font-bold text-shop-ink">
 							{data.shopUser ? data.shopUser.name : 'Mon compte'}
 						</span>
 					</span>
 				</a>
 
-				<Button href="#panier" class="gap-2">
-					<CartOutline class="h-5 w-5" />
-					<span class="hidden sm:inline">Panier</span>
-					<Badge rounded class="bg-white px-2 text-primary-700">0</Badge>
-				</Button>
+				<a href="#panier" class="group flex items-center gap-3">
+					<span
+						class="relative flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
+					>
+						<CartOutline class="h-5 w-5 text-shop-ink" />
+						<span
+							class="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-shop-red px-1 text-[11px] font-bold text-white"
+						>
+							0
+						</span>
+					</span>
+					<span class="hidden text-left lg:block">
+						<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
+							Panier
+						</span>
+						<span class="block text-sm leading-tight font-bold text-shop-ink">0 article</span>
+					</span>
+				</a>
 			</div>
 		</div>
 
-		<!-- Barre des rayons : accès au menu latéral + raccourcis directs -->
-		<nav
-			class="mx-auto flex w-full max-w-screen-2xl items-center gap-1 px-4 pb-2.5 sm:px-6 lg:px-8"
-			aria-label="Navigation principale"
-		>
-			<Button size="sm" class="me-2 shrink-0 gap-2" onclick={() => (menuOpen = true)}>
-				<BarsOutline class="h-4 w-4" />
-				Tous nos rayons
-			</Button>
+		<!-- Barre bleue : recherche en pilule (rayons intégrés) + réassurance -->
+		<div class="bg-shop-blue">
+			<div
+				class="mx-auto flex w-full max-w-screen-2xl items-center gap-8 px-4 py-3 sm:px-6 lg:px-8"
+			>
+				<form action="/recherche" method="get" class="min-w-0 flex-1 lg:max-w-3xl">
+					<div class="flex h-11 items-center rounded-full bg-white p-1">
+						<button
+							type="button"
+							class="flex h-full shrink-0 items-center gap-2 rounded-full px-4 text-sm font-bold text-shop-ink transition-colors hover:bg-shop-subtle"
+							onclick={() => (menuOpen = true)}
+						>
+							<BarsOutline class="h-4 w-4" />
+							<span class="hidden sm:inline">Tous nos rayons</span>
+						</button>
+						<span class="h-5 w-px shrink-0 bg-shop-border" aria-hidden="true"></span>
+						<input
+							type="search"
+							name="q"
+							placeholder="Rechercher une pièce, une référence, un EAN…"
+							class="h-full w-full min-w-0 border-0 bg-transparent px-4 text-sm text-shop-ink placeholder:text-shop-muted focus:ring-0"
+						/>
+						<button
+							type="submit"
+							class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-shop-blue text-white transition-colors hover:bg-shop-blue-dark"
+							aria-label="Rechercher"
+						>
+							<SearchOutline class="h-4 w-4" />
+						</button>
+					</div>
+				</form>
 
-			<div class="hidden items-center gap-0.5 overflow-x-auto lg:flex">
+				<div
+					class="hidden shrink-0 items-center gap-8 text-xs font-semibold tracking-wide text-white uppercase xl:flex"
+				>
+					<span class="flex items-center gap-2">
+						<ShieldCheckSolid class="h-4 w-4" /> Pièces 100 % origine
+					</span>
+					<span class="flex items-center gap-2">
+						<ToolsOutline class="h-4 w-4" /> S.A.V toutes marques
+					</span>
+					<span class="flex items-center gap-2">
+						<LockSolid class="h-4 w-4" /> Paiement sécurisé
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Raccourcis rayons -->
+		<nav class="hidden border-b border-shop-border/70 lg:block" aria-label="Navigation principale">
+			<div
+				class="mx-auto flex w-full max-w-screen-2xl items-center gap-0.5 overflow-x-auto px-4 py-1.5 sm:px-6 lg:px-8"
+			>
 				{#each data.menu as entry (entry.id)}
 					{#if isClearance(entry.slug)}
 						<a
 							href={categoryHref(entry.slug)}
-							class="ms-1 rounded-full bg-shop-orange px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition hover:bg-shop-orange-light"
+							class="ms-1 rounded-full bg-shop-orange px-3 py-1 text-[13px] font-semibold whitespace-nowrap text-white transition hover:bg-shop-orange-light"
 						>
 							{entry.name}
 						</a>
 					{:else}
 						<a
 							href={categoryHref(entry.slug)}
-							class="rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap text-shop-ink transition hover:bg-shop-subtle hover:text-shop-blue"
+							class="rounded-md px-3 py-1 text-[13px] font-medium whitespace-nowrap text-shop-ink transition hover:bg-shop-subtle hover:text-shop-blue"
 						>
 							{entry.name}
 						</a>
@@ -228,14 +258,14 @@
 		>
 			<div>
 				<h2 class="mb-3 text-sm font-bold tracking-wider text-white uppercase">MS Shop</h2>
-				<p class="text-sm leading-6 text-primary-200">
-					<span class="font-semibold text-white">Magasin</span><br />
+				<p class="text-xs font-semibold tracking-wide text-primary-200 uppercase">Hotline</p>
+				<a href="tel:0950922336" class="mt-1 block text-2xl font-extrabold text-white">
+					09 50 92 23 36
+				</a>
+				<p class="mt-1 text-sm text-primary-200">9h/12h – 14h/18h · Fermé sam. dim.</p>
+				<p class="mt-4 text-sm leading-6 text-primary-200">
+					<span class="font-semibold text-white">Magasin & atelier</span><br />
 					4 La Merrerie, 50570 Carantilly
-				</p>
-				<p class="mt-3 text-sm leading-6 text-primary-200">
-					<span class="font-semibold text-white">Contact</span><br />
-					09 50 92 23 36<br />
-					9h/12h – 14h/18h · Fermé sam. dim.
 				</p>
 			</div>
 			<div>
@@ -249,17 +279,13 @@
 				</FooterLinkGroup>
 			</div>
 			<div>
-				<h2 class="mb-3 text-sm font-bold tracking-wider text-white uppercase">Produits</h2>
+				<h2 class="mb-3 text-sm font-bold tracking-wider text-white uppercase">Nos rayons</h2>
 				<FooterLinkGroup class="space-y-2 text-sm text-primary-200">
-					<FooterLink href="/recherche" class="hover:text-white hover:underline">
-						Promotions
-					</FooterLink>
-					<FooterLink href="/recherche" class="hover:text-white hover:underline">
-						Nouveaux produits
-					</FooterLink>
-					<FooterLink href="/recherche" class="hover:text-white hover:underline">
-						Meilleures ventes
-					</FooterLink>
+					{#each data.menu.slice(0, 6) as entry (entry.id)}
+						<FooterLink href="/categorie/{entry.slug}" class="hover:text-white hover:underline">
+							{entry.name}
+						</FooterLink>
+					{/each}
 				</FooterLinkGroup>
 			</div>
 			<div>
@@ -277,7 +303,9 @@
 			</div>
 		</div>
 		<div class="border-t border-white/10">
-			<div class="mx-auto w-full max-w-screen-2xl px-4 py-4 sm:px-6 lg:px-8">
+			<div
+				class="mx-auto flex w-full max-w-screen-2xl flex-col items-center justify-between gap-3 px-4 py-4 sm:flex-row sm:px-6 lg:px-8"
+			>
 				<FooterCopyright
 					href={resolve('/')}
 					by="MS Shop — Meca Services"
@@ -285,6 +313,14 @@
 					class="text-primary-200"
 					classes={{ link: 'text-white hover:underline' }}
 				/>
+				<p class="flex flex-wrap items-center justify-center gap-2 text-xs text-primary-200">
+					<span>Paiement sécurisé</span>
+					{#each ['CB', 'Visa', 'Mastercard', 'Sofinco 3×-4×'] as mean (mean)}
+						<span class="rounded border border-white/20 px-2 py-0.5 font-semibold text-white">
+							{mean}
+						</span>
+					{/each}
+				</p>
 			</div>
 		</div>
 	</Footer>
