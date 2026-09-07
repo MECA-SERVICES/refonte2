@@ -240,8 +240,11 @@ export async function getCartFull(id: number) {
 	const [row] = await db.select().from(cart).where(eq(cart.id, id)).limit(1);
 	if (!row) return undefined;
 
+	// Un panier visiteur n'a pas encore de client rattaché (section 18, règle R2).
 	const [cust, items] = await Promise.all([
-		db.select().from(customer).where(eq(customer.id, row.customerId)).limit(1),
+		row.customerId == null
+			? Promise.resolve([])
+			: db.select().from(customer).where(eq(customer.id, row.customerId)).limit(1),
 		db
 			.select({
 				id: cartItem.id,

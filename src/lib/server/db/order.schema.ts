@@ -62,9 +62,14 @@ export const cart = pgTable(
 	'cart',
 	{
 		id: serial('id').primaryKey(),
-		customerId: integer('customer_id')
-			.notNull()
-			.references(() => customer.id, { onDelete: 'cascade' }),
+		/**
+		 * Propriétaire du panier. Nul tant que le visiteur n'est pas connecté :
+		 * le panier est alors rattaché à `session_token` (règle R2 de la section 18).
+		 */
+		customerId: integer('customer_id').references(() => customer.id, { onDelete: 'cascade' }),
+
+		/** Jeton du panier visiteur, porté par un cookie ; effacé à la fusion. */
+		sessionToken: text('session_token'),
 
 		promoCodeId: integer('promo_code_id'),
 
@@ -76,6 +81,8 @@ export const cart = pgTable(
 	},
 	(t) => [
 		index('cart_customer_idx').on(t.customerId),
+		// Un jeton visiteur ne désigne qu'un seul panier.
+		uniqueIndex('cart_session_token_idx').on(t.sessionToken),
 		// Tri par défaut de la liste des paniers admin.
 		index('cart_last_activity_idx').on(t.lastActivityAt)
 	]
@@ -93,6 +100,12 @@ export const cartItem = pgTable(
 			.references(() => product.id, { onDelete: 'cascade' }),
 		variantId: integer('variant_id').references(() => productVariant.id, { onDelete: 'set null' }),
 		quantity: integer('quantity').notNull().default(1),
+
+		/**
+		 * Prix HT au moment de l'ajout. Sert uniquement à signaler au client un
+		 * écart de prix (règle R11) : le prix facturé reste celui du jour (R10).
+		 */
+		priceHtAtAdd: numeric('price_ht_at_add', { precision: 12, scale: 4 }),
 
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()

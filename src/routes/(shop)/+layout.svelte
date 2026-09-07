@@ -90,22 +90,26 @@
 					</span>
 				</a>
 
-				<a href="#panier" class="group flex items-center gap-3">
+				<a href="/panier" class="group flex items-center gap-3">
 					<span
 						class="relative flex h-11 w-11 items-center justify-center rounded-full bg-shop-subtle transition-colors group-hover:bg-primary-100"
 					>
 						<CartOutline class="h-5 w-5 text-shop-ink" />
-						<span
-							class="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-shop-red px-1 text-[11px] font-bold text-white"
-						>
-							0
-						</span>
+						{#if data.cartCount > 0}
+							<span
+								class="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-shop-red px-1 text-[11px] font-bold text-white"
+							>
+								{data.cartCount}
+							</span>
+						{/if}
 					</span>
 					<span class="hidden text-left lg:block">
 						<span class="block text-[10px] font-medium tracking-wide text-shop-muted uppercase">
 							Panier
 						</span>
-						<span class="block text-sm leading-tight font-bold text-shop-ink">0 article</span>
+						<span class="block text-sm leading-tight font-bold text-shop-ink">
+							{data.cartCount} article{data.cartCount > 1 ? 's' : ''}
+						</span>
 					</span>
 				</a>
 			</div>

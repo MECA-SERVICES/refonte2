@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { Button } from 'flowbite-svelte';
 	import {
 		CartPlusSolid,
@@ -13,7 +14,7 @@
 	import { formatPrice } from '$lib/shop';
 	import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 
 	const product = $derived(data.product);
 	const images = $derived(product.media.filter((m) => m.type === 'image'));
@@ -157,15 +158,42 @@
 				{product.stock > 0 ? 'En stock, expédié sous 24-48 h' : 'Sur commande — nous consulter'}
 			</p>
 
-			<div class="mt-5 flex flex-wrap gap-3">
-				<Button size="lg" disabled class="grow sm:grow-0">
+			<form method="POST" action="?/add" use:enhance class="mt-5 flex flex-wrap items-center gap-3">
+				<input type="hidden" name="productId" value={product.id} />
+				<label class="sr-only" for="quantity">Quantité</label>
+				<input
+					id="quantity"
+					name="quantity"
+					type="number"
+					min="1"
+					max={Math.max(1, product.stock)}
+					value="1"
+					disabled={product.stock <= 0}
+					class="h-12 w-20 rounded-lg border border-shop-border text-center font-semibold text-shop-ink focus:border-shop-blue focus:ring-shop-blue disabled:bg-shop-subtle"
+				/>
+				<Button type="submit" size="lg" disabled={product.stock <= 0} class="grow sm:grow-0">
 					<CartPlusSolid class="me-2 h-5 w-5" /> Ajouter au panier
 				</Button>
 				<Button size="lg" color="alternative" href="tel:0950922336">
 					<PhoneSolid class="me-2 h-4 w-4" /> Un conseil ?
 				</Button>
-			</div>
-			<p class="mt-2 text-xs text-shop-muted">Le panier sera disponible prochainement.</p>
+			</form>
+
+			{#if form?.message}
+				<p
+					class="mt-3 rounded-xl px-3 py-2 text-sm font-medium {form.added
+						? 'bg-primary-50 text-primary-800'
+						: 'bg-shop-subtle text-shop-red'}"
+					role="status"
+				>
+					{form.message}
+					{#if form.added}
+						<a href="/panier" class="ms-1 font-semibold underline underline-offset-2">
+							Voir mon panier
+						</a>
+					{/if}
+				</p>
+			{/if}
 		</div>
 
 		<!-- Réassurance : reprise des engagements affichés en en-tête -->
