@@ -136,6 +136,90 @@ export function normalizeName(raw: string): string {
 	return NAME_ALIASES.get(cleaned.toLowerCase()) ?? cleaned;
 }
 
+
+/**
+ * Unités reconnues, normalisées en minuscules.
+ *
+ * Les fiches mélangent `51 cm` et `51 CM` : sans reprise, une même grandeur
+ * produit deux valeurs de filtre distinctes, chacune sous le seuil d'affichage.
+ * Seules ces unités sont converties ; le reste de la valeur est préservé.
+ */
+const UNITS = new Map([
+	['mm', 'mm'], ['cm', 'cm'], ['m', 'm'], ['km', 'km'], ['g', 'g'], ['kg', 'kg'],
+	['ml', 'ml'], ['cc', 'cc'], ['cm3', 'cm3'], ['bar', 'bar'], ['psi', 'psi'],
+	['min', 'min'], ['nm', 'Nm'], ['mm2', 'mm2'],
+	// Unités dont le symbole officiel porte une majuscule : le volt s'écrit « V »,
+	// pas « v ». Les minusculiser nuirait à la lisibilité du filtre.
+	['v', 'V'], ['w', 'W'], ['kw', 'kW'], ['ah', 'Ah'], ['wh', 'Wh'],
+	['l', 'L'], ['rpm', 'RPM'], ['db', 'dB'], ['h', 'h'], ['cv', 'CV'], ['hp', 'HP']
+]);
+
+/** Valeurs booléennes ou de position dont la casse ne porte aucun sens. */
+const LOWERCASE_WORDS = new Set([
+	'oui', 'non', 'droite', 'gauche', 'avant', 'arrière', 'haut', 'bas',
+	'standard', 'manuel', 'automatique', 'électrique', 'aucun'
+]);
+
+/**
+ * Valeurs dont la forme canonique est fixée d'avance.
+ *
+ * Les sigles matière (`PVC`, `ABS`) et les marqueurs d'absence (`n/a`) ne
+ * suivent pas la règle générale de capitalisation : « Pvc » ou « N/a » seraient
+ * incorrects à l'affichage.
+ */
+const CANONICAL_VALUES = new Map([
+	['n/a', 'n/a'], ['na', 'n/a'], ['-', 'n/a'],
+	['pvc', 'PVC'], ['abs', 'ABS'], ['pe', 'PE'], ['pp', 'PP'], ['pa', 'PA'],
+	['inox', 'Inox'], ['nbr', 'NBR'], ['epdm', 'EPDM'], ['ptfe', 'PTFE'],
+	['led', 'LED'], ['ohv', 'OHV'], ['ohc', 'OHC'], ['bsp', 'BSP'], ['npt', 'NPT']
+]);
+
+/**
+ * Uniformise la casse d'une valeur pour que les variantes se regroupent.
+ *
+ * Une valeur entièrement en capitales est ramenée en casse de phrase — sauf si
+ * elle est courte (`SAE`, `NBR`) ou contient chiffres et symboles (`M6`,
+ * `12.9`), où les capitales sont significatives. Les unités accolées à un
+ * nombre sont toujours mises en minuscules.
+ */
+export function normalizeValue(raw: string): string {
+	const value = raw.replace(/\s+/g, ' ').trim();
+	if (!value) return value;
+
+	// `19 MM` → `19 mm` : le nombre fixe le sens, l'unité n'est qu'une notation.
+	const withUnit = value.replace(
+		/^(-?\d+(?:[.,]\d+)?)\s*([A-Za-zØø²³/]+)$/,
+		(whole, num: string, unit: string) => {
+			const canonical = UNITS.get(unit.toLowerCase());
+			return canonical ? `${num} ${canonical}` : whole;
+		}
+	);
+	if (withUnit !== value) return withUnit;
+
+	const lower = value.toLocaleLowerCase('fr');
+	const canonicalValue = CANONICAL_VALUES.get(lower);
+	if (canonicalValue) return canonicalValue;
+	if (LOWERCASE_WORDS.has(lower)) return lower.replace(/^(.)/, (c) => c.toLocaleUpperCase('fr'));
+
+	// Un mot unique tout en minuscules (« acier ») doit rejoindre sa variante
+	// capitalisée (« Acier ») : sans cela, une même matière reste scindée en deux
+	// valeurs de filtre. On ne touche pas aux expressions de plusieurs mots, où
+	// la minuscule peut être voulue (« vis à tête plate »).
+	if (value === lower && /^\p{L}+$/u.test(value) && value.length > 2) {
+		return value.replace(/^(.)/, (c) => c.toLocaleUpperCase('fr'));
+	}
+
+	// Tout en capitales : on rétablit une casse de phrase, sauf sigle court ou
+	// référence alphanumérique (« M6 », « 12.9 », « SAE 30 ») où elle est portante.
+	if (value === value.toLocaleUpperCase('fr') && /[A-ZÀ-Ý]{4,}/.test(value) && !/\d/.test(value)) {
+		return value
+			.toLocaleLowerCase('fr')
+			.replace(/(^|[\s&/-])(\p{L})/gu, (_, sep: string, c: string) => sep + c.toLocaleUpperCase('fr'));
+	}
+
+	return value;
+}
+
 /**
  * Isole la valeur numérique et son unité.
  *
@@ -239,7 +323,7 @@ export function extractSpecs(...sources: (string | null)[]): ProductSpec[] {
 
 	const push = (rawName: string, rawValue: string) => {
 		const name = normalizeName(rawName);
-		const value = rawValue.trim();
+		const value = normalizeValue(rawValue);
 
 		if (!name || !value) return;
 		if (value.length > MAX_VALUE_LENGTH) return;

@@ -245,6 +245,39 @@ format à deux-points. Écarté volontairement.
 
 ---
 
+## 4 ter. Normalisation des valeurs
+
+Une fois les caractéristiques extraites, un défaut restait visible dans les
+filtres : `51 cm` et `51 CM` apparaissaient comme deux valeurs distinctes,
+chacune sous le seuil d'affichage.
+
+**117 373 lignes** étaient concernées — bien au-delà des seules unités.
+
+Trois familles ont été distinguées, une règle unique aurait dégradé les données :
+
+| Famille | Traitement | Exemple |
+|---|---|---|
+| **Unités** | Minuscules, **sauf symbole normatif** | `51 CM` → `51 cm` · `20V` → `20 V` · `3,6 KW` → `3,6 kW` |
+| **Mots isolés** | Capitale initiale | `ACIER` / `acier` → `Acier` |
+| **Sigles** | Forme canonique imposée | `pvc` → `PVC` · `n/a` reste `n/a` |
+
+Le volt s'écrit `V`, le kilowatt `kW` : les minusculiser aurait nui à la
+lisibilité. `UNITS` est donc une table de correspondance, pas un simple
+`toLowerCase()`.
+
+Les valeurs où la casse porte du sens sont préservées : `SAE 30`, `M6`,
+`V-Twin`, `12.9`, `AISI 316L`, `1/4 Inch`. Vérifié sur 16 cas de test.
+
+### Limites assumées
+
+- `166cm3` — unité collée au nombre, hors du motif reconnu.
+- `25 - 75 MM (7 POSITIONS)` — la valeur contient du texte libre.
+- `HONDA GCV160 4 temps OHC` vs `Honda GCV160…` — les expressions de plusieurs
+  mots ne sont pas capitalisées : le risque d'abîmer une référence dépasse le
+  gain.
+
+---
+
 ## 5. Sources écartées
 
 - **Tables PrestaShop `product_feature` / `product_attribute`** : absentes de la
@@ -264,6 +297,7 @@ format à deux-points. Écarté volontairement.
 | **3** | Normaliser la casse + regrouper les variantes | Machines filtrables | ✅ Fait |
 | **4** | Seuil `minProducts` adaptatif | Visibilité tondeuses | ✅ Fait |
 | **5** | Repli texte « Libellé : Valeur » | **+1 071 fiches machines** | ✅ Fait |
+| **6** | Normalisation de la casse des valeurs | 117 373 lignes | ✅ Fait |
 
 ### Détail des modifications
 
@@ -277,10 +311,20 @@ format à deux-points. Écarté volontairement.
 Le script reste rejouable (`ON CONFLICT … DO UPDATE`) : une nouvelle exécution
 met à jour les lignes au lieu de les dupliquer.
 
-### Rendement après corrections
+### Résultat final mesuré
 
-Nouvel échantillon de 4 000 produits, bruit exclu : **52,9 %** avec au moins une
-caractéristique utile, **4,7** par produit en moyenne.
+| | Produits | Couverture |
+|---|---:|---:|
+| Avant | 202 979 | 20,6 % |
+| **Après** | **395 636** | **40,1 %** |
+
+**1 857 491 caractéristiques**, 4,7 par produit, 11 087 libellés distincts.
+764 302 produits examinés, aucun incident réseau.
+
+L'écart avec la projection initiale de 76,8 % s'explique : celle-ci comptait
+tout produit portant un tableau, y compris ceux dont le tableau ne contenait que
+du bruit (`Vendu à/au`, `Référence`) désormais écarté. 40,1 % correspond aux
+produits ayant au moins une caractéristique **réellement filtrable**.
 
 ---
 
@@ -321,6 +365,27 @@ Les fiches machines sans tableau ne sont pas vides : elles énumèrent leurs
 caractéristiques en `<br>`. Ajout de `extractTextPairs()` avec trois garde-fous
 contre les faux positifs. Gain : 1 071 fiches à 8,2 caractéristiques.
 Format Iseki (sans séparateur) écarté comme trop ambigu.
+
+**8 septembre 2026 — Extraction complète réussie**
+764 302 produits examinés, 395 636 exploitables, **1 857 301 caractéristiques**,
+11 087 libellés. Aucun incident. Couverture portée de 20,6 % à **40,1 %**.
+
+**8 septembre 2026 — Deux défauts d'exécution corrigés**
+La passe précédente avait fait chuter la couverture à 12,2 % : le `SELECT` ne
+ramenait pas `short_description` (le second argument d'`extractSpecs` arrivait
+vide), et la connexion tombait en `ETIMEDOUT` à mi-parcours sans que le code de
+sortie du shell le signale. Ajout de `withRetry()` et d'une connexion sans
+expiration d'inactivité.
+
+**8 septembre 2026 — Cache trompeur sur les facettes**
+Les filtres tondeuses restaient invisibles alors que la base contenait les
+données : le cache mémoire (10 min) servait un résultat calculé avant
+l'extraction. Vérifier une facette impose de contrôler la page servie, pas
+seulement la base.
+
+**8 septembre 2026 — Normalisation de la casse des valeurs**
+117 373 lignes concernées. Trois familles traitées séparément (unités, mots
+isolés, sigles), en préservant les symboles normatifs (`V`, `kW`, `Ah`, `dB`).
 
 **8 septembre 2026 — Incident de normalisation de casse**
 Un script de reprise de casse comportait un `DELETE` non conditionné au succès
