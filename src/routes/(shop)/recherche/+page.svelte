@@ -13,7 +13,12 @@
 
 	const chips = $derived([
 		...(data.selected.inStockOnly ? [{ key: 'stock', value: '1', label: 'En stock atelier' }] : []),
-		...data.selected.brands.map((b) => ({ key: 'marque', value: b.value, label: b.label }))
+		...data.selected.brands.map((b) => ({ key: 'marque', value: b.value, label: b.label })),
+		...data.selected.specs.map((token) => ({
+			key: 'spec',
+			value: token,
+			label: token.replace(':', ' : ')
+		}))
 	]);
 </script>
 
@@ -31,6 +36,8 @@
 		selectedBrands={data.selected.brands.map((b) => b.value)}
 		inStockOnly={data.selected.inStockOnly}
 		inStockTotal={data.facets.inStockTotal}
+		specs={data.facets.specs}
+		selectedSpecs={data.selected.specs}
 	/>
 
 	<!-- ================= Résultats ================= -->

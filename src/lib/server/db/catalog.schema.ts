@@ -290,6 +290,52 @@ export const productVariant = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Caractéristiques techniques
+// ---------------------------------------------------------------------------
+
+/**
+ * Caractéristiques d'un produit, extraites des tableaux HTML des descriptions
+ * reprises de PrestaShop (voir `scripts/extract-product-specs.ts`).
+ *
+ * Elles rendent le catalogue filtrable sur ses critères réels — diamètre,
+ * matériau, type de roulement — là où la description ne permettait qu'une
+ * lecture. `value_num` et `unit` isolent la partie numérique quand elle
+ * existe, ce qui autorise les filtres par plage et non seulement par égalité.
+ *
+ * À ne pas confondre avec `product_attribute` (section 11 du cahier des
+ * charges), qui caractérise les déclinaisons d'un produit.
+ */
+export const productSpec = pgTable(
+	'product_spec',
+	{
+		id: serial('id').primaryKey(),
+		productId: integer('product_id')
+			.notNull()
+			.references(() => product.id, { onDelete: 'cascade' }),
+
+		/** Libellé normalisé, servant de clé de regroupement des facettes. */
+		name: text('name').notNull(),
+		/** Valeur affichée telle quelle sur la fiche produit. */
+		value: text('value').notNull(),
+		/** Partie numérique isolée, si la valeur en comporte une. */
+		valueNum: numeric('value_num', { precision: 14, scale: 4 }),
+		/** Unité accompagnant la valeur numérique (« mm », « kg », « V »…). */
+		unit: text('unit'),
+
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		index('product_spec_product_idx').on(t.productId),
+		// Facettes : on interroge par libellé puis par valeur.
+		index('product_spec_name_value_idx').on(t.name, t.value),
+		// Filtres par plage sur les caractéristiques numériques.
+		index('product_spec_name_num_idx').on(t.name, t.valueNum),
+		// Rend l'import rejouable : une seconde passe met à jour au lieu de dupliquer.
+		uniqueIndex('product_spec_unique_idx').on(t.productId, t.name)
+	]
+);
+
+// ---------------------------------------------------------------------------
 // Mouvements de stock (inventory) — historique traçable
 // ---------------------------------------------------------------------------
 
@@ -479,5 +525,7 @@ export type ProductRelation = typeof productRelation.$inferSelect;
 export type NewProductRelation = typeof productRelation.$inferInsert;
 export type TaxRule = typeof taxRule.$inferSelect;
 export type NewTaxRule = typeof taxRule.$inferInsert;
+export type ProductSpec = typeof productSpec.$inferSelect;
+export type NewProductSpec = typeof productSpec.$inferInsert;
 export type StockMovement = typeof stockMovement.$inferSelect;
 export type NewStockMovement = typeof stockMovement.$inferInsert;

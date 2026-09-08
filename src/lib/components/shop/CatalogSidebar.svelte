@@ -11,6 +11,8 @@
 
 	type TreeEntry = { id: number; name: string; slug: string; total?: number; current?: boolean };
 	type FacetItem = { value: string; label: string; total: number };
+	/** Caractéristique technique : un libellé, ses valeurs et leurs volumes. */
+	type SpecFacet = { name: string; values: { value: string; total: number }[] };
 
 	let {
 		tree = [],
@@ -18,7 +20,9 @@
 		brands = [],
 		selectedBrands = [],
 		inStockOnly = false,
-		inStockTotal = 0
+		inStockTotal = 0,
+		specs = [],
+		selectedSpecs = []
 	}: {
 		tree?: TreeEntry[];
 		treeTitle?: string;
@@ -26,6 +30,10 @@
 		selectedBrands?: string[];
 		inStockOnly?: boolean;
 		inStockTotal?: number;
+		/** Caractéristiques proposées, calculées sur le rayon courant. */
+		specs?: SpecFacet[];
+		/** Sélections en cours, au format « Libellé:Valeur ». */
+		selectedSpecs?: string[];
 	} = $props();
 
 	const fmt = new Intl.NumberFormat('fr-FR');
@@ -55,6 +63,15 @@
 			? selectedBrands.filter((v) => v !== value)
 			: [...selectedBrands, value];
 		return filterHref({ marque: next });
+	}
+
+	/** Ajoute ou retire une caractéristique de la sélection. */
+	function toggleSpec(name: string, value: string) {
+		const token = `${name}:${value}`;
+		const next = selectedSpecs.includes(token)
+			? selectedSpecs.filter((v) => v !== token)
+			: [...selectedSpecs, token];
+		return filterHref({ spec: next });
 	}
 
 	const optionClass =
@@ -128,6 +145,26 @@
 			</div>
 		</div>
 	{/if}
+
+	{#each specs as facet (facet.name)}
+		<div class="border-b border-shop-border-soft p-4">
+			<p class="mb-2.5 font-display text-[13.5px] font-bold text-shop-ink">{facet.name}</p>
+			<div class="max-h-64 overflow-y-auto">
+				{#each facet.values as item (item.value)}
+					{@const selected = selectedSpecs.includes(`${facet.name}:${item.value}`)}
+					<a
+						href={toggleSpec(facet.name, item.value)}
+						class="{optionClass} {selected
+							? 'border-shop-red bg-shop-border-soft font-bold text-shop-ink'
+							: 'border-transparent text-shop-ink-soft hover:bg-shop-subtle'}"
+					>
+						<span class="min-w-0 truncate">{item.value}</span>
+						<span class="shrink-0 text-shop-faint">{fmt.format(item.total)}</span>
+					</a>
+				{/each}
+			</div>
+		</div>
+	{/each}
 
 	<div class="p-4 text-[13px] leading-relaxed text-shop-muted">
 		Besoin d'un conseil ?

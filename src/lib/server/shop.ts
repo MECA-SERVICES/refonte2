@@ -5,6 +5,7 @@ import {
 	product,
 	productCategory,
 	productMedia,
+	productSpec,
 	productRelation,
 	productVariant,
 	taxRule
@@ -210,6 +211,8 @@ export type ShopListParams = {
 	brandIds?: number[];
 	/** Ne garde que les articles disponibles immédiatement. */
 	inStockOnly?: boolean;
+	/** Caractéristiques retenues : « Matériau=Acier », « Largeur=12 mm »… */
+	specs?: { name: string; value: string }[];
 	sort?: ShopSort;
 	page?: number;
 	perPage?: number;
@@ -264,6 +267,25 @@ function listConditions(params: ShopListParams & { secondaryCategories?: boolean
 	if (params.brandIds?.length) conditions.push(inArray(product.brandId, params.brandIds));
 	if (params.inStockOnly) conditions.push(gt(product.stock, 0));
 
+	// Chaque caractéristique retenue restreint un peu plus : elles se cumulent,
+	// d'où un `EXISTS` par critère plutôt qu'un `IN` global.
+	for (const spec of params.specs ?? []) {
+		conditions.push(
+			exists(
+				db
+					.select({ one: sql`1` })
+					.from(productSpec)
+					.where(
+						and(
+							eq(productSpec.productId, product.id),
+							eq(productSpec.name, spec.name),
+							eq(productSpec.value, spec.value)
+						)
+					)
+			)
+		);
+	}
+
 	return conditions;
 }
 
@@ -291,6 +313,98 @@ export async function shopBrandFacets(params: ShopListParams, limit = 12) {
 		.groupBy(brand.id, brand.name)
 		.orderBy(desc(sql`count(*)`))
 		.limit(limit);
+}
+
+/**
+ * Caractéristiques proposées en filtre pour le périmètre courant.
+ *
+ * Les libellés ne sont pas fixés à l'avance : on remonte ceux qui concernent
+ * réellement les produits du rayon consulté, avec leurs valeurs les plus
+ * fréquentes. Un diamètre intérieur n'a de sens que sur les roulements.
+ *
+ * `minProducts` écarte la longue traîne : sur près de 5 000 libellés, seule
+ * une poignée est utile dans un rayon donné. Le seuil s'adapte à la taille du
+ * rayon : un plancher fixe de 5 rendait les filtres invisibles dans les petites
+ * catégories de machines (67 tracteurs tondeuses, dont 7 documentés), alors que
+ * ce sont précisément celles où le choix se fait sur une caractéristique.
+ */
+export async function shopSpecFacets(
+	params: ShopListParams,
+	{ maxNames = 6, maxValues = 8, minProducts }: { maxNames?: number; maxValues?: number; minProducts?: number } = {}
+) {
+	const threshold = minProducts ?? (await smallCatalogScope(params) ? 2 : 5);
+	// Les caractéristiques déjà retenues ne restreignent pas le décompte des
+	// autres : sinon les options disparaîtraient au fur et à mesure des clics.
+	const conditions = listConditions({ ...params, specs: undefined, secondaryCategories: false });
+
+	// L'agrégation balaie près d'un million de lignes : ~550 ms, incompressibles
+	// même avec un index couvrant (le plan est déjà optimal). Le résultat ne
+	// dépend que du périmètre, jamais du visiteur — on le met donc en cache.
+	const cacheKey = `spec-facets-${params.categoryIds?.join(',') ?? ''}-${params.search ?? ''}-${
+		params.brandIds?.join(',') ?? ''
+	}-${params.inStockOnly ? '1' : ''}-${maxNames}-${maxValues}-${threshold}`;
+
+	return cached(
+		cacheKey,
+		() => computeSpecFacets(conditions, maxNames, maxValues, threshold),
+		600
+	);
+}
+
+/**
+ * Un rayon restreint justifie un seuil de facette plus bas : sous 300 produits,
+ * deux articles partageant une largeur de coupe constituent déjà un choix utile.
+ */
+async function smallCatalogScope(params: ShopListParams): Promise<boolean> {
+	const conditions = listConditions({ ...params, specs: undefined, secondaryCategories: false });
+	const [row] = await db
+		.select({ total: sql<number>`count(*)::int` })
+		.from(product)
+		.where(and(...conditions));
+	return (row?.total ?? 0) < 300;
+}
+
+/** Agrégation brute des caractéristiques, isolée pour être mise en cache. */
+async function computeSpecFacets(
+	conditions: SQL[],
+	maxNames: number,
+	maxValues: number,
+	minProducts: number
+) {
+	const rows = await db
+		.select({
+			name: productSpec.name,
+			value: productSpec.value,
+			total: sql<number>`count(*)::int`
+		})
+		.from(productSpec)
+		.innerJoin(product, eq(productSpec.productId, product.id))
+		.where(and(...conditions))
+		.groupBy(productSpec.name, productSpec.value)
+		.having(sql`count(*) >= ${minProducts}`)
+		.orderBy(desc(sql`count(*)`))
+		.limit(maxNames * maxValues * 4);
+
+	// Regroupement par libellé, en conservant l'ordre de fréquence.
+	const byName = new Map<string, { value: string; total: number }[]>();
+	for (const row of rows) {
+		const list = byName.get(row.name) ?? [];
+		if (list.length < maxValues) list.push({ value: row.value, total: row.total });
+		byName.set(row.name, list);
+	}
+
+	return (
+		[...byName.entries()]
+			// Un libellé à valeur unique ne filtre rien.
+			.filter(([, values]) => values.length > 1)
+			.map(([name, values]) => ({
+				name,
+				values,
+				total: values.reduce((sum, v) => sum + v.total, 0)
+			}))
+			.sort((a, b) => b.total - a.total)
+			.slice(0, maxNames)
+	);
 }
 
 /** Nombre d'articles disponibles immédiatement dans le périmètre courant. */
@@ -415,7 +529,7 @@ export async function getShopProduct(id: number) {
 
 	if (!row) return undefined;
 
-	const [media, variants, related, breadcrumb] = await Promise.all([
+	const [media, variants, related, breadcrumb, specs] = await Promise.all([
 		db
 			.select()
 			.from(productMedia)
@@ -434,7 +548,13 @@ export async function getShopProduct(id: number) {
 			.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
 			.where(and(eq(productRelation.fromProductId, id), eq(product.isActive, true)))
 			.orderBy(asc(productRelation.position)),
-		row.categoryId != null ? getCategoryBreadcrumb(row.categoryId) : Promise.resolve([])
+		row.categoryId != null ? getCategoryBreadcrumb(row.categoryId) : Promise.resolve([]),
+		// Caractéristiques extraites des tableaux de la description.
+		db
+			.select({ name: productSpec.name, value: productSpec.value, unit: productSpec.unit })
+			.from(productSpec)
+			.where(eq(productSpec.productId, id))
+			.orderBy(asc(productSpec.name))
 	]);
 
 	return {
@@ -442,6 +562,7 @@ export async function getShopProduct(id: number) {
 		media,
 		variants,
 		related,
-		breadcrumb
+		breadcrumb,
+		specs
 	};
 }

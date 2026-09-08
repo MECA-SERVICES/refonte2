@@ -54,19 +54,19 @@
 		{ label: product.name }
 	]);
 
-	/** Caractéristiques tirées des champs réellement renseignés. */
-	const specs = $derived(
-		[
-			{ k: 'Référence MS Shop', v: product.reference },
-			product.supplierReference
-				? { k: 'Référence constructeur', v: product.supplierReference }
-				: null,
-			product.ean13 ? { k: 'Code EAN', v: product.ean13 } : null,
-			product.brandName ? { k: 'Marque', v: product.brandName } : null,
-			product.weightKg ? { k: 'Poids', v: `${product.weightKg} kg` } : null,
-			product.taxRate ? { k: 'TVA', v: `${product.taxRate} %` } : null
-		].filter((s) => s !== null)
-	);
+	/**
+	 * Caractéristiques affichées : celles extraites du catalogue en priorité,
+	 * complétées par les données d'identification de la fiche.
+	 */
+	const specs = $derived([
+		...product.specs.map((s) => ({ k: s.name, v: s.value })),
+		{ k: 'Référence MS Shop', v: product.reference },
+		...(product.supplierReference
+			? [{ k: 'Référence constructeur', v: product.supplierReference }]
+			: []),
+		...(product.ean13 ? [{ k: 'Code EAN', v: product.ean13 }] : []),
+		...(product.brandName ? [{ k: 'Marque', v: product.brandName }] : [])
+	]);
 
 	type TabId = 'desc' | 'specs' | 'sav';
 	let tab = $state<TabId>('desc');

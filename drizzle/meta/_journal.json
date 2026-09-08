@@ -120,6 +120,13 @@
       "when": 1788780426568,
       "tag": "0017_cart_visiteur",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1788862574010,
+      "tag": "0019_product_spec",
+      "breakpoints": true
     }
   ]
 }
