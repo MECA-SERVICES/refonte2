@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
 	import PartFinder from '$lib/components/shop/PartFinder.svelte';
+	import PromoSlider, { type PromoSlide } from '$lib/components/shop/PromoSlider.svelte';
 	import SectionHeading from '$lib/components/shop/SectionHeading.svelte';
-	import RuledGrid from '$lib/components/shop/RuledGrid.svelte';
 	import AudienceCard from '$lib/components/shop/AudienceCard.svelte';
 	import UniverseCard from '$lib/components/shop/UniverseCard.svelte';
 	import ProductCarousel from '$lib/components/shop/ProductCarousel.svelte';
@@ -32,6 +32,57 @@
 		'Micro-tracteur'
 	];
 	const finderModels = ['550 XP Mark II', '135 Mark II', '120i', 'T540i XP'];
+
+	/**
+	 * Offres mises en avant dans le hero.
+	 *
+	 * Visuels de démonstration issus d'Unsplash (licence libre, usage commercial
+	 * autorisé, attribution non obligatoire) : à remplacer par des photos du parc
+	 * Meca Services avant la mise en ligne. À brancher plus tard sur les produits
+	 * réellement en promotion, une fois les prix barrés renseignés en base.
+	 */
+	const promoSlides: PromoSlide[] = [
+		{
+			badge: 'Offre printemps · −15 %',
+			brand: 'Segway Navimow',
+			name: 'Robot de tonte H500 — jusqu’à 2 500 m²',
+			price: 1299,
+			was: 1529,
+			note: 'Pose et mise en service incluses',
+			href: '/recherche?q=Navimow',
+			image: '/promo/promo-robot-tonte.jpg',
+			imageLabel: 'Robot de tonte en action'
+		},
+		{
+			badge: 'Déstockage 2025',
+			brand: 'Stiga',
+			name: 'Tracteur tondeuse TS 242TXD — 98 cm',
+			price: 3190,
+			was: 3490,
+			note: '2 dernières unités en stock atelier',
+			href: '/recherche?q=Stiga',
+			image: '/promo/promo-tracteur-tondeuse.jpg',
+			imageLabel: 'Tracteur tondeuse'
+		},
+		{
+			badge: 'Offre pro & collectivités',
+			brand: 'Iseki',
+			name: 'Débroussailleuse autoportée SRA 950F — 4 roues motrices',
+			note: 'Devis sous 24 h · mandat administratif accepté',
+			href: '/inscription',
+			image: '/promo/promo-autoportee-pro.jpg',
+			imageLabel: 'Débroussailleuse autoportée au travail'
+		},
+		{
+			badge: 'Préparation hiver · −15 %',
+			brand: 'MS SHOP',
+			name: 'Fraises à neige et produits de dégivrage',
+			note: 'Jusqu’au 30 novembre',
+			href: '/recherche?q=fraise',
+			image: '/promo/promo-fraise-a-neige.jpg',
+			imageLabel: 'Fraise à neige en action'
+		}
+	];
 
 	const reassurance = [
 		{
@@ -153,7 +204,9 @@
 </svelte:head>
 
 <!-- ================= Accroche & sélecteur de pièce ================= -->
-<section class="grid items-start gap-10 pt-6 lg:grid-cols-2">
+<!-- Les deux colonnes s'étirent à la même hauteur : le carrousel suit le
+     bloc de gauche plutôt que d'imposer une hauteur fixe. -->
+<section class="grid gap-10 pt-6 lg:grid-cols-2">
 	<div class="min-w-0">
 		<p
 			class="mb-4 inline-block bg-shop-blue px-2.5 py-1.5 font-display text-[11.5px] font-bold tracking-[0.14em] text-shop-subtle uppercase"
@@ -173,29 +226,21 @@
 		<PartFinder brands={finderBrands} types={finderTypes} models={finderModels} />
 	</div>
 
-	<div class="min-w-0">
-		<ImagePlaceholder
-			label="Photo atelier : mécanicien et machine en réparation"
-			hint="format paysage"
-			class="h-[430px] rounded-none"
-		/>
-		<div class="mt-3 grid grid-cols-2 gap-3">
-			<ImagePlaceholder label="Rayon pièces" class="h-[150px] rounded-none" />
-			<ImagePlaceholder label="Préparation commande" class="h-[150px] rounded-none" />
-		</div>
+	<div class="min-w-0 lg:h-full">
+		<PromoSlider slides={promoSlides} />
 	</div>
 </section>
 
 <!-- ================= Réassurance ================= -->
 <section class="mt-9" aria-label="Nos engagements">
-	<RuledGrid>
+	<div class="grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));">
 		{#each reassurance as item (item.title)}
-			<div class="bg-shop-subtle p-5">
+			<div class="border border-shop-border bg-white p-5">
 				<p class="mb-1.5 font-display text-[15px] font-extrabold text-shop-ink">{item.title}</p>
 				<p class="text-[13.5px] leading-relaxed text-shop-muted">{item.text}</p>
 			</div>
 		{/each}
-	</RuledGrid>
+	</div>
 </section>
 
 <!-- ================= Publics ================= -->

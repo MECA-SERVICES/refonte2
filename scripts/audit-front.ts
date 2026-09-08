@@ -150,7 +150,7 @@ function auditOrphans(files: string[]) {
 	return components.filter((file) => {
 		const name = file.split('/').pop()!.replace('.svelte', '');
 		// Un composant est vivant s'il est importé par un autre fichier que lui-même.
-		const imported = new RegExp(`import\\s+${name}\\s+from`).test(allSource);
+		const imported = new RegExp(`import\\s+${name}\\b[^;]*from`).test(allSource);
 		return !imported;
 	});
 }
