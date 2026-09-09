@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { customerForUser } from '$lib/server/account';
+import { listCustomerOrders } from '$lib/server/customer-orders';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	if (!locals.user) redirect(303, `/connexion?redirectTo=${encodeURIComponent(url.pathname)}`);
@@ -9,6 +10,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return {
 		account: { name: locals.user.name, email: locals.user.email },
+		// Aperçu : le détail complet vit sur /compte/commandes.
+		recentOrders: profile ? await listCustomerOrders(profile.id, { limit: 3 }) : [],
 		profile: profile
 			? {
 					firstName: profile.firstName,

@@ -1,13 +1,19 @@
 <script lang="ts">
-	import { ArrowRightToBracketOutline } from 'flowbite-svelte-icons';
-	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import Panel from '$lib/components/shop/Panel.svelte';
 	import DescriptionItem from '$lib/components/shop/DescriptionItem.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
+	import { formatPrice } from '$lib/shop';
+	import { priceSuffix } from '$lib/tax';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	const dateFormat = new Intl.DateTimeFormat('fr-FR', {
+		day: '2-digit',
+		month: 'short',
+		year: 'numeric'
+	});
 
 	const TYPE_LABELS: Record<string, string> = {
 		particulier: 'Particulier',
@@ -42,7 +48,7 @@
 	</p>
 {/if}
 
-<div class="mt-8 grid gap-6 lg:grid-cols-[1fr_300px] lg:items-start">
+<div class="mt-8">
 	<!-- ================= Coordonnées ================= -->
 	<Panel padded={false} class="p-6">
 		<Heading size="card">Mes informations</Heading>
@@ -91,34 +97,50 @@
 		{/if}
 
 		<p class="mt-6 text-xs text-shop-muted">
-			La modification de vos informations et le carnet d'adresses arrivent prochainement.
+			La modification de vos informations arrive prochainement.
 		</p>
 	</Panel>
 
-	<!-- ================= Actions ================= -->
-	<Panel padded={false} class="p-6">
-		<Heading size="card">Raccourcis</Heading>
-
-		<div class="mt-4 space-y-2">
-			<a
-				href="/panier"
-				class="block border border-shop-border bg-white px-4 py-3 text-sm font-semibold text-shop-ink hover:text-shop-blue"
-			>
-				Mon panier
-			</a>
-			<a
-				href="/recherche"
-				class="block border border-shop-border bg-white px-4 py-3 text-sm font-semibold text-shop-ink hover:text-shop-blue"
-			>
-				Continuer mes achats
-			</a>
+	<!-- ================= Dernières commandes ================= -->
+	<Panel padded={false} class="mt-6 p-6">
+		<div class="flex flex-wrap items-baseline justify-between gap-3">
+			<Heading size="card">Dernières commandes</Heading>
+			{#if data.recentOrders.length > 0}
+				<a
+					href="/compte/commandes"
+					class="text-[13.5px] font-semibold text-shop-blue hover:underline"
+				>
+					Tout voir →
+				</a>
+			{/if}
 		</div>
 
-		<form method="POST" action="/deconnexion" class="mt-5">
-			<input type="hidden" name="redirectTo" value="/" />
-			<ShopButton type="submit" variant="outline" size="sm" block>
-				<ArrowRightToBracketOutline class="me-2 h-4 w-4" /> Déconnexion
-			</ShopButton>
-		</form>
+		{#if data.recentOrders.length === 0}
+			<p class="mt-4 text-sm text-shop-muted">Vous n'avez pas encore passé de commande.</p>
+		{:else}
+			<ul class="mt-4 divide-y divide-shop-border-soft">
+				{#each data.recentOrders as item (item.id)}
+					<li class="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+						<div class="min-w-0">
+							<a
+								href="/compte/commandes/{item.id}"
+								class="font-semibold text-shop-ink hover:text-shop-blue"
+							>
+								{item.reference}
+							</a>
+							<p class="mt-0.5 text-[13px] text-shop-muted">
+								{dateFormat.format(item.createdAt)} · {item.stateLabel}
+							</p>
+						</div>
+						<p class="shrink-0 font-display font-bold text-shop-ink">
+							{formatPrice(data.tax.displayMode === 'ht' ? item.totalHt : item.totalTtc)}
+							<span class="text-[12px] font-bold text-shop-muted">
+								{priceSuffix(data.tax.displayMode)}
+							</span>
+						</p>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 	</Panel>
 </div>
