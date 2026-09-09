@@ -23,13 +23,17 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const sort: ShopSort = triRaw && SORTS.includes(triRaw) ? triRaw : 'new';
 
 	// Filtres portés par l'URL : partageables et utilisables sans JavaScript.
-	const brandSlugs = url.searchParams.getAll('marque');
+	// Une seule marque et une seule caractéristique sont retenues : l'URL peut
+	// en porter plusieurs (lien partagé, retour arrière), la page n'en applique
+	// qu'une pour rester cohérente avec les filtres proposés.
+	const brandSlugs = url.searchParams.getAll('marque').slice(0, 1);
 	const inStockOnly = url.searchParams.get('stock') === '1';
 
 	// Format « Libellé:Valeur » — le libellé peut contenir des espaces, on ne
 	// découpe donc qu'au premier deux-points.
 	const selectedSpecs = url.searchParams
 		.getAll('spec')
+		.slice(0, 1)
 		.map((token) => {
 			const at = token.indexOf(':');
 			return at > 0 ? { name: token.slice(0, at), value: token.slice(at + 1) } : null;

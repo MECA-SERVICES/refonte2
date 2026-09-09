@@ -57,20 +57,27 @@
 		return query ? `${page.url.pathname}?${query}` : page.url.pathname;
 	}
 
-	/** Ajoute ou retire une marque de la sélection courante. */
+	/**
+	 * Sélectionne une marque, ou la retire si elle l'était déjà.
+	 *
+	 * Une seule marque à la fois : cumuler des marques élargit le résultat au
+	 * lieu de le restreindre, ce qui va à l'encontre de ce qu'un client attend
+	 * d'un filtre. Choisir une autre marque remplace donc la précédente.
+	 */
 	function toggleBrand(value: string) {
-		const next = selectedBrands.includes(value)
-			? selectedBrands.filter((v) => v !== value)
-			: [...selectedBrands, value];
+		const next = selectedBrands.includes(value) ? [] : [value];
 		return filterHref({ marque: next });
 	}
 
-	/** Ajoute ou retire une caractéristique de la sélection. */
+	/**
+	 * Sélectionne une caractéristique, ou la retire si elle l'était déjà.
+	 *
+	 * Une seule à la fois, pour la même raison : deux valeurs d'un même libellé
+	 * (« 46 cm » et « 53 cm ») ne peuvent pas être vraies ensemble.
+	 */
 	function toggleSpec(name: string, value: string) {
 		const token = `${name}:${value}`;
-		const next = selectedSpecs.includes(token)
-			? selectedSpecs.filter((v) => v !== token)
-			: [...selectedSpecs, token];
+		const next = selectedSpecs.includes(token) ? [] : [token];
 		return filterHref({ spec: next });
 	}
 
