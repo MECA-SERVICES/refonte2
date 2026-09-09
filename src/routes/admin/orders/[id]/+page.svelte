@@ -198,5 +198,98 @@
 				</p>
 			{/if}
 		</Card>
+
+		<!-- ================= Expédition Sendcloud ================= -->
+		<Card size="xl" class="max-w-none">
+			<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Expédition</h2>
+
+			{#if o.trackingNumber}
+				<p class="text-sm text-gray-700 dark:text-gray-300">
+					Colis créé — suivi <span class="font-medium">{o.trackingNumber}</span>
+				</p>
+				{#if o.trackingUrl}
+					<a
+						href={o.trackingUrl}
+						target="_blank"
+						rel="noopener"
+						class="mt-1 inline-block text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
+					>
+						Suivre le colis
+					</a>
+				{/if}
+
+				<form method="POST" action="?/label" use:enhance class="mt-4">
+					<Button type="submit" color="alternative" size="sm">Récupérer l'étiquette (PDF)</Button>
+				</form>
+
+				{#if form && 'labelBase64' in form && form.labelBase64}
+					<a
+						href={`data:application/pdf;base64,${form.labelBase64}`}
+						download={`etiquette-${o.reference}.pdf`}
+						class="mt-3 inline-block text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
+					>
+						Télécharger etiquette-{o.reference}.pdf
+					</a>
+				{/if}
+			{:else if !data.sendcloudReady}
+				<p class="text-sm text-gray-500">
+					Sendcloud n'est pas configuré : renseignez les clés d'API pour créer des colis.
+				</p>
+			{:else}
+				{#if o.usedFallbackShipping}
+					<p
+						class="mb-4 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200"
+					>
+						Commande passée avec la grille de repli : choisissez le transporteur réel ci-dessous.
+					</p>
+				{/if}
+
+				<form method="POST" action="?/ship" use:enhance class="space-y-4">
+					<div class="grid gap-4 sm:grid-cols-4">
+						<div>
+							<Label for="weightKg" class="mb-1.5">Poids réel (kg)</Label>
+							<Input
+								id="weightKg"
+								name="weightKg"
+								type="number"
+								step="0.001"
+								min="0.001"
+								value={o.packageWeightKg ?? ''}
+								required
+							/>
+						</div>
+						<div>
+							<Label for="lengthCm" class="mb-1.5">Longueur (cm)</Label>
+							<Input id="lengthCm" name="lengthCm" type="number" step="0.01" min="0" />
+						</div>
+						<div>
+							<Label for="widthCm" class="mb-1.5">Largeur (cm)</Label>
+							<Input id="widthCm" name="widthCm" type="number" step="0.01" min="0" />
+						</div>
+						<div>
+							<Label for="heightCm" class="mb-1.5">Hauteur (cm)</Label>
+							<Input id="heightCm" name="heightCm" type="number" step="0.01" min="0" />
+						</div>
+					</div>
+
+					<div>
+						<Label for="optionCode" class="mb-1.5">
+							Offre d'expédition {#if o.shippingOptionCode}(retenue : {o.shippingOptionCode}){/if}
+						</Label>
+						<Input
+							id="optionCode"
+							name="optionCode"
+							placeholder={o.shippingOptionCode ?? data.testOptionCode}
+						/>
+						<p class="mt-1 text-xs text-gray-500">
+							Laissez vide pour reprendre l'offre choisie par le client. Utilisez
+							<code>{data.testOptionCode}</code> pour créer une étiquette de test sans être facturé.
+						</p>
+					</div>
+
+					<Button type="submit" color="primary">Créer le colis</Button>
+				</form>
+			{/if}
+		</Card>
 	</div>
 </div>

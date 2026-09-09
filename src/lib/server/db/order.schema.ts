@@ -149,9 +149,36 @@ export const order = pgTable(
 
 		// Livraison / suivi
 		carrierId: integer('carrier_id'),
+		/** Code Sendcloud du transporteur retenu — jamais une clé locale. */
+		carrierCode: text('carrier_code'),
+		carrierName: text('carrier_name'),
+		/** Code de l'offre Sendcloud (`colissimo:home/fr`…), rejoué à l'expédition. */
+		shippingOptionCode: text('shipping_option_code'),
 		trackingNumber: text('tracking_number'),
 		trackingUrl: text('tracking_url'),
 		packageWeightKg: numeric('package_weight_kg', { precision: 10, scale: 3 }),
+		packageLengthCm: numeric('package_length_cm', { precision: 10, scale: 2 }),
+		packageWidthCm: numeric('package_width_cm', { precision: 10, scale: 2 }),
+		packageHeightCm: numeric('package_height_cm', { precision: 10, scale: 2 }),
+
+		// Colis Sendcloud
+		sendcloudShipmentId: text('sendcloud_shipment_id'),
+		sendcloudParcelId: integer('sendcloud_parcel_id'),
+		labelUrl: text('label_url'),
+		lastTrackingUpdate: timestamp('last_tracking_update', { withTimezone: true }),
+
+		// Point relais retenu (R11)
+		relayPointId: text('relay_point_id'),
+		relayPointName: text('relay_point_name'),
+		relayPointAddress: text('relay_point_address'),
+
+		/** Supplément de transport saisi manuellement, avec sa justification (R17). */
+		additionalShippingFee: numeric('additional_shipping_fee', { precision: 10, scale: 2 })
+			.notNull()
+			.default('0'),
+		additionalFeeReason: text('additional_fee_reason'),
+		/** Commande passée avec la grille de repli : transporteur à arbitrer (R20). */
+		usedFallbackShipping: boolean('used_fallback_shipping').notNull().default(false),
 
 		// Paiement
 		paymentProvider: text('payment_provider'),

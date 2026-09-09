@@ -300,10 +300,16 @@
 				</p>
 			{/if}
 
-			<ShopButton disabled block class="mt-4">Passer à la livraison</ShopButton>
-			<p class="mt-2 text-center text-xs text-shop-muted">
-				Le tunnel de commande sera disponible prochainement.
-			</p>
+			<ShopButton
+				href={cart.hasBlockingLine ? undefined : '/commande'}
+				variant="buy"
+				size="lg"
+				block
+				disabled={cart.hasBlockingLine}
+				class="mt-4"
+			>
+				Passer à la livraison
+			</ShopButton>
 
 			<p
 				class="mt-4 border-t border-shop-border-soft pt-4 text-[13px] leading-relaxed text-shop-muted"
