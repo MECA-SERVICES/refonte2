@@ -16,7 +16,9 @@ export const load: PageServerLoad = async (event) => {
 		};
 	}
 
-	return { cart: await getCart(owner) };
+	// Le régime du client, résolu par le layout, décide de la TVA des totaux.
+	const { tax } = await event.parent();
+	return { cart: await getCart(owner, tax.regime) };
 };
 
 export const actions: Actions = {

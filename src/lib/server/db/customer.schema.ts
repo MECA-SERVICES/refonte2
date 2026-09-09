@@ -54,7 +54,16 @@ export const customer = pgTable(
 		companyName: varchar('company_name', { length: 255 }),
 		siret: varchar('siret', { length: 14 }),
 		vatNumber: varchar('vat_number', { length: 20 }),
+		/** Date de la dernière vérification auprès du service européen (R7). */
+		vatNumberVerifiedAt: timestamp('vat_number_verified_at', { withTimezone: true }),
 		taxExemptStatus: text('tax_exempt_status').default('standard'),
+		/**
+		 * Pays de **facturation** au format ISO 3166-1 alpha-2 (R4, R5).
+		 *
+		 * Distinct du pays de livraison porté par l'adresse : c'est lui, et lui
+		 * seul, qui détermine le régime de TVA applicable.
+		 */
+		billingCountry: varchar('billing_country', { length: 2 }).notNull().default('FR'),
 
 		// Collectivités
 		collectivityType: text('collectivity_type'),

@@ -127,6 +127,13 @@
       "when": 1788862574010,
       "tag": "0019_product_spec",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788936341587,
+      "tag": "0020_customer_fiscalite",
+      "breakpoints": true
     }
   ]
 }

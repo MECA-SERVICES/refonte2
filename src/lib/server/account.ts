@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
 import { customer } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { priceDisplayMode, resolveTaxRegime } from '$lib/tax';
 
 /**
  * Domaine « Compte client » — sections 07 et 08 du cahier des charges.
@@ -141,4 +142,30 @@ export async function createCustomerProfile(userId: string, values: Registration
 export async function customerForUser(userId: string) {
 	const [row] = await db.select().from(customer).where(eq(customer.userId, userId)).limit(1);
 	return row;
+}
+
+/**
+ * Contexte fiscal du visiteur — régime applicable et mode d'affichage.
+ *
+ * Résolu une fois par requête dans le layout boutique, puis transmis aux pages :
+ * le régime décide du taux (R1-R3), le mode d'affichage décide de ce qu'on
+ * montre (P2-P3). Un visiteur non identifié est traité comme un particulier
+ * français, conformément à P3.
+ */
+export async function taxContextForUser(userId: string | null | undefined) {
+	const profile = userId ? await customerForUser(userId) : undefined;
+
+	return {
+		regime: resolveTaxRegime(
+			profile
+				? {
+						country: profile.billingCountry,
+						type: profile.type,
+						taxExemptStatus: profile.taxExemptStatus,
+						status: profile.status
+					}
+				: null
+		),
+		displayMode: priceDisplayMode(profile?.type)
+	};
 }

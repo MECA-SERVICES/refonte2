@@ -9,6 +9,7 @@ import {
 	taxRule
 } from '$lib/server/db/schema';
 import { and, eq, isNull, sql } from 'drizzle-orm';
+import { effectiveTaxRate, type TaxRegime } from '$lib/tax';
 
 /**
  * Domaine « Panier » — section 18 du cahier des charges.
@@ -158,26 +159,32 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 }
 
 /**
- * Totaux du panier. Les prix retenus sont ceux en vigueur (règle R10) ; la TVA
- * est déduite de l'écart entre TTC et HT, ligne à ligne, car le taux varie
- * d'un article à l'autre.
+ * Totaux du panier. Les prix retenus sont ceux en vigueur (règle R10).
+ *
+ * La TVA est recalculée à partir du taux du produit et du régime du client, et
+ * non déduite de l'écart TTC/HT : le TTC issu de la requête suppose toujours le
+ * régime standard, ce qui facturerait la taxe à un client exonéré (CDC 23,
+ * R1-R2). Le taux variant d'un article à l'autre, le calcul reste ligne à ligne.
  */
-export function computeTotals(lines: CartLine[]): CartTotals {
+export function computeTotals(lines: CartLine[], regime: TaxRegime = 'standard'): CartTotals {
 	let subtotalHt = 0;
-	let totalTtc = 0;
+	let tax = 0;
 	let itemCount = 0;
 
 	for (const line of lines) {
-		subtotalHt += Number(line.priceHt) * line.quantity;
-		totalTtc += Number(line.priceTtc) * line.quantity;
+		const lineHt = Number(line.priceHt) * line.quantity;
+		subtotalHt += lineHt;
+		tax += lineHt * (effectiveTaxRate(line.taxRate, regime) / 100);
 		itemCount += line.quantity;
 	}
 
 	const round = (n: number) => Math.round(n * 100) / 100;
+	const ht = round(subtotalHt);
+	const tva = round(tax);
 	return {
-		subtotalHt: round(subtotalHt),
-		tax: round(totalTtc - subtotalHt),
-		totalTtc: round(totalTtc),
+		subtotalHt: ht,
+		tax: tva,
+		totalTtc: round(ht + tva),
 		itemCount
 	};
 }
@@ -187,8 +194,13 @@ function isBlocking(line: CartLine) {
 	return !line.isActive || line.stock <= 0;
 }
 
-/** Panier complet du porteur, prêt à afficher. */
-export async function getCart(owner: CartOwner): Promise<CartView> {
+/**
+ * Panier complet du porteur, prêt à afficher.
+ *
+ * Le régime conditionne la TVA des totaux : un client exonéré ne doit pas la
+ * voir apparaître (R18). À défaut, le régime standard s'applique.
+ */
+export async function getCart(owner: CartOwner, regime: TaxRegime = 'standard'): Promise<CartView> {
 	const found = await findCart(owner);
 	if (!found) return EMPTY;
 
@@ -196,7 +208,7 @@ export async function getCart(owner: CartOwner): Promise<CartView> {
 	return {
 		id: found.id,
 		lines,
-		totals: computeTotals(lines),
+		totals: computeTotals(lines, regime),
 		hasBlockingLine: lines.some(isBlocking)
 	};
 }

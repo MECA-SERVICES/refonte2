@@ -9,6 +9,7 @@
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import SummaryRow from '$lib/components/shop/SummaryRow.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
+	import { effectiveTaxRate } from '$lib/tax';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -47,18 +48,26 @@
 
 	const shownQuantity = (line: Line) => optimistic[line.id] ?? line.quantity;
 
-	/** Totaux recalculés sur les quantités affichées : le récapitulatif suit le clic. */
+	/**
+	 * Totaux recalculés sur les quantités affichées : le récapitulatif suit le
+	 * clic. Le calcul reprend celui du serveur (`computeTotals`), régime compris,
+	 * pour qu'aucun écart n'apparaisse entre l'affichage optimiste et la réponse.
+	 */
 	const shownTotals = $derived.by(() => {
 		let subtotalHt = 0;
-		let totalTtc = 0;
+		let tax = 0;
 		let itemCount = 0;
 		for (const line of lines) {
 			const quantity = shownQuantity(line);
-			subtotalHt += Number(line.priceHt) * quantity;
-			totalTtc += Number(line.priceTtc) * quantity;
+			const lineHt = Number(line.priceHt) * quantity;
+			subtotalHt += lineHt;
+			tax += lineHt * (effectiveTaxRate(line.taxRate, data.tax.regime) / 100);
 			itemCount += quantity;
 		}
-		return { subtotalHt, tax: totalTtc - subtotalHt, totalTtc, itemCount };
+		const round = (n: number) => Math.round(n * 100) / 100;
+		const ht = round(subtotalHt);
+		const tva = round(tax);
+		return { subtotalHt: ht, tax: tva, totalTtc: round(ht + tva), itemCount };
 	});
 
 	/** Minuteries d'envoi par ligne : comptabilité interne, jamais affichée. */
