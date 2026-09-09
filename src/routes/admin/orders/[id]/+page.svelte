@@ -1,19 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import {
-		Button,
-		Card,
-		Select,
-		Input,
-		Label,
-		Table,
-		TableHead,
-		TableHeadCell,
-		TableBody,
-		TableBodyRow,
-		TableBodyCell
-	} from 'flowbite-svelte';
+	import { Button, Card, Select, Input, Label, Textarea } from 'flowbite-svelte';
 	import { PageHeader, StateBadge } from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
@@ -22,20 +10,29 @@
 	const o = $derived(data.order);
 	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+	const dayFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' });
 
 	const stateOptions = $derived(data.states.map((s) => ({ value: String(s.id), name: s.label })));
 
+	/** Adresse figée à l'achat : le carnet du client a pu changer depuis. */
 	type Addr = {
 		firstName?: string;
 		lastName?: string;
+		company?: string | null;
 		line1?: string;
+		line2?: string | null;
 		city?: string;
 		postalCode?: string;
 		country?: string;
+		phone?: string | null;
 	} | null;
-	function fmtAddr(a: unknown): Addr {
-		return (a ?? null) as Addr;
-	}
+	const asAddr = (a: unknown) => (a ?? null) as Addr;
+
+	const shipping = $derived(asAddr(o.shippingAddress));
+	const billing = $derived(asAddr(o.billingAddress));
+
+	/** Une commande expédiée ne se remballe pas : l'écran s'adapte à cet état. */
+	const isShipped = $derived(Boolean(o.trackingNumber));
 </script>
 
 <svelte:head><title>{o.reference} · Commandes</title></svelte:head>
@@ -53,174 +50,182 @@
 	{/snippet}
 </PageHeader>
 
-<div class="grid gap-6 lg:grid-cols-3">
-	<!-- Colonne principale -->
-	<div class="space-y-6 lg:col-span-2">
-		<!-- Lignes -->
-		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Articles</h2>
-			<Table>
-				<TableHead>
-					<TableHeadCell>Produit</TableHeadCell>
-					<TableHeadCell>PU HT</TableHeadCell>
-					<TableHeadCell>Qté</TableHeadCell>
-					<TableHeadCell>Total TTC</TableHeadCell>
-				</TableHead>
-				<TableBody>
-					{#each o.lines as line (line.id)}
-						<TableBodyRow>
-							<TableBodyCell>
-								<span class="font-medium text-gray-900 dark:text-white">{line.productName}</span>
-								{#if line.productReference}
-									<span class="block text-xs text-gray-500">{line.productReference}</span>
-								{/if}
-							</TableBodyCell>
-							<TableBodyCell>{eur.format(Number(line.unitPriceHt))}</TableBodyCell>
-							<TableBodyCell>{line.quantity}</TableBodyCell>
-							<TableBodyCell>{eur.format(Number(line.totalTtc))}</TableBodyCell>
-						</TableBodyRow>
-					{/each}
-				</TableBody>
-			</Table>
+<!-- ================= Synthèse ================= -->
+<!--
+	Quatre repères que l'opérateur cherche en premier lorsqu'il ouvre une
+	commande : quand, combien, pour qui, et où elle en est logistiquement.
+-->
+<div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+	<Card class="max-w-none p-4">
+		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+			Passée le
+		</p>
+		<p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+			{dayFmt.format(new Date(o.createdAt))}
+		</p>
+	</Card>
 
-			<!-- Totaux -->
-			<div class="mt-4 flex justify-end">
-				<dl class="w-64 space-y-1 text-sm">
+	<Card class="max-w-none p-4">
+		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+			Total TTC
+		</p>
+		<p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+			{eur.format(Number(o.totalTtc))}
+		</p>
+	</Card>
+
+	<Card class="max-w-none p-4">
+		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+			Client
+		</p>
+		{#if o.customer}
+			<a
+				href={resolve('/admin/customers/[id]', { id: String(o.customer.id) })}
+				class="mt-1 block truncate text-lg font-semibold text-primary-700 hover:underline dark:text-primary-400"
+			>
+				{o.customer.firstName}
+				{o.customer.lastName}
+			</a>
+		{:else}
+			<p class="mt-1 text-lg font-semibold text-gray-400">Compte supprimé</p>
+		{/if}
+	</Card>
+
+	<Card class="max-w-none p-4">
+		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+			Expédition
+		</p>
+		<p
+			class="mt-1 truncate text-lg font-semibold {isShipped
+				? 'text-green-600 dark:text-green-400'
+				: 'text-gray-900 dark:text-white'}"
+		>
+			{isShipped ? o.trackingNumber : (o.carrierName ?? 'À préparer')}
+		</p>
+	</Card>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-3">
+	<!-- ================= Colonne principale ================= -->
+	<div class="space-y-6 lg:col-span-2">
+		<!-- Articles -->
+		<Card class="max-w-none p-6">
+			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">
+				Articles <span class="font-normal text-gray-400">({o.lines.length})</span>
+			</h2>
+
+			<ul class="divide-y divide-gray-100 dark:divide-gray-800">
+				{#each o.lines as l (l.id)}
+					<li class="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+						<div class="min-w-0">
+							<p class="truncate font-medium text-gray-900 dark:text-white">{l.productName}</p>
+							<p class="mt-0.5 text-xs text-gray-500">
+								{#if l.productReference}Réf. {l.productReference} ·
+								{/if}
+								{l.quantity} × {eur.format(Number(l.unitPriceHt))} HT
+							</p>
+						</div>
+						<p class="shrink-0 font-semibold text-gray-900 tabular-nums dark:text-white">
+							{eur.format(Number(l.totalTtc))}
+						</p>
+					</li>
+				{/each}
+			</ul>
+
+			<!-- Totaux : rattachés aux articles, pas isolés dans une carte à part. -->
+			<dl class="mt-4 space-y-1.5 border-t border-gray-200 pt-4 text-sm dark:border-gray-700">
+				<div class="flex justify-between">
+					<dt class="text-gray-500">Sous-total HT</dt>
+					<dd class="text-gray-900 tabular-nums dark:text-white">
+						{eur.format(Number(o.totalHt) - Number(o.shippingFee))}
+					</dd>
+				</div>
+				<div class="flex justify-between">
+					<dt class="text-gray-500">Livraison HT</dt>
+					<dd class="text-gray-900 tabular-nums dark:text-white">
+						{eur.format(Number(o.shippingFee))}
+					</dd>
+				</div>
+				{#if Number(o.additionalShippingFee) > 0}
 					<div class="flex justify-between">
-						<dt class="text-gray-500">Total HT</dt>
-						<dd class="text-gray-900 dark:text-white">{eur.format(Number(o.totalHt))}</dd>
+						<dt class="text-gray-500">
+							Supplément transport
+							{#if o.additionalFeeReason}<span class="text-xs">— {o.additionalFeeReason}</span>{/if}
+						</dt>
+						<dd class="text-gray-900 tabular-nums dark:text-white">
+							{eur.format(Number(o.additionalShippingFee))}
+						</dd>
 					</div>
-					<div class="flex justify-between">
-						<dt class="text-gray-500">TVA</dt>
-						<dd class="text-gray-900 dark:text-white">{eur.format(Number(o.totalTva))}</dd>
+				{/if}
+				{#if Number(o.discountAmount) > 0}
+					<div class="flex justify-between text-green-600 dark:text-green-400">
+						<dt>Remise</dt>
+						<dd class="tabular-nums">−{eur.format(Number(o.discountAmount))}</dd>
 					</div>
-					<div class="flex justify-between">
-						<dt class="text-gray-500">Livraison</dt>
-						<dd class="text-gray-900 dark:text-white">{eur.format(Number(o.shippingFee))}</dd>
+				{/if}
+				<div class="flex justify-between">
+					<dt class="text-gray-500">TVA</dt>
+					<dd class="text-gray-900 tabular-nums dark:text-white">
+						{eur.format(Number(o.totalTva))}
+					</dd>
+				</div>
+				<div
+					class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold dark:border-gray-700"
+				>
+					<dt class="text-gray-900 dark:text-white">Total TTC</dt>
+					<dd class="text-gray-900 tabular-nums dark:text-white">
+						{eur.format(Number(o.totalTtc))}
+					</dd>
+				</div>
+			</dl>
+		</Card>
+
+		<!-- Expédition -->
+		<Card class="max-w-none p-6">
+			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Expédition</h2>
+
+			{#if form?.message}
+				<p
+					class="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+				>
+					{form.message}
+				</p>
+			{/if}
+
+			{#if isShipped}
+				<dl class="space-y-2 text-sm">
+					<div class="flex justify-between gap-4">
+						<dt class="text-gray-500">Transporteur</dt>
+						<dd class="font-medium text-gray-900 dark:text-white">{o.carrierName ?? '—'}</dd>
 					</div>
-					{#if Number(o.discountAmount) > 0}
-						<div class="flex justify-between text-green-600">
-							<dt>Remise</dt>
-							<dd>-{eur.format(Number(o.discountAmount))}</dd>
+					<div class="flex justify-between gap-4">
+						<dt class="text-gray-500">Numéro de suivi</dt>
+						<dd class="font-mono font-medium text-gray-900 dark:text-white">{o.trackingNumber}</dd>
+					</div>
+					{#if o.packageWeightKg}
+						<div class="flex justify-between gap-4">
+							<dt class="text-gray-500">Poids du colis</dt>
+							<dd class="text-gray-900 dark:text-white">{Number(o.packageWeightKg)} kg</dd>
 						</div>
 					{/if}
-					<div
-						class="flex justify-between border-t border-gray-200 pt-1 font-semibold dark:border-gray-700"
-					>
-						<dt class="text-gray-900 dark:text-white">Total TTC</dt>
-						<dd class="text-gray-900 dark:text-white">{eur.format(Number(o.totalTtc))}</dd>
-					</div>
 				</dl>
-			</div>
-		</Card>
 
-		<!-- Historique -->
-		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Historique des états</h2>
-			{#if o.history.length > 0}
-				<div class="space-y-2">
-					{#each o.history as h (h.id)}
-						<div
-							class="flex items-center justify-between border-b border-gray-100 py-2 text-sm dark:border-gray-800"
+				<div class="mt-4 flex flex-wrap gap-2">
+					{#if o.trackingUrl}
+						<Button
+							href={o.trackingUrl}
+							target="_blank"
+							rel="noopener"
+							color="alternative"
+							size="sm"
 						>
-							<div class="flex items-center gap-2">
-								{#if h.stateLabel}<StateBadge
-										label={h.stateLabel}
-										color={h.stateColor ?? '#6b7280'}
-									/>{/if}
-								{#if h.note}<span class="text-gray-500">— {h.note}</span>{/if}
-							</div>
-							<span class="text-gray-400">{dateFmt.format(new Date(h.createdAt))}</span>
-						</div>
-					{/each}
+							Suivre le colis
+						</Button>
+					{/if}
+					<form method="POST" action="?/label" use:enhance>
+						<Button type="submit" color="alternative" size="sm">Étiquette PDF</Button>
+					</form>
 				</div>
-			{:else}
-				<p class="text-sm text-gray-500 dark:text-gray-400">Aucun changement enregistré.</p>
-			{/if}
-		</Card>
-	</div>
-
-	<!-- Colonne latérale -->
-	<div class="space-y-6">
-		<!-- Changement d'état -->
-		<Card class="p-6">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Changer l'état</h2>
-			<form method="POST" action="?/changeState" use:enhance class="space-y-3">
-				{#if form?.message}<p class="text-sm text-red-600">{form.message}</p>{/if}
-				<Select name="stateId" placeholder="" items={stateOptions} value={String(o.stateId)} />
-				<div>
-					<Label for="note" class="mb-2">Note (optionnelle)</Label>
-					<Input id="note" name="note" placeholder="ex : colis remis au transporteur" />
-				</div>
-				<Button type="submit" class="w-full">Appliquer</Button>
-			</form>
-		</Card>
-
-		<!-- Client -->
-		<Card class="p-6">
-			<h2 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Client</h2>
-			{#if o.customer}
-				<p class="font-medium text-gray-900 dark:text-white">
-					{o.customer.firstName}
-					{o.customer.lastName}
-				</p>
-				<p class="text-sm text-gray-500 dark:text-gray-400">{o.customer.email}</p>
-				<a
-					href={resolve('/admin/customers/[id]', { id: String(o.customer.id) })}
-					class="mt-2 inline-block text-sm text-cyan-600"
-				>
-					Voir la fiche client
-				</a>
-			{:else}
-				<p class="text-sm text-gray-500">Client supprimé.</p>
-			{/if}
-		</Card>
-
-		<!-- Livraison -->
-		<Card class="p-6">
-			<h2 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Livraison</h2>
-			{#if fmtAddr(o.shippingAddress)}
-				{@const a = fmtAddr(o.shippingAddress)}
-				<address class="text-sm text-gray-600 not-italic dark:text-gray-300">
-					{a?.firstName}
-					{a?.lastName}<br />
-					{a?.line1}<br />
-					{a?.postalCode}
-					{a?.city}<br />
-					{a?.country}
-				</address>
-			{:else}
-				<p class="text-sm text-gray-500">Aucune adresse.</p>
-			{/if}
-			{#if o.trackingNumber}
-				<p class="mt-3 text-sm">
-					Suivi : <span class="font-medium">{o.trackingNumber}</span>
-				</p>
-			{/if}
-		</Card>
-
-		<!-- ================= Expédition Sendcloud ================= -->
-		<Card size="xl" class="max-w-none">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Expédition</h2>
-
-			{#if o.trackingNumber}
-				<p class="text-sm text-gray-700 dark:text-gray-300">
-					Colis créé — suivi <span class="font-medium">{o.trackingNumber}</span>
-				</p>
-				{#if o.trackingUrl}
-					<a
-						href={o.trackingUrl}
-						target="_blank"
-						rel="noopener"
-						class="mt-1 inline-block text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
-					>
-						Suivre le colis
-					</a>
-				{/if}
-
-				<form method="POST" action="?/label" use:enhance class="mt-4">
-					<Button type="submit" color="alternative" size="sm">Récupérer l'étiquette (PDF)</Button>
-				</form>
 
 				{#if form && 'labelBase64' in form && form.labelBase64}
 					<a
@@ -238,16 +243,37 @@
 			{:else}
 				{#if o.usedFallbackShipping}
 					<p
-						class="mb-4 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200"
+						class="mb-4 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
 					>
 						Commande passée avec la grille de repli : choisissez le transporteur réel ci-dessous.
 					</p>
 				{/if}
 
+				{#if o.relayPointName}
+					<p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+						Point relais choisi : <span class="font-medium text-gray-900 dark:text-white">
+							{o.relayPointName}
+						</span>
+						{#if o.relayPointAddress}<br />{o.relayPointAddress}{/if}
+					</p>
+				{/if}
+
+				{#if !data.realLabelsAllowed}
+					<p
+						class="mb-4 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200"
+					>
+						<span class="font-semibold">Mode test.</span>
+						Les colis sont créés avec l'offre
+						<code class="rounded bg-white/60 px-1 dark:bg-black/30">{data.testOptionCode}</code> :
+						aucun transporteur n'est sollicité et rien n'est facturé. Aucun envoi réel n'est
+						possible tant que ce mode est actif.
+					</p>
+				{/if}
+
 				<form method="POST" action="?/ship" use:enhance class="space-y-4">
-					<div class="grid gap-4 sm:grid-cols-4">
+					<div class="grid gap-3 sm:grid-cols-4">
 						<div>
-							<Label for="weightKg" class="mb-1.5">Poids réel (kg)</Label>
+							<Label for="weightKg" class="mb-1.5">Poids (kg)</Label>
 							<Input
 								id="weightKg"
 								name="weightKg"
@@ -259,37 +285,133 @@
 							/>
 						</div>
 						<div>
-							<Label for="lengthCm" class="mb-1.5">Longueur (cm)</Label>
+							<Label for="lengthCm" class="mb-1.5">Long. (cm)</Label>
 							<Input id="lengthCm" name="lengthCm" type="number" step="0.01" min="0" />
 						</div>
 						<div>
-							<Label for="widthCm" class="mb-1.5">Largeur (cm)</Label>
+							<Label for="widthCm" class="mb-1.5">Larg. (cm)</Label>
 							<Input id="widthCm" name="widthCm" type="number" step="0.01" min="0" />
 						</div>
 						<div>
-							<Label for="heightCm" class="mb-1.5">Hauteur (cm)</Label>
+							<Label for="heightCm" class="mb-1.5">Haut. (cm)</Label>
 							<Input id="heightCm" name="heightCm" type="number" step="0.01" min="0" />
 						</div>
 					</div>
 
-					<div>
-						<Label for="optionCode" class="mb-1.5">
-							Offre d'expédition {#if o.shippingOptionCode}(retenue : {o.shippingOptionCode}){/if}
-						</Label>
-						<Input
-							id="optionCode"
-							name="optionCode"
-							placeholder={o.shippingOptionCode ?? data.testOptionCode}
-						/>
-						<p class="mt-1 text-xs text-gray-500">
-							Laissez vide pour reprendre l'offre choisie par le client. Utilisez
-							<code>{data.testOptionCode}</code> pour créer une étiquette de test sans être facturé.
+					{#if data.realLabelsAllowed}
+						<div>
+							<Label for="optionCode" class="mb-1.5">Offre d'expédition</Label>
+							<Input
+								id="optionCode"
+								name="optionCode"
+								placeholder={o.shippingOptionCode ?? data.testOptionCode}
+							/>
+							<p class="mt-1 text-xs text-gray-500">
+								Vide = offre choisie par le client{#if o.shippingOptionCode}
+									({o.shippingOptionCode}){/if}.
+							</p>
+						</div>
+					{:else}
+						<p class="text-xs text-gray-500">
+							Offre choisie par le client : <span class="font-medium">
+								{o.shippingOptionCode ?? 'aucune'}
+							</span> — ignorée en mode test.
 						</p>
-					</div>
+					{/if}
 
-					<Button type="submit" color="primary">Créer le colis</Button>
+					<Button type="submit" color="primary">
+						{data.realLabelsAllowed ? 'Créer le colis' : 'Créer un colis de test'}
+					</Button>
 				</form>
 			{/if}
+		</Card>
+
+		<!-- Historique -->
+		<Card class="max-w-none p-6">
+			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Historique</h2>
+
+			{#if o.history.length > 0}
+				<!-- Chronologie verticale : l'ordre des changements se lit d'un coup
+				     d'œil, ce qu'une suite de lignes séparées ne montrait pas. -->
+				<ol class="relative space-y-4 border-l border-gray-200 pl-5 dark:border-gray-700">
+					{#each o.history as h (h.id)}
+						<li class="relative">
+							<span
+								class="absolute top-1.5 -left-[1.4rem] h-2.5 w-2.5 rounded-full ring-4 ring-white dark:ring-gray-800"
+								style="background-color: {h.stateColor ?? '#6b7280'}"
+							></span>
+							<div class="flex flex-wrap items-center justify-between gap-2">
+								<div class="flex items-center gap-2">
+									{#if h.stateLabel}
+										<StateBadge label={h.stateLabel} color={h.stateColor ?? '#6b7280'} />
+									{/if}
+									{#if h.note}<span class="text-sm text-gray-500">{h.note}</span>{/if}
+								</div>
+								<time class="text-xs text-gray-400">
+									{dateFmt.format(new Date(h.createdAt))}
+								</time>
+							</div>
+						</li>
+					{/each}
+				</ol>
+			{:else}
+				<p class="text-sm text-gray-500">Aucun changement d'état enregistré.</p>
+			{/if}
+		</Card>
+	</div>
+
+	<!-- ================= Colonne latérale ================= -->
+	<div class="space-y-6">
+		<!-- Changement d'état : action principale, donc placée en tête. -->
+		<Card class="max-w-none p-6">
+			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Changer l'état</h2>
+
+			<form method="POST" action="?/changeState" use:enhance class="space-y-3">
+				<Select name="stateId" items={stateOptions} value={String(o.stateId)} />
+				<Textarea name="note" rows={2} placeholder="Note interne (facultative)" />
+				<Button type="submit" color="primary" class="w-full">Appliquer</Button>
+			</form>
+		</Card>
+
+		<!-- Adresses -->
+		{#snippet addressCard(title: string, a: Addr)}
+			<Card class="max-w-none p-6">
+				<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
+				{#if a}
+					<address class="text-sm leading-relaxed text-gray-700 not-italic dark:text-gray-300">
+						{a.firstName}
+						{a.lastName}{#if a.company}<br />{a.company}{/if}<br />
+						{a.line1}{#if a.line2}<br />{a.line2}{/if}<br />
+						{a.postalCode}
+						{a.city}{#if a.country && a.country !== 'FR'}<br />{a.country}{/if}
+						{#if a.phone}<br />{a.phone}{/if}
+					</address>
+				{:else}
+					<p class="text-sm text-gray-500">Non renseignée.</p>
+				{/if}
+			</Card>
+		{/snippet}
+
+		{@render addressCard('Adresse de livraison', shipping)}
+		{@render addressCard('Adresse de facturation', billing)}
+
+		<!-- Paiement -->
+		<Card class="max-w-none p-6">
+			<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Paiement</h2>
+			<dl class="space-y-2 text-sm">
+				<div class="flex justify-between gap-4">
+					<dt class="text-gray-500">Moyen</dt>
+					<dd class="font-medium text-gray-900 dark:text-white">
+						{o.paymentProvider === 'bank_transfer' ? 'Virement' : (o.paymentProvider ?? '—')}
+					</dd>
+				</div>
+				<div class="flex justify-between gap-4">
+					<dt class="text-gray-500">Réglé le</dt>
+					<dd class="text-gray-900 dark:text-white">
+						{o.paidAt ? dateFmt.format(new Date(o.paidAt)) : 'En attente'}
+					</dd>
+				</div>
+			</dl>
 		</Card>
 	</div>
 </div>

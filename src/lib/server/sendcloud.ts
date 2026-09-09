@@ -300,6 +300,40 @@ export async function fetchServicePoints(params: {
 }
 
 /**
+ * Option d'expédition sans frais, prévue par Sendcloud pour les tests.
+ *
+ * Sendcloud n'offre aucun environnement de bac à sable : les clés portent sur
+ * le compte réel. Créer une étiquette avec ce code est le seul moyen documenté
+ * de vérifier le cycle complet sans qu'aucun transporteur ne soit sollicité ni
+ * aucun montant facturé.
+ */
+export const TEST_SHIPPING_OPTION_CODE = 'sendcloud:letter';
+
+/**
+ * Tant que ce verrou est actif, seule l'option de test peut produire une
+ * étiquette : toute autre offre est refusée avant l'appel à Sendcloud.
+ *
+ * L'application n'est pas encore en service. Une étiquette réelle serait
+ * annoncée au transporteur et facturée — un simple clic de trop suffirait.
+ * `SENDCLOUD_ALLOW_REAL_LABELS=true` lèvera le verrou le jour de la mise en
+ * production ; l'absence de variable protège par défaut.
+ */
+export function realLabelsAllowed(): boolean {
+	return env.SENDCLOUD_ALLOW_REAL_LABELS === 'true';
+}
+
+/** Refus d'une expédition réelle tant que le verrou de test est en place. */
+export class TestModeError extends Error {
+	constructor(readonly attemptedCode: string) {
+		super(
+			`Mode test : seule l'offre « ${TEST_SHIPPING_OPTION_CODE} » peut créer une étiquette. ` +
+				`L'offre « ${attemptedCode} » créerait un envoi réel, facturé par le transporteur.`
+		);
+		this.name = 'TestModeError';
+	}
+}
+
+/**
  * Crée et annonce une expédition, puis renvoie l'étiquette (R12, R13).
  *
  * En v3 et pour un colis unique, l'annonce est synchrone : l'étiquette revient
@@ -309,6 +343,12 @@ export async function fetchServicePoints(params: {
  * de test prévue par Sendcloud.
  */
 export async function createShipment(input: ParcelInput & { fromAddress: SenderAddress }) {
+	// Le contrôle vit ici, et non dans l'interface : c'est l'unique porte
+	// d'entrée vers la création d'étiquette, quel que soit l'appelant.
+	if (!realLabelsAllowed() && input.shippingOptionCode !== TEST_SHIPPING_OPTION_CODE) {
+		throw new TestModeError(input.shippingOptionCode);
+	}
+
 	const payload = {
 		label_details: { mime_type: 'application/pdf', dpi: 72 },
 		order_number: input.orderReference,
@@ -418,12 +458,3 @@ export async function cancelShipment(shipmentId: string): Promise<{ status: stri
 	);
 	return { status: data.data?.status ?? 'unknown' };
 }
-
-/**
- * Option d'expédition sans frais, prévue par Sendcloud pour les tests.
- *
- * Sendcloud n'offre aucun environnement de bac à sable : les clés portent sur
- * le compte réel. Créer une étiquette avec ce code est le seul moyen documenté
- * de vérifier le cycle complet sans être facturé.
- */
-export const TEST_SHIPPING_OPTION_CODE = 'sendcloud:letter';

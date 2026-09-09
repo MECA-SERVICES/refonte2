@@ -2,7 +2,13 @@ import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { getOrderFull, listOrderStates, changeOrderState } from '$lib/server/orders';
 import { shipOrder, FulfillmentError } from '$lib/server/fulfillment';
-import { fetchLabelPdf, isSendcloudConfigured, TEST_SHIPPING_OPTION_CODE } from '$lib/server/sendcloud';
+import {
+	fetchLabelPdf,
+	isSendcloudConfigured,
+	realLabelsAllowed,
+	TestModeError,
+	TEST_SHIPPING_OPTION_CODE
+} from '$lib/server/sendcloud';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const id = Number(params.id);
@@ -15,8 +21,10 @@ export const load: PageServerLoad = async ({ params }) => {
 		order,
 		states: states.map((s) => ({ id: s.id, label: s.label, color: s.color })),
 		sendcloudReady: isSendcloudConfigured(),
-		/** Offre de test Sendcloud : crée une étiquette réelle sans facturation. */
-		testOptionCode: TEST_SHIPPING_OPTION_CODE
+		/** Offre de test Sendcloud : étiquette créée sans transporteur ni facturation. */
+		testOptionCode: TEST_SHIPPING_OPTION_CODE,
+		/** Faux tant que le verrou de test interdit les envois réels. */
+		realLabelsAllowed: realLabelsAllowed()
 	};
 };
 
@@ -56,15 +64,18 @@ export const actions: Actions = {
 		const dimensionsCm =
 			length > 0 && width > 0 && height > 0 ? { length, width, height } : undefined;
 
+		// En mode test, l'offre est imposée : laisser le champ vide reprendrait
+		// celle du client et tenterait un envoi réel, aussitôt refusé.
+		const requested = form.get('optionCode')?.toString() || undefined;
+		const overrideOptionCode = realLabelsAllowed()
+			? requested
+			: (requested ?? TEST_SHIPPING_OPTION_CODE);
+
 		try {
-			const shipment = await shipOrder({
-				orderId: id,
-				weightKg,
-				dimensionsCm,
-				overrideOptionCode: form.get('optionCode')?.toString() || undefined
-			});
+			const shipment = await shipOrder({ orderId: id, weightKg, dimensionsCm, overrideOptionCode });
 			return { shipped: true, trackingNumber: shipment.trackingNumber };
 		} catch (cause) {
+			if (cause instanceof TestModeError) return fail(400, { message: cause.message });
 			if (cause instanceof FulfillmentError) return fail(400, { message: cause.message });
 			console.error('[admin] expédition impossible', { orderId: id, cause });
 			return fail(502, { message: 'Sendcloud a refusé la création du colis.' });
