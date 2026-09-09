@@ -31,7 +31,7 @@
 
 	/** Accès directs, à droite de la barre. */
 	const shortcuts = [
-		{ label: 'Vues éclatées', href: 'https://doc.mecaservicesshop.fr' },
+		{ label: 'Vues éclatées', href: '/vue-eclatee' },
 		{ label: 'Promos', href: '/recherche' },
 		{ label: 'SAV & atelier', href: '/compte' }
 	];

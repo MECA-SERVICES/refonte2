@@ -14,12 +14,12 @@
 		brands,
 		types,
 		models,
-		action = '/recherche'
+		action = '/vue-eclatee'
 	}: {
 		brands: string[];
 		types: string[];
 		models: string[];
-		/** Destination du formulaire ; la vue éclatée à terme. */
+		/** Destination du formulaire : le sélecteur de pièce par machine. */
 		action?: string;
 	} = $props();
 
