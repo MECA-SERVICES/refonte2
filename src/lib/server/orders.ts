@@ -9,7 +9,22 @@ import {
 	customer,
 	product
 } from '$lib/server/db/schema';
-import { and, asc, count, desc, eq, ilike, or, type SQL } from 'drizzle-orm';
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	gte,
+	ilike,
+	inArray,
+	isNotNull,
+	isNull,
+	lte,
+	or,
+	sql,
+	type SQL
+} from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NewOrderState } from '$lib/server/db/order.schema';
 
@@ -29,12 +44,65 @@ const ORDER_SORT: Record<string, PgColumn> = {
 
 export type OrderListParams = {
 	filters?: Record<string, string>;
-	stateId?: number;
+	/** Recherche libre : porte sur toutes les informations d'une commande. */
+	search?: string;
+	/** États retenus ; plusieurs états peuvent être cumulés. */
+	stateIds?: number[];
+	/** Bornes de date de commande, au format ISO (AAAA-MM-JJ). */
+	dateFrom?: string;
+	dateTo?: string;
+	/** Bornes de montant TTC. */
+	minTotal?: number;
+	maxTotal?: number;
+	/** Restreint aux commandes déjà expédiées, ou à celles qui ne le sont pas. */
+	shipped?: boolean;
 	sort?: string;
 	dir?: 'asc' | 'desc';
 	page?: number;
 	perPage?: number;
 };
+
+/**
+ * Construit la condition de recherche libre.
+ *
+ * L'opérateur ne sait pas toujours dans quel champ se trouve ce qu'il cherche :
+ * un numéro peut être une référence de commande, un numéro de suivi ou un code
+ * postal. La saisie est donc confrontée à tous les champs porteurs de sens,
+ * jointure client comprise.
+ */
+function searchCondition(term: string): SQL | undefined {
+	const value = term.trim();
+	if (!value) return undefined;
+
+	const like = `%${value}%`;
+	const parts: SQL[] = [
+		ilike(order.reference, like),
+		ilike(customer.firstName, like),
+		ilike(customer.lastName, like),
+		ilike(customer.email, like),
+		ilike(customer.companyName, like),
+		ilike(order.trackingNumber, like),
+		ilike(order.carrierName, like),
+		ilike(order.relayPointName, like),
+		ilike(order.invoiceNote, like),
+		ilike(order.privateNote, like),
+		// Les adresses sont figées en JSON : on les interroge comme du texte,
+		// ce qui couvre ville, code postal et nom du destinataire d'un coup.
+		sql`${order.shippingAddress}::text ILIKE ${like}`,
+		sql`${order.billingAddress}::text ILIKE ${like}`,
+		// Une désignation d'article suffit à retrouver la commande qui la contient.
+		sql`EXISTS (
+			SELECT 1 FROM ${orderLine} l
+			WHERE l.order_id = ${order.id}
+			AND (l.product_name ILIKE ${like} OR l.product_reference ILIKE ${like})
+		)`
+	];
+
+	// Une saisie entièrement numérique vise souvent l'identifiant lui-même.
+	if (/^\d+$/.test(value)) parts.push(eq(order.id, Number(value)));
+
+	return or(...parts);
+}
 
 /** Liste paginée des commandes (avec client + état joints). */
 export async function listOrders(params: OrderListParams = {}) {
@@ -46,6 +114,7 @@ export async function listOrders(params: OrderListParams = {}) {
 		const value = raw.trim();
 		if (value && ORDER_TEXT[key]) conditions.push(ilike(ORDER_TEXT[key], `%${value}%`));
 	}
+
 	// Recherche par nom/email client aussi via le filtre "customer".
 	const customerFilter = params.filters?.customer?.trim();
 	if (customerFilter) {
@@ -58,14 +127,51 @@ export async function listOrders(params: OrderListParams = {}) {
 			)!
 		);
 	}
-	if (params.stateId) conditions.push(eq(order.stateId, params.stateId));
+
+	const search = searchCondition(params.search ?? '');
+	if (search) conditions.push(search);
+
+	if (params.stateIds?.length) conditions.push(inArray(order.stateId, params.stateIds));
+
+	// Bornes de date : `dateTo` couvre la journée entière, sinon une commande
+	// passée à 14 h serait exclue d'une recherche s'arrêtant à sa propre date.
+	if (params.dateFrom) conditions.push(gte(order.createdAt, new Date(params.dateFrom)));
+	if (params.dateTo) {
+		const end = new Date(params.dateTo);
+		end.setHours(23, 59, 59, 999);
+		conditions.push(lte(order.createdAt, end));
+	}
+
+	if (params.minTotal !== undefined) {
+		conditions.push(sql`${order.totalTtc} >= ${params.minTotal}`);
+	}
+	if (params.maxTotal !== undefined) {
+		conditions.push(sql`${order.totalTtc} <= ${params.maxTotal}`);
+	}
+
+	if (params.shipped !== undefined) {
+		conditions.push(
+			params.shipped ? isNotNull(order.trackingNumber) : isNull(order.trackingNumber)
+		);
+	}
 
 	const where = conditions.length ? and(...conditions) : undefined;
 	const sortCol = ORDER_SORT[params.sort ?? ''] ?? order.createdAt;
 	const orderBy = params.dir === 'asc' ? asc(sortCol) : desc(sortCol);
 
-	const [rows, [{ total }]] = await Promise.all([
-		db
+	const [{ total: totalCount }] = await db
+		.select({ total: count() })
+		.from(order)
+		.leftJoin(customer, eq(order.customerId, customer.id))
+		.where(where);
+
+	// Une page au-delà du dernier résultat n'affiche rien : le compteur annonce
+	// des commandes que la liste ne montre pas. On ramène donc la demande sur la
+	// dernière page existante, cas courant quand un filtre réduit le total.
+	const pageCount = Math.max(1, Math.ceil(totalCount / perPage));
+	const safePage = Math.min(page, pageCount);
+
+	const rows = await db
 			.select({
 				id: order.id,
 				reference: order.reference,
@@ -82,15 +188,9 @@ export async function listOrders(params: OrderListParams = {}) {
 			.where(where)
 			.orderBy(orderBy)
 			.limit(perPage)
-			.offset((page - 1) * perPage),
-		db
-			.select({ total: count() })
-			.from(order)
-			.leftJoin(customer, eq(order.customerId, customer.id))
-			.where(where)
-	]);
+			.offset((safePage - 1) * perPage);
 
-	return { rows, total, page, perPage, pageCount: Math.max(1, Math.ceil(total / perPage)) };
+	return { rows, total: totalCount, page: safePage, perPage, pageCount };
 }
 
 /** Commande complète : lignes, client, état, historique. */

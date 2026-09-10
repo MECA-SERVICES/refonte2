@@ -34,6 +34,7 @@
 		basePath,
 		params,
 		emptyMessage = 'Aucun résultat.',
+		emptyAction,
 		rowHref,
 		debounceMs = 300
 	}: {
@@ -46,9 +47,16 @@
 			filters: Record<string, string>;
 			sort: string;
 			dir: string;
-			extra?: Record<string, string>;
+			/**
+			 * Paramètres à préserver au tri et au filtrage : recherche libre,
+			 * critères avancés… Un tableau produit plusieurs occurrences de la même
+			 * clé, nécessaire aux sélections multiples.
+			 */
+			extra?: Record<string, string | string[]>;
 		};
 		emptyMessage?: string;
+		/** Action proposée quand la liste est vide — sortir d'une recherche, par exemple. */
+		emptyAction?: Snippet;
 		rowHref?: (row: Row) => Pathname;
 		debounceMs?: number;
 	} = $props();
@@ -70,7 +78,11 @@
 		// puis consommée immédiatement, sans lecture réactive.
 		const pairs: [string, string][] = [];
 		for (const [key, value] of Object.entries(params.extra ?? {})) {
-			if (value) pairs.push([key, value]);
+			if (Array.isArray(value)) {
+				for (const item of value) if (item) pairs.push([key, item]);
+			} else if (value) {
+				pairs.push([key, value]);
+			}
 		}
 		for (const [key, value] of Object.entries(filterValues)) {
 			if (value.trim()) pairs.push([`f_${key}`, value.trim()]);
@@ -165,8 +177,11 @@
 
 		{#if rows.length === 0}
 			<TableBodyRow>
-				<TableBodyCell colspan={columns.length} class="py-8 text-center text-gray-500">
-					{emptyMessage}
+				<TableBodyCell colspan={columns.length} class="py-10 text-center text-gray-500">
+					<p>{emptyMessage}</p>
+					{#if emptyAction}
+						<div class="mt-3 flex justify-center">{@render emptyAction()}</div>
+					{/if}
 				</TableBodyCell>
 			</TableBodyRow>
 		{:else}
