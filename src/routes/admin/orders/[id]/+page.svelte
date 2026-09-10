@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { Button, Card, Select, Input, Label, Textarea } from 'flowbite-svelte';
-	import { PageHeader, StateBadge } from '$lib/components/admin';
+	import { Badge, Button, Card, Select, Input, Label, Textarea } from 'flowbite-svelte';
+	import { PageHeader, StateBadge, Thumbnail } from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -30,6 +30,24 @@
 
 	const shipping = $derived(asAddr(o.shippingAddress));
 	const billing = $derived(asAddr(o.billingAddress));
+
+	/**
+	 * Marge d'une ligne, si le prix d'achat est connu.
+	 *
+	 * Le prix d'achat vient du catalogue courant : il n'est pas figé sur la ligne,
+	 * la valeur est donc indicative et présentée comme telle.
+	 */
+	function lineMargin(l: (typeof o.lines)[number]) {
+		if (l.purchasePrice === null || l.purchasePrice === undefined) return null;
+		const cost = Number(l.purchasePrice) * l.quantity;
+		if (!Number.isFinite(cost) || cost <= 0) return null;
+
+		const revenue = Number(l.totalHt);
+		if (revenue <= 0) return null;
+
+		const amount = revenue - cost;
+		return { amount, percent: (amount / revenue) * 100 };
+	}
 
 	/** Une commande expédiée ne se remballe pas : l'écran s'adapte à cet état. */
 	const isShipped = $derived(Boolean(o.trackingNumber));
@@ -116,18 +134,63 @@
 
 			<ul class="divide-y divide-gray-100 dark:divide-gray-800">
 				{#each o.lines as l (l.id)}
-					<li class="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
-						<div class="min-w-0">
-							<p class="truncate font-medium text-gray-900 dark:text-white">{l.productName}</p>
+					{@const margin = lineMargin(l)}
+					<li class="flex items-start gap-4 py-4 first:pt-0 last:pb-0">
+						<Thumbnail src={l.productImageUrl ?? l.catalogImageUrl} alt={l.productName} />
+
+						<div class="min-w-0 flex-1">
+							{#if l.productId}
+								<a
+									href={resolve('/admin/products/[id]', { id: String(l.productId) })}
+									class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+								>
+									{l.productName}
+								</a>
+							{:else}
+								<span class="font-medium text-gray-900 dark:text-white">{l.productName}</span>
+								<!-- Produit supprimé depuis l'achat : la ligne garde sa copie figée. -->
+								<Badge color="gray" class="ms-2">Hors catalogue</Badge>
+							{/if}
+
 							<p class="mt-0.5 text-xs text-gray-500">
-								{#if l.productReference}Réf. {l.productReference} ·
+								{#if l.productReference}Réf. {l.productReference}{:else}Sans référence{/if}
+								{#if l.currentStock !== null && l.currentStock !== undefined}
+									· Stock actuel :
+									<span
+										class={l.currentStock <= 0 ? 'font-medium text-red-600 dark:text-red-400' : ''}
+									>
+										{l.currentStock}
+									</span>
 								{/if}
+							</p>
+
+							<p class="mt-1.5 text-sm text-gray-600 dark:text-gray-300">
 								{l.quantity} × {eur.format(Number(l.unitPriceHt))} HT
+								<span class="text-gray-400">({eur.format(Number(l.unitPriceTtc))} TTC)</span>
+							</p>
+
+							{#if margin}
+								<p class="mt-1 text-xs text-gray-500">
+									Marge indicative :
+									<span
+										class={margin.amount >= 0
+											? 'font-medium text-green-600 dark:text-green-400'
+											: 'font-medium text-red-600 dark:text-red-400'}
+									>
+										{eur.format(margin.amount)} ({margin.percent.toFixed(1)} %)
+									</span>
+								</p>
+							{/if}
+						</div>
+
+						<div class="shrink-0 text-right">
+							<p class="font-semibold text-gray-900 tabular-nums dark:text-white">
+								{eur.format(Number(l.totalTtc))}
+							</p>
+							<p class="mt-0.5 text-xs text-gray-500 tabular-nums">
+								{eur.format(Number(l.totalHt))} HT
 							</p>
 						</div>
-						<p class="shrink-0 font-semibold text-gray-900 tabular-nums dark:text-white">
-							{eur.format(Number(l.totalTtc))}
-						</p>
 					</li>
 				{/each}
 			</ul>
@@ -264,9 +327,9 @@
 					>
 						<span class="font-semibold">Mode test.</span>
 						Les colis sont créés avec l'offre
-						<code class="rounded bg-white/60 px-1 dark:bg-black/30">{data.testOptionCode}</code> :
-						aucun transporteur n'est sollicité et rien n'est facturé. Aucun envoi réel n'est
-						possible tant que ce mode est actif.
+						<code class="rounded bg-white/60 px-1 dark:bg-black/30">{data.testOptionCode}</code> : aucun
+						transporteur n'est sollicité et rien n'est facturé. Aucun envoi réel n'est possible tant que
+						ce mode est actif.
 					</p>
 				{/if}
 

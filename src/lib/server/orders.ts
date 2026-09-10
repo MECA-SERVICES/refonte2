@@ -172,23 +172,23 @@ export async function listOrders(params: OrderListParams = {}) {
 	const safePage = Math.min(page, pageCount);
 
 	const rows = await db
-			.select({
-				id: order.id,
-				reference: order.reference,
-				totalTtc: order.totalTtc,
-				createdAt: order.createdAt,
-				customerFirstName: customer.firstName,
-				customerLastName: customer.lastName,
-				stateLabel: orderState.label,
-				stateColor: orderState.color
-			})
-			.from(order)
-			.leftJoin(customer, eq(order.customerId, customer.id))
-			.leftJoin(orderState, eq(order.stateId, orderState.id))
-			.where(where)
-			.orderBy(orderBy)
-			.limit(perPage)
-			.offset((safePage - 1) * perPage);
+		.select({
+			id: order.id,
+			reference: order.reference,
+			totalTtc: order.totalTtc,
+			createdAt: order.createdAt,
+			customerFirstName: customer.firstName,
+			customerLastName: customer.lastName,
+			stateLabel: orderState.label,
+			stateColor: orderState.color
+		})
+		.from(order)
+		.leftJoin(customer, eq(order.customerId, customer.id))
+		.leftJoin(orderState, eq(order.stateId, orderState.id))
+		.where(where)
+		.orderBy(orderBy)
+		.limit(perPage)
+		.offset((safePage - 1) * perPage);
 
 	return { rows, total: totalCount, page: safePage, perPage, pageCount };
 }
@@ -199,7 +199,35 @@ export async function getOrderFull(id: number) {
 	if (!row) return undefined;
 
 	const [lines, cust, state, history] = await Promise.all([
-		db.select().from(orderLine).where(eq(orderLine.orderId, id)).orderBy(asc(orderLine.id)),
+		// Le visuel n'est pas figé sur les lignes reprises de PrestaShop : on le
+		// relit au catalogue en repli, et le slug permet d'ouvrir la fiche.
+		db
+			.select({
+				id: orderLine.id,
+				productId: orderLine.productId,
+				productName: orderLine.productName,
+				productReference: orderLine.productReference,
+				productImageUrl: orderLine.productImageUrl,
+				unitPriceHt: orderLine.unitPriceHt,
+				unitPriceTtc: orderLine.unitPriceTtc,
+				quantity: orderLine.quantity,
+				totalHt: orderLine.totalHt,
+				totalTtc: orderLine.totalTtc,
+				productSlug: product.slug,
+				/** Prix d'achat courant : alimente la marge (CDC 20). */
+				purchasePrice: product.purchasePrice,
+				/** Stock actuel, utile lors de la préparation du colis. */
+				currentStock: product.stock,
+				catalogImageUrl: sql<string | null>`(
+					SELECT m.url FROM product_media m
+					WHERE m.product_id = ${orderLine.productId} AND m.type = 'image'
+					ORDER BY m.position, m.id LIMIT 1
+				)`
+			})
+			.from(orderLine)
+			.leftJoin(product, eq(orderLine.productId, product.id))
+			.where(eq(orderLine.orderId, id))
+			.orderBy(asc(orderLine.id)),
 		db.select().from(customer).where(eq(customer.id, row.customerId)).limit(1),
 		db.select().from(orderState).where(eq(orderState.id, row.stateId)).limit(1),
 		db
