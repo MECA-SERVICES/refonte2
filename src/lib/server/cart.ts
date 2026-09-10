@@ -53,6 +53,7 @@ export type CartLine = {
 	isActive: boolean;
 	priceHt: string;
 	priceTtc: string;
+	ecotax: string;
 	taxRate: string | null;
 	/** Prix HT au moment de l'ajout, s'il a été enregistré. */
 	priceHtAtAdd: string | null;
@@ -148,6 +149,8 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 			isActive: product.isActive,
 			priceHt: product.priceHt,
 			priceTtc,
+			/** Éco-participation, à présenter séparément du prix (CDC 10, R6). */
+			ecotax: product.ecotax,
 			taxRate: taxRule.rate
 		})
 		.from(cartItem)

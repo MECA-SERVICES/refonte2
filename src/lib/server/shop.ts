@@ -516,6 +516,8 @@ export async function getShopProduct(id: number) {
 			priceHt: product.priceHt,
 			priceTtc,
 			priceTtcStrike,
+			/** Éco-participation, affichée distinctement du prix (CDC 10, R6). */
+			ecotax: product.ecotax,
 			taxRate: taxRule.rate,
 			brandName: brand.name,
 			brandSlug: brand.slug,

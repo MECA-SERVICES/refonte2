@@ -27,6 +27,9 @@
 	let quantity = $state(1);
 	const maxQuantity = $derived(Math.max(1, product.stock));
 
+	/** Éco-participation incluse dans le prix, affichée à part (R6). */
+	const ecotax = $derived(Number(product.ecotax ?? 0));
+
 	const saved = $derived(
 		product.priceTtcStrike ? Number(product.priceTtcStrike) - Number(product.priceTtc) : 0
 	);
@@ -177,6 +180,17 @@
 					</span>
 				{/if}
 			</div>
+
+			{#if ecotax > 0}
+				<!-- L'éco-participation doit figurer séparément du prix de vente :
+				     c'est une obligation légale, pas une préférence d'affichage
+				     (CDC 10, R6). -->
+				<p class="mt-2 text-[13px] text-shop-muted">
+					Dont éco-participation : <span class="font-semibold text-shop-ink">
+						{formatPrice(ecotax)}
+					</span>
+				</p>
+			{/if}
 
 			<p class="mt-2 text-sm font-bold {available ? 'text-shop-blue' : 'text-shop-orange'}">
 				{#if available}

@@ -70,6 +70,11 @@
 		return { subtotalHt: ht, tax: tva, totalTtc: round(ht + tva), itemCount };
 	});
 
+	/** Éco-participation cumulée, comprise dans le total et rappelée à part (R6). */
+	const shownEcotax = $derived(
+		lines.reduce((sum, line) => sum + Number(line.ecotax ?? 0) * shownQuantity(line), 0)
+	);
+
 	/** Minuteries d'envoi par ligne : comptabilité interne, jamais affichée. */
 	const timers: Record<number, ReturnType<typeof setTimeout>> = {};
 
@@ -283,6 +288,12 @@
 					{formatPrice(shownTotals.subtotalHt)} HT
 				</SummaryRow>
 				<SummaryRow label="TVA">{formatPrice(shownTotals.tax)}</SummaryRow>
+
+				{#if shownEcotax > 0}
+					<!-- Mention légale : l'éco-participation, comprise dans le prix,
+					     doit apparaître distinctement (CDC 10, R6). -->
+					<SummaryRow label="Dont éco-participation">{formatPrice(shownEcotax)}</SummaryRow>
+				{/if}
 				<SummaryRow label="Livraison" muted>Calculée à l'étape suivante</SummaryRow>
 				<SummaryRow label="Préparation">24 h ouvrées</SummaryRow>
 			</dl>
