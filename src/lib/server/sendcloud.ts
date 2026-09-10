@@ -30,6 +30,9 @@ export type ShippingAddress = {
 	addressLine1?: string;
 };
 
+/** Mode de retrait, tel que présenté au client. */
+export type DeliveryMode = 'home' | 'service_point' | 'locker';
+
 /** Offre de livraison présentée au client. */
 export type ShippingOption = {
 	/** Code Sendcloud, stocké tel quel sur la commande (`carrier_code`). */
@@ -37,8 +40,14 @@ export type ShippingOption = {
 	name: string;
 	carrierCode: string;
 	carrierName: string;
+	/** Logo du transporteur, servi par le CDN Sendcloud. */
+	carrierLogoUrl: string | null;
 	/** `home_delivery`, `service_point`, `locker`… — décide de la règle R4. */
 	lastMile: string | null;
+	/** Mode de retrait normalisé, pour regrouper les offres à l'affichage. */
+	mode: DeliveryMode;
+	/** `domestic`, `international`… — une livraison en France exclut le reste. */
+	serviceArea: string | null;
 	/** Un point relais doit être choisi avant de valider (R11). */
 	requiresServicePoint: boolean;
 	/** Tarif hors taxes, `null` tant qu'aucun contrat transporteur n'est actif. */
@@ -47,6 +56,27 @@ export type ShippingOption = {
 	/** Vrai lorsque l'offre provient de la grille de repli et non de Sendcloud. */
 	fallback?: boolean;
 };
+
+/**
+ * Logo du transporteur.
+ *
+ * Le référentiel des transporteurs n'est pas exposé par l'API v3 ; le CDN sert
+ * en revanche les logos par code, comme le fait l'API des points relais.
+ */
+export function carrierLogoUrl(carrierCode: string): string | null {
+	return carrierCode ? `https://cdn.sendcloud.com/global-media/${carrierCode}/img/logo.svg` : null;
+}
+
+/** Ramène les variantes Sendcloud aux trois modes présentés au client. */
+function deliveryMode(lastMile: string | null | undefined): DeliveryMode {
+	if (lastMile === 'locker') return 'locker';
+	// `locker_or_service_point` couvre les bureaux de poste : côté client, cela
+	// reste un point de retrait à choisir.
+	if (lastMile === 'service_point' || lastMile === 'locker_or_service_point') {
+		return 'service_point';
+	}
+	return 'home';
+}
 
 /** Créneau d'ouverture d'un point relais, pour un jour donné. */
 export type OpeningSlot = { start_time: string; end_time: string };
@@ -64,6 +94,7 @@ export type ServicePoint = {
 	longitude: number | null;
 	carrierCode: string;
 	carrierName: string;
+	carrierLogoUrl: string | null;
 	/** `locker`, `shop`… — permet de distinguer consigne et commerce. */
 	shopType: string | null;
 	/** Distance en mètres, renseignée seulement si des coordonnées sont fournies. */
@@ -167,7 +198,7 @@ type RawOption = {
 	code: string;
 	name: string;
 	carrier?: { code?: string; name?: string };
-	functionalities?: { last_mile?: string };
+	functionalities?: { last_mile?: string; service_area?: string };
 	requirements?: { is_service_point_required?: boolean };
 	quotes?: { price?: { total?: { value?: string; currency?: string } } }[];
 };
@@ -219,12 +250,18 @@ export async function fetchShippingOptions(params: {
 
 	return (data.data ?? []).map((option) => {
 		const total = option.quotes?.[0]?.price?.total;
+		const carrierCode = option.carrier?.code ?? '';
+		const lastMile = option.functionalities?.last_mile ?? null;
+
 		return {
 			code: option.code,
 			name: option.name,
-			carrierCode: option.carrier?.code ?? '',
+			carrierCode,
 			carrierName: option.carrier?.name ?? '',
-			lastMile: option.functionalities?.last_mile ?? null,
+			carrierLogoUrl: carrierLogoUrl(carrierCode),
+			lastMile,
+			mode: deliveryMode(lastMile),
+			serviceArea: option.functionalities?.service_area ?? null,
 			requiresServicePoint: option.requirements?.is_service_point_required ?? false,
 			priceHt: total?.value ? Number(total.value) : null,
 			currency: total?.currency ?? null
@@ -235,7 +272,7 @@ export async function fetchShippingOptions(params: {
 type RawServicePoint = {
 	id: number;
 	name: string;
-	carrier?: { code?: string; name?: string };
+	carrier?: { code?: string; name?: string; logo_url?: string };
 	general_shop_type?: string;
 	address?: {
 		street?: string;
@@ -293,6 +330,7 @@ export async function fetchServicePoints(params: {
 		longitude: row.position?.longitude ?? null,
 		carrierCode: row.carrier?.code ?? '',
 		carrierName: row.carrier?.name ?? '',
+		carrierLogoUrl: row.carrier?.logo_url ?? carrierLogoUrl(row.carrier?.code ?? ''),
 		shopType: row.general_shop_type ?? null,
 		distance: row.distance ?? null,
 		openingTimes: row.opening_times ?? null
@@ -438,7 +476,11 @@ export async function fetchLabelPdf(parcelId: number): Promise<ArrayBuffer> {
 
 	if (!response.ok) {
 		const text = await response.text();
-		console.error('[sendcloud] étiquette indisponible', { parcelId, status: response.status, text });
+		console.error('[sendcloud] étiquette indisponible', {
+			parcelId,
+			status: response.status,
+			text
+		});
 		throw new SendcloudError('Étiquette indisponible', response.status, text);
 	}
 

@@ -13,6 +13,22 @@
 
 	const suffix = $derived(priceSuffix(data.tax.displayMode));
 
+	/** Les offres sont groupées par mode de retrait, du plus courant au moins. */
+	const MODE_ORDER = ['home', 'service_point', 'locker'] as const;
+
+	const MODE_LABELS: Record<string, string> = {
+		home: 'Livraison à domicile',
+		service_point: 'Retrait en point relais',
+		locker: 'Retrait en consigne'
+	};
+
+	/** Ce que le client doit savoir du mode, plutôt que le libellé technique. */
+	const MODE_HINTS: Record<string, string> = {
+		home: 'Remise à votre adresse',
+		service_point: 'Point relais à choisir',
+		locker: 'Consigne automatique à choisir'
+	};
+
 	/**
 	 * Choix explicites du client. `null` signifie « pas encore décidé » : la
 	 * valeur retenue retombe alors sur le défaut calculé depuis les données, qui
@@ -71,7 +87,11 @@
 
 <form method="POST" action="?/confirm" use:enhance>
 	<input type="hidden" name="shippingAddressId" value={shippingAddressId} />
-	<input type="hidden" name="billingAddressId" value={billingSameAsShipping ? shippingAddressId : billingAddressId} />
+	<input
+		type="hidden"
+		name="billingAddressId"
+		value={billingSameAsShipping ? shippingAddressId : billingAddressId}
+	/>
 	<input type="hidden" name="optionCode" value={optionCode} />
 	{#if relay}
 		<input type="hidden" name="relayPointId" value={relay.id} />
@@ -103,8 +123,10 @@
 							/>
 							<span class="text-[14.5px] leading-relaxed text-shop-ink">
 								{#if item.label}<span class="font-bold">{item.label}</span><br />{/if}
-								{item.firstName} {item.lastName}<br />
-								{item.line1}, {item.postalCode} {item.city}
+								{item.firstName}
+								{item.lastName}<br />
+								{item.line1}, {item.postalCode}
+								{item.city}
 							</span>
 						</label>
 					{/each}
@@ -117,7 +139,9 @@
 
 				{#if !billingSameAsShipping}
 					<div class="mt-3 space-y-2.5 border-t-[1.5px] border-shop-border-soft pt-4">
-						<p class="font-display text-[13px] font-extrabold tracking-wide text-shop-muted uppercase">
+						<p
+							class="font-display text-[13px] font-extrabold tracking-wide text-shop-muted uppercase"
+						>
 							Adresse de facturation
 						</p>
 						{#each data.addresses as item (item.id)}
@@ -130,7 +154,9 @@
 									onchange={() => (picked = { ...picked, billing: item.id })}
 									class="accent-shop-blue"
 								/>
-								{item.firstName} {item.lastName} — {item.line1}, {item.postalCode} {item.city}
+								{item.firstName}
+								{item.lastName} — {item.line1}, {item.postalCode}
+								{item.city}
 							</label>
 						{/each}
 					</div>
@@ -149,13 +175,17 @@
 				<Heading size="card">2 · Mode de livraison</Heading>
 
 				{#if data.quote.restriction}
-					<p class="mt-3 border-[1.5px] border-shop-blue bg-shop-subtle px-3.5 py-2.5 text-[13.5px] text-shop-ink">
+					<p
+						class="mt-3 border-[1.5px] border-shop-blue bg-shop-subtle px-3.5 py-2.5 text-[13.5px] text-shop-ink"
+					>
 						{data.quote.restriction}
 					</p>
 				{/if}
 
 				{#if data.quote.usedFallback}
-					<p class="mt-3 border-[1.5px] border-shop-orange bg-white px-3.5 py-2.5 text-[13.5px] text-shop-ink">
+					<p
+						class="mt-3 border-[1.5px] border-shop-orange bg-white px-3.5 py-2.5 text-[13.5px] text-shop-ink"
+					>
 						Le transporteur sera confirmé par notre équipe à la préparation de votre colis.
 					</p>
 				{/if}
@@ -164,48 +194,79 @@
 					Poids estimé du colis : {data.quote.weightKg} kg
 				</p>
 
-				<div class="mt-4 space-y-2.5">
-					{#each data.quote.options as item (item.code)}
-						<label
-							class="flex cursor-pointer items-center justify-between gap-3 border-[1.5px] p-3.5 transition-colors {optionCode ===
-							item.code
-								? 'border-shop-ink bg-shop-border-soft'
-								: 'border-shop-border bg-white hover:border-shop-ink'}"
-						>
-							<span class="flex min-w-0 items-center gap-3">
-								<input
-									type="radio"
-									name="optionChoice"
-									value={item.code}
-									checked={optionCode === item.code}
-									onchange={() => {
-										picked = { ...picked, option: item.code };
-										relay = null;
-									}}
-									class="accent-shop-blue"
-								/>
-								<span class="min-w-0">
-									<span class="block text-[14.5px] font-bold text-shop-ink">{item.name}</span>
-									<span class="block text-[13px] text-shop-muted">
-										{item.carrierName}{#if item.requiresServicePoint} · point relais à choisir{/if}
-									</span>
-								</span>
-							</span>
-							<span class="shrink-0 font-display font-bold text-shop-ink">
-								{#if item.priceHt === null}
-									<span class="text-[13px] text-shop-muted">Tarif à confirmer</span>
-								{:else}
-									{formatPrice(item.priceHt)} <span class="text-[12px]">HT</span>
-								{/if}
-							</span>
-						</label>
+				<div class="mt-4 space-y-5">
+					{#each MODE_ORDER as mode (mode)}
+						{@const group = data.quote.options.filter((o) => o.mode === mode)}
+						{#if group.length > 0}
+							<div>
+								<p
+									class="mb-2 font-display text-[12px] font-extrabold tracking-[0.1em] text-shop-muted uppercase"
+								>
+									{MODE_LABELS[mode]}
+								</p>
+
+								<div class="space-y-2.5">
+									{#each group as item (item.code)}
+										<label
+											class="flex cursor-pointer items-center gap-3 border-[1.5px] p-3.5 transition-colors {optionCode ===
+											item.code
+												? 'border-shop-ink bg-shop-border-soft'
+												: 'border-shop-border bg-white hover:border-shop-ink'}"
+										>
+											<input
+												type="radio"
+												name="optionChoice"
+												value={item.code}
+												checked={optionCode === item.code}
+												onchange={() => {
+													picked = { ...picked, option: item.code };
+													relay = null;
+												}}
+												class="shrink-0 accent-shop-blue"
+											/>
+
+											{#if item.carrierLogoUrl}
+												<!-- Le logo identifie le transporteur plus vite que son nom. -->
+												<img
+													src={item.carrierLogoUrl}
+													alt=""
+													loading="lazy"
+													class="h-7 w-16 shrink-0 object-contain"
+												/>
+											{/if}
+
+											<span class="min-w-0 flex-1">
+												<span class="block text-[14.5px] font-bold text-shop-ink">
+													{item.carrierName}
+												</span>
+												<span class="block text-[13px] text-shop-muted">
+													{MODE_HINTS[item.mode]}
+												</span>
+											</span>
+
+											<span class="shrink-0 font-display font-bold text-shop-ink">
+												{#if item.priceHt === null}
+													<span class="text-[13px] font-normal text-shop-muted">
+														Tarif à confirmer
+													</span>
+												{:else}
+													{formatPrice(item.priceHt)} <span class="text-[12px]">HT</span>
+												{/if}
+											</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
 					{/each}
 				</div>
 
 				<!-- ================= Point relais ================= -->
 				{#if option?.requiresServicePoint}
 					<div class="mt-4 border-t-[1.5px] border-shop-border-soft pt-4">
-						<p class="font-display text-[13px] font-extrabold tracking-wide text-shop-muted uppercase">
+						<p
+							class="font-display text-[13px] font-extrabold tracking-wide text-shop-muted uppercase"
+						>
 							Point relais
 						</p>
 
@@ -252,13 +313,47 @@
 													name: point.name,
 													address: `${point.street} ${point.houseNumber}, ${point.postalCode} ${point.city}`
 												})}
-											class="block w-full border-[1.5px] border-shop-border bg-white p-3 text-left hover:border-shop-ink"
+											class="flex w-full items-center gap-3 border-[1.5px] border-shop-border bg-white p-3 text-left hover:border-shop-ink"
 										>
-											<span class="block text-[14px] font-bold text-shop-ink">{point.name}</span>
-											<span class="block text-[12.5px] text-shop-muted">
-												{point.street} {point.houseNumber}, {point.postalCode}
-												{point.city}{#if point.distance} · {Math.round(point.distance)} m{/if}
+											{#if point.carrierLogoUrl}
+												<img
+													src={point.carrierLogoUrl}
+													alt=""
+													loading="lazy"
+													class="h-6 w-12 shrink-0 object-contain"
+												/>
+											{/if}
+											<span class="min-w-0 flex-1">
+												<span class="flex flex-wrap items-center gap-2">
+													<span class="truncate text-[14px] font-bold text-shop-ink">
+														{point.name}
+													</span>
+													{#if point.shopType === 'locker'}
+														<span
+															class="bg-shop-border-soft px-1.5 py-0.5 text-[10.5px] font-bold tracking-wide text-shop-ink uppercase"
+														>
+															Consigne
+														</span>
+													{/if}
+												</span>
+												<span class="block text-[12.5px] text-shop-muted">
+													{point.street}
+													{point.houseNumber}, {point.postalCode}
+													{point.city}
+												</span>
+												{#if point.todaySlots.length > 0}
+													<span class="block text-[12px] text-shop-muted">
+														Aujourd'hui : {point.todaySlots.join(' · ')}
+													</span>
+												{:else}
+													<span class="block text-[12px] text-shop-red">Fermé aujourd'hui</span>
+												{/if}
 											</span>
+											{#if point.distance}
+												<span class="shrink-0 text-[12.5px] text-shop-muted tabular-nums">
+													{Math.round(point.distance)} m
+												</span>
+											{/if}
 										</button>
 									{/each}
 								</div>
@@ -274,8 +369,8 @@
 				<div class="mt-3 border-[1.5px] border-shop-ink bg-shop-border-soft p-4">
 					<p class="text-[14.5px] font-bold text-shop-ink">Virement bancaire</p>
 					<p class="mt-1 text-[13.5px] leading-relaxed text-shop-ink-soft">
-						Nos coordonnées bancaires vous seront communiquées après validation. Votre commande
-						est préparée dès réception du règlement.
+						Nos coordonnées bancaires vous seront communiquées après validation. Votre commande est
+						préparée dès réception du règlement.
 					</p>
 				</div>
 			</Panel>
@@ -317,7 +412,9 @@
 				</span>
 			</div>
 
-			<p class="mt-2 text-[12.5px] text-shop-muted">Montants affichés en {suffix} sur le catalogue.</p>
+			<p class="mt-2 text-[12.5px] text-shop-muted">
+				Montants affichés en {suffix} sur le catalogue.
+			</p>
 
 			<div class="mt-5">
 				<ShopButton

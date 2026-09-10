@@ -105,7 +105,19 @@ export const actions: Actions = {
 				longitude: lon
 			});
 
-			return { relayPoints: points.slice(0, 12) };
+			// Les horaires du jour et le type de point décident du choix bien plus
+			// qu'un visuel — que Sendcloud ne fournit d'ailleurs pas.
+			const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+			const today = days[new Date().getDay()];
+
+			return {
+				relayPoints: points.slice(0, 12).map((point) => ({
+					...point,
+					todaySlots: (point.openingTimes?.[today] ?? []).map(
+						(slot) => `${slot.start_time} – ${slot.end_time}`
+					)
+				}))
+			};
 		} catch {
 			return fail(502, { message: 'Points relais indisponibles pour le moment.' });
 		}

@@ -55,6 +55,51 @@ export const FALLBACK_GRID: { maxWeightKg: number; priceHt: number }[] = [
 const RELAY_LAST_MILES = new Set(['service_point', 'locker', 'locker_or_service_point']);
 
 /**
+ * Écarte les offres qui n'ont pas de sens pour la destination.
+ *
+ * Sendcloud retourne tout le catalogue du compte : pour une livraison en France,
+ * dix-neuf offres remontaient, dont des tarifs internationaux et des variantes
+ * « QR » qui ne changent rien pour le client. Le tri se fait ici plutôt qu'à
+ * l'affichage, pour que la commande ne puisse pas retenir une offre inapplicable.
+ */
+function isRelevant(option: ShippingOption, destinationCountry: string): boolean {
+	// L'option de test ne doit jamais apparaître dans un tunnel client.
+	if (option.code === 'sendcloud:letter') return false;
+
+	const domestic = destinationCountry.toUpperCase() === 'FR';
+	if (domestic && option.serviceArea === 'international') return false;
+	if (!domestic && option.serviceArea?.startsWith('domestic')) return false;
+
+	return true;
+}
+
+/**
+ * Ne conserve qu'une offre par transporteur et par mode, la moins chère.
+ *
+ * « Point Relais » et « Point Relais QR » désignent le même service : le second
+ * n'est qu'une modalité d'impression, invisible du client au moment du choix.
+ */
+function dedupe(options: ShippingOption[]): ShippingOption[] {
+	const best = new Map<string, ShippingOption>();
+
+	for (const option of options) {
+		const key = `${option.carrierCode}:${option.mode}`;
+		const kept = best.get(key);
+		if (!kept) {
+			best.set(key, option);
+			continue;
+		}
+		// À tarif inconnu des deux côtés, le premier reçu fait foi : l'ordre de
+		// Sendcloud place les offres principales avant leurs variantes.
+		const challengerPrice = option.priceHt ?? Number.POSITIVE_INFINITY;
+		const keptPrice = kept.priceHt ?? Number.POSITIVE_INFINITY;
+		if (challengerPrice < keptPrice) best.set(key, option);
+	}
+
+	return [...best.values()];
+}
+
+/**
  * Poids retenu pour un article dont la fiche n'en porte aucun.
  *
  * Près de 70 % du catalogue est dans ce cas, héritage de la reprise
@@ -98,10 +143,7 @@ export function cartDimensionsCm(lines: ShippableLine[]) {
 
 /** Surcoût de transport propre aux articles, cumulé sur le panier (R9). */
 export function extraShippingFee(lines: ShippableLine[]): number {
-	const total = lines.reduce(
-		(sum, line) => sum + (line.shippingExtraFee ?? 0) * line.quantity,
-		0
-	);
+	const total = lines.reduce((sum, line) => sum + (line.shippingExtraFee ?? 0) * line.quantity, 0);
 	return Math.round(total * 100) / 100;
 }
 
@@ -141,7 +183,10 @@ export function fallbackOptions(weightKg: number): ShippingOption[] {
 			name: 'Livraison standard',
 			carrierCode: 'fallback',
 			carrierName: 'À déterminer',
+			carrierLogoUrl: null,
 			lastMile: 'home_delivery',
+			mode: 'home',
+			serviceArea: 'domestic',
 			requiresServicePoint: false,
 			priceHt: tier.priceHt,
 			currency: 'EUR',
@@ -189,12 +234,16 @@ export async function quoteShipping(params: ShippingQuoteParams): Promise<Shippi
 		usedFallback = true;
 	} else {
 		try {
-			options = await fetchShippingOptions({
+			const fetched = await fetchShippingOptions({
 				from: params.from,
 				to: params.to,
 				weightKg,
 				dimensionsCm: cartDimensionsCm(params.lines)
 			});
+			options = dedupe(fetched.filter((o) => isRelevant(o, params.to.countryCode)));
+
+			// Un filtrage trop strict ne doit pas priver le client de tout choix.
+			if (options.length === 0) options = dedupe(fetched);
 		} catch {
 			// L'échec est déjà journalisé par le client (R21) : ici, on garantit
 			// seulement que le client puisse terminer sa commande.
@@ -216,9 +265,7 @@ export async function quoteShipping(params: ShippingQuoteParams): Promise<Shippi
 
 		if (params.cartTotalTtc > RELAY_POINT_MAX_TTC) {
 			const before = options.length;
-			options = options.filter(
-				(option) => !RELAY_LAST_MILES.has(option.lastMile ?? '')
-			);
+			options = options.filter((option) => !RELAY_LAST_MILES.has(option.lastMile ?? ''));
 			if (options.length < before) {
 				restriction ??= `Au-delà de ${RELAY_POINT_MAX_TTC} € TTC, la livraison en point relais n'est pas proposée.`;
 			}
