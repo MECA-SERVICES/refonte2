@@ -80,16 +80,29 @@ export function listFilterHref(
 type BadgeColor = 'gray' | 'green' | 'yellow' | 'red' | 'blue' | 'indigo' | 'purple';
 
 /** Libellés + couleurs partagés pour les badges (type/statut/rôle). */
+/**
+ * Libellés des types de compte (CDC 08).
+ *
+ * Les valeurs anglaises viennent de la reprise PrestaShop et coexistent avec
+ * celles du cahier des charges : les deux sont traduites tant que la migration
+ * des données n'a pas harmonisé la colonne.
+ */
 export const CUSTOMER_TYPE_BADGES: Record<string, { label: string; color: BadgeColor }> = {
 	particulier: { label: 'Particulier', color: 'blue' },
+	individual: { label: 'Particulier', color: 'blue' },
+	pro: { label: 'Professionnel', color: 'indigo' },
+	professional: { label: 'Professionnel', color: 'indigo' },
 	entreprise: { label: 'Entreprise', color: 'indigo' },
 	collectivite: { label: 'Collectivité', color: 'purple' }
 };
 
+/** Statuts de validation du compte (CDC 08, R1-R2). */
 export const CUSTOMER_STATUS_BADGES: Record<string, { label: string; color: BadgeColor }> = {
 	pending: { label: 'En attente', color: 'yellow' },
 	validated: { label: 'Validé', color: 'green' },
-	rejected: { label: 'Rejeté', color: 'red' }
+	active: { label: 'Validé', color: 'green' },
+	rejected: { label: 'Rejeté', color: 'red' },
+	inactive: { label: 'Inactif', color: 'gray' }
 };
 
 export const ROLE_BADGES: Record<string, { label: string; color: BadgeColor }> = {

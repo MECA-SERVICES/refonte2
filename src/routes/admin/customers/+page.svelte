@@ -16,15 +16,23 @@
 
 	type CustomerRow = (typeof data.rows)[number];
 
+	/**
+	 * Valeurs proposées au filtre.
+	 *
+	 * Les libellés anglais proviennent de la reprise PrestaShop : filtrer sur
+	 * « particulier » ne renverrait aujourd'hui qu'une seule fiche, la base
+	 * portant « individual » sur les 24 744 autres.
+	 */
 	const typeFilterOptions = [
-		{ value: 'particulier', name: 'Particulier' },
-		{ value: 'entreprise', name: 'Entreprise' },
+		{ value: 'individual', name: 'Particulier' },
+		{ value: 'professional', name: 'Professionnel' },
 		{ value: 'collectivite', name: 'Collectivité' }
 	];
 
 	const statusFilterOptions = [
 		{ value: 'pending', name: 'En attente' },
-		{ value: 'validated', name: 'Validé' },
+		{ value: 'active', name: 'Validé' },
+		{ value: 'inactive', name: 'Inactif' },
 		{ value: 'rejected', name: 'Rejeté' }
 	];
 
@@ -61,7 +69,17 @@
 {/snippet}
 
 {#snippet nameCell(row: CustomerRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{row.firstName} {row.lastName}</span>
+	<!-- L'avatar à initiales donne un point d'accroche visuel dans une liste de
+	     25 000 lignes, là où une colonne de texte seule se parcourt mal. -->
+	<span class="flex items-center gap-2.5">
+		<span
+			class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[11px] font-bold text-primary-700 dark:bg-primary-900 dark:text-primary-200"
+			aria-hidden="true"
+		>
+			{`${row.firstName?.[0] ?? ''}${row.lastName?.[0] ?? ''}`.toUpperCase() || '?'}
+		</span>
+		<span class="font-medium text-gray-900 dark:text-white">{row.firstName} {row.lastName}</span>
+	</span>
 {/snippet}
 
 {#snippet emailCell(row: CustomerRow)}
