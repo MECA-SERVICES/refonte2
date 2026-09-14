@@ -37,12 +37,23 @@ const ALLOWED_TAGS = new Set([
 	'small',
 	'sub',
 	'sup',
-	'hr'
+	'hr',
+	// Balises produites par l'éditeur des pages éditoriales : absentes de cette
+	// liste, la mise en forme saisie disparaîtrait silencieusement à l'affichage.
+	'blockquote',
+	'code',
+	'pre',
+	's',
+	'h1',
+	'img',
+	'figure',
+	'figcaption'
 ]);
 
 /** Attributs conservés, par balise. */
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
-	a: new Set(['href', 'title', 'target', 'rel'])
+	a: new Set(['href', 'title', 'target', 'rel']),
+	img: new Set(['src', 'alt', 'title', 'width', 'height'])
 };
 
 /** Protocoles autorisés dans un href. */
@@ -67,7 +78,9 @@ function cleanAttributes(tag: string, raw: string): string {
 		if (!allowed.has(name)) continue;
 
 		const value = match[2].replace(/^["']|["']$/g, '');
-		if (name === 'href' && !SAFE_HREF.test(value.trim())) continue;
+		// `src` est aussi porteur d'une adresse : le laisser passer sans contrôle
+		// autoriserait un `javascript:` sur une image.
+		if ((name === 'href' || name === 'src') && !SAFE_HREF.test(value.trim())) continue;
 
 		kept.push(`${name}="${value.replace(/"/g, '&quot;')}"`);
 	}

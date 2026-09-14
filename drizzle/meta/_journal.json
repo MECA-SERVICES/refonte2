@@ -141,6 +141,13 @@
       "when": 1788970767767,
       "tag": "0021_commande_livraison",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1789390498215,
+      "tag": "0022_cms_page",
+      "breakpoints": true
     }
   ]
 }

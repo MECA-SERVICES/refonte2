@@ -33,6 +33,7 @@
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1094.0",
     "@eslint/js": "^10.0.1",
+    "@flowbite-svelte-plugins/texteditor": "^0.25.6",
     "@inlang/paraglide-js": "^2.18.2",
     "@playwright/test": "^1.60.0",
     "@sveltejs/adapter-node": "^5.5.4",
@@ -53,7 +54,9 @@
     "flowbite-svelte": "^1.33.1",
     "flowbite-svelte-icons": "^3.1.0",
     "flowbite-svelte-illustrations": "^1.0.6",
+    "flowbite-typography": "^1.0.5",
     "globals": "^17.6.0",
+    "lowlight": "^3.3.0",
     "mdsvex": "^0.12.7",
     "mysql2": "^3.23.2",
     "playwright": "^1.60.0",
