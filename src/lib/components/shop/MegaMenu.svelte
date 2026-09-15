@@ -33,6 +33,7 @@
 	const shortcuts = [
 		{ label: 'Vues éclatées', href: '/vue-eclatee' },
 		{ label: 'Promos', href: '/recherche' },
+		{ label: 'Blog', href: '/blog' },
 		{ label: 'SAV & atelier', href: '/compte' }
 	];
 

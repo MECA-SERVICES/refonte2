@@ -28,7 +28,8 @@
     "specs:analyze": "node --experimental-strip-types --no-warnings scripts/extract-product-specs.ts --dry-run",
     "specs:extract": "node --experimental-strip-types --no-warnings scripts/extract-product-specs.ts",
     "tax:seed": "node --experimental-strip-types --no-warnings scripts/seed-tax-rules.ts",
-    "addresses:backfill": "node --experimental-strip-types --no-warnings scripts/backfill-default-addresses.ts"
+    "addresses:backfill": "node --experimental-strip-types --no-warnings scripts/backfill-default-addresses.ts",
+    "blog:seed": "node --experimental-strip-types --no-warnings scripts/seed-blog.ts"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1094.0",
