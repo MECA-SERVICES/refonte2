@@ -10,6 +10,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { order } from './db/order.schema';
 import { createShipment, type SenderAddress } from './sendcloud';
+import { proposeMachinesFromOrder } from './machines';
 
 /** Expéditeur de tous les colis : l'atelier de Carantilly. */
 const SENDER: SenderAddress = {
@@ -104,6 +105,15 @@ export async function shipOrder(input: {
 			updatedAt: new Date()
 		})
 		.where(eq(order.id, input.orderId));
+
+	// Le colis est parti : les machines qu'il contient entrent dans le parc du
+	// client, en attente de leur numéro de série (CDC 32, R7). Un échec ici ne
+	// doit pas invalider une expédition déjà créée chez le transporteur.
+	try {
+		await proposeMachinesFromOrder(input.orderId);
+	} catch (cause) {
+		console.error('[parc machines] proposition impossible', { orderId: input.orderId, cause });
+	}
 
 	return shipment;
 }

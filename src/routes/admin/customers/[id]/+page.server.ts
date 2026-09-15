@@ -2,6 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { getCustomerWithAddresses, deleteCustomer } from '$lib/server/customers';
 import { db } from '$lib/server/db';
+import { listMachines } from '$lib/server/machines';
 import { order, orderState } from '$lib/server/db/order.schema';
 import { desc, eq, sql } from 'drizzle-orm';
 
@@ -39,7 +40,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			.where(eq(order.customerId, id))
 	]);
 
-	return { customer, orders, totals };
+	return { customer, orders, totals, machines: await listMachines(id) };
 };
 
 export const actions: Actions = {
