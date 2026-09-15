@@ -91,3 +91,6 @@
 /* Éditeur des pages éditoriales : sans cette source, Tailwind ne génère pas les
    classes de sa barre d'outils, qui s'afficherait sans style. */
 @source '../../node_modules/@flowbite-svelte-plugins/texteditor/dist';
+/* Graphiques du tableau de bord : même raison, leurs classes doivent être
+   générées pour que les cartes s'affichent correctement. */
+@source '../../node_modules/@flowbite-svelte-plugins/chart/dist';
