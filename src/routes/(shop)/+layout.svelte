@@ -208,7 +208,7 @@
 		</div>
 		<!-- Navigation principale : méga-menu du catalogue (écrans larges) -->
 		<div class="hidden lg:block">
-			<MegaMenu sections={megaSections} />
+			<MegaMenu sections={megaSections} brands={data.topBrands} />
 		</div>
 	</header>
 
@@ -279,8 +279,16 @@
 			</Accordion>
 
 			<a
-				href="/recherche"
+				href="/marques"
 				class="mt-4 block border border-shop-border bg-shop-subtle px-4 py-3 text-center text-sm font-semibold text-shop-blue hover:bg-primary-100"
+				onclick={() => (menuOpen = false)}
+			>
+				Parcourir les marques
+			</a>
+
+			<a
+				href="/recherche"
+				class="mt-2 block border border-shop-border bg-shop-subtle px-4 py-3 text-center text-sm font-semibold text-shop-blue hover:bg-primary-100"
 				onclick={() => (menuOpen = false)}
 			>
 				Voir tout le catalogue

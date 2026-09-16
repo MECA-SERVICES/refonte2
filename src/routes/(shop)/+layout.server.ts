@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import { getShopMenu } from '$lib/server/shop';
+import { getShopMenu, topShopBrands } from '$lib/server/shop';
 import { countCartItems } from '$lib/server/cart';
 import { resolveCartOwner } from '$lib/server/cart-session';
 import { taxContextForUser } from '$lib/server/account';
@@ -18,6 +18,8 @@ export const load: LayoutServerLoad = async (event) => {
 
 	return {
 		menu: await getShopMenu(),
+		// Marques vedettes du menu (CDC 12) — mises en cache côté serveur.
+		topBrands: await topShopBrands(18),
 		tax,
 		// Client connecté (better-auth) — null pour les visiteurs.
 		shopUser: locals.user ? { name: locals.user.name } : null,

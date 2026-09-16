@@ -133,6 +133,12 @@ export function parseBrandForm(form: FormData) {
 			slug: slugInput ? slugify(slugInput) : slugify(name),
 			logoUrl: form.get('logoUrl')?.toString().trim() || null,
 			description: form.get('description')?.toString().trim() || null,
+			// Contenu de la page de marque (CDC 12).
+			heroImageUrl: form.get('heroImageUrl')?.toString().trim() || null,
+			tagline: form.get('tagline')?.toString().trim() || null,
+			pageContent: form.get('pageContent')?.toString() || null,
+			metaTitle: form.get('metaTitle')?.toString().trim() || null,
+			metaDescription: form.get('metaDescription')?.toString().trim() || null,
 			isActive: form.get('isActive') != null
 		}
 	};

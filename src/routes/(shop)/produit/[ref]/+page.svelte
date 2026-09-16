@@ -147,7 +147,7 @@
 	<div class="min-w-0">
 		{#if product.brandName}
 			<p class="mb-2.5 text-xs font-bold tracking-[0.12em] text-shop-muted uppercase">
-				<a href="/recherche?marque={product.brandSlug}" class="hover:text-shop-blue">
+				<a href="/marque/{product.brandSlug}" class="hover:text-shop-blue">
 					{product.brandName}
 				</a>
 			</p>

@@ -10,7 +10,20 @@ import {
 	productVariant,
 	taxRule
 } from '$lib/server/db/schema';
-import { and, asc, desc, eq, exists, gt, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	exists,
+	gt,
+	ilike,
+	inArray,
+	notInArray,
+	or,
+	sql,
+	type SQL
+} from 'drizzle-orm';
 import type { Category } from '$lib/server/db/catalog.schema';
 import { cached } from './cache';
 
@@ -587,4 +600,132 @@ export async function getShopProduct(id: number) {
 		breadcrumb,
 		specs
 	};
+}
+
+// ===========================================================================
+// Page de marque (CDC 12)
+// ===========================================================================
+
+/** Marque publiée, avec son contenu éditorial. */
+export async function getShopBrand(slug: string) {
+	const [row] = await db
+		.select({
+			id: brand.id,
+			name: brand.name,
+			slug: brand.slug,
+			logoUrl: brand.logoUrl,
+			heroImageUrl: brand.heroImageUrl,
+			tagline: brand.tagline,
+			pageContent: brand.pageContent,
+			description: brand.description,
+			metaTitle: brand.metaTitle,
+			metaDescription: brand.metaDescription
+		})
+		.from(brand)
+		.where(and(eq(brand.slug, slug), eq(brand.isActive, true)))
+		.limit(1);
+
+	return row;
+}
+
+/**
+ * Gammes d'une marque : ses catégories les mieux fournies.
+ *
+ * Le décompte porte sur la catégorie principale du produit — assez précis pour
+ * orienter, sans la jointure sur les catégories secondaires qui coûterait cher
+ * sur un catalogue d'un million de références.
+ */
+export async function shopBrandRanges(brandId: number, limit = 6) {
+	return db
+		.select({
+			id: category.id,
+			name: category.name,
+			slug: category.slug,
+			total: sql<number>`count(*)::int`
+		})
+		.from(product)
+		.innerJoin(category, eq(product.categoryId, category.id))
+		.where(and(eq(product.brandId, brandId), eq(product.isActive, true)))
+		.groupBy(category.id, category.name, category.slug)
+		.orderBy(desc(sql`count(*)`))
+		.limit(limit);
+}
+
+/** Chiffres affichés sur la page d'une marque. */
+export async function shopBrandFacts(brandId: number) {
+	const [row] = await db
+		.select({
+			products: sql<number>`count(*)::int`,
+			inStock: sql<number>`count(*) FILTER (WHERE ${product.stock} > 0)::int`,
+			categories: sql<number>`count(DISTINCT ${product.categoryId})::int`
+		})
+		.from(product)
+		.where(and(eq(product.brandId, brandId), eq(product.isActive, true)));
+
+	return {
+		products: row?.products ?? 0,
+		inStock: row?.inStock ?? 0,
+		categories: row?.categories ?? 0
+	};
+}
+
+/**
+ * Marques génériques du catalogue PrestaShop.
+ *
+ * Ce ne sont pas des fabricants mais des fourre-tout d'import : leur ouvrir une
+ * page de marque n'aurait pas de sens.
+ */
+const PLACEHOLDER_BRAND_SLUGS = ['sans-marque', 'autre-marque'];
+
+/**
+ * Index des marques distribuées, pour la page `/marques` et le menu.
+ *
+ * Seules les marques ayant au moins un produit actif sont retenues : le
+ * catalogue en compte un millier, et une entrée qui mène à une page vide est
+ * pire que pas d'entrée du tout.
+ */
+export function shopBrandIndex() {
+	return db
+		.select({
+			id: brand.id,
+			name: brand.name,
+			slug: brand.slug,
+			logoUrl: brand.logoUrl,
+			total: sql<number>`count(${product.id})::int`,
+			inStock: sql<number>`count(*) FILTER (WHERE ${product.stock} > 0)::int`
+		})
+		.from(brand)
+		.innerJoin(product, and(eq(product.brandId, brand.id), eq(product.isActive, true)))
+		.where(and(eq(brand.isActive, true), notInArray(brand.slug, PLACEHOLDER_BRAND_SLUGS)))
+		.groupBy(brand.id, brand.name, brand.slug, brand.logoUrl)
+		.orderBy(asc(brand.name));
+}
+
+/**
+ * Marques mises en avant dans le menu de navigation.
+ *
+ * Classées par profondeur de catalogue : c'est le meilleur signal disponible
+ * pour deviner ce qu'un visiteur vient chercher, et il recoupe les marques
+ * effectivement distribuées en atelier.
+ */
+export function topShopBrands(limit = 18) {
+	// Affichée sur chaque page via le menu : le comptage par marque est trop
+	// coûteux pour être refait à chaque navigation.
+	return cached(`shop-top-brands-${limit}`, () => topShopBrandsUncached(limit), 600); // 10 minutes
+}
+
+function topShopBrandsUncached(limit: number) {
+	return db
+		.select({
+			id: brand.id,
+			name: brand.name,
+			slug: brand.slug,
+			logoUrl: brand.logoUrl
+		})
+		.from(brand)
+		.innerJoin(product, and(eq(product.brandId, brand.id), eq(product.isActive, true)))
+		.where(and(eq(brand.isActive, true), notInArray(brand.slug, PLACEHOLDER_BRAND_SLUGS)))
+		.groupBy(brand.id, brand.name, brand.slug, brand.logoUrl)
+		.orderBy(desc(sql`count(${product.id})`))
+		.limit(limit);
 }

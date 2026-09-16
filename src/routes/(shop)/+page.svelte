@@ -305,7 +305,7 @@
 			<div class="grid grid-cols-3 gap-2.5 lg:grid-cols-4">
 				{#each data.brands.slice(0, 12) as brandItem (brandItem.id)}
 					<a
-						href="/recherche?q={encodeURIComponent(brandItem.name)}"
+						href="/marque/{brandItem.slug}"
 						class="flex h-14 items-center justify-center bg-shop-subtle px-2 text-center font-display text-[13px] font-bold text-shop-ink"
 					>
 						{#if brandItem.logoUrl}

@@ -20,7 +20,12 @@
 		families: ShopMenuChild[];
 	};
 
-	let { sections }: { sections: Section[] } = $props();
+	type BrandLink = { id: number; name: string; slug: string; logoUrl: string | null };
+
+	let { sections, brands = [] }: { sections: Section[]; brands?: BrandLink[] } = $props();
+
+	/** Identifiant réservé au panneau des marques, qui ne vient pas du catalogue. */
+	const BRANDS_ID = '__brands';
 
 	/** Section ouverte ; `null` quand le panneau est replié. */
 	let openId = $state<string | null>(null);
@@ -32,7 +37,6 @@
 	/** Accès directs, à droite de la barre. */
 	const shortcuts = [
 		{ label: 'Vues éclatées', href: '/vue-eclatee' },
-		{ label: 'Promos', href: '/recherche' },
 		{ label: 'Blog', href: '/blog' },
 		{ label: 'SAV & atelier', href: '/compte' }
 	];
@@ -74,6 +78,30 @@
 					</span>
 				</button>
 			{/each}
+
+			<!--
+				Les marques sont un axe d'entrée à part entière — beaucoup de
+				visiteurs cherchent « une pièce Husqvarna » avant de chercher un
+				rayon. Le panneau montre les principales ; la page complète prend
+				le relais pour les mille autres.
+			-->
+			{#if brands.length > 0}
+				<button
+					type="button"
+					onclick={() => toggle(BRANDS_ID)}
+					onmouseenter={() => (openId = BRANDS_ID)}
+					aria-expanded={openId === BRANDS_ID}
+					class="px-4 py-4 font-display text-sm font-bold tracking-[0.04em] text-white uppercase transition-colors {openId ===
+					BRANDS_ID
+						? 'bg-shop-blue-dark'
+						: 'hover:bg-shop-blue-dark/60'}"
+				>
+					Marques
+					<span class="ms-0.5 text-[11px] {openId === BRANDS_ID ? 'opacity-100' : 'opacity-60'}">
+						▾
+					</span>
+				</button>
+			{/if}
 		</div>
 
 		<div class="flex flex-wrap items-center gap-0.5">
@@ -87,6 +115,55 @@
 			{/each}
 		</div>
 	</div>
+
+	{#if openId === BRANDS_ID}
+		<div
+			class="absolute inset-x-0 top-full max-h-[70vh] overflow-y-auto border-b-[3px] border-shop-blue bg-white shadow-[0_18px_40px_rgba(30,36,54,0.18)]"
+		>
+			<div class="mx-auto w-full max-w-[1360px] px-4 py-6 sm:px-6 lg:px-8">
+				<p
+					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-muted uppercase"
+				>
+					Marques principales
+				</p>
+
+				<ul class="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+					{#each brands as brandLink (brandLink.id)}
+						<li>
+							<a
+								href="/marque/{brandLink.slug}"
+								class="flex h-full items-center gap-2.5 border-[1.5px] border-shop-border p-2 transition-colors hover:border-shop-ink"
+							>
+								{#if brandLink.logoUrl}
+									<img
+										src={brandLink.logoUrl}
+										alt=""
+										loading="lazy"
+										class="h-8 w-12 shrink-0 object-contain"
+									/>
+								{/if}
+								<span class="min-w-0 truncate font-display text-[13.5px] font-bold text-shop-ink">
+									{brandLink.name}
+								</span>
+							</a>
+						</li>
+					{/each}
+				</ul>
+
+				<div
+					class="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-shop-border pt-4 text-[13px] text-shop-muted"
+				>
+					<a
+						href="/marques"
+						class="font-display text-[13.5px] font-bold text-shop-red hover:underline"
+					>
+						Voir toutes les marques →
+					</a>
+					<span>Vous ne trouvez pas la vôtre ? La liste complète est consultable de A à Z.</span>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	{#if active}
 		<div
