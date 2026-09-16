@@ -30,11 +30,28 @@ const priceTtcStrike = sql<
 >`round(${product.priceHtStrike} * (1 + coalesce(${taxRule.rate}, 0) / 100), 2)`;
 
 /** Vignette : première image du produit (position la plus basse). */
-const thumbnail = sql<string | null>`(
-	SELECT m.url FROM ${productMedia} m
+/**
+ * Vignette : première image du produit, à défaut le logo de sa marque.
+ *
+ * 68 % du catalogue n'a aucune photo — héritage de la reprise. Afficher le logo
+ * du fabricant vaut mieux qu'un cadre vide : le client reconnaît au moins
+ * l'origine de la pièce. La distinction reste faite côté affichage, pour ne pas
+ * présenter un logo comme une photo du produit.
+ */
+const thumbnail = sql<string | null>`COALESCE(
+	(
+		SELECT m.url FROM ${productMedia} m
+		WHERE m.product_id = ${product.id} AND m.type = 'image'
+		ORDER BY m.position, m.id
+		LIMIT 1
+	),
+	${brand.logoUrl}
+)`;
+
+/** Vrai lorsque la vignette est un logo de marque et non une photo du produit. */
+const isBrandLogo = sql<boolean>`NOT EXISTS (
+	SELECT 1 FROM ${productMedia} m
 	WHERE m.product_id = ${product.id} AND m.type = 'image'
-	ORDER BY m.position, m.id
-	LIMIT 1
 )`;
 
 /** Champs communs des cartes produit (listes, vignettes, produits liés). */
@@ -47,7 +64,8 @@ const productCardFields = {
 	priceTtc,
 	priceTtcStrike,
 	brandName: brand.name,
-	imageUrl: thumbnail
+	imageUrl: thumbnail,
+	imageIsBrandLogo: isBrandLogo
 };
 
 export type ShopSort = 'new' | 'price_asc' | 'price_desc' | 'name';
@@ -330,9 +348,13 @@ export async function shopBrandFacets(params: ShopListParams, limit = 12) {
  */
 export async function shopSpecFacets(
 	params: ShopListParams,
-	{ maxNames = 6, maxValues = 8, minProducts }: { maxNames?: number; maxValues?: number; minProducts?: number } = {}
+	{
+		maxNames = 6,
+		maxValues = 8,
+		minProducts
+	}: { maxNames?: number; maxValues?: number; minProducts?: number } = {}
 ) {
-	const threshold = minProducts ?? (await smallCatalogScope(params) ? 2 : 5);
+	const threshold = minProducts ?? ((await smallCatalogScope(params)) ? 2 : 5);
 	// Les caractéristiques déjà retenues ne restreignent pas le décompte des
 	// autres : sinon les options disparaîtraient au fur et à mesure des clics.
 	const conditions = listConditions({ ...params, specs: undefined, secondaryCategories: false });
@@ -344,11 +366,7 @@ export async function shopSpecFacets(
 		params.brandIds?.join(',') ?? ''
 	}-${params.inStockOnly ? '1' : ''}-${maxNames}-${maxValues}-${threshold}`;
 
-	return cached(
-		cacheKey,
-		() => computeSpecFacets(conditions, maxNames, maxValues, threshold),
-		600
-	);
+	return cached(cacheKey, () => computeSpecFacets(conditions, maxNames, maxValues, threshold), 600);
 }
 
 /**
@@ -521,6 +539,8 @@ export async function getShopProduct(id: number) {
 			taxRate: taxRule.rate,
 			brandName: brand.name,
 			brandSlug: brand.slug,
+			/** Sert de repli visuel sur une fiche sans photo. */
+			brandLogoUrl: brand.logoUrl,
 			categoryId: product.categoryId
 		})
 		.from(product)

@@ -105,6 +105,14 @@
 					alt={images[activeIndex]?.alt ?? product.name}
 					class="max-h-full max-w-full object-contain"
 				/>
+			{:else if product.brandLogoUrl}
+				<!-- Aucune photo : le logo de la marque vaut mieux qu'un cadre vide
+				     sur une fiche de pièce détachée. -->
+				<img
+					src={product.brandLogoUrl}
+					alt={product.brandName ?? ''}
+					class="max-h-full max-w-full object-contain"
+				/>
 			{:else}
 				<ImagePlaceholder label="Photo produit" class="border-0" />
 			{/if}

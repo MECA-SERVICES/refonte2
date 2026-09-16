@@ -48,9 +48,15 @@
 		class="relative flex aspect-square items-center justify-center border-b border-shop-border/60 p-3"
 	>
 		{#if product.imageUrl}
+			<!--
+				Faute de photo, on affiche le logo de la marque : 68 % du catalogue
+				n'en a aucune, et un logo renseigne mieux qu'un cadre vide. Le texte
+				alternatif reste celui de la marque, pour qu'un lecteur d'écran
+				n'annonce pas une photo du produit.
+			-->
 			<img
 				src={product.imageUrl}
-				alt={product.name}
+				alt={product.imageIsBrandLogo ? (product.brandName ?? '') : product.name}
 				loading="lazy"
 				class="max-h-full max-w-full object-contain"
 			/>

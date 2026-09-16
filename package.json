@@ -30,7 +30,8 @@
     "tax:seed": "node --experimental-strip-types --no-warnings scripts/seed-tax-rules.ts",
     "addresses:backfill": "node --experimental-strip-types --no-warnings scripts/backfill-default-addresses.ts",
     "blog:seed": "node --experimental-strip-types --no-warnings scripts/seed-blog.ts",
-    "machines:purge": "node --experimental-strip-types --no-warnings scripts/purge-machine-proposals.ts"
+    "machines:purge": "node --experimental-strip-types --no-warnings scripts/purge-machine-proposals.ts",
+    "brands:logos": "node --experimental-strip-types --no-warnings scripts/import-brand-logos.ts"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1094.0",

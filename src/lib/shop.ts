@@ -11,6 +11,8 @@ export type ProductCard = {
 	priceTtcStrike: string | null;
 	brandName: string | null;
 	imageUrl: string | null;
+	/** Vrai si la vignette est le logo de la marque, faute de photo produit. */
+	imageIsBrandLogo?: boolean;
 };
 
 /** URL canonique d'une fiche produit (id + slug, sur le modèle de l'ancienne boutique). */
