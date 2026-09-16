@@ -38,7 +38,11 @@
 	elle qui fait foi sur un catalogue de pièces. Le prix reprend le bleu de
 	marque, le rouge reste réservé à l'action d'achat.
 -->
-<article class="flex h-full flex-col border-[1.5px] border-shop-border bg-white">
+<!--
+	`relative` sert de repère au lien d'ensemble posé plus bas : sans lui, la zone
+	cliquable se calerait sur la page entière.
+-->
+<article class="relative flex h-full flex-col border-[1.5px] border-shop-border bg-white">
 	<a
 		href={shopProductPath(product)}
 		class="relative flex aspect-square items-center justify-center border-b border-shop-border/60 p-3"
@@ -77,10 +81,17 @@
 			reste lisible au survol et pour les lecteurs d'écran.
 		-->
 		<h3 class="font-display text-[15.5px] leading-tight font-semibold text-shop-ink">
+			<!--
+				`after:absolute after:inset-0` étend la zone cliquable à toute la
+				carte : marque, référence et prix ne captaient rien, et le bouton
+				désactivé avalait les clics sans conduire nulle part. Les éléments
+				interactifs placés au-dessus (le formulaire d'achat) restent
+				accessibles grâce à leur `relative z-10`.
+			-->
 			<a
 				href={shopProductPath(product)}
 				title={product.name}
-				class="line-clamp-2 block min-h-[2.5rem] hover:text-shop-blue"
+				class="line-clamp-2 block min-h-[2.5rem] after:absolute after:inset-0 after:content-[''] hover:text-shop-blue"
 			>
 				{product.name}
 			</a>
@@ -110,7 +121,7 @@
 				{available ? `En stock (${product.stock})` : 'Sur commande'}
 			</p>
 
-			<form method="POST" action="/panier?/add" use:enhance={addToCart}>
+			<form method="POST" action="/panier?/add" use:enhance={addToCart} class="relative z-10">
 				<input type="hidden" name="productId" value={product.id} />
 				<input type="hidden" name="quantity" value="1" />
 				<ShopButton type="submit" variant="buy" size="sm" block disabled={!available}>

@@ -12,7 +12,13 @@
 		<li>
 			<a href="/" class="hover:text-shop-blue hover:underline">Accueil</a>
 		</li>
-		{#each items as item (item.label)}
+		<!--
+			La clé est la position, non le libellé : le catalogue repris de
+			PrestaShop compte des catégories homonymes — deux « Entretoises », par
+			exemple — et un libellé dupliqué dans un même fil interrompait le rendu
+			de la page.
+		-->
+		{#each items as item, i (i)}
 			<li aria-hidden="true"><ChevronRightOutline class="h-3.5 w-3.5" /></li>
 			<li>
 				{#if item.href}

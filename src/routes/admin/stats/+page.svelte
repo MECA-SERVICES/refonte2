@@ -206,7 +206,7 @@
 			<ul
 				class="mt-4 divide-y divide-gray-100 border-t border-gray-100 dark:divide-gray-800 dark:border-gray-800"
 			>
-				{#each data.products.slice(0, 5) as product (product.name)}
+				{#each data.products.slice(0, 5) as product, i (i)}
 					<li class="flex items-center justify-between gap-3 py-2 text-sm">
 						<span class="min-w-0 truncate text-gray-700 dark:text-gray-300">{product.name}</span>
 						<span class="shrink-0 text-gray-500 tabular-nums">

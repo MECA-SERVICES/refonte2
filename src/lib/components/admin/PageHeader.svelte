@@ -20,7 +20,9 @@
 <div class="mb-6">
 	{#if crumbs.length > 0}
 		<Breadcrumb class="mb-3">
-			{#each crumbs as crumb (crumb.label)}
+			<!-- Clé positionnelle : deux catégories homonymes peuvent cohabiter dans un
+			     même fil (catalogue repris de PrestaShop). -->
+			{#each crumbs as crumb, i (i)}
 				<BreadcrumbItem href={crumb.href}>{crumb.label}</BreadcrumbItem>
 			{/each}
 		</Breadcrumb>
