@@ -77,7 +77,8 @@
 		<!-- Ligne marque toujours présente, même vide : sans elle, les titres
 		     ne s'aligneraient pas d'une carte à l'autre. -->
 		<p class="min-h-4 text-xs font-bold tracking-[0.1em] text-shop-muted uppercase">
-			{product.brandName ?? ''}
+			<!-- Le préfixe n'apparaît qu'avec une marque : seul, il n'annoncerait rien. -->
+			{#if product.brandName}Marque : {product.brandName}{/if}
 		</p>
 
 		<!--
