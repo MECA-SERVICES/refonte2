@@ -33,7 +33,11 @@
 	const saved = $derived(
 		product.priceTtcStrike ? Number(product.priceTtcStrike) - Number(product.priceTtc) : 0
 	);
-	const available = $derived(product.stock > 0);
+	/*
+	 * Un article réservé à la boutique physique n'est pas commandable, même en
+	 * stock : le serveur refuserait l'ajout, autant ne pas proposer le bouton.
+	 */
+	const available = $derived(product.stock > 0 && product.availableForOrder !== false);
 
 	/**
 	 * `use:enhance` sans argument recharge déjà les données après l'action — donc

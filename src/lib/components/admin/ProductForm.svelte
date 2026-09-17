@@ -76,6 +76,7 @@
 	let taxRuleId = $state(untrack(() => val(product?.taxRuleId)));
 	let purchasePrice = $state(untrack(() => val(product?.purchasePrice)));
 	let isActive = $state(untrack(() => product?.isActive ?? true));
+	let availableForOrder = $state(untrack(() => product?.availableForOrder ?? true));
 	let mainCategoryId = $state(untrack(() => val(product?.categoryId)));
 	let selectedCategoryIds = $state(untrack(() => [...initialCategoryIds]));
 
@@ -212,55 +213,22 @@
 		<div>
 			<!-- ===== Paramètres de base ===== -->
 			<TabPanel id="general" {selected}>
-				<!-- Les images en premier, en haut à gauche : c'est la disposition PrestaShop. -->
-				{#if mediaPanel}
-					{@render mediaPanel()}
-				{/if}
-
+				<!--
+					Ordre de l'onglet « Paramètres de base » de PrestaShop 1.7 :
+					nom, images, résumé, description, catégories, marque, prix.
+					Les références (SKU, EAN, fournisseur) sont dans « Options »,
+					comme chez PrestaShop.
+				-->
 				<Card class="max-w-none p-6">
-					<div class="grid gap-4 sm:grid-cols-2">
-						<div class="sm:col-span-2">
-							<Label for="name" class="mb-2">Nom du produit</Label>
-							<Input id="name" name="name" required value={product?.name ?? ''} />
-						</div>
-						<div>
-							<Label for="reference" class="mb-2">Référence (SKU)</Label>
-							<Input id="reference" name="reference" required value={product?.reference ?? ''} />
-						</div>
-						<div>
-							<Label for="supplierReference" class="mb-2">Référence fournisseur</Label>
-							<Input
-								id="supplierReference"
-								name="supplierReference"
-								value={product?.supplierReference ?? ''}
-							/>
-						</div>
-						<div>
-							<Label for="ean13" class="mb-2">Code-barres (EAN13)</Label>
-							<Input id="ean13" name="ean13" value={product?.ean13 ?? ''} maxlength={13} />
-						</div>
-						<div>
-							<Label for="brandId" class="mb-2">Marque</Label>
-							<Select
-								id="brandId"
-								name="brandId"
-								placeholder=""
-								value={val(product?.brandId)}
-								items={[{ value: '', name: 'Aucune' }, ...brandOptions]}
-							/>
-						</div>
+					<div>
+						<Label for="name" class="mb-2">Nom du produit</Label>
+						<Input id="name" name="name" required value={product?.name ?? ''} />
 					</div>
 				</Card>
 
-				<!-- Rattachement aux catégories, façon PrestaShop : principale + arborescence. -->
-				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Catégories</h2>
-					<CategoryPicker
-						categories={categoryTree}
-						bind:mainCategoryId
-						bind:selectedIds={selectedCategoryIds}
-					/>
-				</Card>
+				{#if mediaPanel}
+					{@render mediaPanel()}
+				{/if}
 
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Description</h2>
@@ -285,6 +253,59 @@
 								rows={6}
 								value={product?.description ?? ''}
 							/>
+						</div>
+					</div>
+				</Card>
+
+				<!-- Rattachement aux catégories : principale + arborescence. -->
+				<Card class="max-w-none p-6">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Catégories</h2>
+					<CategoryPicker
+						categories={categoryTree}
+						bind:mainCategoryId
+						bind:selectedIds={selectedCategoryIds}
+					/>
+				</Card>
+
+				<Card class="max-w-none p-6">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Marque</h2>
+					<Select
+						id="brandId"
+						name="brandId"
+						placeholder=""
+						value={val(product?.brandId)}
+						items={[{ value: '', name: 'Aucune' }, ...brandOptions]}
+					/>
+				</Card>
+
+				<!--
+					Rappel du prix en bas de l'onglet, comme PrestaShop : on saisit
+					ici le prix courant sans quitter la page, le détail restant dans
+					l'onglet « Tarifs ».
+				-->
+				<Card class="max-w-none p-6">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prix</h2>
+					<div class="grid gap-4 sm:grid-cols-3">
+						<div>
+							<Label for="priceHtQuick" class="mb-2">Prix HT (€)</Label>
+							<Input
+								id="priceHtQuick"
+								type="number"
+								step="0.01"
+								bind:value={priceHt}
+								aria-describedby="priceHtQuickHelp"
+							/>
+							<p id="priceHtQuickHelp" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Champ lié à l'onglet « Tarifs ».
+							</p>
+						</div>
+						<div>
+							<Label class="mb-2">Prix TTC</Label>
+							<div
+								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+							>
+								{ttcPreview ? `${ttcPreview} €` : '—'}
+							</div>
 						</div>
 					</div>
 				</Card>
@@ -391,6 +412,26 @@
 
 			<!-- ===== Tarifs ===== -->
 			<TabPanel id="price" {selected}>
+				<!-- Ordre PrestaShop : prix d'achat, puis prix de vente, écotaxe, TVA. -->
+				<Card class="max-w-none p-6">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prix d'achat</h2>
+					<div class="grid gap-4 sm:grid-cols-3">
+						<div>
+							<Label for="purchasePrice" class="mb-2">Prix d'achat HT (€)</Label>
+							<Input
+								id="purchasePrice"
+								name="purchasePrice"
+								type="number"
+								step="0.01"
+								bind:value={purchasePrice}
+							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Jamais affiché en boutique. Sert au calcul de la marge.
+							</p>
+						</div>
+					</div>
+				</Card>
+
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prix de vente</h2>
 					<div class="grid gap-4 sm:grid-cols-3">
@@ -427,6 +468,20 @@
 							</div>
 						</div>
 						<div>
+							<Label for="ecotax" class="mb-2">Écotaxe TTC (€)</Label>
+							<Input
+								id="ecotax"
+								name="ecotax"
+								type="number"
+								step="0.01"
+								min="0"
+								value={val(product?.ecotax)}
+							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Incluse dans le prix affiché, détaillée sur la fiche produit.
+							</p>
+						</div>
+						<div>
 							<Label for="priceHtStrike" class="mb-2">Prix barré HT (€)</Label>
 							<Input
 								id="priceHtStrike"
@@ -435,16 +490,9 @@
 								step="0.01"
 								value={val(product?.priceHtStrike)}
 							/>
-						</div>
-						<div>
-							<Label for="purchasePrice" class="mb-2">Prix d'achat HT (€)</Label>
-							<Input
-								id="purchasePrice"
-								name="purchasePrice"
-								type="number"
-								step="0.01"
-								bind:value={purchasePrice}
-							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Prix de référence barré, pour une promotion.
+							</p>
 						</div>
 					</div>
 				</Card>
@@ -519,21 +567,48 @@
 						<p class="text-xs text-gray-500 dark:text-gray-400">
 							Un produit inactif reste accessible en administration mais disparaît de la boutique.
 						</p>
+
+						<!--
+							Champ caché : une case décochée n'est pas envoyée par le
+							navigateur. Sans lui, impossible de distinguer « décoché »
+							de « absent du formulaire ».
+						-->
+						<input type="hidden" name="availableForOrder" value={availableForOrder ? 'on' : ''} />
+						<Toggle bind:checked={availableForOrder}>Disponible à la commande</Toggle>
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							Décoché, le produit reste visible en boutique mais ne peut pas être ajouté au panier.
+							Utile pour une pièce présentée au catalogue sans être vendue en ligne.
+						</p>
 					</div>
 				</Card>
 
+				<!-- Les références sont dans « Options » chez PrestaShop 1.7. -->
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Références</h2>
-					<div class="grid gap-4 text-sm sm:grid-cols-2">
-						<div class="flex justify-between border-b border-gray-100 py-2 dark:border-gray-800">
-							<span class="text-gray-500 dark:text-gray-400">Identifiant</span>
-							<span class="font-medium text-gray-900 dark:text-white">{productId ?? '—'}</span>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div>
+							<Label for="reference" class="mb-2">Référence (SKU)</Label>
+							<Input id="reference" name="reference" required value={product?.reference ?? ''} />
 						</div>
-						<div class="flex justify-between border-b border-gray-100 py-2 dark:border-gray-800">
-							<span class="text-gray-500 dark:text-gray-400">Code-barres</span>
-							<span class="font-medium text-gray-900 dark:text-white">
-								{product?.ean13 || '—'}
-							</span>
+						<div>
+							<Label for="ean13" class="mb-2">Code-barres (EAN13)</Label>
+							<Input id="ean13" name="ean13" value={product?.ean13 ?? ''} maxlength={13} />
+						</div>
+						<div>
+							<Label for="supplierReference" class="mb-2">Référence fournisseur</Label>
+							<Input
+								id="supplierReference"
+								name="supplierReference"
+								value={product?.supplierReference ?? ''}
+							/>
+						</div>
+						<div>
+							<Label class="mb-2">Identifiant</Label>
+							<div
+								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+							>
+								{productId ?? '—'}
+							</div>
 						</div>
 					</div>
 				</Card>

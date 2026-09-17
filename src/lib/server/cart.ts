@@ -36,6 +36,8 @@ export type CartLine = {
 	imageUrl: string | null;
 	stock: number;
 	isActive: boolean;
+	/** Faux : article réservé à la boutique physique (CDC 18, R7). */
+	availableForOrder: boolean;
 	priceHt: string;
 	priceTtc: string;
 	ecotax: string;
@@ -125,6 +127,7 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 			imageUrl: firstImageSql(product.id),
 			stock: product.stock,
 			isActive: product.isActive,
+			availableForOrder: product.availableForOrder,
 			priceHt: product.priceHt,
 			priceTtc: priceTtcSql,
 			/** Éco-participation, à présenter séparément du prix (CDC 10, R6). */
@@ -141,7 +144,7 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 
 /** Un article désactivé ou en rupture bloque le passage en commande (règle R7). */
 function isBlocking(line: CartLine) {
-	return !line.isActive || line.stock <= 0;
+	return !line.isActive || !line.availableForOrder || line.stock <= 0;
 }
 
 /**
@@ -191,14 +194,22 @@ export async function addToCart(
 	const quantity = Math.max(1, Math.trunc(input.quantity) || 1);
 
 	const [item] = await db
-		.select({ stock: product.stock, isActive: product.isActive, priceHt: product.priceHt })
+		.select({
+			stock: product.stock,
+			isActive: product.isActive,
+			availableForOrder: product.availableForOrder,
+			priceHt: product.priceHt
+		})
 		.from(product)
 		.where(eq(product.id, input.productId))
 		.limit(1);
 
 	if (!item) return { ok: false, reason: 'not_found' };
-	// Un article inactif ou sans disponibilité ne peut pas être ajouté (règle R7).
-	if (!item.isActive || item.stock <= 0) return { ok: false, reason: 'unavailable' };
+	// Un article inactif, réservé à la boutique physique, ou sans disponibilité
+	// ne peut pas être ajouté (règle R7).
+	if (!item.isActive || !item.availableForOrder || item.stock <= 0) {
+		return { ok: false, reason: 'unavailable' };
+	}
 
 	const target = await findOrCreateCart(owner);
 	const variantId = input.variantId ?? null;
