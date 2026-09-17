@@ -419,6 +419,18 @@ export const ORDER_STATE_SEED = [
  *  régénéré, sous peine de casser la continuité de la numérotation légale.
  * ────────────────────────────────────────────────────────────────────────────
  */
+/** Une ligne du bloc « Détail des taxes » d'une facture. */
+export type InvoiceTaxLine = {
+	/** Intitulé de l'assiette : « Produits », « Livraison »… */
+	label: string;
+	/** Taux appliqué, en pourcentage (20 pour 20 %). */
+	rate: number;
+	/** Assiette hors taxes. */
+	baseHt: number;
+	/** Montant de TVA correspondant. */
+	taxAmount: number;
+};
+
 export const orderInvoice = pgTable(
 	'order_invoice',
 	{
@@ -444,12 +456,28 @@ export const orderInvoice = pgTable(
 		shopAddress: text('shop_address'),
 		note: text('note'),
 
+		/**
+		 * Ventilation de TVA par taux, telle qu'imprimée (CDC 24, R7).
+		 *
+		 * Figée à l'émission : une facture émise ne se recalcule jamais (R4), et
+		 * les taux comme le statut du client peuvent changer ensuite.
+		 */
+		taxBreakdown: jsonb('tax_breakdown').$type<InvoiceTaxLine[] | null>(),
+		/** Régime fiscal retenu, et sa mention légale (R7). */
+		taxRegime: text('tax_regime'),
+		taxMention: text('tax_mention'),
+
+		/** Date d'émission — distincte de l'insertion en base pour l'historique migré. */
+		issuedAt: timestamp('issued_at', { withTimezone: true }),
+
 		legacyPsId: integer('legacy_ps_id'),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
 		index('order_invoice_order_idx').on(t.orderId),
-		index('order_invoice_number_idx').on(t.number)
+		index('order_invoice_number_idx').on(t.number),
+		// R1/R2 : un numéro n'est jamais réutilisé ni dupliqué.
+		uniqueIndex('order_invoice_number_unique').on(t.number)
 	]
 );
 

@@ -169,6 +169,13 @@
       "when": 1789551704482,
       "tag": "0025_brand_page",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789657485714,
+      "tag": "0026_facture",
+      "breakpoints": true
     }
   ]
 }

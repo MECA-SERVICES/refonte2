@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { issueInvoice } from '$lib/server/invoicing';
 import {
 	order,
 	orderLine,
@@ -280,6 +281,18 @@ export async function changeOrderState(input: {
 			changedBy: input.changedBy ?? null,
 			note: input.note ?? null
 		});
+
+		/*
+		 * Facture émise au passage à un état payé (CDC 24, R24).
+		 *
+		 * Pas à la création : une commande en attente de virement peut ne
+		 * jamais être payée, et lui attribuer un numéro légal créerait un trou
+		 * dans la séquence comptable pour rien. `issueInvoice` est idempotent,
+		 * un aller-retour entre états payés ne produit donc qu'une facture.
+		 */
+		if (state.isPaid) {
+			await issueInvoice(input.orderId, tx);
+		}
 	});
 }
 

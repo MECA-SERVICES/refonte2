@@ -89,6 +89,24 @@
 	</Panel>
 {/if}
 
+{#if data.invoiceNumber}
+	<Panel class="mt-5 p-4" tone="subtle">
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<p class="text-[14.5px] text-shop-ink">
+				<span class="font-semibold">Facture {data.invoiceNumber}</span>
+			</p>
+			<a
+				href="/compte/commandes/{order.id}/facture"
+				target="_blank"
+				rel="noopener"
+				class="border-[1.5px] border-shop-ink px-3.5 py-2 font-display text-sm font-bold text-shop-ink hover:bg-shop-ink hover:text-white"
+			>
+				Télécharger le PDF
+			</a>
+		</div>
+	</Panel>
+{/if}
+
 <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
 	<!-- ================= Articles ================= -->
 	<Panel class="p-5">

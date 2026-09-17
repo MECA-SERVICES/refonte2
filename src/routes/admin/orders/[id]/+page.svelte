@@ -389,6 +389,22 @@
 			{/if}
 		</Card>
 
+		<!-- Documents (CDC 24) -->
+		<Card class="max-w-none p-6">
+			<h2 class="mb-1 text-base font-semibold text-gray-900 dark:text-white">Documents</h2>
+			<p class="mb-4 text-xs text-gray-500">
+				{#if data.invoiceNumber}
+					Facture {data.invoiceNumber} — émise le {data.invoiceIssuedAt}.
+				{:else}
+					Aucune facture émise. Le numéro sera attribué au premier téléchargement.
+				{/if}
+			</p>
+
+			<Button href="/admin/orders/{o.id}/facture" target="_blank" rel="noopener" size="sm">
+				Facture PDF
+			</Button>
+		</Card>
+
 		<!-- Historique -->
 		<Card class="max-w-none p-6">
 			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Historique</h2>

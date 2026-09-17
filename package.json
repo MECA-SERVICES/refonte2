@@ -25,6 +25,7 @@
     "migrate:ps:verify": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts --only=verify",
     "auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
     "audit:front": "node --experimental-strip-types --no-warnings scripts/audit-front.ts",
+    "invoices:seq": "node --experimental-strip-types --no-warnings scripts/set-invoice-sequence.ts",
     "specs:analyze": "node --experimental-strip-types --no-warnings scripts/extract-product-specs.ts --dry-run",
     "specs:extract": "node --experimental-strip-types --no-warnings scripts/extract-product-specs.ts",
     "tax:seed": "node --experimental-strip-types --no-warnings scripts/seed-tax-rules.ts",
@@ -77,5 +78,10 @@
     "vite": "^8.0.16",
     "vitest": "^4.1.8",
     "vitest-browser-svelte": "^2.1.1"
+  },
+  "dependencies": {
+    "@types/pdfmake": "^0.3.3",
+    "pdfmake": "^0.3.11",
+    "unicode-properties": "^1.4.1"
   }
 }
