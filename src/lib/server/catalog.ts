@@ -468,7 +468,19 @@ export function parseProductForm(form: FormData) {
 			lengthCm: num(form.get('lengthCm')),
 			widthCm: num(form.get('widthCm')),
 			heightCm: num(form.get('heightCm')),
-			shippingExtraFee: num(form.get('shippingExtraFee'))
+			shippingExtraFee: num(form.get('shippingExtraFee')),
+			// Écotaxe : déjà affichée sur la fiche et comptée au panier, elle
+			// n'était jusqu'ici modifiable que directement en base. La colonne
+			// est NOT NULL : un champ vide vaut zéro, pas « non renseigné ».
+			ecotax: num(form.get('ecotax')) ?? '0',
+			/*
+			 * Disponibilité à la commande.
+			 *
+			 * Une case décochée n'est pas envoyée par le navigateur : l'absence
+			 * vaut donc `false`, sauf à la création où la valeur par défaut est
+			 * `true` (le champ caché du formulaire garantit la présence).
+			 */
+			availableForOrder: form.get('availableForOrder') != null
 		}
 	};
 }

@@ -549,6 +549,8 @@ export async function getShopProduct(id: number) {
 			priceTtcStrike,
 			/** Éco-participation, affichée distinctement du prix (CDC 10, R6). */
 			ecotax: product.ecotax,
+			/** Faux : article présenté au catalogue mais non vendu en ligne (R7). */
+			availableForOrder: product.availableForOrder,
 			taxRate: taxRule.rate,
 			brandName: brand.name,
 			brandSlug: brand.slug,
