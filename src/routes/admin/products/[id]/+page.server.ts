@@ -13,7 +13,9 @@ import {
 	addMedia,
 	deleteMedia,
 	recordStockMovement,
-	setProductCategories
+	setProductCategories,
+	addProductRelation,
+	removeProductRelation
 } from '$lib/server/catalog';
 import type { StockMovementType } from '$lib/server/db/catalog.schema';
 
@@ -143,6 +145,24 @@ export const actions: Actions = {
 			alt: form.get('alt')?.toString().trim() || null,
 			position: Number(form.get('position')?.toString() ?? '0') || 0
 		});
+		return { success: true };
+	},
+
+	addRelation: async ({ request, params }) => {
+		const id = idParam(params);
+		const form = await request.formData();
+		const reference = form.get('reference')?.toString().trim();
+		if (!reference) return fail(400, { relationError: 'La référence est requise.' });
+
+		const result = await addProductRelation(id, reference);
+		if ('error' in result) return fail(400, { relationError: result.error });
+		return { success: true };
+	},
+
+	removeRelation: async ({ request }) => {
+		const form = await request.formData();
+		const rid = Number(form.get('relationId')?.toString());
+		if (Number.isInteger(rid)) await removeProductRelation(rid);
 		return { success: true };
 	},
 

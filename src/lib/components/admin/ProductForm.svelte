@@ -42,7 +42,8 @@
 		productId,
 		stockPanel,
 		variantsPanel,
-		mediaPanel
+		mediaPanel,
+		relationsPanel
 	}: {
 		product?: Partial<Product>;
 		brandOptions: { value: string; name: string }[];
@@ -60,6 +61,7 @@
 		stockPanel?: Snippet;
 		variantsPanel?: Snippet;
 		mediaPanel?: Snippet;
+		relationsPanel?: Snippet;
 	} = $props();
 
 	function val(n: number | string | null | undefined): string {
@@ -612,6 +614,10 @@
 						</div>
 					</div>
 				</Card>
+
+				{#if relationsPanel}
+					{@render relationsPanel()}
+				{/if}
 			</TabPanel>
 		</div>
 

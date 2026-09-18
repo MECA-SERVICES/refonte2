@@ -312,7 +312,23 @@ export async function getProductFull(id: number) {
 			.from(productMedia)
 			.where(eq(productMedia.productId, id))
 			.orderBy(asc(productMedia.position)),
-		db.select().from(productRelation).where(eq(productRelation.fromProductId, id)),
+		// Produits associés : le nom et la référence sont joints, sinon la liste
+		// n'afficherait que des identifiants.
+		db
+			.select({
+				id: productRelation.id,
+				type: productRelation.type,
+				position: productRelation.position,
+				productId: product.id,
+				name: product.name,
+				reference: product.reference,
+				isActive: product.isActive
+			})
+			.from(productRelation)
+			.innerJoin(product, eq(product.id, productRelation.toProductId))
+			.where(eq(productRelation.fromProductId, id))
+			.orderBy(asc(productRelation.position), asc(product.name))
+			.limit(50),
 		db
 			.select()
 			.from(stockMovement)
@@ -558,4 +574,38 @@ export async function recordStockMovement(input: {
 
 		return movement;
 	});
+}
+
+// ----- Produits associés -----
+
+/**
+ * Associe un produit à un autre par sa référence (CDC 10).
+ *
+ * La liaison est orientée : associer A à B ne rend pas B associé à A. C'est le
+ * comportement de PrestaShop, dont les 174 797 liaisons ont été reprises.
+ */
+export async function addProductRelation(fromProductId: number, reference: string) {
+	const [target] = await db
+		.select({ id: product.id })
+		.from(product)
+		.where(eq(product.reference, reference))
+		.limit(1);
+
+	if (!target) return { error: 'Aucun produit ne porte cette référence.' as const };
+	if (target.id === fromProductId) {
+		return { error: 'Un produit ne peut pas être associé à lui-même.' as const };
+	}
+
+	await db
+		.insert(productRelation)
+		.values({ fromProductId, toProductId: target.id, type: 'accessory', position: 0 })
+		// L'index unique absorbe une association déjà existante.
+		.onConflictDoNothing();
+
+	return { ok: true as const };
+}
+
+/** Retire une association. */
+export async function removeProductRelation(relationId: number) {
+	await db.delete(productRelation).where(eq(productRelation.id, relationId));
 }
