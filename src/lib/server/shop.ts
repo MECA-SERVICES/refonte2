@@ -529,6 +529,9 @@ export function latestShopProducts(limit = 8) {
 export type ShopProductCard = Awaited<ReturnType<typeof latestShopProducts>>[number];
 
 /** Fiche produit publique : produit actif + galerie, variantes, produits liés, fil d'Ariane. */
+/** Nombre maximal de produits associés affichés sur une fiche. */
+const RELATED_LIMIT = 12;
+
 export async function getShopProduct(id: number) {
 	const [row] = await db
 		.select({
@@ -584,7 +587,11 @@ export async function getShopProduct(id: number) {
 			.leftJoin(brand, eq(product.brandId, brand.id))
 			.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
 			.where(and(eq(productRelation.fromProductId, id), eq(product.isActive, true)))
-			.orderBy(asc(productRelation.position)),
+			.orderBy(asc(productRelation.position))
+			// Certains produits ont plusieurs milliers d'accessoires dans le
+			// catalogue repris : sans plafond, la fiche chargerait autant de
+			// cartes que de liaisons.
+			.limit(RELATED_LIMIT),
 		row.categoryId != null ? getCategoryBreadcrumb(row.categoryId) : Promise.resolve([]),
 		// Caractéristiques extraites des tableaux de la description.
 		db

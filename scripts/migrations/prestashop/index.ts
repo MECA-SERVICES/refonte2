@@ -51,6 +51,7 @@ import { reclassifyTask } from './tasks/09-reclassify.ts';
 import { productTaxonomyTask } from './tasks/10-product-taxonomy.ts';
 import { compatibilityTask } from './tasks/11-compatibility.ts';
 import { replacementsTask } from './tasks/12-replacements.ts';
+import { accessoriesTask } from './tasks/16-accessories.ts';
 import { customersTask } from './tasks/13-customers.ts';
 import { orderStatesTask } from './tasks/14-order-states.ts';
 import { ordersTask } from './tasks/15-orders.ts';
@@ -103,6 +104,7 @@ const tasks = [
 	// `reclassify` a désactivé les 18 803 obsolètes ; celle-ci les relie à leur
 	// remplaçant, pour que ces fiches ne soient pas des culs-de-sac (§7 n°10).
 	replacementsTask,
+	accessoriesTask,
 	// ── Domaine commandes ─────────────────────────────────────────────────────
 	// Indépendant du catalogue : `orders` rattache les produits quand il les
 	// trouve, mais une ligne de commande garde son libellé et son prix même si

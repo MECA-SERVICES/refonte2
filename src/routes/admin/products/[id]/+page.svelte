@@ -267,6 +267,62 @@
 	</Card>
 {/snippet}
 
+{#snippet relationsPanel()}
+	<Card class="max-w-none p-6">
+		<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+			Produits associés ({p.relations.length})
+		</h2>
+		<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+			Affichés en bas de la fiche produit, sous « Vous aimerez aussi ». Repris de PrestaShop.
+		</p>
+
+		{#if p.relations.length === 0}
+			<p class="text-sm text-gray-500 dark:text-gray-400">Aucun produit associé.</p>
+		{:else}
+			<ul class="divide-y divide-gray-100 dark:divide-gray-800">
+				{#each p.relations as relation (relation.id)}
+					<li class="flex items-center justify-between gap-3 py-2">
+						<div class="min-w-0">
+							<a
+								href="/admin/products/{relation.productId}"
+								class="block truncate text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
+							>
+								{relation.name}
+							</a>
+							<span class="text-xs text-gray-500 dark:text-gray-400">
+								{relation.reference}
+								{#if relation.type !== 'accessory'}· {relation.type}{/if}
+								{#if !relation.isActive}· inactif{/if}
+							</span>
+						</div>
+						<form method="POST" action="?/removeRelation" use:enhance>
+							<input type="hidden" name="relationId" value={relation.id} />
+							<Button type="submit" size="xs" color="alternative">Retirer</Button>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
+		{#if form?.relationError}
+			<p class="mt-3 text-sm text-red-600">{form.relationError}</p>
+		{/if}
+
+		<div class="mt-4 flex items-end gap-3">
+			<div class="flex-1">
+				<Label for="relation-ref" class="mb-2">Ajouter par référence</Label>
+				<Input
+					id="relation-ref"
+					name="reference"
+					form="relation-form"
+					placeholder="Référence du produit à associer"
+				/>
+			</div>
+			<Button type="submit" form="relation-form" size="sm">Associer</Button>
+		</div>
+	</Card>
+{/snippet}
+
 <ProductForm
 	product={p}
 	brandOptions={data.brandOptions}
@@ -280,6 +336,7 @@
 	{stockPanel}
 	{variantsPanel}
 	{mediaPanel}
+	{relationsPanel}
 />
 
 <!--
@@ -295,6 +352,7 @@
 ></form>
 <form id="variant-form" method="POST" action="?/addVariant" use:enhance class="hidden"></form>
 <form id="media-form" method="POST" action="?/addMedia" use:enhance class="hidden"></form>
+<form id="relation-form" method="POST" action="?/addRelation" use:enhance class="hidden"></form>
 
 <form method="POST" action="?/delete" bind:this={deleteForm} class="hidden"></form>
 
