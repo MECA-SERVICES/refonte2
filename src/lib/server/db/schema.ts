@@ -6,3 +6,4 @@ export * from './order.schema';
 export * from './cms.schema';
 export * from './blog.schema';
 export * from './machine.schema';
+export * from './repair.schema';

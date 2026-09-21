@@ -20,6 +20,7 @@
 		{ href: '/compte', label: 'Tableau de bord' },
 		{ href: '/compte/commandes', label: 'Mes commandes' },
 		{ href: '/compte/machines', label: 'Mon parc machines' },
+		{ href: '/compte/reparations', label: 'Mes réparations' },
 		{ href: '/compte/adresses', label: 'Mes adresses' }
 	];
 

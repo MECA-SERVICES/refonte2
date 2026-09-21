@@ -355,7 +355,8 @@ export const stockMovementType = [
 	'out', // sortie manuelle
 	'adjustment', // ajustement d'inventaire (correction)
 	'order', // décrément suite à une commande
-	'return' // incrément suite à un retour
+	'return', // incrément suite à un retour
+	'repair' // pièce consommée sur un ordre de réparation (CDC 31, R6/R7)
 ] as const;
 export type StockMovementType = (typeof stockMovementType)[number];
 
