@@ -1,8 +1,19 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Alert, Badge, Button, Card, Input, Label, Textarea, Toggle } from 'flowbite-svelte';
+	import {
+		Alert,
+		Badge,
+		Button,
+		Card,
+		Input,
+		Label,
+		Select,
+		Textarea,
+		Toggle
+	} from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
 	import { PageHeader } from '$lib/components/admin';
+	import { BLOG_CATEGORY_MAX_DEPTH } from '$lib/blog';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -14,6 +25,38 @@
 
 	const isNew = $derived(editing !== null && !('id' in editing));
 	const current = $derived(editing as Category | null);
+
+	/** Ids de la catégorie éditée et de sa descendance : parents interdits. */
+	function forbiddenIds(rows: Category[], rootId: number): number[] {
+		const ids = [rootId];
+
+		for (let i = 0; i < ids.length; i++) {
+			for (const c of rows) {
+				if (c.parentId === ids[i] && !ids.includes(c.id)) ids.push(c.id);
+			}
+		}
+		return ids;
+	}
+
+	/*
+	 * Parents proposés : tout sauf la catégorie éditée, sa descendance, et les
+	 * catégories déjà au dernier niveau — qui ne peuvent plus accueillir d'enfant.
+	 * Le serveur revalide : cette liste n'est qu'un confort de saisie.
+	 */
+	const parentOptions = $derived.by(() => {
+		const excluded = current?.id ? forbiddenIds(data.rows, current.id) : [];
+
+		return [
+			{ value: '', name: '— Catégorie principale —' },
+			...data.rows
+				.filter((c) => !excluded.includes(c.id) && c.depth < BLOG_CATEGORY_MAX_DEPTH)
+				.map((c) => ({
+					value: String(c.id),
+					// Insécables : un `<option>` écrase les espaces ordinaires.
+					name: `${'  '.repeat(c.depth - 1)}${c.depth > 1 ? '└ ' : ''}${c.name}`
+				}))
+		];
+	});
 </script>
 
 <svelte:head><title>Catégories du blog · Administration</title></svelte:head>
@@ -72,6 +115,20 @@
 			</div>
 
 			<div>
+				<Label for="parentId" class="mb-2">Catégorie parente</Label>
+				<Select
+					id="parentId"
+					name="parentId"
+					items={parentOptions}
+					value={current?.parentId ? String(current.parentId) : ''}
+				/>
+				<p class="mt-1 text-xs text-gray-500">
+					Arborescence limitée à {BLOG_CATEGORY_MAX_DEPTH} niveaux. Ouvrir une catégorie affiche aussi
+					les articles de ses sous-catégories.
+				</p>
+			</div>
+
+			<div>
 				<Label for="description" class="mb-2">Description</Label>
 				<Textarea id="description" name="description" rows={2} value={current?.description ?? ''} />
 			</div>
@@ -112,9 +169,13 @@
 {:else}
 	<div class="space-y-2">
 		{#each data.rows as row (row.id)}
-			<Card class="max-w-none p-4">
+			<!-- Décalage proportionnel au niveau : l'arborescence se lit d'un coup d'œil. -->
+			<Card class="max-w-none p-4" style="margin-left: {(row.depth - 1) * 1.5}rem">
 				<div class="flex flex-wrap items-center justify-between gap-3">
 					<div class="flex min-w-0 items-center gap-3">
+						{#if row.depth > 1}
+							<span class="shrink-0 text-gray-400" aria-hidden="true">└</span>
+						{/if}
 						{#if row.color}
 							<span
 								class="h-4 w-4 shrink-0 rounded-full"

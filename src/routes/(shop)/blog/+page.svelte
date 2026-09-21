@@ -26,20 +26,21 @@
 	Entretien, réglages, choix du matériel : ce que notre atelier voit passer tous les jours.
 </p>
 
-{#if data.categories.length > 0}
+{#if data.roots.length > 0}
+	<!-- Premier niveau seulement : les sous-catégories s'atteignent depuis leur parent. -->
 	<nav class="mt-6 flex flex-wrap gap-2" aria-label="Catégories du blog">
 		<span
 			class="border-[1.5px] border-shop-ink bg-shop-ink px-3 py-1.5 font-display text-[13px] font-bold text-white"
 		>
 			Tous les articles
 		</span>
-		{#each data.categories as category (category.slug)}
+		{#each data.roots as category (category.slug)}
 			<a
 				href="/blog/categorie/{category.slug}"
 				class="border-[1.5px] border-shop-border bg-white px-3 py-1.5 font-display text-[13px] font-bold text-shop-ink hover:border-shop-ink"
 			>
 				{category.name}
-				<span class="text-shop-muted">({category.articleCount})</span>
+				<span class="text-shop-muted">({category.branchCount})</span>
 			</a>
 		{/each}
 	</nav>

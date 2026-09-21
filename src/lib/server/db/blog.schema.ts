@@ -6,6 +6,7 @@
  */
 
 import {
+	type AnyPgColumn,
 	boolean,
 	index,
 	integer,
@@ -21,6 +22,19 @@ export const blogCategory = pgTable(
 	'blog_category',
 	{
 		id: serial('id').primaryKey(),
+
+		/*
+		 * Catégorie parente (arborescence auto-référente), sur le modèle du
+		 * catalogue produit.
+		 *
+		 * `set null` plutôt que `restrict` : supprimer un parent remonte ses
+		 * enfants à la racine au lieu de bloquer. R15 protège déjà, plus haut,
+		 * les catégories qui portent des articles.
+		 */
+		parentId: integer('parent_id').references((): AnyPgColumn => blogCategory.id, {
+			onDelete: 'set null'
+		}),
+
 		name: text('name').notNull(),
 		slug: text('slug').notNull(),
 		description: text('description'),
@@ -39,7 +53,8 @@ export const blogCategory = pgTable(
 	},
 	(t) => [
 		uniqueIndex('blog_category_slug_idx').on(t.slug),
-		index('blog_category_order_idx').on(t.sortOrder)
+		index('blog_category_order_idx').on(t.sortOrder),
+		index('blog_category_parent_idx').on(t.parentId)
 	]
 );
 

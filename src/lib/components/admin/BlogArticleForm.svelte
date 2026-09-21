@@ -19,7 +19,8 @@
 		action
 	}: {
 		article?: Partial<BlogArticle>;
-		categories: { id: number; name: string }[];
+		/** Catégories ordonnées en arbre ; `depth` sert à l'indentation. */
+		categories: { id: number; name: string; depth?: number }[];
 		message?: string;
 		submitLabel?: string;
 		/** Action ciblée ; en édition, la page expose `?/save`. */
@@ -50,9 +51,16 @@
 		{ value: 'archived', name: 'Archivé' }
 	];
 
+	/*
+	 * Un article se range indifféremment dans une catégorie principale ou dans
+	 * une sous-catégorie : l'indentation situe le choix dans l'arborescence.
+	 */
 	const categoryOptions = $derived([
 		{ value: '', name: '— Aucune —' },
-		...categories.map((c) => ({ value: String(c.id), name: c.name }))
+		...categories.map((c) => ({
+			value: String(c.id),
+			name: `${'\u00a0\u00a0'.repeat((c.depth ?? 1) - 1)}${(c.depth ?? 1) > 1 ? '└ ' : ''}${c.name}`
+		}))
 	]);
 </script>
 

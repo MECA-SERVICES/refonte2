@@ -3,12 +3,13 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	createBlogCategory,
 	deleteBlogCategory,
-	listBlogCategories,
+	listBlogCategoryTree,
 	parseCategoryForm,
-	updateBlogCategory
+	updateBlogCategory,
+	validateCategoryParent
 } from '$lib/server/blog';
 
-export const load: PageServerLoad = async () => ({ rows: await listBlogCategories() });
+export const load: PageServerLoad = async () => ({ rows: await listBlogCategoryTree() });
 
 export const actions: Actions = {
 	save: async ({ request }) => {
@@ -17,6 +18,11 @@ export const actions: Actions = {
 		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		const id = Number(form.get('id'));
+
+		// Rattachement : ni boucle, ni descendant pour parent, ni quatrième niveau.
+		const invalid = await validateCategoryParent(parsed.values.parentId, id || undefined);
+		if (invalid) return fail(400, { message: invalid });
+
 		if (id) await updateBlogCategory(id, parsed.values);
 		else await createBlogCategory(parsed.values);
 

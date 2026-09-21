@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { createBlogArticle, listBlogCategories, parseArticleForm } from '$lib/server/blog';
+import { createBlogArticle, listBlogCategoryTree, parseArticleForm } from '$lib/server/blog';
 
-export const load: PageServerLoad = async () => ({ categories: await listBlogCategories() });
+export const load: PageServerLoad = async () => ({ categories: await listBlogCategoryTree() });
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {

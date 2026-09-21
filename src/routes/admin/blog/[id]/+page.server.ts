@@ -4,7 +4,7 @@ import {
 	deleteBlogArticle,
 	getBlogArticle,
 	issuePreviewToken,
-	listBlogCategories,
+	listBlogCategoryTree,
 	parseArticleForm,
 	revokePreviewToken,
 	updateBlogArticle
@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const article = await getBlogArticle(id);
 	if (!article) error(404, 'Article introuvable');
 
-	return { article, categories: await listBlogCategories() };
+	return { article, categories: await listBlogCategoryTree() };
 };
 
 export const actions: Actions = {

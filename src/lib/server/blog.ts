@@ -2,7 +2,7 @@
  * Blog éditorial — CDC section 33.
  */
 
-import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { db } from './db';
 import {
@@ -15,7 +15,13 @@ import {
 } from './db/blog.schema';
 import { user } from './db/auth.schema';
 import { slugify } from './slug';
+<<<<<<< HEAD
 import { formFields, type ParseResult } from './forms';
+=======
+import { BLOG_CATEGORY_MAX_DEPTH } from '$lib/blog';
+
+export { BLOG_CATEGORY_MAX_DEPTH };
+>>>>>>> 4d40d4f (categorie blog)
 
 /** Durée de validité d'un lien d'aperçu (R10). */
 const PREVIEW_TOKEN_DAYS = 7;
@@ -24,6 +30,70 @@ const PREVIEW_TOKEN_DAYS = 7;
 // Catégories
 // ===========================================================================
 
+/** Forme minimale exploitable par les parcours d'arborescence. */
+type TreeNode = { id: number; parentId: number | null };
+
+/**
+ * Ids d'une catégorie et de toute sa descendance.
+ *
+ * Parcours en mémoire — l'arbre du blog reste petit, et le catalogue produit
+ * traite déjà ses 600 entrées de la même façon (`shop.ts`). Le marquage des
+ * visités protège des cycles qu'un enregistrement ancien aurait pu laisser.
+ */
+export function descendantIds<T extends TreeNode>(all: T[], rootId: number): number[] {
+	const ids = [rootId];
+	const seen = new Set([rootId]);
+
+	for (let i = 0; i < ids.length; i++) {
+		for (const c of all) {
+			if (c.parentId === ids[i] && !seen.has(c.id)) {
+				seen.add(c.id);
+				ids.push(c.id);
+			}
+		}
+	}
+	return ids;
+}
+
+/** Chaîne des ancêtres, de la racine vers la catégorie — fil d'Ariane. */
+export function ancestorsOf<T extends TreeNode>(all: T[], leaf: T): T[] {
+	const byId = new Map(all.map((c) => [c.id, c]));
+	const chain: T[] = [];
+	let current: T | undefined = leaf;
+
+	// La borne vaut garde-fou : un cycle résiduel arrêterait la remontée.
+	while (current && chain.length < BLOG_CATEGORY_MAX_DEPTH) {
+		chain.unshift(current);
+		current = current.parentId != null ? byId.get(current.parentId) : undefined;
+	}
+	return chain;
+}
+
+/** Profondeur d'une catégorie : 1 pour une racine. */
+function depthOf<T extends TreeNode>(all: T[], node: T): number {
+	return ancestorsOf(all, node).length;
+}
+
+/**
+ * Hauteur du sous-arbre porté par une catégorie : 1 si elle n'a pas d'enfant.
+ *
+ * Sert à refuser un rattachement qui pousserait une descendance existante
+ * au-delà de la profondeur permise.
+ */
+function subtreeHeight<T extends TreeNode>(all: T[], rootId: number): number {
+	const children = all.filter((c) => c.parentId === rootId);
+	if (children.length === 0) return 1;
+
+	let tallest = 0;
+	for (const child of children) {
+		// `descendantIds` a déjà écarté les cycles ; la borne évite une récursion
+		// sans fin sur une donnée incohérente.
+		if (child.id === rootId) continue;
+		tallest = Math.max(tallest, subtreeHeight(all, child.id));
+	}
+	return tallest + 1;
+}
+
 export function listBlogCategories() {
 	return db
 		.select()
@@ -31,13 +101,80 @@ export function listBlogCategories() {
 		.orderBy(asc(blogCategory.sortOrder), asc(blogCategory.name));
 }
 
+type BlogCategoryRow = Awaited<ReturnType<typeof listBlogCategories>>[number];
+
+/**
+ * Catégories ordonnées en arbre : chaque parent précède ses enfants, chaque
+ * ligne portant sa profondeur. L'admin s'en sert pour l'indentation.
+ */
+export async function listBlogCategoryTree() {
+	const rows = await listBlogCategories();
+
+	const walk = (
+		parentId: number | null,
+		depth: number
+	): (BlogCategoryRow & {
+		depth: number;
+	})[] =>
+		rows
+			.filter((c) => c.parentId === parentId)
+			.flatMap((c) => [{ ...c, depth }, ...walk(c.id, depth + 1)]);
+
+	const tree = walk(null, 1);
+
+	// Filet de sécurité : une catégorie orpheline (parent supprimé hors
+	// application) resterait invisible sans cela.
+	const placed = new Set(tree.map((c) => c.id));
+	return [...tree, ...rows.filter((c) => !placed.has(c.id)).map((c) => ({ ...c, depth: 1 }))];
+}
+
+/**
+ * Valide un rattachement (R16 étendu) : pas de boucle sur soi, pas de
+ * descendant pour parent, et trois niveaux au maximum.
+ *
+ * Retourne `null` si le rattachement est permis, sinon le motif du refus.
+ */
+export async function validateCategoryParent(
+	parentId: number | null,
+	categoryId?: number
+): Promise<string | null> {
+	if (parentId == null) return null;
+
+	const rows = await db
+		.select({ id: blogCategory.id, parentId: blogCategory.parentId })
+		.from(blogCategory);
+
+	const parent = rows.find((c) => c.id === parentId);
+	if (!parent) return 'La catégorie parente est introuvable.';
+
+	if (categoryId) {
+		if (parentId === categoryId) return 'Une catégorie ne peut pas être sa propre parente.';
+
+		// Rattacher à sa propre descendance détacherait le sous-arbre du reste.
+		if (descendantIds(rows, categoryId).includes(parentId)) {
+			return 'Une catégorie ne peut pas être rattachée à l’une de ses sous-catégories.';
+		}
+	}
+
+	const parentDepth = depthOf(rows, parent);
+	// Une catégorie déjà pourvue d'enfants emmène tout son sous-arbre avec elle.
+	const height = categoryId ? subtreeHeight(rows, categoryId) : 1;
+
+	if (parentDepth + height > BLOG_CATEGORY_MAX_DEPTH) {
+		return `L’arborescence est limitée à ${BLOG_CATEGORY_MAX_DEPTH} niveaux.`;
+	}
+	return null;
+}
+
 /** Catégories visibles, avec le nombre d'articles publiés (R14). */
 export function listPublicCategories() {
 	return db
 		.select({
 			id: blogCategory.id,
+			parentId: blogCategory.parentId,
 			name: blogCategory.name,
 			slug: blogCategory.slug,
+			description: blogCategory.description,
 			color: blogCategory.color,
 			articleCount: sql<number>`(
 				SELECT count(*)::int FROM ${blogArticle} a
@@ -121,10 +258,29 @@ export function listBlogArticles() {
 		.orderBy(desc(blogArticle.updatedAt));
 }
 
-/** Articles publiés, éventuellement restreints à une catégorie (R19). */
-export function listPublishedArticles(categorySlug?: string) {
+/**
+ * Articles publiés, éventuellement restreints à une catégorie (R19).
+ *
+ * La restriction couvre la catégorie **et toute sa descendance** : ouvrir un
+ * thème montre aussi ce qui est rangé dans ses sous-catégories. `categoryIds`
+ * permet à l'appelant qui a déjà l'arbre en main d'éviter une relecture.
+ */
+export async function listPublishedArticles(categorySlug?: string, categoryIds?: number[]) {
 	const conditions = [eq(blogArticle.status, 'published')];
-	if (categorySlug) conditions.push(eq(blogCategory.slug, categorySlug));
+
+	if (categoryIds) {
+		// Une catégorie sans article ni descendance ne doit rien remonter.
+		if (categoryIds.length === 0) return [];
+		conditions.push(inArray(blogArticle.blogCategoryId, categoryIds));
+	} else if (categorySlug) {
+		const rows = await db
+			.select({ id: blogCategory.id, parentId: blogCategory.parentId, slug: blogCategory.slug })
+			.from(blogCategory);
+
+		const root = rows.find((c) => c.slug === categorySlug);
+		if (!root) return [];
+		conditions.push(inArray(blogArticle.blogCategoryId, descendantIds(rows, root.id)));
+	}
 
 	return db
 		.select({
@@ -364,6 +520,7 @@ export function parseArticleForm(form: FormData): ParseResult<ArticleInput> {
 export type CategoryInput = {
 	name: string;
 	slug: string;
+	parentId: number | null;
 	description: string | null;
 	color: string | null;
 	icon: string | null;
@@ -378,11 +535,17 @@ export function parseCategoryForm(form: FormData): ParseResult<CategoryInput> {
 	const name = str('name');
 	if (!name) return { ok: false, error: 'Le libellé est obligatoire.' };
 
+	// Une valeur vide vaut « à la racine » ; la cohérence du rattachement est
+	// vérifiée séparément par `validateCategoryParent`, qui lit la base.
+	const parentRaw = Number(form.get('parentId'));
+	const parentId = Number.isInteger(parentRaw) && parentRaw > 0 ? parentRaw : null;
+
 	return {
 		ok: true,
 		values: {
 			name,
 			slug: str('slug') ?? name,
+			parentId,
 			description: str('description'),
 			color: str('color'),
 			icon: str('icon'),
