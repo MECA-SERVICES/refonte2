@@ -34,15 +34,15 @@ export const brand = pgTable(
 		description: text('description'),
 		logoUrl: text('logo_url'),
 
-	// Page de marque (CDC 12) : contenu éditorial modifiable en back-office.
-	/** Visuel pleine largeur du bandeau. */
-	heroImageUrl: text('hero_image_url'),
-	/** Accroche affichée sous le nom, dans l'encart du bandeau. */
-	tagline: text('tagline'),
-	/** Présentation rédigée, en HTML assaini à l'affichage. */
-	pageContent: text('page_content'),
-	metaTitle: text('meta_title'),
-	metaDescription: text('meta_description'),
+		// Page de marque (CDC 12) : contenu éditorial modifiable en back-office.
+		/** Visuel pleine largeur du bandeau. */
+		heroImageUrl: text('hero_image_url'),
+		/** Accroche affichée sous le nom, dans l'encart du bandeau. */
+		tagline: text('tagline'),
+		/** Présentation rédigée, en HTML assaini à l'affichage. */
+		pageContent: text('page_content'),
+		metaTitle: text('meta_title'),
+		metaDescription: text('meta_description'),
 		isActive: boolean('is_active').notNull().default(true),
 
 		legacyPsId: integer('legacy_ps_id'),

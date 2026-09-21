@@ -23,9 +23,9 @@ describe('resolveTaxRegime', () => {
 	});
 
 	it('autorise l’autoliquidation aux trois conditions réunies (R2)', () => {
-		expect(
-			resolveTaxRegime({ country: 'DE', type: 'pro', taxExemptStatus: 'exempt_eu_b2b' })
-		).toBe('reverse_charge_eu');
+		expect(resolveTaxRegime({ country: 'DE', type: 'pro', taxExemptStatus: 'exempt_eu_b2b' })).toBe(
+			'reverse_charge_eu'
+		);
 		expect(
 			resolveTaxRegime({ country: 'BE', type: 'collectivite', taxExemptStatus: 'exempt_eu_b2b' })
 		).toBe('reverse_charge_eu');
@@ -39,9 +39,9 @@ describe('resolveTaxRegime', () => {
 		// Professionnel européen sans statut prononcé par un administrateur.
 		expect(resolveTaxRegime({ country: 'DE', type: 'pro' })).toBe('standard');
 		// Professionnel français : jamais d'autoliquidation.
-		expect(
-			resolveTaxRegime({ country: 'FR', type: 'pro', taxExemptStatus: 'exempt_eu_b2b' })
-		).toBe('standard');
+		expect(resolveTaxRegime({ country: 'FR', type: 'pro', taxExemptStatus: 'exempt_eu_b2b' })).toBe(
+			'standard'
+		);
 	});
 
 	it('maintient au régime standard un compte professionnel en attente (R11)', () => {

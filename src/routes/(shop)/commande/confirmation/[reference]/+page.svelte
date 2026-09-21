@@ -32,8 +32,7 @@
 		<Heading size="card">Règlement par virement</Heading>
 		<p class="mt-2 text-[14.5px] leading-relaxed text-shop-ink-soft">
 			Contactez-nous au <a href="tel:0950922336" class="font-bold text-shop-blue">09 50 92 23 36</a>
-			pour obtenir nos coordonnées bancaires. Votre commande est préparée dès réception du
-			règlement.
+			pour obtenir nos coordonnées bancaires. Votre commande est préparée dès réception du règlement.
 		</p>
 
 		<dl class="mt-4 space-y-2 border-t-[1.5px] border-shop-border-soft pt-4 text-[14px]">

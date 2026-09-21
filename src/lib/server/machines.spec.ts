@@ -12,9 +12,7 @@ function form(fields: Record<string, string | null>) {
 describe('guessEquipmentType', () => {
 	it('reconnaît les machines du catalogue', () => {
 		expect(guessEquipmentType('TONDEUSE - CC256TV | ANOVA')).toBe('Tondeuse');
-		expect(guessEquipmentType('Tracteur tondeuse a ramassage TR3801E-B')).toBe(
-			'Tracteur tondeuse'
-		);
+		expect(guessEquipmentType('Tracteur tondeuse a ramassage TR3801E-B')).toBe('Tracteur tondeuse');
 		expect(guessEquipmentType('DEBROUSSAILLEUSE AUTOPORTEE SRA 950FA')).toBe('Tracteur tondeuse');
 		expect(guessEquipmentType('Tronçonneuse 550 XP Mark II')).toBe('Tronçonneuse');
 		expect(guessEquipmentType('Taille-haie thermique HS 45')).toBe('Taille-haie');

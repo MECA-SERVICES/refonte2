@@ -25,18 +25,18 @@ elle ne portait que sur le champ `description`.
 
 Le produit possède **deux champs textuels**. Le script n'en lisait qu'un.
 
-| Champ | Produits renseignés |
-|---|---:|
-| `description` | 331 226 |
-| **`short_description`** | **791 811** |
-| Aucun des deux | 72 091 |
+| Champ                   | Produits renseignés |
+| ----------------------- | ------------------: |
+| `description`           |             331 226 |
+| **`short_description`** |         **791 811** |
+| Aucun des deux          |              72 091 |
 
 Le champ `short_description` (`catalog.schema.ts:154`) contient les mêmes
 tableaux HTML de couples « libellé / valeur » que `description`.
 
-| Mesure | Produits |
-|---|---:|
-| `short_description` contenant un `<table>` | 689 727 |
+| Mesure                                           |    Produits |
+| ------------------------------------------------ | ----------: |
+| `short_description` contenant un `<table>`       |     689 727 |
 | dont **sans aucune caractéristique aujourd'hui** | **555 149** |
 
 ### Rendement mesuré
@@ -44,22 +44,22 @@ tableaux HTML de couples « libellé / valeur » que `description`.
 Test de `extractSpecs()` **sans aucune modification** sur un échantillon
 aléatoire de 4 000 produits non couverts :
 
-| Indicateur | Résultat |
-|---|---:|
-| Extraction techniquement réussie | 3 968 (**99,2 %**) |
+| Indicateur                                               |           Résultat |
+| -------------------------------------------------------- | -----------------: |
+| Extraction techniquement réussie                         | 3 968 (**99,2 %**) |
 | Avec au moins une caractéristique **utile** (hors bruit) | 2 056 (**51,4 %**) |
-| Caractéristiques utiles par produit | 4,1 |
+| Caractéristiques utiles par produit                      |                4,1 |
 
 L'extracteur actuel est donc directement compatible : il suffit de lui donner
 le second champ à lire.
 
 ### Impact projeté
 
-| | Produits | Couverture |
-|---|---:|---:|
-| Aujourd'hui | 202 979 | 20,6 % |
-| **Après reprise des deux champs** | **758 339** | **76,8 %** |
-| Hors de portée (aucun tableau nulle part) | 228 842 | 23,2 % |
+|                                           |    Produits | Couverture |
+| ----------------------------------------- | ----------: | ---------: |
+| Aujourd'hui                               |     202 979 |     20,6 % |
+| **Après reprise des deux champs**         | **758 339** | **76,8 %** |
+| Hors de portée (aucun tableau nulle part) |     228 842 |     23,2 % |
 
 **Gain : ×3,7 sur le nombre de produits filtrables.**
 
@@ -70,13 +70,13 @@ le second champ à lire.
 Tous les libellés n'ont pas de valeur comme critère de filtrage. Deux dominent
 largement le champ `short_description` sans rien apporter au client :
 
-| Libellé | Fréquence | Verdict |
-|---|---:|---|
-| `Vendu à/au` | 83,9 % · 19 valeurs pour 202 447 produits | **À exclure** — ne discrimine rien |
-| `Référence` | 83,4 % · quasi unique par produit | **À exclure** — déjà affichée sur la fiche |
-| `Description de l'article` | 7,0 % | À exclure — texte libre |
-| `Arrondir les quantités` | 3,0 % | À exclure — logistique interne |
-| `Conditionnement`, `Quantité par emballage` | 3,3 % | À exclure — logistique |
+| Libellé                                     |                                 Fréquence | Verdict                                    |
+| ------------------------------------------- | ----------------------------------------: | ------------------------------------------ |
+| `Vendu à/au`                                | 83,9 % · 19 valeurs pour 202 447 produits | **À exclure** — ne discrimine rien         |
+| `Référence`                                 |         83,4 % · quasi unique par produit | **À exclure** — déjà affichée sur la fiche |
+| `Description de l'article`                  |                                     7,0 % | À exclure — texte libre                    |
+| `Arrondir les quantités`                    |                                     3,0 % | À exclure — logistique interne             |
+| `Conditionnement`, `Quantité par emballage` |                                     3,3 % | À exclure — logistique                     |
 
 C'est l'écart entre 99,2 % d'extraction et 51,4 % de rendement utile.
 
@@ -111,8 +111,15 @@ sans ses balises. Le HTML réel :
 
 ```html
 <table class="product-properties-table">
-  <tr><td class="property-key">MOTEUR</td><td class="property-value">MA173</td></tr>
-  <tr><td class="property-key">CYLINDRÉE</td><td class="property-value">173 CC</td></tr>
+	<tr>
+		<td class="property-key">MOTEUR</td>
+		<td class="property-value">MA173</td>
+	</tr>
+	<tr>
+		<td class="property-key">CYLINDRÉE</td>
+		<td class="property-value">173 CC</td>
+	</tr>
+</table>
 ```
 
 Il était dans `short_description` — le champ que le script ne lisait pas. Les
@@ -124,15 +131,15 @@ unités isolées (`Largeur de coupe = 56 CM`, num=56).
 **232 produits** portent ce format `product-properties-table`, avec exactement
 les critères d'achat d'une machine — et un taux numérique très élevé :
 
-| Libellé | Produits | % numérique |
-|---|---:|---:|
-| Puissance | 158 | 97 % |
-| Poids | 157 | 100 % |
-| Cylindrée | 98 | 99 % |
-| Tension | 54 | 100 % |
-| Débit | 29 | 100 % |
-| Réservoir | 27 | 100 % |
-| Hauteur de coupe | 22 | 50 % |
+| Libellé          | Produits | % numérique |
+| ---------------- | -------: | ----------: |
+| Puissance        |      158 |        97 % |
+| Poids            |      157 |       100 % |
+| Cylindrée        |       98 |        99 % |
+| Tension          |       54 |       100 % |
+| Débit            |       29 |       100 % |
+| Réservoir        |       27 |       100 % |
+| Hauteur de coupe |       22 |        50 % |
 
 ### Deux corrections nécessaires
 
@@ -146,15 +153,15 @@ les critères d'achat d'une machine — et un taux numérique très élevé :
 
 ### Mesure d'origine (avant correction)
 
-Mesure sur la catégorie 272 (*Tracteurs tondeuses avec ramassage*), celle du
+Mesure sur la catégorie 272 (_Tracteurs tondeuses avec ramassage_), celle du
 produit `ANO-TC102HB` signalé :
 
-| | Produits |
-|---|---:|
-| Total actifs | 67 |
-| Avec caractéristiques | 7 |
-| Tableau dans `description` | 7 |
-| **Tableau dans `short_description`** | **1** |
+|                                      | Produits |
+| ------------------------------------ | -------: |
+| Total actifs                         |       67 |
+| Avec caractéristiques                |        7 |
+| Tableau dans `description`           |        7 |
+| **Tableau dans `short_description`** |    **1** |
 
 Les machines complètes sont décrites en **texte rédigé**, pas en tableau —
 contrairement aux pièces détachées, qui viennent de flux fournisseurs
@@ -165,8 +172,10 @@ structurés. Deux populations, deux traitements.
 Format identifié : paragraphes Bootstrap avec couples séparés par `<br>`.
 
 ```html
-<p class="card-text">Largeur de coupe : 112 cm à 2 lames<br /><br />
-Hauteur de coupe : 7 de 30 à 100 mm<br />…</p>
+<p class="card-text">
+	Largeur de coupe : 112 cm à 2 lames<br /><br />
+	Hauteur de coupe : 7 de 30 à 100 mm<br />…
+</p>
 ```
 
 **1 208 produits** sont concernés (mesure nette, hors produits déjà couverts
@@ -193,9 +202,11 @@ caractéristique. L'hypothèse « fiches vides » a été vérifiée — elle é
 Exemple, `TONDEUSE AUTOPORTÉE BALLIA MHHE2 | ETESIA` :
 
 ```html
-<p>Moteur : HONDA GXV390<br />Cylindrée : 389 cc<br />
-Réservoir carburant : 12 litres<br />Poids : 230 kg<br />
-Largeur de coupe : 80 cm<br />Hauteur de coupe : de 44 à 102 mm</p>
+<p>
+	Moteur : HONDA GXV390<br />Cylindrée : 389 cc<br />
+	Réservoir carburant : 12 litres<br />Poids : 230 kg<br />
+	Largeur de coupe : 80 cm<br />Hauteur de coupe : de 44 à 102 mm
+</p>
 ```
 
 Aucun tableau, mais **12 caractéristiques** parfaitement lisibles, séparées par
@@ -205,13 +216,13 @@ des `<br>`. Le format est propre : `Libellé : Valeur`, un couple par ligne.
 
 Sur les produits sans caractéristique disposant encore de texte :
 
-| Mesure | Produits |
-|---|---:|
-| Sans spec mais avec du texte | 7 052 |
-| Motif « Libellé : Valeur » présent | 2 610 |
+| Mesure                                  |           Produits |
+| --------------------------------------- | -----------------: |
+| Sans spec mais avec du texte            |              7 052 |
+| Motif « Libellé : Valeur » présent      |              2 610 |
 | **≥ 3 couples (vraie fiche technique)** | **1 071 (15,2 %)** |
-| ≥ 5 couples | 765 (10,8 %) |
-| Couples par fiche | **8,2** |
+| ≥ 5 couples                             |       765 (10,8 %) |
+| Couples par fiche                       |            **8,2** |
 
 Libellés dominants : `poids` (315), `cylindrée` (304), `moteur` (249),
 `largeur de coupe` (235), `hauteur de coupe` (186), `puissance nette` (133).
@@ -255,11 +266,11 @@ chacune sous le seuil d'affichage.
 
 Trois familles ont été distinguées, une règle unique aurait dégradé les données :
 
-| Famille | Traitement | Exemple |
-|---|---|---|
-| **Unités** | Minuscules, **sauf symbole normatif** | `51 CM` → `51 cm` · `20V` → `20 V` · `3,6 KW` → `3,6 kW` |
-| **Mots isolés** | Capitale initiale | `ACIER` / `acier` → `Acier` |
-| **Sigles** | Forme canonique imposée | `pvc` → `PVC` · `n/a` reste `n/a` |
+| Famille         | Traitement                            | Exemple                                                  |
+| --------------- | ------------------------------------- | -------------------------------------------------------- |
+| **Unités**      | Minuscules, **sauf symbole normatif** | `51 CM` → `51 cm` · `20V` → `20 V` · `3,6 KW` → `3,6 kW` |
+| **Mots isolés** | Capitale initiale                     | `ACIER` / `acier` → `Acier`                              |
+| **Sigles**      | Forme canonique imposée               | `pvc` → `PVC` · `n/a` reste `n/a`                        |
 
 Le volt s'écrit `V`, le kilowatt `kW` : les minusculiser aurait nui à la
 lisibilité. `UNITS` est donc une table de correspondance, pas un simple
@@ -290,14 +301,14 @@ Les valeurs où la casse porte du sens sont préservées : `SAE 30`, `M6`,
 
 ## 6. Plan d'action
 
-| # | Action | Gain | État |
-|---|---|---:|---|
-| **1** | Lire `short_description` en plus de `description` | **+555 149 produits** | ✅ Fait |
-| **2** | Exclure les libellés de bruit | 204 528 lignes purgées | ✅ Fait |
-| **3** | Normaliser la casse + regrouper les variantes | Machines filtrables | ✅ Fait |
-| **4** | Seuil `minProducts` adaptatif | Visibilité tondeuses | ✅ Fait |
-| **5** | Repli texte « Libellé : Valeur » | **+1 071 fiches machines** | ✅ Fait |
-| **6** | Normalisation de la casse des valeurs | 117 373 lignes | ✅ Fait |
+| #     | Action                                            |                       Gain | État    |
+| ----- | ------------------------------------------------- | -------------------------: | ------- |
+| **1** | Lire `short_description` en plus de `description` |      **+555 149 produits** | ✅ Fait |
+| **2** | Exclure les libellés de bruit                     |     204 528 lignes purgées | ✅ Fait |
+| **3** | Normaliser la casse + regrouper les variantes     |        Machines filtrables | ✅ Fait |
+| **4** | Seuil `minProducts` adaptatif                     |       Visibilité tondeuses | ✅ Fait |
+| **5** | Repli texte « Libellé : Valeur »                  | **+1 071 fiches machines** | ✅ Fait |
+| **6** | Normalisation de la casse des valeurs             |             117 373 lignes | ✅ Fait |
 
 ### Détail des modifications
 
@@ -313,9 +324,9 @@ met à jour les lignes au lieu de les dupliquer.
 
 ### Résultat final mesuré
 
-| | Produits | Couverture |
-|---|---:|---:|
-| Avant | 202 979 | 20,6 % |
+|           |    Produits | Couverture |
+| --------- | ----------: | ---------: |
+| Avant     |     202 979 |     20,6 % |
 | **Après** | **395 636** | **40,1 %** |
 
 **1 857 491 caractéristiques**, 4,7 par produit, 11 087 libellés distincts.

@@ -82,9 +82,7 @@
 {#if pendingCount > 0}
 	<!-- Une proposition automatique attend son numéro de série : tant qu'elle
 	     n'est pas confirmée, elle ne sert pas à identifier les pièces (R11). -->
-	<p
-		class="mt-5 border-[1.5px] border-shop-orange bg-white px-4 py-3 text-[14.5px] text-shop-ink"
-	>
+	<p class="mt-5 border-[1.5px] border-shop-orange bg-white px-4 py-3 text-[14.5px] text-shop-ink">
 		<span class="font-bold">
 			{pendingCount} machine{pendingCount > 1 ? 's' : ''} à compléter.
 		</span>
@@ -114,7 +112,13 @@
 			<div class="grid gap-4 sm:grid-cols-2">
 				<div>
 					<Label for="name" class="mb-1.5">Nom d'usage *</Label>
-					<Input id="name" name="name" required value={current?.name ?? ''} placeholder="Tondeuse du fond" />
+					<Input
+						id="name"
+						name="name"
+						required
+						value={current?.name ?? ''}
+						placeholder="Tondeuse du fond"
+					/>
 				</div>
 				<div>
 					<Label for="equipmentType" class="mb-1.5">Type d'équipement *</Label>
@@ -328,7 +332,12 @@
 				{#if isPending}
 					<div class="mt-4 border-t-[1.5px] border-shop-border-soft pt-4">
 						{#if confirming === machine.id}
-							<form method="POST" action="?/confirm" use:enhance class="flex flex-wrap items-end gap-3">
+							<form
+								method="POST"
+								action="?/confirm"
+								use:enhance
+								class="flex flex-wrap items-end gap-3"
+							>
 								<input type="hidden" name="id" value={machine.id} />
 								<div>
 									<Label for="serial-{machine.id}" class="mb-1.5">Numéro de série</Label>

@@ -41,7 +41,9 @@ describe('parseArticleForm', () => {
 	});
 
 	it('exige une catégorie avant publication (R8)', () => {
-		const out = parseArticleForm(form({ title: 'Article', status: 'published', excerpt: 'Résumé' }));
+		const out = parseArticleForm(
+			form({ title: 'Article', status: 'published', excerpt: 'Résumé' })
+		);
 		expect(!out.ok && out.error).toMatch(/catégorie/i);
 	});
 

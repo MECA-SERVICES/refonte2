@@ -84,7 +84,7 @@ const NAME_ALIASES = new Map([
 	['largeur de travail', 'Largeur de travail'],
 	['longueur de coupe', 'Longueur de coupe'],
 	['poids à vide', 'Poids'],
-	['poids brut de l\'article', 'Poids'],
+	["poids brut de l'article", 'Poids'],
 	['cylindree', 'Cylindrée'],
 	['puissance moteur', 'Puissance'],
 	['tension batterie', 'Tension'],
@@ -103,9 +103,7 @@ const NAME_ALIASES = new Map([
 function fixCase(name: string): string {
 	if (name !== name.toUpperCase() || !/[A-ZÀ-Ý]/.test(name)) return name;
 	if (name.length <= 4) return name;
-	return name
-		.toLocaleLowerCase('fr')
-		.replace(/^(.)/, (c) => c.toLocaleUpperCase('fr'));
+	return name.toLocaleLowerCase('fr').replace(/^(.)/, (c) => c.toLocaleUpperCase('fr'));
 }
 
 /** Retire les balises et normalise les espaces d'un fragment HTML. */
@@ -136,7 +134,6 @@ export function normalizeName(raw: string): string {
 	return NAME_ALIASES.get(cleaned.toLowerCase()) ?? cleaned;
 }
 
-
 /**
  * Unités reconnues, normalisées en minuscules.
  *
@@ -145,19 +142,50 @@ export function normalizeName(raw: string): string {
  * Seules ces unités sont converties ; le reste de la valeur est préservé.
  */
 const UNITS = new Map([
-	['mm', 'mm'], ['cm', 'cm'], ['m', 'm'], ['km', 'km'], ['g', 'g'], ['kg', 'kg'],
-	['ml', 'ml'], ['cc', 'cc'], ['cm3', 'cm3'], ['bar', 'bar'], ['psi', 'psi'],
-	['min', 'min'], ['nm', 'Nm'], ['mm2', 'mm2'],
+	['mm', 'mm'],
+	['cm', 'cm'],
+	['m', 'm'],
+	['km', 'km'],
+	['g', 'g'],
+	['kg', 'kg'],
+	['ml', 'ml'],
+	['cc', 'cc'],
+	['cm3', 'cm3'],
+	['bar', 'bar'],
+	['psi', 'psi'],
+	['min', 'min'],
+	['nm', 'Nm'],
+	['mm2', 'mm2'],
 	// Unités dont le symbole officiel porte une majuscule : le volt s'écrit « V »,
 	// pas « v ». Les minusculiser nuirait à la lisibilité du filtre.
-	['v', 'V'], ['w', 'W'], ['kw', 'kW'], ['ah', 'Ah'], ['wh', 'Wh'],
-	['l', 'L'], ['rpm', 'RPM'], ['db', 'dB'], ['h', 'h'], ['cv', 'CV'], ['hp', 'HP']
+	['v', 'V'],
+	['w', 'W'],
+	['kw', 'kW'],
+	['ah', 'Ah'],
+	['wh', 'Wh'],
+	['l', 'L'],
+	['rpm', 'RPM'],
+	['db', 'dB'],
+	['h', 'h'],
+	['cv', 'CV'],
+	['hp', 'HP']
 ]);
 
 /** Valeurs booléennes ou de position dont la casse ne porte aucun sens. */
 const LOWERCASE_WORDS = new Set([
-	'oui', 'non', 'droite', 'gauche', 'avant', 'arrière', 'haut', 'bas',
-	'standard', 'manuel', 'automatique', 'électrique', 'aucun'
+	'oui',
+	'non',
+	'droite',
+	'gauche',
+	'avant',
+	'arrière',
+	'haut',
+	'bas',
+	'standard',
+	'manuel',
+	'automatique',
+	'électrique',
+	'aucun'
 ]);
 
 /**
@@ -168,10 +196,23 @@ const LOWERCASE_WORDS = new Set([
  * incorrects à l'affichage.
  */
 const CANONICAL_VALUES = new Map([
-	['n/a', 'n/a'], ['na', 'n/a'], ['-', 'n/a'],
-	['pvc', 'PVC'], ['abs', 'ABS'], ['pe', 'PE'], ['pp', 'PP'], ['pa', 'PA'],
-	['inox', 'Inox'], ['nbr', 'NBR'], ['epdm', 'EPDM'], ['ptfe', 'PTFE'],
-	['led', 'LED'], ['ohv', 'OHV'], ['ohc', 'OHC'], ['bsp', 'BSP'], ['npt', 'NPT']
+	['n/a', 'n/a'],
+	['na', 'n/a'],
+	['-', 'n/a'],
+	['pvc', 'PVC'],
+	['abs', 'ABS'],
+	['pe', 'PE'],
+	['pp', 'PP'],
+	['pa', 'PA'],
+	['inox', 'Inox'],
+	['nbr', 'NBR'],
+	['epdm', 'EPDM'],
+	['ptfe', 'PTFE'],
+	['led', 'LED'],
+	['ohv', 'OHV'],
+	['ohc', 'OHC'],
+	['bsp', 'BSP'],
+	['npt', 'NPT']
 ]);
 
 /**
@@ -214,7 +255,10 @@ export function normalizeValue(raw: string): string {
 	if (value === value.toLocaleUpperCase('fr') && /[A-ZÀ-Ý]{4,}/.test(value) && !/\d/.test(value)) {
 		return value
 			.toLocaleLowerCase('fr')
-			.replace(/(^|[\s&/-])(\p{L})/gu, (_, sep: string, c: string) => sep + c.toLocaleUpperCase('fr'));
+			.replace(
+				/(^|[\s&/-])(\p{L})/gu,
+				(_, sep: string, c: string) => sep + c.toLocaleUpperCase('fr')
+			);
 	}
 
 	return value;
@@ -245,7 +289,6 @@ export function parseNumeric(value: string): { num: number | null; unit: string 
 
 	return { num, unit: unit || null };
 }
-
 
 /**
  * Nombre minimal de couples pour qu'un texte soit tenu pour une fiche technique.

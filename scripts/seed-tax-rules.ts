@@ -73,7 +73,9 @@ const check = await sql<{ name: string; rate: string; n: number }[]>`
 `;
 console.log('\n--- Répartition ---');
 for (const r of check) {
-	console.log(`  ${r.name.padEnd(26)} ${Number(r.rate).toFixed(2)} %  ${r.n.toLocaleString('fr-FR')} produits`);
+	console.log(
+		`  ${r.name.padEnd(26)} ${Number(r.rate).toFixed(2)} %  ${r.n.toLocaleString('fr-FR')} produits`
+	);
 }
 console.log();
 

@@ -64,15 +64,17 @@ describe('verrou de mode test', () => {
 	});
 
 	it("nomme l'offre refusée dans le message, pour que l'opérateur comprenne", async () => {
-		await expect(createShipment(shipment('mondial_relay:service_point,dualapi/size=l,c2c'))).rejects.toThrow(
-			/mondial_relay/
-		);
+		await expect(
+			createShipment(shipment('mondial_relay:service_point,dualapi/size=l,c2c'))
+		).rejects.toThrow(/mondial_relay/);
 	});
 
 	it("laisse passer l'offre de test", async () => {
-		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-			new Response(JSON.stringify({ data: { id: 'shp', parcels: [{ id: 1 }] } }), { status: 201 })
-		);
+		const fetchSpy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValue(
+				new Response(JSON.stringify({ data: { id: 'shp', parcels: [{ id: 1 }] } }), { status: 201 })
+			);
 
 		await createShipment(shipment(TEST_SHIPPING_OPTION_CODE));
 		expect(fetchSpy).toHaveBeenCalledOnce();
@@ -80,9 +82,11 @@ describe('verrou de mode test', () => {
 
 	it('autorise une offre réelle une fois le verrou levé', async () => {
 		env.SENDCLOUD_ALLOW_REAL_LABELS = 'true';
-		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-			new Response(JSON.stringify({ data: { id: 'shp', parcels: [{ id: 1 }] } }), { status: 201 })
-		);
+		const fetchSpy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValue(
+				new Response(JSON.stringify({ data: { id: 'shp', parcels: [{ id: 1 }] } }), { status: 201 })
+			);
 
 		await createShipment(shipment('colissimo:home/fr'));
 		expect(fetchSpy).toHaveBeenCalledOnce();

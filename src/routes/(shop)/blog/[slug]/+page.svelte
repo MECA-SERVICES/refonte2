@@ -54,7 +54,8 @@
 
 	<p class="mt-2 text-[13.5px] text-shop-muted">
 		{#if article.publishedAt}{dateFmt.format(new Date(article.publishedAt))}{/if}
-		{#if data.authorName} · {data.authorName}{/if}
+		{#if data.authorName}
+			· {data.authorName}{/if}
 	</p>
 
 	{#if article.contentType === 'video' && article.videoUrl}
@@ -71,7 +72,7 @@
 
 	{#if article.content}
 		<!-- Même classe que l'éditeur : le rédacteur voit ce qui sera publié. -->
-		<div class="format format-blue mt-6 max-w-none">
+		<div class="format mt-6 max-w-none format-blue">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- assaini côté serveur -->
 			{@html article.content}
 		</div>

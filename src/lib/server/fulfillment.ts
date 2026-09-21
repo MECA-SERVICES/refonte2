@@ -56,7 +56,8 @@ export async function shipOrder(input: {
 }) {
 	const [found] = await db.select().from(order).where(eq(order.id, input.orderId)).limit(1);
 	if (!found) throw new FulfillmentError('Commande introuvable.');
-	if (found.sendcloudParcelId) throw new FulfillmentError('Un colis existe déjà pour cette commande.');
+	if (found.sendcloudParcelId)
+		throw new FulfillmentError('Un colis existe déjà pour cette commande.');
 
 	const optionCode = input.overrideOptionCode ?? found.shippingOptionCode;
 	if (!optionCode) {
