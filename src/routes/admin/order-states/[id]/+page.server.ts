@@ -23,7 +23,7 @@ export const actions: Actions = {
 		if (!Number.isInteger(id)) throw error(404, 'État introuvable');
 
 		const parsed = parseOrderStateForm(await request.formData());
-		if ('error' in parsed) return fail(400, { message: parsed.error });
+		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		await updateOrderState(id, parsed.values);
 		throw redirect(303, '/admin/order-states');

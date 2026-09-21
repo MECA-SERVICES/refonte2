@@ -10,6 +10,7 @@ import { db } from './db';
 import { clientMachine, type MachineSource, type NewClientMachine } from './db/machine.schema';
 import { order, orderLine, orderState } from './db/order.schema';
 import { product } from './db/catalog.schema';
+import { formFields, type ParseResult } from './forms';
 
 /** Délai au terme duquel une proposition non confirmée est retirée (R14). */
 const PENDING_EXPIRY_MONTHS = 6;
@@ -359,10 +360,8 @@ export type MachineInput = {
 	notes: string | null;
 };
 
-export type ParseResult<T> = { ok: false; error: string } | { ok: true; values: T };
-
 export function parseMachineForm(form: FormData): ParseResult<MachineInput> {
-	const str = (key: string) => form.get(key)?.toString().trim() || null;
+	const { str } = formFields(form);
 
 	// R4 — seuls le nom d'usage et le type sont exigés.
 	const name = str('name');

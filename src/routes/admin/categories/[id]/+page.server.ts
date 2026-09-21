@@ -29,7 +29,7 @@ export const actions: Actions = {
 		if (!Number.isInteger(id)) throw error(404, 'Catégorie introuvable');
 
 		const parsed = parseCategoryForm(await request.formData());
-		if ('error' in parsed) return fail(400, { message: parsed.error });
+		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		await updateCategory(id, parsed.values);
 		throw redirect(303, '/admin/categories');

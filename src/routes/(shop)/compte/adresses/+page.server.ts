@@ -20,7 +20,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 
 		const parsed = parseAddressForm(form);
-		if ('error' in parsed) return fail(400, { message: parsed.error });
+		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		const id = Number(form.get('id'));
 		if (id) {

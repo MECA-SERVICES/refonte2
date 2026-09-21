@@ -15,6 +15,7 @@ import {
 	type ShippingAddress,
 	type ShippingOption
 } from './sendcloud';
+import { round2 } from '$lib/money';
 
 /** Article du panier, réduit à ce qui influence le transport. */
 export type ShippableLine = {
@@ -121,7 +122,7 @@ export function cartWeightKg(lines: ShippableLine[]): number {
 		(sum, line) => sum + (line.weightKg || DEFAULT_LINE_WEIGHT_KG) * line.quantity,
 		0
 	);
-	return Math.max(DEFAULT_LINE_WEIGHT_KG, Math.round(total * 100) / 100);
+	return Math.max(DEFAULT_LINE_WEIGHT_KG, round2(total));
 }
 
 /**
@@ -144,7 +145,7 @@ export function cartDimensionsCm(lines: ShippableLine[]) {
 /** Surcoût de transport propre aux articles, cumulé sur le panier (R9). */
 export function extraShippingFee(lines: ShippableLine[]): number {
 	const total = lines.reduce((sum, line) => sum + (line.shippingExtraFee ?? 0) * line.quantity, 0);
-	return Math.round(total * 100) / 100;
+	return round2(total);
 }
 
 /**
@@ -275,7 +276,7 @@ export async function quoteShipping(params: ShippingQuoteParams): Promise<Shippi
 	// Le surcoût produit s'ajoute au tarif de l'offre (R9).
 	const priced = options.map((option) => ({
 		...option,
-		priceHt: option.priceHt === null ? null : Math.round((option.priceHt + extraFee) * 100) / 100
+		priceHt: option.priceHt === null ? null : round2(option.priceHt + extraFee)
 	}));
 
 	// Tri par prix croissant (R8) ; les offres sans tarif ferment la marche.

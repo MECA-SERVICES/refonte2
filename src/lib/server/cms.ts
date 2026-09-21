@@ -6,6 +6,7 @@ import { and, asc, eq, ne } from 'drizzle-orm';
 import { db } from './db';
 import { cmsPage, type NewCmsPage } from './db/cms.schema';
 import { slugify } from './slug';
+import { formFields, type ParseResult } from './forms';
 
 /** Toutes les pages, publiées ou non — back-office. */
 export function listCmsPages() {
@@ -88,33 +89,31 @@ export async function deleteCmsPage(id: number) {
 	await db.delete(cmsPage).where(eq(cmsPage.id, id));
 }
 
+/** Champs saisissables d'une page éditoriale. */
+export type CmsPageInput = {
+	title: string;
+	slug: string;
+	content: string;
+	isPublished: boolean;
+	metaTitle: string | null;
+	metaDescription: string | null;
+};
+
 /** Champs d'une page, extraits d'un formulaire. */
-export function parseCmsPageForm(
-	form: FormData
-):
-	| { error: string }
-	| {
-			values: {
-				title: string;
-				slug: string;
-				content: string;
-				isPublished: boolean;
-				metaTitle: string | null;
-				metaDescription: string | null;
-			};
-	  } {
-	const str = (key: string) => form.get(key)?.toString().trim() || null;
+export function parseCmsPageForm(form: FormData): ParseResult<CmsPageInput> {
+	const { str, bool } = formFields(form);
 
 	const title = str('title');
-	if (!title) return { error: 'Le titre est obligatoire.' };
+	if (!title) return { ok: false, error: 'Le titre est obligatoire.' };
 
 	return {
+		ok: true,
 		values: {
 			title,
 			// Vide, le slug sera dérivé du titre par `uniqueSlug`.
 			slug: str('slug') ?? title,
 			content: form.get('content')?.toString() ?? '',
-			isPublished: form.get('isPublished') != null,
+			isPublished: bool('isPublished'),
 			metaTitle: str('metaTitle'),
 			metaDescription: str('metaDescription')
 		}

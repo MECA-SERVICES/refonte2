@@ -2,6 +2,7 @@ import { db } from '$lib/server/db';
 import { customer } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { priceDisplayMode, resolveTaxRegime } from '$lib/tax';
+import type { FieldErrors } from '$lib/server/forms';
 
 /**
  * Domaine « Compte client » — sections 07 et 08 du cahier des charges.
@@ -32,8 +33,9 @@ export type RegistrationInput = {
 	newsletter: boolean;
 };
 
-/** Erreurs de saisie, indexées par nom de champ. */
-export type FieldErrors = Partial<Record<string, string>>;
+// La forme champ par champ vit dans $lib/server/forms, comme la convention
+// `ParseResult` : ré-exportée ici pour les consommateurs du module compte.
+export type { FieldErrors } from '$lib/server/forms';
 
 function clean(value: FormDataEntryValue | null): string {
 	return typeof value === 'string' ? value.trim() : '';

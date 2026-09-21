@@ -6,6 +6,7 @@
 	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import SummaryRow from '$lib/components/shop/SummaryRow.svelte';
 	import { formatPrice } from '$lib/shop';
+	import { round2 } from '$lib/money';
 	import { priceSuffix } from '$lib/tax';
 	import type { PageProps } from './$types';
 
@@ -56,9 +57,8 @@
 	let relay = $state<{ id: string; name: string; address: string } | null>(null);
 
 	const shippingFee = $derived(option?.priceHt ?? 0);
-	const shippingTva = $derived(
-		data.tax.regime === 'standard' ? Math.round(shippingFee * 20) / 100 : 0
-	);
+	// Les frais de port suivent le régime des articles, au taux normal (R13).
+	const shippingTva = $derived(data.tax.regime === 'standard' ? round2(shippingFee * 0.2) : 0);
 
 	const totalHt = $derived(data.cart.totals.subtotalHt + shippingFee);
 	const totalTva = $derived(data.cart.totals.tax + shippingTva);

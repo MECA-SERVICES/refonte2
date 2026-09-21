@@ -3,6 +3,7 @@ import { order, orderInvoice, orderLine, orderPayment } from '$lib/server/db/ord
 import type { InvoiceTaxLine } from '$lib/server/db/order.schema';
 import { customer } from '$lib/server/db/customer.schema';
 import { TAX_MENTIONS, type TaxRegime } from '$lib/tax';
+import { round2 } from '$lib/money';
 import { desc, eq, sql } from 'drizzle-orm';
 
 /**
@@ -106,9 +107,6 @@ export function buildTaxBreakdown(input: {
 	return lines;
 }
 
-/** Arrondi comptable au centime. */
-const cents = (n: number) => Math.round(n * 100) / 100;
-
 /**
  * Reconstitue la ventilation de TVA à partir des totaux d'une commande.
  *
@@ -121,16 +119,16 @@ const cents = (n: number) => Math.round(n * 100) / 100;
  */
 export function splitOrderTax(input: { totalHt: number; totalTva: number; shippingTtc: number }) {
 	const impliedRate = input.totalHt > 0 ? input.totalTva / input.totalHt : 0;
-	const shippingHt = cents(
+	const shippingHt = round2(
 		impliedRate > 0 ? input.shippingTtc / (1 + impliedRate) : input.shippingTtc
 	);
-	const shippingTva = cents(input.shippingTtc - shippingHt);
+	const shippingTva = round2(input.shippingTtc - shippingHt);
 
 	return {
 		shippingHt,
 		shippingTva,
-		productsHt: cents(input.totalHt - shippingHt),
-		productsTva: cents(input.totalTva - shippingTva)
+		productsHt: round2(input.totalHt - shippingHt),
+		productsTva: round2(input.totalTva - shippingTva)
 	};
 }
 

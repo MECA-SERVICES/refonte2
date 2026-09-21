@@ -20,9 +20,6 @@ export function shopProductPath(p: { id: number; slug: string }): string {
 	return `/produit/${p.id}-${p.slug}`;
 }
 
-const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
-
-/** Formate un prix (chaîne numeric SQL ou nombre) en euros : « 1 234,56 € ». */
-export function formatPrice(value: string | number): string {
-	return eur.format(Number(value));
-}
+// Le formatage des prix vit dans $lib/money ; ré-exporté ici par commodité
+// pour les composants vitrine qui importent déjà depuis $lib/shop.
+export { formatPrice } from '$lib/money';

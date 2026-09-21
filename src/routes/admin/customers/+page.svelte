@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPrice } from '$lib/money';
 	import { Button } from 'flowbite-svelte';
 	import { UserAddOutline } from 'flowbite-svelte-icons';
 	import {
@@ -37,8 +38,6 @@
 	];
 
 	const tableParams = $derived({ filters: data.filters, sort: data.sort, dir: data.dir });
-
-	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 
 	/** Conserve les filtres/tri courants dans les liens de pagination. */
 	function pageHref(p: number) {
@@ -91,7 +90,7 @@
 	     les clients dans la liste. -->
 	{#if Number(row.totalSpent) > 0}
 		<span class="font-medium text-gray-900 dark:text-white">
-			{eur.format(Number(row.totalSpent))}
+			{formatPrice(Number(row.totalSpent))}
 		</span>
 	{:else}
 		<span class="text-gray-400">—</span>

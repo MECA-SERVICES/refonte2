@@ -26,6 +26,12 @@ import {
 } from 'drizzle-orm';
 import type { Category } from '$lib/server/db/catalog.schema';
 import { cached } from './cache';
+import {
+	isBrandLogoSql,
+	priceTtcSql,
+	priceTtcStrikeSql,
+	thumbnailWithBrandFallbackSql
+} from './pricing';
 
 /**
  * Domaine « Vitrine » — requêtes publiques de la boutique.
@@ -36,37 +42,6 @@ import { cached } from './cache';
 
 export const SHOP_PAGE_SIZE = 24;
 
-/** Prix TTC = HT × (1 + taux de TVA). Produits sans règle de TVA : HT tel quel. */
-const priceTtc = sql<string>`round(${product.priceHt} * (1 + coalesce(${taxRule.rate}, 0) / 100), 2)`;
-const priceTtcStrike = sql<
-	string | null
->`round(${product.priceHtStrike} * (1 + coalesce(${taxRule.rate}, 0) / 100), 2)`;
-
-/** Vignette : première image du produit (position la plus basse). */
-/**
- * Vignette : première image du produit, à défaut le logo de sa marque.
- *
- * 68 % du catalogue n'a aucune photo — héritage de la reprise. Afficher le logo
- * du fabricant vaut mieux qu'un cadre vide : le client reconnaît au moins
- * l'origine de la pièce. La distinction reste faite côté affichage, pour ne pas
- * présenter un logo comme une photo du produit.
- */
-const thumbnail = sql<string | null>`COALESCE(
-	(
-		SELECT m.url FROM ${productMedia} m
-		WHERE m.product_id = ${product.id} AND m.type = 'image'
-		ORDER BY m.position, m.id
-		LIMIT 1
-	),
-	${brand.logoUrl}
-)`;
-
-/** Vrai lorsque la vignette est un logo de marque et non une photo du produit. */
-const isBrandLogo = sql<boolean>`NOT EXISTS (
-	SELECT 1 FROM ${productMedia} m
-	WHERE m.product_id = ${product.id} AND m.type = 'image'
-)`;
-
 /** Champs communs des cartes produit (listes, vignettes, produits liés). */
 const productCardFields = {
 	id: product.id,
@@ -74,11 +49,11 @@ const productCardFields = {
 	slug: product.slug,
 	reference: product.reference,
 	stock: product.stock,
-	priceTtc,
-	priceTtcStrike,
+	priceTtc: priceTtcSql,
+	priceTtcStrike: priceTtcStrikeSql,
 	brandName: brand.name,
-	imageUrl: thumbnail,
-	imageIsBrandLogo: isBrandLogo
+	imageUrl: thumbnailWithBrandFallbackSql,
+	imageIsBrandLogo: isBrandLogoSql
 };
 
 export type ShopSort = 'new' | 'price_asc' | 'price_desc' | 'name';
@@ -485,6 +460,116 @@ export async function listShopProducts(params: ShopListParams = {}) {
 	};
 }
 
+// ---------------------------------------------------------------------------
+// Listing avec filtres (catégorie, recherche) — parsing d'URL et chargement
+// ---------------------------------------------------------------------------
+
+const SHOP_SORTS: ShopSort[] = ['new', 'price_asc', 'price_desc', 'name'];
+
+/** Filtres d'un listing vitrine tels que portés par l'URL. */
+export type ParsedShopListParams = {
+	page: number;
+	sort: ShopSort;
+	brandSlugs: string[];
+	inStockOnly: boolean;
+	specs: { name: string; value: string }[];
+};
+
+/**
+ * Filtres portés par l'URL : partageables et utilisables sans JavaScript.
+ *
+ * Une seule marque et une seule caractéristique sont retenues : l'URL peut en
+ * porter plusieurs (lien partagé, retour arrière), la page n'en applique
+ * qu'une pour rester cohérente avec les filtres proposés.
+ */
+export function parseShopListParams(url: URL): ParsedShopListParams {
+	const triRaw = url.searchParams.get('tri') as ShopSort | null;
+
+	// Format « Libellé:Valeur » — le libellé peut contenir des espaces, on ne
+	// découpe donc qu'au premier deux-points.
+	const specs = url.searchParams
+		.getAll('spec')
+		.slice(0, 1)
+		.map((token) => {
+			const at = token.indexOf(':');
+			return at > 0 ? { name: token.slice(0, at), value: token.slice(at + 1) } : null;
+		})
+		.filter((s) => s !== null);
+
+	return {
+		page: Number(url.searchParams.get('page') ?? '1') || 1,
+		sort: triRaw && SHOP_SORTS.includes(triRaw) ? triRaw : 'new',
+		brandSlugs: url.searchParams.getAll('marque').slice(0, 1),
+		inStockOnly: url.searchParams.get('stock') === '1',
+		specs
+	};
+}
+
+/** Marques actives, pour résoudre les slugs des filtres d'URL. */
+function activeBrandOptions() {
+	return cached(
+		'shop-active-brands',
+		() =>
+			db
+				.select({ id: brand.id, name: brand.name, slug: brand.slug })
+				.from(brand)
+				.where(eq(brand.isActive, true))
+				.orderBy(asc(brand.name)),
+		600
+	); // 10 minutes
+}
+
+/**
+ * Charge un listing vitrine complet : produits + facettes + filtres retenus.
+ *
+ * Mutualisé entre la page de catégorie et la recherche — tout nouveau listing
+ * (marque, promotions…) part d'ici plutôt que d'un copier-coller.
+ */
+export async function loadShopListing(
+	url: URL,
+	scope: { categoryIds?: number[]; search?: string } = {}
+) {
+	const parsed = parseShopListParams(url);
+
+	const brands = await activeBrandOptions();
+	const selected = brands.filter((b) => parsed.brandSlugs.includes(b.slug));
+
+	const filters: ShopListParams = {
+		categoryIds: scope.categoryIds,
+		search: scope.search || undefined,
+		brandIds: selected.length > 0 ? selected.map((b) => b.id) : undefined,
+		inStockOnly: parsed.inStockOnly,
+		specs: parsed.specs.length > 0 ? parsed.specs : undefined
+	};
+
+	const [products, brandFacets, inStockTotal, specFacets] = await Promise.all([
+		listShopProducts({ ...filters, sort: parsed.sort, page: parsed.page }),
+		shopBrandFacets(filters),
+		shopStockFacet(filters),
+		shopSpecFacets(filters)
+	]);
+
+	// Les facettes portent l'id de marque ; l'URL, le slug, plus lisible.
+	const byId = new Map(brands.map((b) => [b.id, b]));
+
+	return {
+		products,
+		sort: parsed.sort,
+		facets: {
+			brands: brandFacets
+				.map((f) => ({ value: byId.get(f.id)?.slug ?? '', label: f.name, total: f.total }))
+				.filter((f) => f.value),
+			inStockTotal,
+			specs: specFacets
+		},
+		selected: {
+			brands: selected.map((b) => ({ value: b.slug, label: b.name })),
+			inStockOnly: parsed.inStockOnly,
+			specs: parsed.specs.map((s) => `${s.name}:${s.value}`)
+		}
+	};
+}
+
 /** Marques actives mises en avant sur l'accueil (celles avec logo d'abord). */
 export function featuredBrands(limit = 12) {
 	return db
@@ -545,8 +630,8 @@ export async function getShopProduct(id: number) {
 			stock: product.stock,
 			weightKg: product.weightKg,
 			priceHt: product.priceHt,
-			priceTtc,
-			priceTtcStrike,
+			priceTtc: priceTtcSql,
+			priceTtcStrike: priceTtcStrikeSql,
 			/** Éco-participation, affichée distinctement du prix (CDC 10, R6). */
 			ecotax: product.ecotax,
 			taxRate: taxRule.rate,

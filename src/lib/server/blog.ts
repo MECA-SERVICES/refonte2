@@ -15,6 +15,7 @@ import {
 } from './db/blog.schema';
 import { user } from './db/auth.schema';
 import { slugify } from './slug';
+import { formFields, type ParseResult } from './forms';
 
 /** Durée de validité d'un lien d'aperçu (R10). */
 const PREVIEW_TOKEN_DAYS = 7;
@@ -294,14 +295,6 @@ async function uniqueSlug(
 	}
 }
 
-/**
- * Résultat d'une analyse de formulaire.
- *
- * Union discriminée par `ok` : un simple `'values' in out` ne suffirait pas à
- * convaincre TypeScript que la valeur est définie.
- */
-export type ParseResult<T> = { ok: false; error: string } | { ok: true; values: T };
-
 /** Champs d'un article, prêts à être enregistrés. */
 export type ArticleInput = {
 	title: string;
@@ -321,7 +314,7 @@ export type ArticleInput = {
 
 /** Champs d'un article, extraits d'un formulaire. */
 export function parseArticleForm(form: FormData): ParseResult<ArticleInput> {
-	const str = (key: string) => form.get(key)?.toString().trim() || null;
+	const { str } = formFields(form);
 
 	const title = str('title');
 	if (!title) return { ok: false, error: 'Le titre est obligatoire.' };
@@ -380,7 +373,7 @@ export type CategoryInput = {
 
 /** Champs d'une catégorie, extraits d'un formulaire. */
 export function parseCategoryForm(form: FormData): ParseResult<CategoryInput> {
-	const str = (key: string) => form.get(key)?.toString().trim() || null;
+	const { str, int, bool } = formFields(form);
 
 	const name = str('name');
 	if (!name) return { ok: false, error: 'Le libellé est obligatoire.' };
@@ -393,8 +386,8 @@ export function parseCategoryForm(form: FormData): ParseResult<CategoryInput> {
 			description: str('description'),
 			color: str('color'),
 			icon: str('icon'),
-			sortOrder: Number(form.get('sortOrder')) || 0,
-			isActive: form.get('isActive') != null
+			sortOrder: int('sortOrder'),
+			isActive: bool('isActive')
 		}
 	};
 }

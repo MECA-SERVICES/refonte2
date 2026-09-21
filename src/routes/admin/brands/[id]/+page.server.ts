@@ -18,7 +18,7 @@ export const actions: Actions = {
 		if (!Number.isInteger(id)) throw error(404, 'Marque introuvable');
 
 		const parsed = parseBrandForm(await request.formData());
-		if ('error' in parsed) return fail(400, { message: parsed.error });
+		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		await updateBrand(id, parsed.values);
 		throw redirect(303, '/admin/brands');

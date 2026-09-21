@@ -9,6 +9,7 @@
 import { and, asc, desc, eq, ne } from 'drizzle-orm';
 import { db } from './db';
 import { address } from './db/customer.schema';
+import { formFields, type ParseResult } from './forms';
 
 /** Champs saisissables par le client. */
 export type AddressInput = {
@@ -125,7 +126,9 @@ export async function deleteCustomerAddress(customerId: number, addressId: numbe
 	const owned = await getCustomerAddress(customerId, addressId);
 	if (!owned) return false;
 
-	await db.delete(address).where(and(eq(address.id, addressId), eq(address.customerId, customerId)));
+	await db
+		.delete(address)
+		.where(and(eq(address.id, addressId), eq(address.customerId, customerId)));
 
 	// Le carnet ne doit pas rester sans adresse par défaut : on promeut la plus
 	// ancienne restante, celle que le client utilise vraisemblablement le plus.
@@ -152,10 +155,8 @@ export async function deleteCustomerAddress(customerId: number, addressId: numbe
 }
 
 /** Champs obligatoires manquants, sous forme de messages prêts à afficher. */
-export function parseAddressForm(form: FormData):
-	| { error: string }
-	| { values: AddressInput } {
-	const str = (key: string) => form.get(key)?.toString().trim() || null;
+export function parseAddressForm(form: FormData): ParseResult<AddressInput> {
+	const { str, bool } = formFields(form);
 
 	const firstName = str('firstName');
 	const lastName = str('lastName');
@@ -164,10 +165,11 @@ export function parseAddressForm(form: FormData):
 	const city = str('city');
 
 	if (!firstName || !lastName || !line1 || !postalCode || !city) {
-		return { error: 'Nom, prénom, adresse, code postal et ville sont obligatoires.' };
+		return { ok: false, error: 'Nom, prénom, adresse, code postal et ville sont obligatoires.' };
 	}
 
 	return {
+		ok: true,
 		values: {
 			label: str('label'),
 			firstName,
@@ -181,8 +183,8 @@ export function parseAddressForm(form: FormData):
 			// transporteur applicable dans le tunnel de commande.
 			country: (str('country') ?? 'FR').toUpperCase().slice(0, 2),
 			phone: str('phone'),
-			isDefaultShipping: form.get('isDefaultShipping') != null,
-			isDefaultBilling: form.get('isDefaultBilling') != null
+			isDefaultShipping: bool('isDefaultShipping'),
+			isDefaultBilling: bool('isDefaultBilling')
 		}
 	};
 }

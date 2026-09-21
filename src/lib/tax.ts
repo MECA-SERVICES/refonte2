@@ -11,6 +11,8 @@
  * Ce module est partagé client/serveur : il ne fait aucun accès base.
  */
 
+import { round2 } from '$lib/money';
+
 /** Types de compte reconnus (CDC section 08). */
 export type CustomerType = 'particulier' | 'pro' | 'collectivite';
 
@@ -41,8 +43,32 @@ export type TaxProfile = {
  * R3, jamais de l'autoliquidation.
  */
 const EU_COUNTRIES = new Set([
-	'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'GR', 'HR', 'HU',
-	'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK'
+	'AT',
+	'BE',
+	'BG',
+	'CY',
+	'CZ',
+	'DE',
+	'DK',
+	'EE',
+	'ES',
+	'FI',
+	'GR',
+	'HR',
+	'HU',
+	'IE',
+	'IT',
+	'LT',
+	'LU',
+	'LV',
+	'MT',
+	'NL',
+	'PL',
+	'PT',
+	'RO',
+	'SE',
+	'SI',
+	'SK'
 ]);
 
 /** Mentions légales portées sur les documents émis en exonération (R17). */
@@ -114,11 +140,6 @@ export type TaxBreakdown = {
 	totalTva: number;
 	totalTtc: number;
 };
-
-/** Arrondi au centime — les montants monétaires ne portent que deux décimales. */
-function round2(value: number): number {
-	return Math.round((value + Number.EPSILON) * 100) / 100;
-}
 
 /**
  * Calcule la ventilation d'un montant hors taxes.

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPrice } from '$lib/money';
 	import { resolve } from '$app/paths';
 	import { Badge, Button, Card } from 'flowbite-svelte';
 	import { EditOutline, TrashBinOutline } from 'flowbite-svelte-icons';
@@ -13,7 +14,6 @@
 	let { data }: PageProps = $props();
 
 	const c = $derived(data.customer);
-	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 	const dayFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' });
 	const shortFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' });
 
@@ -126,7 +126,7 @@
 			Chiffre d'affaires TTC
 		</p>
 		<p class="mt-1 text-2xl font-bold text-gray-900 tabular-nums dark:text-white">
-			{eur.format(revenue)}
+			{formatPrice(revenue)}
 		</p>
 	</Card>
 
@@ -174,7 +174,7 @@
 								</p>
 							</div>
 							<span class="font-semibold text-gray-900 tabular-nums dark:text-white">
-								{eur.format(Number(o.totalTtc))}
+								{formatPrice(Number(o.totalTtc))}
 							</span>
 						</li>
 					{/each}

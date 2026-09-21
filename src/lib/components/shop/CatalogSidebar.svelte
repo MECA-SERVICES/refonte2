@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatNumber } from '$lib/money';
 	import { page } from '$app/state';
 
 	/**
@@ -35,8 +36,6 @@
 		/** Sélections en cours, au format « Libellé:Valeur ». */
 		selectedSpecs?: string[];
 	} = $props();
-
-	const fmt = new Intl.NumberFormat('fr-FR');
 
 	/**
 	 * Construit l'URL d'un filtre sans muter celle de la page : un filtre qui
@@ -109,7 +108,7 @@
 				>
 					<span class="min-w-0 truncate">{entry.name}</span>
 					{#if entry.total != null}
-						<span class="shrink-0 text-[12.5px] text-shop-faint">{fmt.format(entry.total)}</span>
+						<span class="shrink-0 text-[12.5px] text-shop-faint">{formatNumber(entry.total)}</span>
 					{/if}
 				</a>
 			{/each}
@@ -128,7 +127,7 @@
 					: 'border-transparent text-shop-ink-soft hover:bg-shop-subtle'}"
 			>
 				<span>En stock atelier</span>
-				<span class="text-shop-faint">{fmt.format(inStockTotal)}</span>
+				<span class="text-shop-faint">{formatNumber(inStockTotal)}</span>
 			</a>
 		</div>
 	{/if}
@@ -146,7 +145,7 @@
 							: 'border-transparent text-shop-ink-soft hover:bg-shop-subtle'}"
 					>
 						<span class="min-w-0 truncate">{item.label}</span>
-						<span class="shrink-0 text-shop-faint">{fmt.format(item.total)}</span>
+						<span class="shrink-0 text-shop-faint">{formatNumber(item.total)}</span>
 					</a>
 				{/each}
 			</div>
@@ -166,7 +165,7 @@
 							: 'border-transparent text-shop-ink-soft hover:bg-shop-subtle'}"
 					>
 						<span class="min-w-0 truncate">{item.value}</span>
-						<span class="shrink-0 text-shop-faint">{fmt.format(item.total)}</span>
+						<span class="shrink-0 text-shop-faint">{formatNumber(item.total)}</span>
 					</a>
 				{/each}
 			</div>

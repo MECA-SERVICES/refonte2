@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { computeTtc, formatPrice } from '$lib/money';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import {
@@ -81,7 +82,7 @@
 	const selectedRate = $derived(taxOptions.find((t) => t.value === taxRuleId)?.rate ?? 0);
 	const ttcPreview = $derived(
 		priceHt && !Number.isNaN(Number(priceHt))
-			? (Number(priceHt) * (1 + selectedRate / 100)).toFixed(2)
+			? formatPrice(computeTtc(priceHt, selectedRate))
 			: null
 	);
 
@@ -94,8 +95,6 @@
 		}
 		return { amount: (sale - cost).toFixed(2), percent: (((sale - cost) / sale) * 100).toFixed(1) };
 	});
-
-	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 
 	// Pastille de stock du bandeau : vert / orange / rouge comme PrestaShop.
 	const stockTone = $derived.by(() => {
@@ -136,7 +135,7 @@
 		<span class="text-gray-500 dark:text-gray-400">
 			Prix TTC :
 			<span class="font-medium text-gray-900 dark:text-white">
-				{ttcPreview ? `${ttcPreview} €` : '—'}
+				{ttcPreview ?? '—'}
 			</span>
 		</span>
 		<span class="text-gray-500 dark:text-gray-400">
@@ -424,7 +423,7 @@
 							<div
 								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
 							>
-								{ttcPreview ? `${ttcPreview} €` : '—'}
+								{ttcPreview ?? '—'}
 							</div>
 						</div>
 						<div>
@@ -460,7 +459,7 @@
 									Marge brute HT
 								</span>
 								<span class="mt-1 block text-xl font-semibold text-gray-900 dark:text-white">
-									{eur.format(Number(margin.amount))}
+									{formatPrice(Number(margin.amount))}
 								</span>
 							</div>
 							<div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
@@ -577,13 +576,13 @@
 						<div class="flex items-center justify-between">
 							<dt class="text-gray-500 dark:text-gray-400">Prix HT</dt>
 							<dd class="font-medium text-gray-900 dark:text-white">
-								{priceHt ? eur.format(Number(priceHt)) : '—'}
+								{priceHt ? formatPrice(Number(priceHt)) : '—'}
 							</dd>
 						</div>
 						<div class="flex items-center justify-between">
 							<dt class="text-gray-500 dark:text-gray-400">Prix TTC</dt>
 							<dd class="font-medium text-gray-900 dark:text-white">
-								{ttcPreview ? `${ttcPreview} €` : '—'}
+								{ttcPreview ?? '—'}
 							</dd>
 						</div>
 						<div class="flex items-center justify-between">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPrice } from '$lib/money';
 	import {
 		PageHeader,
 		FilterableTable,
@@ -35,7 +36,6 @@
 		dir: data.dir,
 		extra: searchParams
 	});
-	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' });
 
 	/**
@@ -243,7 +243,7 @@
 {/snippet}
 
 {#snippet totalCell(row: OrderRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{eur.format(Number(row.totalTtc))}</span>
+	<span class="font-medium text-gray-900 dark:text-white">{formatPrice(Number(row.totalTtc))}</span>
 {/snippet}
 
 {#snippet dateCell(row: OrderRow)}
@@ -268,7 +268,7 @@
 		{ key: 'total', label: 'Total TTC', cell: totalCell, sortKey: 'totalTtc' },
 		{ key: 'date', label: 'Date', cell: dateCell, sortKey: 'createdAt' }
 	]}
-	emptyMessage={emptyMessage}
+	{emptyMessage}
 	emptyAction={hasAnyFilter ? clearAction : undefined}
 	rowHref={(row) => `/admin/orders/${row.id}`}
 />

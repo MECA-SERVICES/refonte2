@@ -1,96 +1,63 @@
 import { db } from '$lib/server/db';
 import { customer, address } from '$lib/server/db/schema';
-import { and, asc, count, desc, eq, ilike, or, type SQL, type SQLWrapper } from 'drizzle-orm';
-import type { PgColumn } from 'drizzle-orm/pg-core';
+import { count, desc, eq } from 'drizzle-orm';
 import type { NewCustomer, NewAddress } from '$lib/server/db/customer.schema';
+import {
+	buildOrderBy,
+	buildWhere,
+	pageBounds,
+	paginated,
+	type ColumnMaps,
+	type ListParams
+} from '$lib/server/listing';
+import { formFields, type ParseResult } from '$lib/server/forms';
 
-/**
- * Colonnes filtrables par saisie libre (input « contient »).
- * La clé est le nom de filtre exposé dans l'URL ; on ne filtre QUE sur ces colonnes
- * (liste blanche : pas d'injection de nom de colonne arbitraire).
- */
-const TEXT_FILTER_COLUMNS: Record<string, PgColumn> = {
-	firstName: customer.firstName,
-	lastName: customer.lastName,
-	email: customer.email,
-	phone: customer.phone,
-	companyName: customer.companyName,
-	siret: customer.siret,
-	vatNumber: customer.vatNumber
+const CUSTOMER_MAPS: ColumnMaps = {
+	text: {
+		firstName: customer.firstName,
+		lastName: customer.lastName,
+		email: customer.email,
+		phone: customer.phone,
+		companyName: customer.companyName,
+		siret: customer.siret,
+		vatNumber: customer.vatNumber
+	},
+	exact: {
+		type: customer.type,
+		status: customer.status
+	},
+	sort: {
+		firstName: customer.firstName,
+		lastName: customer.lastName,
+		email: customer.email,
+		type: customer.type,
+		status: customer.status,
+		companyName: customer.companyName,
+		totalSpent: customer.totalSpent,
+		createdAt: customer.createdAt
+	},
+	defaultSort: customer.createdAt
 };
 
-/** Colonnes filtrables par égalité stricte (menus déroulants). */
-const EXACT_FILTER_COLUMNS: Record<string, PgColumn> = {
-	type: customer.type,
-	status: customer.status
-};
-
-/** Colonnes autorisées au tri (liste blanche). */
-const SORT_COLUMNS: Record<string, PgColumn> = {
-	firstName: customer.firstName,
-	lastName: customer.lastName,
-	email: customer.email,
-	type: customer.type,
-	status: customer.status,
-	companyName: customer.companyName,
-	totalSpent: customer.totalSpent,
-	createdAt: customer.createdAt
-};
-
-export type CustomerListParams = {
-	/** Recherche globale (tous les champs texte à la fois). */
-	search?: string;
-	/** Filtres par colonne : { firstName: 'jean', email: '@gmail', type: 'entreprise', ... }. */
-	filters?: Record<string, string>;
-	sort?: string;
-	dir?: 'asc' | 'desc';
-	page?: number;
-	perPage?: number;
-};
+export type CustomerListParams = ListParams;
 
 /** Liste paginée des clients : recherche globale + filtres par colonne + tri (tout côté serveur). */
 export async function listCustomers(params: CustomerListParams = {}) {
-	const page = Math.max(1, params.page ?? 1);
-	const perPage = Math.min(100, Math.max(1, params.perPage ?? 20));
-
-	const conditions: SQL[] = [];
-
-	// Recherche globale : le terme doit apparaître dans au moins une colonne texte.
-	if (params.search) {
-		const term = `%${params.search}%`;
-		const parts = Object.values(TEXT_FILTER_COLUMNS).map((col) => ilike(col, term));
-		conditions.push(or(...parts)!);
-	}
-
-	// Filtres par colonne.
-	for (const [key, raw] of Object.entries(params.filters ?? {})) {
-		const value = raw.trim();
-		if (!value) continue;
-		if (TEXT_FILTER_COLUMNS[key]) {
-			conditions.push(ilike(TEXT_FILTER_COLUMNS[key], `%${value}%`));
-		} else if (EXACT_FILTER_COLUMNS[key]) {
-			conditions.push(eq(EXACT_FILTER_COLUMNS[key], value));
-		}
-	}
-
-	const where = conditions.length ? and(...conditions) : undefined;
-
-	// Tri : colonne en liste blanche, direction bornée, défaut = plus récents.
-	const sortColumn: SQLWrapper = SORT_COLUMNS[params.sort ?? ''] ?? customer.createdAt;
-	const orderBy = params.dir === 'asc' ? asc(sortColumn) : desc(sortColumn);
+	const { page, perPage, offset } = pageBounds(params);
+	const where = buildWhere(params, CUSTOMER_MAPS);
 
 	const [rows, [{ total }]] = await Promise.all([
 		db
 			.select()
 			.from(customer)
 			.where(where)
-			.orderBy(orderBy)
+			.orderBy(buildOrderBy(params, CUSTOMER_MAPS))
 			.limit(perPage)
-			.offset((page - 1) * perPage),
+			.offset(offset),
 		db.select({ total: count() }).from(customer).where(where)
 	]);
 
-	return { rows, total, page, perPage, pageCount: Math.max(1, Math.ceil(total / perPage)) };
+	return paginated(rows, total, page, perPage);
 }
 
 /** Un client par son id (ou undefined). */
@@ -131,30 +98,24 @@ export async function deleteCustomer(id: number) {
 
 // ----- Adresses -----
 
-export type AddressListParams = {
-	search?: string;
-	page?: number;
-	perPage?: number;
+const ADDRESS_MAPS: ColumnMaps = {
+	text: {
+		firstName: address.firstName,
+		lastName: address.lastName,
+		city: address.city,
+		postalCode: address.postalCode
+	},
+	exact: {},
+	sort: {},
+	defaultSort: address.createdAt
 };
+
+export type AddressListParams = Pick<ListParams, 'search' | 'page' | 'perPage'>;
 
 /** Liste paginée globale des adresses (avec le nom du client). */
 export async function listAddresses(params: AddressListParams = {}) {
-	const page = Math.max(1, params.page ?? 1);
-	const perPage = Math.min(100, Math.max(1, params.perPage ?? 20));
-
-	const filters: SQL[] = [];
-	if (params.search) {
-		const term = `%${params.search}%`;
-		filters.push(
-			or(
-				ilike(address.firstName, term),
-				ilike(address.lastName, term),
-				ilike(address.city, term),
-				ilike(address.postalCode, term)
-			)!
-		);
-	}
-	const where = filters.length ? and(...filters) : undefined;
+	const { page, perPage, offset } = pageBounds(params);
+	const where = buildWhere(params, ADDRESS_MAPS);
 
 	const [rows, [{ total }]] = await Promise.all([
 		db
@@ -176,11 +137,11 @@ export async function listAddresses(params: AddressListParams = {}) {
 			.where(where)
 			.orderBy(desc(address.createdAt))
 			.limit(perPage)
-			.offset((page - 1) * perPage),
+			.offset(offset),
 		db.select({ total: count() }).from(address).where(where)
 	]);
 
-	return { rows, total, page, perPage, pageCount: Math.max(1, Math.ceil(total / perPage)) };
+	return paginated(rows, total, page, perPage);
 }
 
 export async function createAddress(values: NewAddress) {
@@ -194,34 +155,33 @@ export async function deleteAddress(id: number) {
 
 // ----- Parsing des formulaires -----
 
-function str(v: FormDataEntryValue | null): string | null {
-	const s = v?.toString().trim();
-	return s ? s : null;
-}
-
 /** Extrait les champs client d'un FormData (validation minimale). */
-export function parseCustomerForm(form: FormData) {
-	const firstName = str(form.get('firstName'));
-	const lastName = str(form.get('lastName'));
-	const email = str(form.get('email'));
+// `userId` n'est pas saisi au formulaire : il est rattaché par l'appelant.
+export function parseCustomerForm(form: FormData): ParseResult<Omit<NewCustomer, 'userId'>> {
+	const { str, bool } = formFields(form);
+
+	const firstName = str('firstName');
+	const lastName = str('lastName');
+	const email = str('email');
 
 	if (!firstName || !lastName || !email) {
-		return { error: 'Prénom, nom et email sont requis.' as const };
+		return { ok: false, error: 'Prénom, nom et email sont requis.' };
 	}
 
 	return {
+		ok: true,
 		values: {
 			firstName,
 			lastName,
 			email,
-			phone: str(form.get('phone')),
-			type: str(form.get('type')) ?? 'particulier',
-			status: str(form.get('status')) ?? 'validated',
-			companyName: str(form.get('companyName')),
-			siret: str(form.get('siret')),
-			vatNumber: str(form.get('vatNumber')),
-			privateNote: str(form.get('privateNote')),
-			newsletterSubscribed: form.get('newsletterSubscribed') != null
+			phone: str('phone'),
+			type: str('type') ?? 'particulier',
+			status: str('status') ?? 'validated',
+			companyName: str('companyName'),
+			siret: str('siret'),
+			vatNumber: str('vatNumber'),
+			privateNote: str('privateNote'),
+			newsletterSubscribed: bool('newsletterSubscribed')
 		}
 	};
 }

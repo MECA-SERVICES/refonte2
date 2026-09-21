@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatNumber, formatPrice, formatPriceRounded } from '$lib/money';
 	import type { ApexOptions } from 'apexcharts';
 	import { Chart } from '@flowbite-svelte-plugins/chart';
 	import { Button, Card } from 'flowbite-svelte';
@@ -8,13 +9,6 @@
 
 	let { data }: PageProps = $props();
 
-	const eur = new Intl.NumberFormat('fr-FR', {
-		style: 'currency',
-		currency: 'EUR',
-		maximumFractionDigits: 0
-	});
-	const eurPrecise = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
-	const num = new Intl.NumberFormat('fr-FR');
 	const dayFmt = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short' });
 
 	const PERIOD_LABELS: Record<number, string> = {
@@ -57,7 +51,7 @@
 		},
 		yaxis: {
 			labels: {
-				formatter: (value: number) => eur.format(value),
+				formatter: (value: number) => formatPriceRounded(value),
 				style: { fontSize: '11px' }
 			}
 		},
@@ -69,7 +63,7 @@
 		stroke: { curve: 'smooth', width: 2 },
 		dataLabels: { enabled: false },
 		grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
-		tooltip: { y: { formatter: (value: number) => eurPrecise.format(value) } }
+		tooltip: { y: { formatter: (value: number) => formatPrice(value) } }
 	});
 
 	/** Répartition des commandes par état. */
@@ -99,14 +93,14 @@
 			categories: data.products.map((product) =>
 				product.name.length > 34 ? `${product.name.slice(0, 32)}…` : product.name
 			),
-			labels: { formatter: (value: string) => eur.format(Number(value)) }
+			labels: { formatter: (value: string) => formatPriceRounded(Number(value)) }
 		},
 		yaxis: { labels: { style: { fontSize: '11px' } } },
 		colors: [BLUE],
 		plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '70%' } },
 		dataLabels: { enabled: false },
 		grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
-		tooltip: { y: { formatter: (value: number) => eurPrecise.format(value) } }
+		tooltip: { y: { formatter: (value: number) => formatPrice(value) } }
 	});
 
 	const periodHref = (days: number) => `/admin/stats?jours=${days}`;
@@ -160,25 +154,25 @@
 <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 	{@render kpi(
 		"Chiffre d'affaires TTC",
-		eurPrecise.format(data.headline.revenue.value),
+		formatPrice(data.headline.revenue.value),
 		data.headline.revenue.change,
 		'vs période précédente'
 	)}
 	{@render kpi(
 		'Commandes payées',
-		num.format(data.headline.orders.value),
+		formatNumber(data.headline.orders.value),
 		data.headline.orders.change,
 		'vs période précédente'
 	)}
 	{@render kpi(
 		'Panier moyen',
-		eurPrecise.format(data.headline.averageCart.value),
+		formatPrice(data.headline.averageCart.value),
 		data.headline.averageCart.change,
 		'vs période précédente'
 	)}
 	{@render kpi(
 		'Clients acheteurs',
-		num.format(data.headline.customers.value),
+		formatNumber(data.headline.customers.value),
 		data.headline.customers.change,
 		'vs période précédente'
 	)}
@@ -210,7 +204,7 @@
 					<li class="flex items-center justify-between gap-3 py-2 text-sm">
 						<span class="min-w-0 truncate text-gray-700 dark:text-gray-300">{product.name}</span>
 						<span class="shrink-0 text-gray-500 tabular-nums">
-							{product.quantity} × · {eurPrecise.format(product.revenue)}
+							{product.quantity} × · {formatPrice(product.revenue)}
 						</span>
 					</li>
 				{/each}
@@ -238,13 +232,13 @@
 				<div class="flex justify-between gap-4">
 					<dt class="text-gray-500">Chiffre d'affaires HT</dt>
 					<dd class="font-medium text-gray-900 tabular-nums dark:text-white">
-						{eurPrecise.format(data.margin.revenueHt)}
+						{formatPrice(data.margin.revenueHt)}
 					</dd>
 				</div>
 				<div class="flex justify-between gap-4">
 					<dt class="text-gray-500">Coût d'achat</dt>
 					<dd class="font-medium text-gray-900 tabular-nums dark:text-white">
-						{eurPrecise.format(data.margin.cost)}
+						{formatPrice(data.margin.cost)}
 					</dd>
 				</div>
 				<div
@@ -256,7 +250,7 @@
 							? 'text-green-600 dark:text-green-400'
 							: 'text-red-600 dark:text-red-400'}"
 					>
-						{eurPrecise.format(data.margin.margin)}
+						{formatPrice(data.margin.margin)}
 						{#if data.margin.rate !== null}
 							<span class="text-xs font-normal">({data.margin.rate.toFixed(1)} %)</span>
 						{/if}

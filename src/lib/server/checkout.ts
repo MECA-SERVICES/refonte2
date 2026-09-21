@@ -12,6 +12,7 @@ import { cartItem, order, orderLine, orderState, orderStateHistory } from './db/
 import { address } from './db/customer.schema';
 import { product } from './db/catalog.schema';
 import { effectiveTaxRate, type TaxRegime } from '$lib/tax';
+import { round2 } from '$lib/money';
 
 /** État d'entrée d'une commande réglée par virement. */
 const BANK_TRANSFER_STATE = 'en-attente-du-paiement-par-virement-bancaire';
@@ -153,9 +154,8 @@ export async function createOrderFromCart(input: CheckoutInput) {
 		const shippingRate = effectiveTaxRate(20, input.regime);
 		const shippingTva = input.shipping.feeHt * (shippingRate / 100);
 
-		const round = (n: number) => Math.round(n * 100) / 100;
-		const grandHt = round(totalHt + input.shipping.feeHt);
-		const grandTva = round(totalTva + shippingTva);
+		const grandHt = round2(totalHt + input.shipping.feeHt);
+		const grandTva = round2(totalTva + shippingTva);
 
 		const [created] = await tx
 			.insert(order)
@@ -165,7 +165,7 @@ export async function createOrderFromCart(input: CheckoutInput) {
 				stateId: state.id,
 				totalHt: grandHt.toFixed(2),
 				totalTva: grandTva.toFixed(2),
-				totalTtc: round(grandHt + grandTva).toFixed(2),
+				totalTtc: round2(grandHt + grandTva).toFixed(2),
 				shippingFee: input.shipping.feeHt.toFixed(2),
 				shippingAddress: freeze(shippingAddress),
 				billingAddress: freeze(billingAddress),

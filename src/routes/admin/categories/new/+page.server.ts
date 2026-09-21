@@ -10,7 +10,7 @@ export const load: PageServerLoad = async () => {
 export const actions: Actions = {
 	default: async ({ request }) => {
 		const parsed = parseCategoryForm(await request.formData());
-		if ('error' in parsed) return fail(400, { message: parsed.error });
+		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		const created = await createCategory(parsed.values);
 		throw redirect(303, `/admin/categories/${created.id}`);

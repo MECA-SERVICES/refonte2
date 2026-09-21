@@ -52,7 +52,7 @@ export const actions: Actions = {
 		const id = idParam(params);
 		const form = await request.formData();
 		const parsed = parseProductForm(form);
-		if ('error' in parsed) return fail(400, { message: parsed.error });
+		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		// Le stock n'est pas modifiable ici : il est piloté par les mouvements de stock.
 		const { stock: _ignoredStock, ...values } = parsed.values;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPrice } from '$lib/money';
 	import { Button } from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
 	import {
@@ -22,8 +23,6 @@
 		// Conserve la recherche globale (barre du haut) dans les liens de filtre/tri/pagination.
 		extra: data.q ? { q: data.q } : undefined
 	});
-
-	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 </script>
 
 <svelte:head><title>Produits · Administration</title></svelte:head>
@@ -55,7 +54,7 @@
 {/snippet}
 
 {#snippet priceCell(row: ProductRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{eur.format(Number(row.priceHt))}</span>
+	<span class="font-medium text-gray-900 dark:text-white">{formatPrice(Number(row.priceHt))}</span>
 {/snippet}
 
 {#snippet brandCell(row: ProductRow)}

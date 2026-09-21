@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatNumber } from '$lib/money';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
 	import ShopButton from '$lib/components/shop/ShopButton.svelte';
@@ -7,7 +8,6 @@
 	let { data }: PageProps = $props();
 
 	const brand = $derived(data.brand);
-	const num = new Intl.NumberFormat('fr-FR');
 
 	/**
 	 * Chiffres du bandeau.
@@ -16,9 +16,9 @@
 	 * se remarque tout de suite sur une page de marque.
 	 */
 	const facts = $derived([
-		{ value: num.format(data.facts.products), label: 'références en ligne' },
-		{ value: num.format(data.facts.inStock), label: 'en stock atelier' },
-		{ value: num.format(data.facts.categories), label: 'rayons couverts' },
+		{ value: formatNumber(data.facts.products), label: 'références en ligne' },
+		{ value: formatNumber(data.facts.inStock), label: 'en stock atelier' },
+		{ value: formatNumber(data.facts.categories), label: 'rayons couverts' },
 		{ value: '24 h', label: 'expédition des pièces' }
 	]);
 </script>
@@ -124,7 +124,7 @@
 			>
 				<p class="font-display text-base font-bold text-shop-ink">{range.name}</p>
 				<p class="mt-1 text-[13px] text-shop-muted">
-					{num.format(range.total)} référence{range.total > 1 ? 's' : ''}
+					{formatNumber(range.total)} référence{range.total > 1 ? 's' : ''}
 				</p>
 			</a>
 		{/each}
@@ -141,7 +141,7 @@
 			href="/recherche?marque={brand.slug}"
 			class="font-display text-sm font-bold text-shop-blue hover:underline"
 		>
-			Voir les {num.format(data.facts.products)} références →
+			Voir les {formatNumber(data.facts.products)} références →
 		</a>
 	</div>
 

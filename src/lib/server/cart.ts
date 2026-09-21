@@ -1,15 +1,11 @@
 import { db } from '$lib/server/db';
-import {
-	brand,
-	cart,
-	cartItem,
-	customer,
-	product,
-	productMedia,
-	taxRule
-} from '$lib/server/db/schema';
+import { brand, cart, cartItem, customer, product, taxRule } from '$lib/server/db/schema';
 import { and, eq, isNull, sql } from 'drizzle-orm';
-import { effectiveTaxRate, type TaxRegime } from '$lib/tax';
+import type { TaxRegime } from '$lib/tax';
+import { computeCartTotals, type CartTotals } from '$lib/cart';
+import { firstImageSql, priceTtcSql } from './pricing';
+
+export { computeCartTotals, type CartTotals } from '$lib/cart';
 
 /**
  * Domaine « Panier » — section 18 du cahier des charges.
@@ -27,17 +23,6 @@ export const CART_COOKIE = 'ms_cart';
 
 /** Durée de vie du panier visiteur : 30 jours. */
 export const CART_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
-
-/** Prix TTC calculé en SQL, comme dans le service vitrine. */
-const priceTtc = sql<string>`round(${product.priceHt} * (1 + coalesce(${taxRule.rate}, 0) / 100), 2)`;
-
-/** Vignette : première image du produit. */
-const thumbnail = sql<string | null>`(
-	SELECT m.url FROM ${productMedia} m
-	WHERE m.product_id = ${product.id} AND m.type = 'image'
-	ORDER BY m.position, m.id
-	LIMIT 1
-)`;
 
 export type CartLine = {
 	id: number;
@@ -57,13 +42,6 @@ export type CartLine = {
 	taxRate: string | null;
 	/** Prix HT au moment de l'ajout, s'il a été enregistré. */
 	priceHtAtAdd: string | null;
-};
-
-export type CartTotals = {
-	subtotalHt: number;
-	tax: number;
-	totalTtc: number;
-	itemCount: number;
 };
 
 export type CartView = {
@@ -144,11 +122,11 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 			slug: product.slug,
 			reference: product.reference,
 			brandName: brand.name,
-			imageUrl: thumbnail,
+			imageUrl: firstImageSql(product.id),
 			stock: product.stock,
 			isActive: product.isActive,
 			priceHt: product.priceHt,
-			priceTtc,
+			priceTtc: priceTtcSql,
 			/** Éco-participation, à présenter séparément du prix (CDC 10, R6). */
 			ecotax: product.ecotax,
 			taxRate: taxRule.rate
@@ -159,37 +137,6 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 		.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
 		.where(eq(cartItem.cartId, cartId))
 		.orderBy(cartItem.id);
-}
-
-/**
- * Totaux du panier. Les prix retenus sont ceux en vigueur (règle R10).
- *
- * La TVA est recalculée à partir du taux du produit et du régime du client, et
- * non déduite de l'écart TTC/HT : le TTC issu de la requête suppose toujours le
- * régime standard, ce qui facturerait la taxe à un client exonéré (CDC 23,
- * R1-R2). Le taux variant d'un article à l'autre, le calcul reste ligne à ligne.
- */
-export function computeTotals(lines: CartLine[], regime: TaxRegime = 'standard'): CartTotals {
-	let subtotalHt = 0;
-	let tax = 0;
-	let itemCount = 0;
-
-	for (const line of lines) {
-		const lineHt = Number(line.priceHt) * line.quantity;
-		subtotalHt += lineHt;
-		tax += lineHt * (effectiveTaxRate(line.taxRate, regime) / 100);
-		itemCount += line.quantity;
-	}
-
-	const round = (n: number) => Math.round(n * 100) / 100;
-	const ht = round(subtotalHt);
-	const tva = round(tax);
-	return {
-		subtotalHt: ht,
-		tax: tva,
-		totalTtc: round(ht + tva),
-		itemCount
-	};
 }
 
 /** Un article désactivé ou en rupture bloque le passage en commande (règle R7). */
@@ -211,7 +158,7 @@ export async function getCart(owner: CartOwner, regime: TaxRegime = 'standard'):
 	return {
 		id: found.id,
 		lines,
-		totals: computeTotals(lines, regime),
+		totals: computeCartTotals(lines, regime),
 		hasBlockingLine: lines.some(isBlocking)
 	};
 }

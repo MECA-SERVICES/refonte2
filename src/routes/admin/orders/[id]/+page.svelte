@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPrice } from '$lib/money';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { Badge, Button, Card, Select, Input, Label, Textarea } from 'flowbite-svelte';
@@ -8,7 +9,6 @@
 	let { data, form }: PageProps = $props();
 
 	const o = $derived(data.order);
-	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
 	const dayFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' });
 
@@ -88,7 +88,7 @@
 			Total TTC
 		</p>
 		<p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
-			{eur.format(Number(o.totalTtc))}
+			{formatPrice(Number(o.totalTtc))}
 		</p>
 	</Card>
 
@@ -165,8 +165,8 @@
 							</p>
 
 							<p class="mt-1.5 text-sm text-gray-600 dark:text-gray-300">
-								{l.quantity} × {eur.format(Number(l.unitPriceHt))} HT
-								<span class="text-gray-400">({eur.format(Number(l.unitPriceTtc))} TTC)</span>
+								{l.quantity} × {formatPrice(Number(l.unitPriceHt))} HT
+								<span class="text-gray-400">({formatPrice(Number(l.unitPriceTtc))} TTC)</span>
 							</p>
 
 							{#if margin}
@@ -177,7 +177,7 @@
 											? 'font-medium text-green-600 dark:text-green-400'
 											: 'font-medium text-red-600 dark:text-red-400'}
 									>
-										{eur.format(margin.amount)} ({margin.percent.toFixed(1)} %)
+										{formatPrice(margin.amount)} ({margin.percent.toFixed(1)} %)
 									</span>
 								</p>
 							{/if}
@@ -185,10 +185,10 @@
 
 						<div class="shrink-0 text-right">
 							<p class="font-semibold text-gray-900 tabular-nums dark:text-white">
-								{eur.format(Number(l.totalTtc))}
+								{formatPrice(Number(l.totalTtc))}
 							</p>
 							<p class="mt-0.5 text-xs text-gray-500 tabular-nums">
-								{eur.format(Number(l.totalHt))} HT
+								{formatPrice(Number(l.totalHt))} HT
 							</p>
 						</div>
 					</li>
@@ -200,13 +200,13 @@
 				<div class="flex justify-between">
 					<dt class="text-gray-500">Sous-total HT</dt>
 					<dd class="text-gray-900 tabular-nums dark:text-white">
-						{eur.format(Number(o.totalHt) - Number(o.shippingFee))}
+						{formatPrice(Number(o.totalHt) - Number(o.shippingFee))}
 					</dd>
 				</div>
 				<div class="flex justify-between">
 					<dt class="text-gray-500">Livraison HT</dt>
 					<dd class="text-gray-900 tabular-nums dark:text-white">
-						{eur.format(Number(o.shippingFee))}
+						{formatPrice(Number(o.shippingFee))}
 					</dd>
 				</div>
 				{#if Number(o.additionalShippingFee) > 0}
@@ -216,20 +216,20 @@
 							{#if o.additionalFeeReason}<span class="text-xs">— {o.additionalFeeReason}</span>{/if}
 						</dt>
 						<dd class="text-gray-900 tabular-nums dark:text-white">
-							{eur.format(Number(o.additionalShippingFee))}
+							{formatPrice(Number(o.additionalShippingFee))}
 						</dd>
 					</div>
 				{/if}
 				{#if Number(o.discountAmount) > 0}
 					<div class="flex justify-between text-green-600 dark:text-green-400">
 						<dt>Remise</dt>
-						<dd class="tabular-nums">−{eur.format(Number(o.discountAmount))}</dd>
+						<dd class="tabular-nums">−{formatPrice(Number(o.discountAmount))}</dd>
 					</div>
 				{/if}
 				<div class="flex justify-between">
 					<dt class="text-gray-500">TVA</dt>
 					<dd class="text-gray-900 tabular-nums dark:text-white">
-						{eur.format(Number(o.totalTva))}
+						{formatPrice(Number(o.totalTva))}
 					</dd>
 				</div>
 				<div
@@ -237,7 +237,7 @@
 				>
 					<dt class="text-gray-900 dark:text-white">Total TTC</dt>
 					<dd class="text-gray-900 tabular-nums dark:text-white">
-						{eur.format(Number(o.totalTtc))}
+						{formatPrice(Number(o.totalTtc))}
 					</dd>
 				</div>
 			</dl>

@@ -8,7 +8,7 @@ export const actions: Actions = {
 	default: async (event) => {
 		const form = await event.request.formData();
 		const parsed = parseCustomerForm(form);
-		if ('error' in parsed) {
+		if (!parsed.ok) {
 			return fail(400, { message: parsed.error });
 		}
 		const { values } = parsed;

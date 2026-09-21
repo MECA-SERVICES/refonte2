@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatNumber } from '$lib/money';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
 	import PartFinder from '$lib/components/shop/PartFinder.svelte';
 	import PromoSlider, { type PromoSlide } from '$lib/components/shop/PromoSlider.svelte';
@@ -9,8 +10,6 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-
-	const fmt = new Intl.NumberFormat('fr-FR');
 
 	/** Sélecteur de pièce : listes de départ, à brancher sur la compatibilité. */
 	const finderBrands = [
@@ -197,7 +196,7 @@
 	<title>MS Shop — Meca Services · Motoculture & pièces détachées</title>
 	<meta
 		name="description"
-		content="Pièces détachées et matériel de motoculture : plus de {fmt.format(
+		content="Pièces détachées et matériel de motoculture : plus de {formatNumber(
 			data.productTotal
 		)} références de marque, 100 % origine. Tondeuses, robots, débroussailleuses, S.A.V expert."
 	/>

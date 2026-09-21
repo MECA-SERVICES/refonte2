@@ -1,10 +1,9 @@
 <script lang="ts">
+	import { formatNumber } from '$lib/money';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-
-	const num = new Intl.NumberFormat('fr-FR');
 
 	let query = $state('');
 	/** Initiale sélectionnée ; `null` quand aucun filtre alphabétique n'est posé. */
@@ -70,7 +69,7 @@
 	<title>Toutes les marques — MS Shop</title>
 	<meta
 		name="description"
-		content="Les {num.format(
+		content="Les {formatNumber(
 			data.brands.length
 		)} marques de motoculture et de pièces détachées distribuées par MS Shop."
 	/>
@@ -84,8 +83,8 @@
 	Toutes les <span class="text-shop-orange">marques</span>
 </h1>
 <p class="mt-2 max-w-[70ch] text-[15px] leading-relaxed text-shop-ink-soft">
-	{num.format(data.brands.length)} marques référencées, pièces d'origine et adaptables homologuées. Choisissez
-	la vôtre pour accéder à son catalogue.
+	{formatNumber(data.brands.length)} marques référencées, pièces d'origine et adaptables homologuées.
+	Choisissez la vôtre pour accéder à son catalogue.
 </p>
 
 <!-- ================= Filtres ================= -->
@@ -145,7 +144,7 @@
 	</div>
 {:else}
 	<p class="mt-5 text-sm text-shop-muted" aria-live="polite">
-		{num.format(filtered.length)}
+		{formatNumber(filtered.length)}
 		{filtered.length > 1 ? 'marques' : 'marque'}
 	</p>
 
@@ -176,8 +175,8 @@
 									{item.name}
 								</span>
 								<span class="block text-xs text-shop-muted">
-									{num.format(item.total)} réf.{#if item.inStock > 0}
-										· {num.format(item.inStock)} en stock{/if}
+									{formatNumber(item.total)} réf.{#if item.inStock > 0}
+										· {formatNumber(item.inStock)} en stock{/if}
 								</span>
 							</span>
 						</a>

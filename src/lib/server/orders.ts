@@ -28,6 +28,8 @@ import {
 } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NewOrderState } from '$lib/server/db/order.schema';
+import { formFields, type ParseResult } from '$lib/server/forms';
+import { firstImageSql } from '$lib/server/pricing';
 
 // ===========================================================================
 // Commandes
@@ -219,11 +221,7 @@ export async function getOrderFull(id: number) {
 				purchasePrice: product.purchasePrice,
 				/** Stock actuel, utile lors de la préparation du colis. */
 				currentStock: product.stock,
-				catalogImageUrl: sql<string | null>`(
-					SELECT m.url FROM product_media m
-					WHERE m.product_id = ${orderLine.productId} AND m.type = 'image'
-					ORDER BY m.position, m.id LIMIT 1
-				)`
+				catalogImageUrl: firstImageSql(orderLine.productId)
 			})
 			.from(orderLine)
 			.leftJoin(product, eq(orderLine.productId, product.id))
@@ -327,22 +325,25 @@ export async function deleteOrderState(id: number) {
 	await db.delete(orderState).where(eq(orderState.id, id));
 }
 
-export function parseOrderStateForm(form: FormData) {
-	const label = form.get('label')?.toString().trim();
-	const code = form.get('code')?.toString().trim();
-	if (!label || !code) return { error: 'Le code et le libellé sont requis.' as const };
+export function parseOrderStateForm(form: FormData): ParseResult<NewOrderState> {
+	const { str, int, bool } = formFields(form);
+
+	const label = str('label');
+	const code = str('code');
+	if (!label || !code) return { ok: false, error: 'Le code et le libellé sont requis.' };
 
 	return {
+		ok: true,
 		values: {
 			code: code.toLowerCase().replace(/[^a-z0-9_]+/g, '_'),
 			label,
-			color: form.get('color')?.toString().trim() || '#6b7280',
-			position: Number(form.get('position')?.toString() ?? '0') || 0,
-			isPaid: form.get('isPaid') != null,
-			isShipped: form.get('isShipped') != null,
-			isFinal: form.get('isFinal') != null,
-			sendEmailOnChange: form.get('sendEmailOnChange') != null,
-			hideFromClient: form.get('hideFromClient') != null
+			color: str('color') ?? '#6b7280',
+			position: int('position'),
+			isPaid: bool('isPaid'),
+			isShipped: bool('isShipped'),
+			isFinal: bool('isFinal'),
+			sendEmailOnChange: bool('sendEmailOnChange'),
+			hideFromClient: bool('hideFromClient')
 		}
 	};
 }

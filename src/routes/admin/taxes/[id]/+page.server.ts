@@ -18,7 +18,7 @@ export const actions: Actions = {
 		if (!Number.isInteger(id)) throw error(404, 'Taux introuvable');
 
 		const parsed = parseTaxRuleForm(await request.formData());
-		if ('error' in parsed) return fail(400, { message: parsed.error });
+		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		await updateTaxRule(id, parsed.values);
 		throw redirect(303, '/admin/taxes');

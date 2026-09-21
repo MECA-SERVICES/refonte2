@@ -9,7 +9,7 @@
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import SummaryRow from '$lib/components/shop/SummaryRow.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
-	import { effectiveTaxRate } from '$lib/tax';
+	import { computeCartTotals } from '$lib/cart';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -50,25 +50,16 @@
 
 	/**
 	 * Totaux recalculés sur les quantités affichées : le récapitulatif suit le
-	 * clic. Le calcul reprend celui du serveur (`computeTotals`), régime compris,
-	 * pour qu'aucun écart n'apparaisse entre l'affichage optimiste et la réponse.
+	 * clic. Le calcul est LE MÊME que celui du serveur (`computeCartTotals`,
+	 * partagé via $lib/cart), régime compris : aucun écart ne peut apparaître
+	 * entre l'affichage optimiste et la réponse.
 	 */
-	const shownTotals = $derived.by(() => {
-		let subtotalHt = 0;
-		let tax = 0;
-		let itemCount = 0;
-		for (const line of lines) {
-			const quantity = shownQuantity(line);
-			const lineHt = Number(line.priceHt) * quantity;
-			subtotalHt += lineHt;
-			tax += lineHt * (effectiveTaxRate(line.taxRate, data.tax.regime) / 100);
-			itemCount += quantity;
-		}
-		const round = (n: number) => Math.round(n * 100) / 100;
-		const ht = round(subtotalHt);
-		const tva = round(tax);
-		return { subtotalHt: ht, tax: tva, totalTtc: round(ht + tva), itemCount };
-	});
+	const shownTotals = $derived(
+		computeCartTotals(
+			lines.map((line) => ({ ...line, quantity: shownQuantity(line) })),
+			data.tax.regime
+		)
+	);
 
 	/** Éco-participation cumulée, comprise dans le total et rappelée à part (R6). */
 	const shownEcotax = $derived(

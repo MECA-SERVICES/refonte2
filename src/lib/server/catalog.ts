@@ -10,9 +10,18 @@ import {
 	taxRule,
 	stockMovement
 } from '$lib/server/db/schema';
-import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
-import type { PgColumn } from 'drizzle-orm/pg-core';
+import { and, asc, count, desc, eq, sql, type SQL } from 'drizzle-orm';
 import { slugify } from '$lib/server/slug';
+import {
+	buildOrderBy,
+	buildWhere,
+	pageBounds,
+	paginated,
+	type ColumnMaps,
+	type ListParams
+} from '$lib/server/listing';
+import { formFields, type ParseResult } from '$lib/server/forms';
+import { firstImageSql } from '$lib/server/pricing';
 import type {
 	NewBrand,
 	NewCategory,
@@ -23,50 +32,9 @@ import type {
 	NewProductMedia
 } from '$lib/server/db/catalog.schema';
 
-// ===========================================================================
-// Helpers de listing générique (recherche + filtres + tri + pagination serveur)
-// ===========================================================================
-
-export type ListParams = {
-	search?: string;
-	filters?: Record<string, string>;
-	sort?: string;
-	dir?: 'asc' | 'desc';
-	page?: number;
-	perPage?: number;
-};
-
-type ColumnMaps = {
-	text: Record<string, PgColumn>;
-	exact: Record<string, PgColumn>;
-	sort: Record<string, PgColumn>;
-	defaultSort: PgColumn;
-};
-
-/** Construit la clause WHERE à partir de la recherche globale et des filtres par colonne. */
-function buildWhere(params: ListParams, maps: ColumnMaps): SQL | undefined {
-	const conditions: SQL[] = [];
-
-	if (params.search) {
-		const term = `%${params.search}%`;
-		const parts = Object.values(maps.text).map((col) => ilike(col, term));
-		if (parts.length) conditions.push(or(...parts)!);
-	}
-
-	for (const [key, raw] of Object.entries(params.filters ?? {})) {
-		const value = raw.trim();
-		if (!value) continue;
-		if (maps.text[key]) conditions.push(ilike(maps.text[key], `%${value}%`));
-		else if (maps.exact[key]) conditions.push(eq(maps.exact[key], value));
-	}
-
-	return conditions.length ? and(...conditions) : undefined;
-}
-
-function buildOrderBy(params: ListParams, maps: ColumnMaps) {
-	const col = maps.sort[params.sort ?? ''] ?? maps.defaultSort;
-	return params.dir === 'asc' ? asc(col) : desc(col);
-}
+// Le mécanisme générique de listing (liste blanche de colonnes, recherche,
+// tri, pagination) vit dans $lib/server/listing ; ré-exporté pour les routes.
+export type { ListParams } from '$lib/server/listing';
 
 // ===========================================================================
 // Marques
@@ -80,8 +48,7 @@ const BRAND_MAPS: ColumnMaps = {
 };
 
 export async function listBrands(params: ListParams = {}) {
-	const page = Math.max(1, params.page ?? 1);
-	const perPage = Math.min(100, Math.max(1, params.perPage ?? 20));
+	const { page, perPage, offset } = pageBounds(params);
 	const where = buildWhere(params, BRAND_MAPS);
 
 	const [rows, [{ total }]] = await Promise.all([
@@ -91,11 +58,11 @@ export async function listBrands(params: ListParams = {}) {
 			.where(where)
 			.orderBy(buildOrderBy(params, BRAND_MAPS))
 			.limit(perPage)
-			.offset((page - 1) * perPage),
+			.offset(offset),
 		db.select({ total: count() }).from(brand).where(where)
 	]);
 
-	return { rows, total, page, perPage, pageCount: Math.max(1, Math.ceil(total / perPage)) };
+	return paginated(rows, total, page, perPage);
 }
 
 export async function getBrand(id: number) {
@@ -122,24 +89,27 @@ export async function deleteBrand(id: number) {
 }
 
 /** Extrait et valide les champs d'une marque depuis un FormData. */
-export function parseBrandForm(form: FormData) {
-	const name = form.get('name')?.toString().trim();
-	if (!name) return { error: 'Le nom est requis.' as const };
+export function parseBrandForm(form: FormData): ParseResult<NewBrand> {
+	const { str, bool } = formFields(form);
 
-	const slugInput = form.get('slug')?.toString().trim();
+	const name = str('name');
+	if (!name) return { ok: false, error: 'Le nom est requis.' };
+
+	const slugInput = str('slug');
 	return {
+		ok: true,
 		values: {
 			name,
 			slug: slugInput ? slugify(slugInput) : slugify(name),
-			logoUrl: form.get('logoUrl')?.toString().trim() || null,
-			description: form.get('description')?.toString().trim() || null,
+			logoUrl: str('logoUrl'),
+			description: str('description'),
 			// Contenu de la page de marque (CDC 12).
-			heroImageUrl: form.get('heroImageUrl')?.toString().trim() || null,
-			tagline: form.get('tagline')?.toString().trim() || null,
+			heroImageUrl: str('heroImageUrl'),
+			tagline: str('tagline'),
 			pageContent: form.get('pageContent')?.toString() || null,
-			metaTitle: form.get('metaTitle')?.toString().trim() || null,
-			metaDescription: form.get('metaDescription')?.toString().trim() || null,
-			isActive: form.get('isActive') != null
+			metaTitle: str('metaTitle'),
+			metaDescription: str('metaDescription'),
+			isActive: bool('isActive')
 		}
 	};
 }
@@ -165,8 +135,7 @@ const CATEGORY_MAPS: ColumnMaps = {
 };
 
 export async function listCategories(params: ListParams = {}) {
-	const page = Math.max(1, params.page ?? 1);
-	const perPage = Math.min(200, Math.max(1, params.perPage ?? 50));
+	const { page, perPage, offset } = pageBounds(params, { maxPerPage: 200, defaultPerPage: 50 });
 	const where = buildWhere(params, CATEGORY_MAPS);
 
 	const [rows, [{ total }]] = await Promise.all([
@@ -176,11 +145,11 @@ export async function listCategories(params: ListParams = {}) {
 			.where(where)
 			.orderBy(buildOrderBy(params, CATEGORY_MAPS))
 			.limit(perPage)
-			.offset((page - 1) * perPage),
+			.offset(offset),
 		db.select({ total: count() }).from(category).where(where)
 	]);
 
-	return { rows, total, page, perPage, pageCount: Math.max(1, Math.ceil(total / perPage)) };
+	return paginated(rows, total, page, perPage);
 }
 
 export async function getCategory(id: number) {
@@ -207,22 +176,24 @@ export async function deleteCategory(id: number) {
 }
 
 /** Extrait et valide les champs d'une catégorie depuis un FormData. */
-export function parseCategoryForm(form: FormData) {
-	const name = form.get('name')?.toString().trim();
-	if (!name) return { error: 'Le nom est requis.' as const };
+export function parseCategoryForm(form: FormData): ParseResult<NewCategory> {
+	const { str, int, bool } = formFields(form);
 
-	const slugInput = form.get('slug')?.toString().trim();
-	const parentRaw = form.get('parentId')?.toString().trim();
-	const parentId = parentRaw ? Number(parentRaw) : null;
+	const name = str('name');
+	if (!name) return { ok: false, error: 'Le nom est requis.' };
+
+	const slugInput = str('slug');
+	const parentId = int('parentId', 0);
 
 	return {
+		ok: true,
 		values: {
 			name,
 			slug: slugInput ? slugify(slugInput) : slugify(name),
-			parentId: parentId && Number.isInteger(parentId) ? parentId : null,
-			description: form.get('description')?.toString().trim() || null,
-			position: Number(form.get('position')?.toString() ?? '0') || 0,
-			isActive: form.get('isActive') != null
+			parentId: parentId > 0 ? parentId : null,
+			description: str('description'),
+			position: int('position'),
+			isActive: bool('isActive')
 		}
 	};
 }
@@ -280,8 +251,7 @@ export async function estimateProductTotal(): Promise<number> {
 }
 
 export async function listProducts(params: ProductListParams = {}) {
-	const page = Math.max(1, params.page ?? 1);
-	const perPage = Math.min(100, Math.max(1, params.perPage ?? 20));
+	const { page, perPage, offset } = pageBounds(params);
 
 	const conditions: SQL[] = [];
 	const base = buildWhere(params, PRODUCT_MAPS);
@@ -301,21 +271,14 @@ export async function listProducts(params: ProductListParams = {}) {
 				stock: product.stock,
 				isActive: product.isActive,
 				brandName: brand.name,
-				// Vignette : image de plus petite position. Sous-requête corrélée plutôt
-				// qu'une jointure, qui dupliquerait les produits à plusieurs médias.
-				imageUrl: sql<string | null>`(
-					SELECT m.url FROM ${productMedia} m
-					WHERE m.product_id = ${product.id} AND m.type = 'image'
-					ORDER BY m.position, m.id
-					LIMIT 1
-				)`
+				imageUrl: firstImageSql(product.id)
 			})
 			.from(product)
 			.leftJoin(brand, eq(product.brandId, brand.id))
 			.where(where)
 			.orderBy(buildOrderBy(params, PRODUCT_MAPS))
 			.limit(perPage)
-			.offset((page - 1) * perPage),
+			.offset(offset),
 		where
 			? db
 					.select({ total: count() })
@@ -325,7 +288,7 @@ export async function listProducts(params: ProductListParams = {}) {
 			: estimateProductTotal()
 	]);
 
-	return { rows, total, page, perPage, pageCount: Math.max(1, Math.ceil(total / perPage)) };
+	return paginated(rows, total, page, perPage);
 }
 
 export async function getProduct(id: number) {
@@ -413,62 +376,48 @@ export async function deleteProduct(id: number) {
 	await db.delete(product).where(eq(product.id, id));
 }
 
-function str(v: FormDataEntryValue | null): string | null {
-	const s = v?.toString().trim();
-	return s ? s : null;
-}
-
-/** Convertit une saisie en nombre décimal (chaîne) ou null. */
-function num(v: FormDataEntryValue | null): string | null {
-	const s = v?.toString().trim().replace(',', '.');
-	if (!s) return null;
-	return Number.isNaN(Number(s)) ? null : s;
-}
-
-function int(v: FormDataEntryValue | null, fallback = 0): number {
-	const n = Number(v?.toString().trim());
-	return Number.isInteger(n) ? n : fallback;
-}
-
 /** Extrait et valide les champs d'un produit depuis un FormData. */
-export function parseProductForm(form: FormData) {
-	const name = str(form.get('name'));
-	const reference = str(form.get('reference'));
-	const priceHt = num(form.get('priceHt'));
+export function parseProductForm(form: FormData): ParseResult<NewProduct> {
+	const { str, num, int, bool } = formFields(form);
+
+	const name = str('name');
+	const reference = str('reference');
+	const priceHt = num('priceHt');
 
 	if (!name || !reference || priceHt === null) {
-		return { error: 'Le nom, la référence (SKU) et le prix HT sont requis.' as const };
+		return { ok: false, error: 'Le nom, la référence (SKU) et le prix HT sont requis.' };
 	}
 
-	const slugInput = str(form.get('slug'));
-	const brandRaw = form.get('brandId')?.toString().trim();
-	const categoryRaw = form.get('categoryId')?.toString().trim();
-	const taxRaw = form.get('taxRuleId')?.toString().trim();
+	const slugInput = str('slug');
+	const brandRaw = str('brandId');
+	const categoryRaw = str('categoryId');
+	const taxRaw = str('taxRuleId');
 
 	return {
+		ok: true,
 		values: {
 			name,
 			reference,
 			priceHt,
-			isActive: form.get('isActive') != null,
-			supplierReference: str(form.get('supplierReference')),
-			ean13: str(form.get('ean13')),
+			isActive: bool('isActive'),
+			supplierReference: str('supplierReference'),
+			ean13: str('ean13'),
 			brandId: brandRaw ? Number(brandRaw) || null : null,
 			categoryId: categoryRaw ? Number(categoryRaw) || null : null,
 			taxRuleId: taxRaw ? Number(taxRaw) || null : null,
 			slug: slugInput ? slugify(slugInput) : slugify(name),
-			shortDescription: str(form.get('shortDescription')),
-			description: str(form.get('description')),
-			metaTitle: str(form.get('metaTitle')),
-			metaDescription: str(form.get('metaDescription')),
-			priceHtStrike: num(form.get('priceHtStrike')),
-			purchasePrice: num(form.get('purchasePrice')),
-			stock: int(form.get('stock')),
-			weightKg: num(form.get('weightKg')),
-			lengthCm: num(form.get('lengthCm')),
-			widthCm: num(form.get('widthCm')),
-			heightCm: num(form.get('heightCm')),
-			shippingExtraFee: num(form.get('shippingExtraFee'))
+			shortDescription: str('shortDescription'),
+			description: str('description'),
+			metaTitle: str('metaTitle'),
+			metaDescription: str('metaDescription'),
+			priceHtStrike: num('priceHtStrike'),
+			purchasePrice: num('purchasePrice'),
+			stock: int('stock'),
+			weightKg: num('weightKg'),
+			lengthCm: num('lengthCm'),
+			widthCm: num('widthCm'),
+			heightCm: num('heightCm'),
+			shippingExtraFee: num('shippingExtraFee')
 		}
 	};
 }
@@ -538,27 +487,23 @@ export async function deleteTaxRule(id: number) {
 	await db.delete(taxRule).where(eq(taxRule.id, id));
 }
 
-export function parseTaxRuleForm(form: FormData) {
-	const name = str(form.get('name'));
-	const rate = num(form.get('rate'));
+export function parseTaxRuleForm(form: FormData): ParseResult<NewTaxRule> {
+	const { str, num, bool } = formFields(form);
+
+	const name = str('name');
+	const rate = num('rate');
 	if (!name || rate === null) {
-		return { error: 'Le libellé et le taux sont requis.' as const };
+		return { ok: false, error: 'Le libellé et le taux sont requis.' };
 	}
 	return {
+		ok: true,
 		values: {
 			name,
 			rate,
-			isActive: form.get('isActive') != null,
-			isDefault: form.get('isDefault') != null
+			isActive: bool('isActive'),
+			isDefault: bool('isDefault')
 		}
 	};
-}
-
-/** Calcule le prix TTC à partir d'un prix HT et d'un taux (%). */
-export function computeTtc(priceHt: string | number, rate: string | number): number {
-	const ht = Number(priceHt);
-	const r = Number(rate);
-	return Math.round(ht * (1 + r / 100) * 100) / 100;
 }
 
 // ===========================================================================

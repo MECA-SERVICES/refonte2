@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPrice } from '$lib/money';
 	import {
 		Card,
 		Table,
@@ -14,7 +15,6 @@
 	let { data }: PageProps = $props();
 
 	const c = $derived(data.cart);
-	const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 </script>
 
 <svelte:head><title>Panier #{c.id} · Administration</title></svelte:head>
@@ -56,7 +56,7 @@
 					<TableBodyRow>
 						<TableBodyCell>{item.productName ?? 'Produit supprimé'}</TableBodyCell>
 						<TableBodyCell>{item.productReference ?? '—'}</TableBodyCell>
-						<TableBodyCell>{item.priceHt ? eur.format(Number(item.priceHt)) : '—'}</TableBodyCell>
+						<TableBodyCell>{item.priceHt ? formatPrice(Number(item.priceHt)) : '—'}</TableBodyCell>
 						<TableBodyCell>{item.quantity}</TableBodyCell>
 					</TableBodyRow>
 				{/each}

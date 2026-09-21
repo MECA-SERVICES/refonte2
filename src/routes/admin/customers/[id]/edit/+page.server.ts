@@ -18,7 +18,7 @@ export const actions: Actions = {
 		if (!Number.isInteger(id)) throw error(404, 'Client introuvable');
 
 		const parsed = parseCustomerForm(await request.formData());
-		if ('error' in parsed) {
+		if (!parsed.ok) {
 			return fail(400, { message: parsed.error });
 		}
 

@@ -18,7 +18,7 @@ export const actions: Actions = {
 		if (!Number.isInteger(id)) error(404, 'Page introuvable');
 
 		const parsed = parseCmsPageForm(await request.formData());
-		if ('error' in parsed) return fail(400, { message: parsed.error });
+		if (!parsed.ok) return fail(400, { message: parsed.error });
 
 		const updated = await updateCmsPage(id, parsed.values);
 		if (!updated) return fail(404, { message: 'Page introuvable.' });
