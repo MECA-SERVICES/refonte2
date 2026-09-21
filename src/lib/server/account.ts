@@ -3,6 +3,13 @@ import { customer } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { priceDisplayMode, resolveTaxRegime } from '$lib/tax';
 import type { FieldErrors } from '$lib/server/forms';
+import {
+	CUSTOMER_TYPES,
+	requiresValidation,
+	type CustomerType,
+	type ValidationRequestType
+} from '$lib/accounts';
+import { openValidationRequest } from './account-validation';
 
 /**
  * Domaine « Compte client » — sections 07 et 08 du cahier des charges.

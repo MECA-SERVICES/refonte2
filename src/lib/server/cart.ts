@@ -142,7 +142,10 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 		.orderBy(cartItem.id);
 }
 
-/** Un article désactivé ou en rupture bloque le passage en commande (règle R7). */
+/**
+ * Un article désactivé, en rupture, ou réservé à la boutique physique bloque le
+ * passage en commande (règle R7).
+ */
 function isBlocking(line: CartLine) {
 	return !line.isActive || !line.availableForOrder || line.stock <= 0;
 }

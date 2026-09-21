@@ -35,11 +35,7 @@ import type { RepairImageMoment, RepairOrderType, RepairStatus } from '$lib/repa
  * navigateur : ce fichier est réservé au serveur et ne peut pas les lui
  * fournir. Réexportées ici pour que le schéma reste lisible d'un bloc.
  */
-export {
-	repairImageMoments,
-	repairOrderTypes,
-	repairStatuses
-} from '$lib/repairs';
+export { repairImageMoments, repairOrderTypes, repairStatuses } from '$lib/repairs';
 export type { RepairImageMoment, RepairOrderType, RepairStatus } from '$lib/repairs';
 
 export const repairOrder = pgTable(

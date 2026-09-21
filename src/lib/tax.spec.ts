@@ -22,12 +22,23 @@ describe('resolveTaxRegime', () => {
 		expect(resolveTaxRegime({ country: 'US', type: 'pro' })).toBe('export_outside_eu');
 	});
 
-	it('autorise l’autoliquidation aux trois conditions réunies (R2)', () => {
-		expect(resolveTaxRegime({ country: 'DE', type: 'pro', taxExemptStatus: 'exempt_eu_b2b' })).toBe(
-			'reverse_charge_eu'
-		);
+	it('autorise l’autoliquidation aux conditions réunies (R2)', () => {
+		// Le compte doit être validé : R11 écarte tout dossier non tranché.
 		expect(
-			resolveTaxRegime({ country: 'BE', type: 'collectivite', taxExemptStatus: 'exempt_eu_b2b' })
+			resolveTaxRegime({
+				country: 'DE',
+				type: 'pro',
+				taxExemptStatus: 'exempt_eu_b2b',
+				status: 'validated'
+			})
+		).toBe('reverse_charge_eu');
+		expect(
+			resolveTaxRegime({
+				country: 'BE',
+				type: 'collectivite',
+				taxExemptStatus: 'exempt_eu_b2b',
+				status: 'validated'
+			})
 		).toBe('reverse_charge_eu');
 	});
 

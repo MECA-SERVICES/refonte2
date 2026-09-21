@@ -11,12 +11,7 @@ import { product } from '$lib/server/db/catalog.schema';
 import { clientMachine } from '$lib/server/db/machine.schema';
 import { recordStockMovement } from '$lib/server/catalog';
 import { computeTax, effectiveTaxRate, resolveTaxRegime } from '$lib/tax';
-import {
-	canTransition,
-	isFrozen,
-	REPAIR_STATUS_LABELS,
-	REPAIRS_PER_PAGE
-} from '$lib/repairs';
+import { canTransition, isFrozen, REPAIR_STATUS_LABELS, REPAIRS_PER_PAGE } from '$lib/repairs';
 import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
 
 /**

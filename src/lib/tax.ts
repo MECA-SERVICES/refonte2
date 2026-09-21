@@ -12,6 +12,11 @@
  */
 
 import { round2 } from '$lib/money';
+import {
+	isBusinessType as isBusinessAccount,
+	normalizeCustomerStatus,
+	type CustomerType
+} from './accounts';
 
 /** Types de compte reconnus (CDC section 08). */
 export type { CustomerType };

@@ -15,13 +15,10 @@ import {
 } from './db/blog.schema';
 import { user } from './db/auth.schema';
 import { slugify } from './slug';
-<<<<<<< HEAD
 import { formFields, type ParseResult } from './forms';
-=======
 import { BLOG_CATEGORY_MAX_DEPTH } from '$lib/blog';
 
 export { BLOG_CATEGORY_MAX_DEPTH };
->>>>>>> 4d40d4f (categorie blog)
 
 /** Durée de validité d'un lien d'aperçu (R10). */
 const PREVIEW_TOKEN_DAYS = 7;

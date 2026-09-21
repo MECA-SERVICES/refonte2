@@ -17,11 +17,7 @@
 		Textarea
 	} from 'flowbite-svelte';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
-	import {
-		REPAIR_STATUS_COLORS,
-		REPAIR_STATUS_LABELS,
-		REPAIR_TYPE_LABELS
-	} from '$lib/repairs';
+	import { REPAIR_STATUS_COLORS, REPAIR_STATUS_LABELS, REPAIR_TYPE_LABELS } from '$lib/repairs';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
