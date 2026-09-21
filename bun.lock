@@ -55,6 +55,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "@flowbite-svelte-plugins/texteditor@0.25.6": "patches/@flowbite-svelte-plugins%2Ftexteditor@0.25.6.patch",
+  },
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 

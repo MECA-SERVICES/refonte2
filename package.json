@@ -83,5 +83,8 @@
 		"@types/pdfmake": "^0.3.3",
 		"pdfmake": "^0.3.11",
 		"unicode-properties": "^1.4.1"
+	},
+	"patchedDependencies": {
+		"@flowbite-svelte-plugins/texteditor@0.25.6": "patches/@flowbite-svelte-plugins%2Ftexteditor@0.25.6.patch"
 	}
 }

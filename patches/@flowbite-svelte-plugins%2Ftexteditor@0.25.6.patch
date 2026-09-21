@@ -1,0 +1,997 @@
+diff --git a/dist/EditorConfig.svelte b/dist/EditorConfig.svelte
+index 40b621b016cfa192770e249050213e39aaa9c1bc..136e13d39f333d47769cc7704a92179a4bae1a18 100644
+--- a/dist/EditorConfig.svelte
++++ b/dist/EditorConfig.svelte
+@@ -1,7 +1,7 @@
+ <!-- EditorConfig.svelte -->
+ <script lang="ts">
+   import { setContext, type Snippet } from 'svelte';
+-  import type { EditorExtensionConfigs } from './';
++  import type { EditorExtensionConfigs } from './index.js';
+ 
+   let {
+     children,
+diff --git a/dist/EditorConfig.svelte.d.ts b/dist/EditorConfig.svelte.d.ts
+index 9b7c19c250ff983b1d30d8ce612d37d11a187eca..65ebd8d6287f6e36d150398fae93f3d4c605f69c 100644
+--- a/dist/EditorConfig.svelte.d.ts
++++ b/dist/EditorConfig.svelte.d.ts
+@@ -1,5 +1,5 @@
+ import { type Snippet } from 'svelte';
+-import type { EditorExtensionConfigs } from './';
++import type { EditorExtensionConfigs } from './index.js';
+ type $$ComponentProps = {
+     children: Snippet;
+ } & EditorExtensionConfigs;
+diff --git a/dist/TextEditor.svelte b/dist/TextEditor.svelte
+index 633beae364cb430c347c393c0a519e856d41fe14..b5111336c4e1b25a75d533b17ffae2d2341dce5f 100644
+--- a/dist/TextEditor.svelte
++++ b/dist/TextEditor.svelte
+@@ -7,7 +7,7 @@
+ 
+ <script lang="ts">
+   import { onDestroy, setContext, getContext } from 'svelte';
+-  import { type EditorProviderProps, EditorWrapper, ContentWrapper, ToolbarWrapper, SvelteRenderer, FloatingMenu, getMenuConfig, Toc, cn, type EditableContext, type EditorExtensionConfigs } from './';
++  import { type EditorProviderProps, EditorWrapper, ContentWrapper, ToolbarWrapper, SvelteRenderer, FloatingMenu, getMenuConfig, Toc, cn, type EditableContext, type EditorExtensionConfigs } from './index.js';
+   import { Editor } from '@tiptap/core';
+   import type { Extensions } from '@tiptap/core';
+   import { Blockquote } from '@tiptap/extension-blockquote';
+diff --git a/dist/TextEditor.svelte.d.ts b/dist/TextEditor.svelte.d.ts
+index 7dd852784373227df269e61660cfb141031700db..bac181403162d34b28e7cda55b2ca1267c5ad48d 100644
+--- a/dist/TextEditor.svelte.d.ts
++++ b/dist/TextEditor.svelte.d.ts
+@@ -1,6 +1,6 @@
+ import type { TableOfContentData } from '@tiptap/extension-table-of-contents';
+ export declare const tocItems: import("svelte/store").Writable<TableOfContentData>;
+-import { type EditorProviderProps } from './';
++import { type EditorProviderProps } from './index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/alignment/AlignmentButton.svelte b/dist/alignment/AlignmentButton.svelte
+index bd081a7867f251d9d21fe739960f19378bd52bf4..83ee99a12b8bcc7b79f4935bb3ca172b409d0ae7 100644
+--- a/dist/alignment/AlignmentButton.svelte
++++ b/dist/alignment/AlignmentButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { runAlignmentCommand, type AlignmentAction, generateButtonId, type AlignmentButtonProps, useEditableContext } from '..';
++  import { runAlignmentCommand, type AlignmentAction, generateButtonId, type AlignmentButtonProps, useEditableContext } from '../index.js';
+ 
+   let { editor, alignment, tooltipText, ariaLabel, id, class: className }: AlignmentButtonProps = $props();
+ 
+diff --git a/dist/alignment/AlignmentButton.svelte.d.ts b/dist/alignment/AlignmentButton.svelte.d.ts
+index 273b7791198d7097bfc8cc68ec1562d593740bc3..e55c8155de6a88b4303c7f3c210038e67839d0a8 100644
+--- a/dist/alignment/AlignmentButton.svelte.d.ts
++++ b/dist/alignment/AlignmentButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type AlignmentButtonProps } from '..';
++import { type AlignmentButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/alignment/AlignmentButtonGroup.svelte b/dist/alignment/AlignmentButtonGroup.svelte
+index ceaa606a87a88e1f8938fc25ee6c727374726679..42381e682fe3a6c8d116d6406d1591b11c40df22 100644
+--- a/dist/alignment/AlignmentButtonGroup.svelte
++++ b/dist/alignment/AlignmentButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { AlignmentButton, type AlignmentButtonGroupProps } from '..';
++  import { AlignmentButton, type AlignmentButtonGroupProps } from '../index.js';
+   let { editor, showToolbar = true, left = true, center = true, right = true, justify = true }: AlignmentButtonGroupProps = $props();
+ </script>
+ 
+diff --git a/dist/alignment/AlignmentButtonGroup.svelte.d.ts b/dist/alignment/AlignmentButtonGroup.svelte.d.ts
+index 2a3be5b0c099dc3e3fcc0bdbb8690dad1cc9d35e..28afef98c4e4a87acde7cf5c1cd9e6c61b428dcf 100644
+--- a/dist/alignment/AlignmentButtonGroup.svelte.d.ts
++++ b/dist/alignment/AlignmentButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type AlignmentButtonGroupProps } from '..';
++import { type AlignmentButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/bubble-menu/BubbleMenu.svelte b/dist/bubble-menu/BubbleMenu.svelte
+index 630eca171d42f783283545679cfb197476d0c248..b9bc3923132484302448230b95f09d6bf7a6d568 100644
+--- a/dist/bubble-menu/BubbleMenu.svelte
++++ b/dist/bubble-menu/BubbleMenu.svelte
+@@ -1,7 +1,7 @@
+ <script lang="ts">
+   import { BubbleMenuPlugin } from '@tiptap/extension-bubble-menu';
+   import { onMount, onDestroy } from 'svelte';
+-  import { runFormatCommand } from '..';
++  import { runFormatCommand } from '../index.js';
+   import type { Editor as CoreEditor } from '@tiptap/core';
+   import type { EditorView } from '@tiptap/pm/view';
+   import type { EditorState } from '@tiptap/pm/state';
+diff --git a/dist/charcter-count/CharacterCount.svelte b/dist/charcter-count/CharacterCount.svelte
+index 801aa77a54b6096d992d9365b8758ffff3fcc90e..9b230e3a1a13a08453404457533d98ce0dfdfd61 100644
+--- a/dist/charcter-count/CharacterCount.svelte
++++ b/dist/charcter-count/CharacterCount.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { onMount } from 'svelte';
+-  import { cn } from '..';
++  import { cn } from '../index.js';
+   import type { Editor } from '@tiptap/core';
+ 
+   interface CharacterCountProps {
+diff --git a/dist/details/DetailsButton.svelte b/dist/details/DetailsButton.svelte
+index 552668eeb57554062a1c6a7689684b2a67497bca..7034f8247def5c211993b06daf76ac42af60017f 100644
+--- a/dist/details/DetailsButton.svelte
++++ b/dist/details/DetailsButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { runDetailsCommand, type DetailsAction, generateButtonId, type DetailsButtonProps, useEditableContext } from '..';
++  import { runDetailsCommand, type DetailsAction, generateButtonId, type DetailsButtonProps, useEditableContext } from '../index.js';
+ 
+   let { editor, action, ariaLabel, id, tooltipText, class: className }: DetailsButtonProps = $props();
+ 
+diff --git a/dist/details/DetailsButton.svelte.d.ts b/dist/details/DetailsButton.svelte.d.ts
+index 7ce491784b1ba8ed8edc380bc8177230f5e6912d..6d3f2471fa2259bcfb63040b87ab92a9725ba61e 100644
+--- a/dist/details/DetailsButton.svelte.d.ts
++++ b/dist/details/DetailsButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type DetailsButtonProps } from '..';
++import { type DetailsButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/details/DetailsButtonGroup.svelte b/dist/details/DetailsButtonGroup.svelte
+index 84376aa0075ab7261bb65d232d12ca0b6e05711e..d27c43ccc0a398627fed1a8c2963a4964bfff31e 100644
+--- a/dist/details/DetailsButtonGroup.svelte
++++ b/dist/details/DetailsButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { DetailsButton, type DetailsButtonGroupProps } from '..';
++  import { DetailsButton, type DetailsButtonGroupProps } from '../index.js';
+ 
+   let { editor, showToolbar = true, set = true, unset = true }: DetailsButtonGroupProps = $props();
+ </script>
+diff --git a/dist/details/DetailsButtonGroup.svelte.d.ts b/dist/details/DetailsButtonGroup.svelte.d.ts
+index f9ffb6a413f7b52760640b955cee6705086bb5d3..33283ffa31da316e2463d46a545adad0441540b0 100644
+--- a/dist/details/DetailsButtonGroup.svelte.d.ts
++++ b/dist/details/DetailsButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type DetailsButtonGroupProps } from '..';
++import { type DetailsButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/drag-handle/DragHandle.svelte b/dist/drag-handle/DragHandle.svelte
+index 63bb5fc545908afc2072634abc7b90d7f4395e78..d2b887719831a810c7ca38e5b0c83e7d36aac563 100644
+--- a/dist/drag-handle/DragHandle.svelte
++++ b/dist/drag-handle/DragHandle.svelte
+@@ -2,7 +2,7 @@
+   import { onMount, onDestroy } from 'svelte';
+   import type { Node } from '@tiptap/pm/model';
+   import type { Editor } from '@tiptap/core';
+-  import { type DragHandleProps } from '..';
++  import { type DragHandleProps } from '../index.js';
+   import { DragHandlePlugin, dragHandlePluginDefaultKey } from '@tiptap/extension-drag-handle';
+ 
+   // Accept editor and draghandleprops as separate props
+diff --git a/dist/drag-handle/DragHandle.svelte.d.ts b/dist/drag-handle/DragHandle.svelte.d.ts
+index 56016d4afd999070b3621f49845ebd91f00afa9b..d5fb1233716e2b54fcc0c6a27465d75812c59a52 100644
+--- a/dist/drag-handle/DragHandle.svelte.d.ts
++++ b/dist/drag-handle/DragHandle.svelte.d.ts
+@@ -1,6 +1,6 @@
+ import type { Node } from '@tiptap/pm/model';
+ import type { Editor } from '@tiptap/core';
+-import { type DragHandleProps } from '..';
++import { type DragHandleProps } from '../index.js';
+ type $$ComponentProps = {
+     editor: Editor | null;
+     draghandleprops?: Omit<DragHandleProps, 'editor'>;
+diff --git a/dist/editable/EditableButton.svelte b/dist/editable/EditableButton.svelte
+index e103c5f3f96b92d1badcc86444815cb3c0f309b7..3acd51a83a1e362a1a123a246b7ddb6f7e442432 100644
+--- a/dist/editable/EditableButton.svelte
++++ b/dist/editable/EditableButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { cn, generateButtonId } from '..';
++  import { cn, generateButtonId } from '../index.js';
+   import type { Editor } from '@tiptap/core';
+ 
+   interface EditableButtonProps {
+diff --git a/dist/export/ExportButton.svelte b/dist/export/ExportButton.svelte
+index e72e32c40ea738f8ee671832f36ba1122b0dab7d..37e9511de7aaac326b0db722cbee46d1697a2b1b 100644
+--- a/dist/export/ExportButton.svelte
++++ b/dist/export/ExportButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip, Modal, Clipboard } from 'flowbite-svelte';
+-  import { exportEditorContent, type ExportAction, generateButtonId, type ExportButtonProps, useEditableContext } from '..';
++  import { exportEditorContent, type ExportAction, generateButtonId, type ExportButtonProps, useEditableContext } from '../index.js';
+   import { CheckOutline, ClipboardCleanSolid } from 'flowbite-svelte-icons';
+ 
+   let { editor, format = 'json', tooltipText, ariaLabel, id, class: className }: ExportButtonProps = $props();
+diff --git a/dist/export/ExportButton.svelte.d.ts b/dist/export/ExportButton.svelte.d.ts
+index 2b9ef849c0a6887b224abc00541b9b571b953ed3..f45585bcc33ed2cc0ecb3b401cea450f92cc6231 100644
+--- a/dist/export/ExportButton.svelte.d.ts
++++ b/dist/export/ExportButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ExportButtonProps } from '..';
++import { type ExportButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/export/ExportButtonGroup.svelte b/dist/export/ExportButtonGroup.svelte
+index c2b9b3215ebda3512dd75151fd6751d01656ea4f..b8ec04350de81791b6502b1c00f5fad6b00be093 100644
+--- a/dist/export/ExportButtonGroup.svelte
++++ b/dist/export/ExportButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { ExportButton, type ExportButtonGroupProps } from '..';
++  import { ExportButton, type ExportButtonGroupProps } from '../index.js';
+   let { editor, showToolbar = true, json = true, html = true }: ExportButtonGroupProps = $props();
+ </script>
+ 
+diff --git a/dist/export/ExportButtonGroup.svelte.d.ts b/dist/export/ExportButtonGroup.svelte.d.ts
+index 07c692b69209a988c35d4a3f05a0642f03103138..33779484c40fd44175a6501a818aa50dfd2110d7 100644
+--- a/dist/export/ExportButtonGroup.svelte.d.ts
++++ b/dist/export/ExportButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ExportButtonGroupProps } from '..';
++import { type ExportButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/floating-menu/FloatingMenu.svelte b/dist/floating-menu/FloatingMenu.svelte
+index 9d26ef42c0fc713f5dc32cd4da4456b0620d1fe7..75c6982e1d2b846e0485073cfa894d75704702c1 100644
+--- a/dist/floating-menu/FloatingMenu.svelte
++++ b/dist/floating-menu/FloatingMenu.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { onMount, onDestroy } from 'svelte';
+-  import { runHeadingCommand, runListCommand, runLayoutsCommand, runTableCommand, runTaskCommand, runImageCommand, type FloatingMenuProps } from '..';
++  import { runHeadingCommand, runListCommand, runLayoutsCommand, runTableCommand, runTaskCommand, runImageCommand, type FloatingMenuProps } from '../index.js';
+ 
+   let { editor, headingsOnly = false, showHeadings = true, showList = true, showCodeBlock = true, showQuote = true, showHorizontalRule = true, showTable = true, showTasks = true, showImage = true, autoSetup = true }: FloatingMenuProps & { autoSetup?: boolean } = $props();
+ 
+diff --git a/dist/floating-menu/FloatingMenu.svelte.d.ts b/dist/floating-menu/FloatingMenu.svelte.d.ts
+index c6ea944e02f3b166d09890c18fc2928a4c90bd70..3527190e6c1626309d92d62ef894ab24b746a552 100644
+--- a/dist/floating-menu/FloatingMenu.svelte.d.ts
++++ b/dist/floating-menu/FloatingMenu.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type FloatingMenuProps } from '..';
++import { type FloatingMenuProps } from '../index.js';
+ type $$ComponentProps = FloatingMenuProps & {
+     autoSetup?: boolean;
+ };
+diff --git a/dist/floating-menu/FloatingMenuButton.svelte b/dist/floating-menu/FloatingMenuButton.svelte
+index 125af7f186b391df834adf9477f15d8d9e2a5447..23da6893edadb2904d78f7e032865b0988a3b2f2 100644
+--- a/dist/floating-menu/FloatingMenuButton.svelte
++++ b/dist/floating-menu/FloatingMenuButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { cn, generateButtonId } from '..';
++  import { cn, generateButtonId } from '../index.js';
+   import type { Editor } from '@tiptap/core';
+ 
+   interface FloatingButtonProps {
+diff --git a/dist/font/FontButton.svelte b/dist/font/FontButton.svelte
+index 659fdacc49a8a7c3a033ffc288bfeb8bcc89b0a7..a722f6b5aa1bde09a92ef00b65e108d531896eaf 100644
+--- a/dist/font/FontButton.svelte
++++ b/dist/font/FontButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip, Dropdown, DropdownItem } from 'flowbite-svelte';
+-  import { setFontFamily, setFontSize, removeFontSizeFormatting, setTextColor, removeTextColorFormatting, generateButtonId, useEditableContext } from '..';
++  import { setFontFamily, setFontSize, removeFontSizeFormatting, setTextColor, removeTextColorFormatting, generateButtonId, useEditableContext } from '../index.js';
+   import { type FontButtonProps } from '../types';
+ 
+   let { editor, format, tooltipText, ariaLabel, colorValue = '#e66465', id, class: className }: FontButtonProps = $props();
+diff --git a/dist/font/FontButtonGroup.svelte b/dist/font/FontButtonGroup.svelte
+index 44761849916bb8a773f17556da710f18f5d9d0d4..a8fe19a99dc7521dba40fb124c16616ac2ea1a69 100644
+--- a/dist/font/FontButtonGroup.svelte
++++ b/dist/font/FontButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { FontButton, type FontButtonGroupProps } from '..';
++  import { FontButton, type FontButtonGroupProps } from '../index.js';
+ 
+   let { editor, showToolbar = true, fontFamily = true, fontSize = true, textColor = true }: FontButtonGroupProps = $props();
+ </script>
+diff --git a/dist/font/FontButtonGroup.svelte.d.ts b/dist/font/FontButtonGroup.svelte.d.ts
+index 4116c686975804e8d274832b9c328956dff442a0..1e9f5d353ef1b2a95de85cc1c40917f9dec3af6b 100644
+--- a/dist/font/FontButtonGroup.svelte.d.ts
++++ b/dist/font/FontButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type FontButtonGroupProps } from '..';
++import { type FontButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/format/FormatButton.svelte b/dist/format/FormatButton.svelte
+index 862d83b2d6a2aa14e5196044fea93691cfc23604..044d1ee1ca15b092a765eafa912da94198c7312c 100644
+--- a/dist/format/FormatButton.svelte
++++ b/dist/format/FormatButton.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { runFormatCommand, type FormatAction, type FormatButtonProps, generateButtonId, useEditableContext } from '..';
++  import { runFormatCommand, type FormatAction, type FormatButtonProps, generateButtonId, useEditableContext } from '../index.js';
+   import { Tooltip } from 'flowbite-svelte';
+ 
+   let { editor, format, tooltipText, ariaLabel, id, class: className }: FormatButtonProps = $props();
+diff --git a/dist/format/FormatButton.svelte.d.ts b/dist/format/FormatButton.svelte.d.ts
+index 199dc1e581ab70addc7bbaac715010282230f16f..b62a6c1d40e1ac12bb170ad06f044c419b348118 100644
+--- a/dist/format/FormatButton.svelte.d.ts
++++ b/dist/format/FormatButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type FormatButtonProps } from '..';
++import { type FormatButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/format/FormatButtonGroup.svelte b/dist/format/FormatButtonGroup.svelte
+index a120505e7c77641997773a4be59278f9754f7294..ac649fb247f35d9df25eb7e84df61988c84878a8 100644
+--- a/dist/format/FormatButtonGroup.svelte
++++ b/dist/format/FormatButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { FormatButton, type FormatButtonGroupProps } from '..';
++  import { FormatButton, type FormatButtonGroupProps } from '../index.js';
+ 
+   let { editor, showToolbar = true, bold = true, code = true, highlight = true, italic = true, link = true, removeLink = true, strike = true, subscript = true, superscript = true, underline = true, br = true }: FormatButtonGroupProps = $props();
+ </script>
+diff --git a/dist/format/FormatButtonGroup.svelte.d.ts b/dist/format/FormatButtonGroup.svelte.d.ts
+index c354d445e9665904640dfe9eff52769dad93ab10..f58d7ca3f2de000e738fdfd383d1846b4303ca20 100644
+--- a/dist/format/FormatButtonGroup.svelte.d.ts
++++ b/dist/format/FormatButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type FormatButtonGroupProps } from '..';
++import { type FormatButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/groups/GroupCustom.svelte b/dist/groups/GroupCustom.svelte
+index 5126864e204a00e2ec9c41ad648e60c748b54446..b121b28410a21c897b81de7ef4c1b92af43a56d4 100644
+--- a/dist/groups/GroupCustom.svelte
++++ b/dist/groups/GroupCustom.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { type GroupEditorBasicProps, AlignmentButton, FontButton, FormatButton, ImageButton } from '..';
++  import { type GroupEditorBasicProps, AlignmentButton, FontButton, FormatButton, ImageButton } from '../index.js';
+ 
+   let { editor, showToolbar = true }: GroupEditorBasicProps = $props();
+ </script>
+diff --git a/dist/groups/GroupCustom.svelte.d.ts b/dist/groups/GroupCustom.svelte.d.ts
+index ce0a141fd0f28f44cbc11db128e1b99dd35bf702..dd8cac2acbae6b556926ee992021d4d54121ad8d 100644
+--- a/dist/groups/GroupCustom.svelte.d.ts
++++ b/dist/groups/GroupCustom.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type GroupEditorBasicProps } from '..';
++import { type GroupEditorBasicProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/heading/HeadingButton.svelte b/dist/heading/HeadingButton.svelte
+index 610e53629cef86dad1cf06c0025d170f4d1c2547..5d206b5afd6ee424828b6c14264c3c2c8a6e7356 100644
+--- a/dist/heading/HeadingButton.svelte
++++ b/dist/heading/HeadingButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip, Dropdown, DropdownItem } from 'flowbite-svelte';
+-  import { runHeadingCommand, generateButtonId, type EditorBasicProps, type HeadingLevel, useEditableContext } from '..';
++  import { runHeadingCommand, generateButtonId, type EditorBasicProps, type HeadingLevel, useEditableContext } from '../index.js';
+ 
+   let { editor, tooltipText, ariaLabel, id, class: className }: EditorBasicProps = $props();
+ 
+diff --git a/dist/heading/HeadingButton.svelte.d.ts b/dist/heading/HeadingButton.svelte.d.ts
+index 3e1e3fe16388d29742579ae5dd0a2021d35b8021..211953de6715da8b82ae1fc1ade5a0f1d6693691 100644
+--- a/dist/heading/HeadingButton.svelte.d.ts
++++ b/dist/heading/HeadingButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type EditorBasicProps } from '..';
++import { type EditorBasicProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/heading/HeadingButtonGroup.svelte b/dist/heading/HeadingButtonGroup.svelte
+index cd5863c53db820af111c05e34607c929e9cbb91a..2dcc68beb74c051dca580e36f3d96cd8c8bd661d 100644
+--- a/dist/heading/HeadingButtonGroup.svelte
++++ b/dist/heading/HeadingButtonGroup.svelte
+@@ -1,6 +1,6 @@
+ <!-- In your FontButtonGroup.svelte or wherever you want to use it -->
+ <script lang="ts">
+-  import { FontButton, HeadingButton, type HeadingButtonGroupProps } from '..';
++  import { FontButton, HeadingButton, type HeadingButtonGroupProps } from '../index.js';
+ 
+   let { editor, showToolbar = true, fontFamily = true, fontSize = true, textColor = true }: HeadingButtonGroupProps = $props();
+ </script>
+diff --git a/dist/heading/HeadingButtonGroup.svelte.d.ts b/dist/heading/HeadingButtonGroup.svelte.d.ts
+index 54014f56ef1441e5d254db24a16a5e2747d25f68..2da4537849ef9c853f389e24e7291bec3647087e 100644
+--- a/dist/heading/HeadingButtonGroup.svelte.d.ts
++++ b/dist/heading/HeadingButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type HeadingButtonGroupProps } from '..';
++import { type HeadingButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/image/ImageButton.svelte b/dist/image/ImageButton.svelte
+index 726683d4ee8c66dd427191fb7e5d4e0079d8fe6d..9fdd04d5263d633a17e992773949052c5e59f0a1 100644
+--- a/dist/image/ImageButton.svelte
++++ b/dist/image/ImageButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip, Modal, Label, Input, Button } from 'flowbite-svelte';
+-  import { runImageCommand, generateButtonId, type ImageButtonsProps, useEditableContext } from '..';
++  import { runImageCommand, generateButtonId, type ImageButtonsProps, useEditableContext } from '../index.js';
+ 
+   let { editor, format = 'basic', tooltipText, ariaLabel, id, imageOptions = { src: 'https://placehold.co/600x400', alt: 'image alt', title: 'image title' }, onAdvancedClick, class: className, ...restProps }: ImageButtonsProps = $props();
+ 
+diff --git a/dist/image/ImageButton.svelte.d.ts b/dist/image/ImageButton.svelte.d.ts
+index eaf7294c546379dcde6c86caae0854268a472f6b..e695436e63bda7b8ba1af8102d982d4bf80b6477 100644
+--- a/dist/image/ImageButton.svelte.d.ts
++++ b/dist/image/ImageButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ImageButtonsProps } from '..';
++import { type ImageButtonsProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/image/ImageButtonGroup.svelte b/dist/image/ImageButtonGroup.svelte
+index 3b0363a31a0f2519dc664838eb28b204f5f87e46..452183f2c1f04867a45cc975c69372e697f5db89 100644
+--- a/dist/image/ImageButtonGroup.svelte
++++ b/dist/image/ImageButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { type ImageButtonGroupProps, ImageButton } from '..';
++  import { type ImageButtonGroupProps, ImageButton } from '../index.js';
+ 
+   let { editor, showToolbar = true, basic = true, advanced = true }: ImageButtonGroupProps = $props();
+ </script>
+diff --git a/dist/image/ImageButtonGroup.svelte.d.ts b/dist/image/ImageButtonGroup.svelte.d.ts
+index f01521af84cb88db628443ad741bfc359ff00522..3d686c45d6b68a9487500ac0f7597754275c3579 100644
+--- a/dist/image/ImageButtonGroup.svelte.d.ts
++++ b/dist/image/ImageButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ImageButtonGroupProps } from '..';
++import { type ImageButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/invisible-characters/InvisibleButton.svelte b/dist/invisible-characters/InvisibleButton.svelte
+index eaaf04c7c2c61d9fa30414b7aca44980f30a1838..9f0d74f0369de04847d6baed0fd6ee39d4bd4e57 100644
+--- a/dist/invisible-characters/InvisibleButton.svelte
++++ b/dist/invisible-characters/InvisibleButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { runInvisibleCommand, type InvisibleAction, generateButtonId, type InvisibleButtonProps, cn, useEditableContext } from '..';
++  import { runInvisibleCommand, type InvisibleAction, generateButtonId, type InvisibleButtonProps, cn, useEditableContext } from '../index.js';
+   import Paragraph from './Paragraph.svelte';
+   import { onMount } from 'svelte';
+ 
+diff --git a/dist/invisible-characters/InvisibleButton.svelte.d.ts b/dist/invisible-characters/InvisibleButton.svelte.d.ts
+index b019fe7ea5997e5de83567026d9eda2b7c3400e1..6ed7476e9f5045ba3f77c0f9bc07fb2ff14ba167 100644
+--- a/dist/invisible-characters/InvisibleButton.svelte.d.ts
++++ b/dist/invisible-characters/InvisibleButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type InvisibleButtonProps } from '..';
++import { type InvisibleButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/invisible-characters/InvisibleButtonGroup.svelte b/dist/invisible-characters/InvisibleButtonGroup.svelte
+index 85119063b5ddb3c3707595d076dcf928d0589e48..880b525ba4928dedfd83b83ad0196e25d6fb918b 100644
+--- a/dist/invisible-characters/InvisibleButtonGroup.svelte
++++ b/dist/invisible-characters/InvisibleButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { InvisibleButton, type InvisibleButtonGroupProps } from '..';
++  import { InvisibleButton, type InvisibleButtonGroupProps } from '../index.js';
+   let { editor, showToolbar = true, toggle = true, show = true, hide = true }: InvisibleButtonGroupProps = $props();
+ </script>
+ 
+diff --git a/dist/invisible-characters/InvisibleButtonGroup.svelte.d.ts b/dist/invisible-characters/InvisibleButtonGroup.svelte.d.ts
+index 33c3be2d5d5f000126c7c0fcb90a7e094be99d53..9fd78527cbbd17bc0a2df2453cfae4692d843bbf 100644
+--- a/dist/invisible-characters/InvisibleButtonGroup.svelte.d.ts
++++ b/dist/invisible-characters/InvisibleButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type InvisibleButtonGroupProps } from '..';
++import { type InvisibleButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/layout/LayoutButton.svelte b/dist/layout/LayoutButton.svelte
+index de85b0f892c6f7f9033f68d4178bc5df94ff886c..8d2d6df10afb0e8057e71d20af835b36a8b94540 100644
+--- a/dist/layout/LayoutButton.svelte
++++ b/dist/layout/LayoutButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { runLayoutsCommand, generateButtonId, type LayoutButtonProps, useEditableContext } from '..';
++  import { runLayoutsCommand, generateButtonId, type LayoutButtonProps, useEditableContext } from '../index.js';
+ 
+   let { editor, format, tooltipText, ariaLabel, id, class: className }: LayoutButtonProps = $props();
+ 
+diff --git a/dist/layout/LayoutButton.svelte.d.ts b/dist/layout/LayoutButton.svelte.d.ts
+index 80f08a4d85b76228efa86b2b64b464468fe09107..68c3fa5a10105d1cb200d206ec8a66289db19d7d 100644
+--- a/dist/layout/LayoutButton.svelte.d.ts
++++ b/dist/layout/LayoutButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type LayoutButtonProps } from '..';
++import { type LayoutButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/layout/LayoutButtonGroup.svelte b/dist/layout/LayoutButtonGroup.svelte
+index 2ec26a0faa86d204c0e46c63b8a5736c488baa51..0a313042d794830a235c116e90ae7037f9876362 100644
+--- a/dist/layout/LayoutButtonGroup.svelte
++++ b/dist/layout/LayoutButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { LayoutButton, type LayoutButtonGroupProps } from '..';
++  import { LayoutButton, type LayoutButtonGroupProps } from '../index.js';
+ 
+   let { editor, showToolbar = true, blockquote = true, codeblock = true, hr = true }: LayoutButtonGroupProps = $props();
+ </script>
+diff --git a/dist/layout/LayoutButtonGroup.svelte.d.ts b/dist/layout/LayoutButtonGroup.svelte.d.ts
+index 6a7296eefbe64571e6d0e275481bb6807bb8efba..f1f82520308fb89f65382e9190428fff6381a650 100644
+--- a/dist/layout/LayoutButtonGroup.svelte.d.ts
++++ b/dist/layout/LayoutButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type LayoutButtonGroupProps } from '..';
++import { type LayoutButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/list/ListButton.svelte b/dist/list/ListButton.svelte
+index 925410523c5085eb691781735c850f4022f62d1d..a130b4cb57821809d1b8d768ba5954d5207ce69d 100644
+--- a/dist/list/ListButton.svelte
++++ b/dist/list/ListButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { runListCommand, type ListAction, generateButtonId, type ListButtonProps, useEditableContext } from '..';
++  import { runListCommand, type ListAction, generateButtonId, type ListButtonProps, useEditableContext } from '../index.js';
+ 
+   let { editor, format, tooltipText, ariaLabel, id, class: className }: ListButtonProps = $props();
+ 
+diff --git a/dist/list/ListButton.svelte.d.ts b/dist/list/ListButton.svelte.d.ts
+index 78893f46b486ff49201baa803a5a8241088ad704..e6158e9a8ccb927aab21486fb3e72c8b81ded4cc 100644
+--- a/dist/list/ListButton.svelte.d.ts
++++ b/dist/list/ListButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ListButtonProps } from '..';
++import { type ListButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/list/ListButtonGroup.svelte b/dist/list/ListButtonGroup.svelte
+index dcad5b45aab5414dd99a77645923cda81b0f32ec..4dad68345e4640db4a4c80622c93080dd436cf6e 100644
+--- a/dist/list/ListButtonGroup.svelte
++++ b/dist/list/ListButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { ListButton, type ListButtonGroupProps } from '..';
++  import { ListButton, type ListButtonGroupProps } from '../index.js';
+ 
+   let { editor, showToolbar = true, bullet = true, ordered = true }: ListButtonGroupProps = $props();
+ </script>
+diff --git a/dist/list/ListButtonGroup.svelte.d.ts b/dist/list/ListButtonGroup.svelte.d.ts
+index 931883cf63b0d87342a8d04e88d167cc7f904584..c6dc51d58f343a391bb157467f866fb74ba514f5 100644
+--- a/dist/list/ListButtonGroup.svelte.d.ts
++++ b/dist/list/ListButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ListButtonGroupProps } from '..';
++import { type ListButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/source/HtmlCodeButton.svelte b/dist/source/HtmlCodeButton.svelte
+index 8198813115bd24ddcc7ee85d5e2ba2120739f9a8..d58406474640c7dce0a05a4c7758e564a5e57f4f 100644
+--- a/dist/source/HtmlCodeButton.svelte
++++ b/dist/source/HtmlCodeButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip, Modal } from 'flowbite-svelte';
+-  import { generateButtonId, type InsertHtmlCodeButtonProps, useEditableContext } from '..';
++  import { generateButtonId, type InsertHtmlCodeButtonProps, useEditableContext } from '../index.js';
+ 
+   let { editor, tooltipText, ariaLabel = 'Insert HTML Code Block', id, class: className }: InsertHtmlCodeButtonProps = $props();
+ 
+diff --git a/dist/source/HtmlCodeButton.svelte.d.ts b/dist/source/HtmlCodeButton.svelte.d.ts
+index 92732106892d90cd13209722de84985bc5d48f61..cdd2329b4c370ebbe0c6ba21b1b40a21803a4559 100644
+--- a/dist/source/HtmlCodeButton.svelte.d.ts
++++ b/dist/source/HtmlCodeButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type InsertHtmlCodeButtonProps } from '..';
++import { type InsertHtmlCodeButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/source/SourceButton.svelte b/dist/source/SourceButton.svelte
+index 8dea7ee0e4435982693637af9f991719000fe84d..f9ba32207c00ca128c0192bda5637e33077b62b6 100644
+--- a/dist/source/SourceButton.svelte
++++ b/dist/source/SourceButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip, Modal } from 'flowbite-svelte';
+-  import { generateButtonId, type SourceToggleButtonProps, useEditableContext } from '..';
++  import { generateButtonId, type SourceToggleButtonProps, useEditableContext } from '../index.js';
+ 
+   let { editor, tooltipText, ariaLabel = 'Toggle Source View', id, class: className }: SourceToggleButtonProps = $props();
+ 
+diff --git a/dist/source/SourceButton.svelte.d.ts b/dist/source/SourceButton.svelte.d.ts
+index b59dc5dbc345ceb9cf612d64782c8070d2fee04d..e06c6da795d6d8ff23a796c4c5f3a3ce0995dc62 100644
+--- a/dist/source/SourceButton.svelte.d.ts
++++ b/dist/source/SourceButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type SourceToggleButtonProps } from '..';
++import { type SourceToggleButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/source/SourceButtonGroup.svelte b/dist/source/SourceButtonGroup.svelte
+index 02a532382fbd89c80d71ca747b8b2618ee7e71f5..be1c79a1e273a943b85baa7539bc3a4cabd31fba 100644
+--- a/dist/source/SourceButtonGroup.svelte
++++ b/dist/source/SourceButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { HtmlCodeButton, SourceButton, type SourceButtonGroupProps } from '..';
++  import { HtmlCodeButton, SourceButton, type SourceButtonGroupProps } from '../index.js';
+ 
+   let { editor, showToolbar = true, source = true, html = true }: SourceButtonGroupProps = $props();
+ </script>
+diff --git a/dist/source/SourceButtonGroup.svelte.d.ts b/dist/source/SourceButtonGroup.svelte.d.ts
+index aeab34dc1ee2e5f8f1d785fd73a824f42aae50b3..292c9b5b36367faf71ca12d9d00029f564f0466c 100644
+--- a/dist/source/SourceButtonGroup.svelte.d.ts
++++ b/dist/source/SourceButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type SourceButtonGroupProps } from '..';
++import { type SourceButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/table/TableButton.svelte b/dist/table/TableButton.svelte
+index 3189663305a3d32dbe04c9202e14c594695da55c..526ede7f9acb93c4704ee041ec467dad6e3b25b2 100644
+--- a/dist/table/TableButton.svelte
++++ b/dist/table/TableButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { runTableCommand, cn, generateButtonId, type TableButtonProps, useEditableContext } from '..';
++  import { runTableCommand, cn, generateButtonId, type TableButtonProps, useEditableContext } from '../index.js';
+ 
+   let { editor, action = 'table', tooltipText, id, ariaLabel, class: className }: TableButtonProps = $props();
+ 
+diff --git a/dist/table/TableButton.svelte.d.ts b/dist/table/TableButton.svelte.d.ts
+index 631983b19a2803e676de5ea36f012c4e61fe4534..b8eef82b2615bc4a0f57cd3662ab632a6b7cbcf3 100644
+--- a/dist/table/TableButton.svelte.d.ts
++++ b/dist/table/TableButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type TableButtonProps } from '..';
++import { type TableButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/table/TableButtonGroup1.svelte b/dist/table/TableButtonGroup1.svelte
+index 8664bc82a789eab59d906eef92faa96c34255f1b..66fb812a98c1102796d89942b83c0d1739444b66 100644
+--- a/dist/table/TableButtonGroup1.svelte
++++ b/dist/table/TableButtonGroup1.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { type TableButtonGroupProps, TableButton, Divider } from '..';
++  import { type TableButtonGroupProps, TableButton, Divider } from '../index.js';
+ 
+   let { editor, showToolbar = true, table = true, deleteTable = true, addColumnBefore = true, addColumnAfter = true, deleteColumn = true, addRowBefore = true, addRowAfter = true, deleteRow = true }: TableButtonGroupProps = $props();
+ </script>
+diff --git a/dist/table/TableButtonGroup1.svelte.d.ts b/dist/table/TableButtonGroup1.svelte.d.ts
+index bce2b7c98af4ccf7b32ae30019c972d9b6d3d815..1258bcfa0002100ea00e598572898a3478542735 100644
+--- a/dist/table/TableButtonGroup1.svelte.d.ts
++++ b/dist/table/TableButtonGroup1.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type TableButtonGroupProps } from '..';
++import { type TableButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/table/TableButtonGroup2.svelte b/dist/table/TableButtonGroup2.svelte
+index 8ef52ab0509602e23dcc3bfbd84d5112480db704..b08ccf756b4241a7de7f2310fa619a93d3c8054d 100644
+--- a/dist/table/TableButtonGroup2.svelte
++++ b/dist/table/TableButtonGroup2.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { type TableButtonGroupProps, TableButton, Divider } from '..';
++  import { type TableButtonGroupProps, TableButton, Divider } from '../index.js';
+ 
+   let { editor, showToolbar = true, mergeCells = true, splitCell = true, mergeOrSplit = true, toggleHeaderColumn = true, toggleHeaderRow = true, toggleHeaderCell = true, fixTables = true, goToPreviousCell = true, goToNextCell = true }: TableButtonGroupProps = $props();
+ </script>
+diff --git a/dist/table/TableButtonGroup2.svelte.d.ts b/dist/table/TableButtonGroup2.svelte.d.ts
+index 37cbde74d7b271f40c1971aa2be5a69767bc0eb3..a1f350ffdff26892a5a781e47fb85bbaef64fe00 100644
+--- a/dist/table/TableButtonGroup2.svelte.d.ts
++++ b/dist/table/TableButtonGroup2.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type TableButtonGroupProps } from '..';
++import { type TableButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/task/TaskListButton.svelte b/dist/task/TaskListButton.svelte
+index 68c11eab75fcd3a5ff5fcef7565389c74f3faa24..f43f6ce8c366322227352980e64d0f665ee823e3 100644
+--- a/dist/task/TaskListButton.svelte
++++ b/dist/task/TaskListButton.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { runTaskCommand, generateButtonId, useEditableContext, type TaskListButtonProps } from '..';
++  import { runTaskCommand, generateButtonId, useEditableContext, type TaskListButtonProps } from '../index.js';
+ 
+   let { editor, action, ariaLabel, id, class: className }: TaskListButtonProps = $props();
+ 
+diff --git a/dist/task/TaskListButton.svelte.d.ts b/dist/task/TaskListButton.svelte.d.ts
+index e83401e1eced6cd14bf40f4d3b38fb0a9309c1bc..26fc0e048e6cf68390763ed52fa621e52e68d218 100644
+--- a/dist/task/TaskListButton.svelte.d.ts
++++ b/dist/task/TaskListButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type TaskListButtonProps } from '..';
++import { type TaskListButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/task/TaskListButtonGroup.svelte b/dist/task/TaskListButtonGroup.svelte
+index 117ff98dbc628d773bcd2bc5ccb9b63912707e9b..e50b7f95880780401a62fdd917ceb47d020ce56b 100644
+--- a/dist/task/TaskListButtonGroup.svelte
++++ b/dist/task/TaskListButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { TaskListButton, type TaskListButtonGroupProps } from '..';
++  import { TaskListButton, type TaskListButtonGroupProps } from '../index.js';
+   let { editor, showToolbar = true, toggle = true, split = true, sink = true, lift = true }: TaskListButtonGroupProps = $props();
+ </script>
+ 
+diff --git a/dist/task/TaskListButtonGroup.svelte.d.ts b/dist/task/TaskListButtonGroup.svelte.d.ts
+index 80045aa8bee72ba458f36cbb746c03bde2390b84..b90a11bf9c8d48be6c192f3e67448ad8237ca36d 100644
+--- a/dist/task/TaskListButtonGroup.svelte.d.ts
++++ b/dist/task/TaskListButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type TaskListButtonGroupProps } from '..';
++import { type TaskListButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/undo-redo/UndoRedo.svelte b/dist/undo-redo/UndoRedo.svelte
+index 3b06269f4586ba84ce223bfcc05181040542a4eb..a42da13f22b9b88fcba9b17039d000f3f9e0b87a 100644
+--- a/dist/undo-redo/UndoRedo.svelte
++++ b/dist/undo-redo/UndoRedo.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+   import { Tooltip } from 'flowbite-svelte';
+-  import { runUndoRedoCommand, cn, type UndoRedoProps, generateButtonId, useEditableContext } from '..';
++  import { runUndoRedoCommand, cn, type UndoRedoProps, generateButtonId, useEditableContext } from '../index.js';
+ 
+   let { editor, action, class: className, iconClass, ...restProps }: UndoRedoProps = $props();
+ 
+diff --git a/dist/undo-redo/UndoRedo.svelte.d.ts b/dist/undo-redo/UndoRedo.svelte.d.ts
+index c6d133ef1f5f504c9b2a66aaed80a8c0744e3f82..163ec31d7bbe2c23eec576ad66072ec721193b02 100644
+--- a/dist/undo-redo/UndoRedo.svelte.d.ts
++++ b/dist/undo-redo/UndoRedo.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type UndoRedoProps } from '..';
++import { type UndoRedoProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/undo-redo/UndoRedoButtonGroup.svelte b/dist/undo-redo/UndoRedoButtonGroup.svelte
+index 17cdea4f42019235ee9cd522efb2fc7ede34f950..bf7fa7c14d1ab382dece8c5cc97d4ad0e8f7d3dc 100644
+--- a/dist/undo-redo/UndoRedoButtonGroup.svelte
++++ b/dist/undo-redo/UndoRedoButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { type UndoRedoButtonGroupProps, UndoRedo } from '..';
++  import { type UndoRedoButtonGroupProps, UndoRedo } from '../index.js';
+ 
+   let { editor, showToolbar = true, undo = true, redo = true }: UndoRedoButtonGroupProps = $props();
+ </script>
+diff --git a/dist/undo-redo/UndoRedoButtonGroup.svelte.d.ts b/dist/undo-redo/UndoRedoButtonGroup.svelte.d.ts
+index cc48baabc91d815fa33460234d4e5c874e0d056c..c3f2d172cd2fcefc992ee21164ceb9ed57a60100 100644
+--- a/dist/undo-redo/UndoRedoButtonGroup.svelte.d.ts
++++ b/dist/undo-redo/UndoRedoButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type UndoRedoButtonGroupProps } from '..';
++import { type UndoRedoButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/useEditableContext.svelte.d.ts b/dist/useEditableContext.svelte.d.ts
+index ce8912430babc0e4f70a300ce640c6eecc9882e3..3dfb8f215e667efebc0a68943566d12cb08b3f90 100644
+--- a/dist/useEditableContext.svelte.d.ts
++++ b/dist/useEditableContext.svelte.d.ts
+@@ -1,5 +1,5 @@
+ import { type ClassValue } from 'clsx';
+-import { type EditableContext } from './';
++import { type EditableContext } from './index.js';
+ export declare function useEditableContext(): {
+     editableContext: EditableContext;
+     createEditableHandler: (handler: () => void, isEditableCtx: boolean) => () => void;
+diff --git a/dist/useEditableContext.svelte.js b/dist/useEditableContext.svelte.js
+index ec732017bcbcc36e43c616efef56c8b543483b86..03677f81deb0ea57a1eea1a7a284cbb8ae24d0d9 100644
+--- a/dist/useEditableContext.svelte.js
++++ b/dist/useEditableContext.svelte.js
+@@ -1,7 +1,7 @@
+ // lib/utils/useEditableContext.svelte.ts
+ import { getContext } from 'svelte';
+ import {} from 'clsx';
+-import { cn } from './';
++import { cn } from './index.js';
+ export function useEditableContext() {
+     const editableContext = getContext('isEditable');
+     return {
+diff --git a/dist/utils.d.ts b/dist/utils.d.ts
+index 7c2b7e10b3db88e9cb900130084e71eefea633e4..25bd2069c4fc3532d78f2b83c2d51c816c66a043 100644
+--- a/dist/utils.d.ts
++++ b/dist/utils.d.ts
+@@ -1,5 +1,5 @@
+ import { type ClassValue } from 'clsx';
+-import { type BubbleMenuConfig, type FloatingMenuConfig } from './';
++import { type BubbleMenuConfig, type FloatingMenuConfig } from './index.js';
+ /**
+  * Combines clsx and tailwind-merge for intelligent class merging
+  */
+diff --git a/dist/utils.js b/dist/utils.js
+index 4c0cd268a0b91abe7329e6b6b901428ff5717aa3..7b78c6ea4b3fea937cd5a7fa3d1df9f8b0a12948 100644
+--- a/dist/utils.js
++++ b/dist/utils.js
+@@ -1,6 +1,6 @@
+ import { clsx } from 'clsx';
+ import { twMerge } from 'tailwind-merge';
+-import {} from './';
++import {} from './index.js';
+ /**
+  * Combines clsx and tailwind-merge for intelligent class merging
+  */
+diff --git a/dist/wrappers/ContentWrapper.svelte b/dist/wrappers/ContentWrapper.svelte
+index df989c9360706c9b0e4aeaf2bd2b4b945158b662..de55d3f94e7cddac35169b0b07d369c36ed95618 100644
+--- a/dist/wrappers/ContentWrapper.svelte
++++ b/dist/wrappers/ContentWrapper.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { cn, type ContentWrapperProps } from '..';
++  import { cn, type ContentWrapperProps } from '../index.js';
+   let { children, contentprops, ...restProps }: ContentWrapperProps = $props();
+ 
+   const { containerClass, contentClass, id = 'wysiwyg-content' } = contentprops ?? {};
+diff --git a/dist/wrappers/ContentWrapper.svelte.d.ts b/dist/wrappers/ContentWrapper.svelte.d.ts
+index 6c70f9934d556c4efd578b04d6b2937f76fe1cdc..759f7aabb0d7cc7b0f4d719e76a650da11ccff69 100644
+--- a/dist/wrappers/ContentWrapper.svelte.d.ts
++++ b/dist/wrappers/ContentWrapper.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ContentWrapperProps } from '..';
++import { type ContentWrapperProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/wrappers/Divider.svelte b/dist/wrappers/Divider.svelte
+index 50442c62a81510ee440c91c9c968ba4fd2b6a2eb..6e08794ec6c6f91f824a4bdfb9caa27ed08f9dbb 100644
+--- a/dist/wrappers/Divider.svelte
++++ b/dist/wrappers/Divider.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { cn, type DividerProps } from '..';
++  import { cn, type DividerProps } from '../index.js';
+   let { divClass, spanClass, ...restProps }: DividerProps = $props();
+ </script>
+ 
+diff --git a/dist/wrappers/Divider.svelte.d.ts b/dist/wrappers/Divider.svelte.d.ts
+index 574d7f1c44aef2411de5ebcc7c66007a362eca14..1e3c457897d323334930412b09a0d17f6b2184a6 100644
+--- a/dist/wrappers/Divider.svelte.d.ts
++++ b/dist/wrappers/Divider.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type DividerProps } from '..';
++import { type DividerProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/wrappers/EditorWrapper.svelte b/dist/wrappers/EditorWrapper.svelte
+index a6f12f3483a7678d5a0e4fa61e92248d6849fa41..5d85a645ddce92d139786c71670e4a4362cf0abe 100644
+--- a/dist/wrappers/EditorWrapper.svelte
++++ b/dist/wrappers/EditorWrapper.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { cn, type EditorWrapperProps } from '..';
++  import { cn, type EditorWrapperProps } from '../index.js';
+   let { children, class: className, ...restProps }: EditorWrapperProps = $props();
+ </script>
+ 
+diff --git a/dist/wrappers/EditorWrapper.svelte.d.ts b/dist/wrappers/EditorWrapper.svelte.d.ts
+index a0cac49e7898a0209d0620487063b8b45019eb77..17745f8bc11b882b846cf2d71302b657d1d278f2 100644
+--- a/dist/wrappers/EditorWrapper.svelte.d.ts
++++ b/dist/wrappers/EditorWrapper.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type EditorWrapperProps } from '..';
++import { type EditorWrapperProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/wrappers/ToolbarRowWrapper.svelte b/dist/wrappers/ToolbarRowWrapper.svelte
+index 38260e9d6f9aac1d3dec96f096fd2149ba24c564..d2f23a0fbddc0c6a53385c51a53dade10f87ad54 100644
+--- a/dist/wrappers/ToolbarRowWrapper.svelte
++++ b/dist/wrappers/ToolbarRowWrapper.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { cn, type ToolbarRowWrapperProps } from '..';
++  import { cn, type ToolbarRowWrapperProps } from '../index.js';
+ 
+   let { children, toolbarrawprops, ...restProps }: ToolbarRowWrapperProps = $props();
+   const { containerClass, contentClass, top = true } = toolbarrawprops ?? {};
+diff --git a/dist/wrappers/ToolbarRowWrapper.svelte.d.ts b/dist/wrappers/ToolbarRowWrapper.svelte.d.ts
+index 2dab0120f6dd018ff3f50db7b611b3b9e9eb3984..a9ad6aef2be2c60096fa770f01bc3b78d3451e9a 100644
+--- a/dist/wrappers/ToolbarRowWrapper.svelte.d.ts
++++ b/dist/wrappers/ToolbarRowWrapper.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ToolbarRowWrapperProps } from '..';
++import { type ToolbarRowWrapperProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/wrappers/ToolbarWrapper.svelte b/dist/wrappers/ToolbarWrapper.svelte
+index 21b7fc9f3d628469d0147994b4453c7aa0b590d6..b0f4377780e34aef2a2200e4a71bb4814343d3d2 100644
+--- a/dist/wrappers/ToolbarWrapper.svelte
++++ b/dist/wrappers/ToolbarWrapper.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { cn, type ToolbarWrapperProps } from '..';
++  import { cn, type ToolbarWrapperProps } from '../index.js';
+   let { children, class: className, ...restProps }: ToolbarWrapperProps = $props();
+ </script>
+ 
+diff --git a/dist/wrappers/ToolbarWrapper.svelte.d.ts b/dist/wrappers/ToolbarWrapper.svelte.d.ts
+index fa4af9f1979e8eae5f5193832666de3b126c0744..b927264a20c7a4cbdb09aceacf99f292cce2499c 100644
+--- a/dist/wrappers/ToolbarWrapper.svelte.d.ts
++++ b/dist/wrappers/ToolbarWrapper.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type ToolbarWrapperProps } from '..';
++import { type ToolbarWrapperProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/youtube/YoutubeButton.svelte b/dist/youtube/YoutubeButton.svelte
+index e537e1bd9fe79ac831afb25039248b4a6e3c6b21..dd4dc4f051d63dc89c7ccbeb5ccfacc66cdb518d 100644
+--- a/dist/youtube/YoutubeButton.svelte
++++ b/dist/youtube/YoutubeButton.svelte
+@@ -1,7 +1,7 @@
+ <script lang="ts">
+   import { getContext } from 'svelte';
+   import { Tooltip, Modal, Label, Input, Button } from 'flowbite-svelte';
+-  import { runVideoCommand, generateButtonId, generateUniqueId, type YoutubeButtonProps, useEditableContext, type EditorExtensionConfigs } from '..';
++  import { runVideoCommand, generateButtonId, generateUniqueId, type YoutubeButtonProps, useEditableContext, type EditorExtensionConfigs } from '../index.js';
+ 
+   let {
+     modalChildren,
+diff --git a/dist/youtube/YoutubeButton.svelte.d.ts b/dist/youtube/YoutubeButton.svelte.d.ts
+index f7dea5220b7b85c2ea15f08b7b950b2e3be1a85f..62ea46044beb04733b2fe6dfe57659cd1b5756f4 100644
+--- a/dist/youtube/YoutubeButton.svelte.d.ts
++++ b/dist/youtube/YoutubeButton.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type YoutubeButtonProps } from '..';
++import { type YoutubeButtonProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
+diff --git a/dist/youtube/YoutubeButtonGroup.svelte b/dist/youtube/YoutubeButtonGroup.svelte
+index 39fbdd1df3c3b4f3666e261d71402f51c792861b..3859e1da985a1d5758334341d30ff877e7fd51ef 100644
+--- a/dist/youtube/YoutubeButtonGroup.svelte
++++ b/dist/youtube/YoutubeButtonGroup.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-  import { type YoutubeButtonGroupProps, YoutubeButton } from '..';
++  import { type YoutubeButtonGroupProps, YoutubeButton } from '../index.js';
+ 
+   let { editor, showToolbar = true, basic = true, advanced = true }: YoutubeButtonGroupProps = $props();
+ </script>
+diff --git a/dist/youtube/YoutubeButtonGroup.svelte.d.ts b/dist/youtube/YoutubeButtonGroup.svelte.d.ts
+index 4aae13eba33c7e45e47f56c3cdb388b3c5f8b980..e432a9a7cf9f350b929a89544dcf5404b737e869 100644
+--- a/dist/youtube/YoutubeButtonGroup.svelte.d.ts
++++ b/dist/youtube/YoutubeButtonGroup.svelte.d.ts
+@@ -1,4 +1,4 @@
+-import { type YoutubeButtonGroupProps } from '..';
++import { type YoutubeButtonGroupProps } from '../index.js';
+ /**
+  * [Go to docs](https://flowbite-svelte.com/docs/plugins/wysiwyg)
+  * ## Type
