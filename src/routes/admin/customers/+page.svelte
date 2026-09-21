@@ -11,31 +11,31 @@
 		CUSTOMER_STATUS_BADGES,
 		listPageHref
 	} from '$lib/components/admin';
+	import {
+		CUSTOMER_STATUSES,
+		CUSTOMER_STATUS_LABELS,
+		CUSTOMER_TYPES,
+		CUSTOMER_TYPE_LABELS
+	} from '$lib/accounts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
 	type CustomerRow = (typeof data.rows)[number];
 
-	/**
-	 * Valeurs proposées au filtre.
-	 *
-	 * Les libellés anglais proviennent de la reprise PrestaShop : filtrer sur
-	 * « particulier » ne renverrait aujourd'hui qu'une seule fiche, la base
-	 * portant « individual » sur les 24 744 autres.
+	/*
+	 * Valeurs proposées au filtre — celles du CDC, seules présentes en base
+	 * depuis la normalisation du vocabulaire (migration 0030).
 	 */
-	const typeFilterOptions = [
-		{ value: 'individual', name: 'Particulier' },
-		{ value: 'professional', name: 'Professionnel' },
-		{ value: 'collectivite', name: 'Collectivité' }
-	];
+	const typeFilterOptions = CUSTOMER_TYPES.map((value) => ({
+		value,
+		name: CUSTOMER_TYPE_LABELS[value]
+	}));
 
-	const statusFilterOptions = [
-		{ value: 'pending', name: 'En attente' },
-		{ value: 'active', name: 'Validé' },
-		{ value: 'inactive', name: 'Inactif' },
-		{ value: 'rejected', name: 'Rejeté' }
-	];
+	const statusFilterOptions = CUSTOMER_STATUSES.map((value) => ({
+		value,
+		name: CUSTOMER_STATUS_LABELS[value]
+	}));
 
 	const tableParams = $derived({ filters: data.filters, sort: data.sort, dir: data.dir });
 
@@ -57,6 +57,7 @@
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Clients' }]}
 >
 	{#snippet actions()}
+		<Button color="alternative" href="/admin/customers/validations">Validations de comptes</Button>
 		<Button href="/admin/customers/new">
 			<UserAddOutline class="me-2 h-4 w-4" /> Nouveau client
 		</Button>

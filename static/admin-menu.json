@@ -75,6 +75,11 @@
 							"id": "customers-list",
 							"label": "Clients",
 							"href": "/admin/customers"
+						},
+						{
+							"id": "customers-validations",
+							"label": "Validations de comptes",
+							"href": "/admin/customers/validations"
 						}
 					]
 				},

@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { getCustomerWithAddresses, deleteCustomer } from '$lib/server/customers';
 import { db } from '$lib/server/db';
 import { listMachines } from '$lib/server/machines';
+import { pendingRequestForCustomer } from '$lib/server/account-validation';
 import { order, orderState } from '$lib/server/db/order.schema';
 import { desc, eq, sql } from 'drizzle-orm';
 
@@ -40,7 +41,14 @@ export const load: PageServerLoad = async ({ params }) => {
 			.where(eq(order.customerId, id))
 	]);
 
-	return { customer, orders, totals, machines: await listMachines(id) };
+	return {
+		customer,
+		orders,
+		totals,
+		machines: await listMachines(id),
+		// Dossier en cours, pour renvoyer vers l'écran de décision (CDC 08).
+		pendingRequest: await pendingRequestForCustomer(id)
+	};
 };
 
 export const actions: Actions = {

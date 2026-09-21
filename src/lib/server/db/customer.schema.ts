@@ -21,13 +21,18 @@ import { user } from './auth.schema';
  * le personnel (role employee/admin) n'en a pas.
  */
 
-/** Type de compte client. */
-export const customerType = ['particulier', 'entreprise', 'collectivite'] as const;
-export type CustomerType = (typeof customerType)[number];
-
-/** État de validation du compte (utile pour les comptes pro à valider). */
-export const customerStatus = ['pending', 'validated', 'rejected'] as const;
-export type CustomerStatus = (typeof customerStatus)[number];
+/*
+ * Type et statut de compte — vocabulaire défini dans `$lib/accounts`, partagé
+ * navigateur/serveur et seul jeu de valeurs de référence (CDC 08).
+ *
+ * Réexportés ici pour les appelants qui raisonnent en termes de schéma.
+ */
+export {
+	CUSTOMER_TYPES as customerType,
+	CUSTOMER_STATUSES as customerStatus,
+	type CustomerType,
+	type CustomerStatus
+} from '$lib/accounts';
 
 export const customer = pgTable(
 	'customer',
@@ -69,6 +74,17 @@ export const customer = pgTable(
 		collectivityType: text('collectivity_type'),
 		collectivityName: text('collectivity_name'),
 
+		/*
+		 * Suivi de la validation (CDC 08, §5.4).
+		 *
+		 * Le détail et l'historique vivent dans `account_validation_request` ;
+		 * ces colonnes portent l'état courant, pour l'afficher au client et
+		 * filtrer la liste admin sans jointure.
+		 */
+		statusUpdatedAt: timestamp('status_updated_at', { withTimezone: true }),
+		/** Motif du dernier refus, affiché au client (R9). */
+		rejectionReason: text('rejection_reason'),
+
 		// Document KBIS (validation pro)
 		kbisDocumentId: integer('kbis_document_id'),
 		kbisValidatedAt: timestamp('kbis_validated_at', { withTimezone: true }),
@@ -85,6 +101,13 @@ export const customer = pgTable(
 
 		// Traçabilité de la reprise PrestaShop (renseignée par l'import des données).
 		legacyPsId: integer('legacy_ps_id'),
+		/**
+		 * Couple `type/status` d'avant la normalisation du vocabulaire (CDC 08).
+		 *
+		 * Conservé pour pouvoir revenir en arrière : la bascule des comptes
+		 * professionnels repris vers `pending` leur retire leurs conditions.
+		 */
+		legacyAccountState: text('legacy_account_state'),
 
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()

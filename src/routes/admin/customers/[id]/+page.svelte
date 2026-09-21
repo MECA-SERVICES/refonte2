@@ -103,11 +103,28 @@
 	{#if awaitingReview}
 		<!-- Le dossier attend une décision : le signaler ici évite qu'il se perde
 		     au milieu des informations de contact (R2, R9). -->
-		<p
-			class="mt-5 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+		<div
+			class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
 		>
-			<span class="font-semibold">Dossier en attente de validation.</span>
-			Tant qu'il n'est pas traité, ce client voit les prix TTC et n'accède pas aux conditions professionnelles.
+			<p>
+				<span class="font-semibold">Dossier en attente de validation.</span>
+				Tant qu'il n'est pas traité, ce client voit les prix TTC et n'accède pas aux conditions professionnelles.
+			</p>
+			{#if data.pendingRequest}
+				<a href="/admin/customers/validations/{data.pendingRequest.id}">
+					<Button size="xs" color="primary">Examiner le dossier</Button>
+				</a>
+			{/if}
+		</div>
+	{/if}
+
+	{#if c.rejectionReason}
+		<!-- R9 : le motif du refus, tel qu'il a été communiqué au client. -->
+		<p
+			class="mt-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
+		>
+			<span class="font-semibold">Dossier refusé —</span>
+			{c.rejectionReason}
 		</p>
 	{/if}
 </Card>

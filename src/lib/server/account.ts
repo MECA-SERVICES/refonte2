@@ -12,9 +12,13 @@ import type { FieldErrors } from '$lib/server/forms';
  * compte via Better Auth, puis la fiche client rattachée par `user_id`.
  */
 
-/** Typologies de compte ouvertes à l'inscription (section 08). */
-export const CUSTOMER_TYPES = ['particulier', 'pro', 'collectivite'] as const;
-export type CustomerType = (typeof CUSTOMER_TYPES)[number];
+/*
+ * Typologies de compte ouvertes à l'inscription (section 08).
+ *
+ * Le vocabulaire est défini une seule fois dans `$lib/accounts` ; il est
+ * réexporté ici pour que les appelants historiques gardent leur import.
+ */
+export { CUSTOMER_TYPES, type CustomerType };
 
 /** Longueur minimale du mot de passe (règle R11 de la section 07). */
 export const PASSWORD_MIN_LENGTH = 8;
@@ -113,31 +117,55 @@ export function parseRegistration(form: FormData): {
 /**
  * Crée la fiche client rattachée à un compte d'authentification.
  *
- * Un compte particulier est actif immédiatement ; un compte professionnel ou
- * de collectivité reste en attente de validation par l'équipe (section 08).
+ * Un compte particulier est validé d'office (R1) ; un compte professionnel ou
+ * de collectivité reste en attente et **ouvre une demande de validation**
+ * (R2), qui alimente la file du back-office. Les deux écritures partagent une
+ * transaction : une fiche `pending` sans demande resterait invisible de
+ * l'équipe, et donc jamais traitée.
  */
 export async function createCustomerProfile(userId: string, values: RegistrationInput) {
-	const [created] = await db
-		.insert(customer)
-		.values({
-			userId,
-			firstName: values.firstName,
-			lastName: values.lastName,
-			email: values.email,
-			phone: values.phone,
-			type: values.type,
-			status: values.type === 'particulier' ? 'validated' : 'pending',
-			companyName: values.companyName,
-			siret: values.siret,
-			vatNumber: values.vatNumber,
-			collectivityName: values.collectivityName,
-			source: 'inscription',
-			newsletterSubscribed: values.newsletter,
-			newsletterSubscribedAt: values.newsletter ? new Date() : null
-		})
-		.returning();
+	const needsReview = requiresValidation(values.type);
+	const now = new Date();
 
-	return created;
+	return db.transaction(async (tx) => {
+		const [created] = await tx
+			.insert(customer)
+			.values({
+				userId,
+				firstName: values.firstName,
+				lastName: values.lastName,
+				email: values.email,
+				phone: values.phone,
+				type: values.type,
+				status: needsReview ? 'pending' : 'validated',
+				statusUpdatedAt: now,
+				companyName: values.companyName,
+				siret: values.siret,
+				vatNumber: values.vatNumber,
+				collectivityName: values.collectivityName,
+				source: 'inscription',
+				newsletterSubscribed: values.newsletter,
+				newsletterSubscribedAt: values.newsletter ? new Date() : null
+			})
+			.returning();
+
+		if (needsReview) {
+			await openValidationRequest(
+				created.id,
+				values.type as ValidationRequestType,
+				{
+					companyName: values.companyName,
+					siret: values.siret,
+					vatNumber: values.vatNumber,
+					collectivityName: values.collectivityName,
+					origin: 'inscription'
+				},
+				tx
+			);
+		}
+
+		return created;
+	});
 }
 
 /** Fiche client d'un compte, si elle existe. */
@@ -168,6 +196,7 @@ export async function taxContextForUser(userId: string | null | undefined) {
 					}
 				: null
 		),
-		displayMode: priceDisplayMode(profile?.type)
+		// R8 : le HT n'est ouvert qu'à un dossier validé, pas au seul type.
+		displayMode: priceDisplayMode(profile?.type, profile?.status)
 	};
 }

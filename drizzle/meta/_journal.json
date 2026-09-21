@@ -190,6 +190,20 @@
       "when": 1789812675964,
       "tag": "0028_blog_sous_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789899075964,
+      "tag": "0029_validation_comptes_pro",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789985475964,
+      "tag": "0030_normalisation_comptes",
+      "breakpoints": true
     }
   ]
 }

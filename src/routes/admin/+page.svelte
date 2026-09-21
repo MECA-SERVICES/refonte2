@@ -22,7 +22,7 @@
 		label="Comptes en attente"
 		value={data.stats.pending}
 		icon={ClockSolid}
-		href="/admin/customers?status=pending"
+		href="/admin/customers/validations"
 	/>
 	<StatCard
 		label="Produits"

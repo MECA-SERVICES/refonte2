@@ -53,6 +53,10 @@ describe('resolveTaxRegime', () => {
 				status: 'pending'
 			})
 		).toBe('standard');
+		// Statut absent : le dossier n'a pas été tranché, donc pas d'exonération.
+		expect(resolveTaxRegime({ country: 'IT', type: 'pro', taxExemptStatus: 'exempt_eu_b2b' })).toBe(
+			'standard'
+		);
 	});
 });
 
@@ -93,14 +97,28 @@ describe('priceDisplayMode', () => {
 		expect(priceDisplayMode(null)).toBe('ttc');
 	});
 
-	it('affiche le HT au professionnel et à la collectivité (P2)', () => {
-		expect(priceDisplayMode('pro')).toBe('ht');
-		expect(priceDisplayMode('collectivite')).toBe('ht');
+	it('affiche le HT au professionnel et à la collectivité validés (P2, R14)', () => {
+		expect(priceDisplayMode('pro', 'validated')).toBe('ht');
+		expect(priceDisplayMode('collectivite', 'validated')).toBe('ht');
 	});
 
-	it('reste indépendant du régime fiscal : un pro français voit le HT et paie la TVA', () => {
-		const profile = { country: 'FR', type: 'pro' as const };
-		expect(priceDisplayMode(profile.type)).toBe('ht');
+	it('maintient le TTC tant que le dossier n’est pas validé (R8)', () => {
+		expect(priceDisplayMode('pro', 'pending')).toBe('ttc');
+		expect(priceDisplayMode('pro', 'rejected')).toBe('ttc');
+		// Statut absent : le compte n'est pas qualifié, donc TTC.
+		expect(priceDisplayMode('pro')).toBe('ttc');
+	});
+
+	it('reconnaît les types hérités de PrestaShop', () => {
+		// Sans normalisation, ces comptes repris resteraient en TTC.
+		expect(priceDisplayMode('professional', 'active')).toBe('ht');
+		expect(priceDisplayMode('entreprise', 'validated')).toBe('ht');
+		expect(priceDisplayMode('individual', 'active')).toBe('ttc');
+	});
+
+	it('reste indépendant du régime fiscal : un pro validé voit le HT et paie la TVA', () => {
+		const profile = { country: 'FR', type: 'pro' as const, status: 'validated' };
+		expect(priceDisplayMode(profile.type, profile.status)).toBe('ht');
 		expect(resolveTaxRegime(profile)).toBe('standard');
 	});
 });

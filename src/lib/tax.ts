@@ -14,7 +14,7 @@
 import { round2 } from '$lib/money';
 
 /** Types de compte reconnus (CDC section 08). */
-export type CustomerType = 'particulier' | 'pro' | 'collectivite';
+export type { CustomerType };
 
 /** Statut fiscal, porté par `customer.tax_exempt_status`. */
 export type TaxExemptStatus = 'standard' | 'exempt_eu_b2b';
@@ -84,9 +84,15 @@ function normalizeCountry(country?: string | null): string {
 	return code.length === 2 ? code : 'FR';
 }
 
-/** Les professionnels et collectivités partagent le même traitement fiscal. */
+/**
+ * Les professionnels et collectivités partagent le même traitement fiscal.
+ *
+ * Délègue à `$lib/accounts`, qui ramène les valeurs héritées de PrestaShop
+ * (`professional`, `entreprise`) au vocabulaire du CDC : sans cela, un client
+ * repris resterait traité comme un particulier.
+ */
 export function isBusinessType(type?: CustomerType | string | null): boolean {
-	return type === 'pro' || type === 'collectivite';
+	return isBusinessAccount(type);
 }
 
 /**
@@ -108,8 +114,9 @@ export function resolveTaxRegime(profile: TaxProfile): TaxRegime {
 		EU_COUNTRIES.has(country) &&
 		isBusinessType(profile?.type) &&
 		profile?.taxExemptStatus === 'exempt_eu_b2b' &&
-		// R11 — un compte professionnel en attente reste au régime standard.
-		profile?.status !== 'pending'
+		// R11 — seul un compte validé autoliquide ; la normalisation évite qu'un
+		// statut hérité (`active`) contourne la règle.
+		normalizeCustomerStatus(profile?.status) === 'validated'
 	) {
 		return 'reverse_charge_eu';
 	}
@@ -157,10 +164,21 @@ export function computeTax(totalHt: number, rate: number): TaxBreakdown {
 /**
  * Mode d'affichage des prix au catalogue (P2, P3).
  *
- * Indépendant du régime fiscal : il ne dépend que du type de compte connecté.
+ * Indépendant du régime fiscal, qui décide du taux : celui-ci décide de ce que
+ * l'on montre.
+ *
+ * Le HT suppose **deux** conditions (CDC 08, R8 et R14) : un compte
+ * professionnel ou collectivité, et un dossier validé. Un compte encore en
+ * attente voit les prix TTC — ses conditions professionnelles ne s'ouvrent
+ * qu'à l'acceptation du dossier.
  */
-export function priceDisplayMode(type?: CustomerType | string | null): 'ht' | 'ttc' {
-	return isBusinessType(type) ? 'ht' : 'ttc';
+export function priceDisplayMode(
+	type?: CustomerType | string | null,
+	status?: string | null
+): 'ht' | 'ttc' {
+	if (!isBusinessType(type)) return 'ttc';
+	// Statut absent : le compte n'est pas encore qualifié, donc TTC.
+	return normalizeCustomerStatus(status) === 'validated' ? 'ht' : 'ttc';
 }
 
 /** Suffixe à accoler à tout montant affiché — aucun montant nu (P4, P5). */
