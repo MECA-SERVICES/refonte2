@@ -30,6 +30,13 @@ const handleSiteLock: Handle = async ({ event, resolve }) => {
 	// La page de déverrouillage et ses ressources restent joignables.
 	if (event.url.pathname === LOCK_PATH) return resolve(event);
 
+	/*
+	 * Les notifications de paiement viennent du serveur de la banque, qui n'a
+	 * pas de session : le verrou les transformerait en 401, et l'encaissement
+	 * serait perdu. Leur authenticité tient à leur sceau, vérifié par la route.
+	 */
+	if (event.url.pathname.startsWith('/api/paiement/')) return resolve(event);
+
 	// Une navigation est redirigée ; tout le reste reçoit un refus sec.
 	if (
 		event.request.method === 'GET' &&

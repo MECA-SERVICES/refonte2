@@ -6,6 +6,7 @@ import { resolveCartOwner } from '$lib/server/cart-session';
 import { listCustomerAddresses } from '$lib/server/addresses';
 import { quoteShipping, type ShippableLine } from '$lib/server/shipping';
 import { createOrderFromCart, CheckoutError } from '$lib/server/checkout';
+import { isMoneticoConfigured } from '$lib/server/monetico';
 import { fetchServicePoints } from '$lib/server/sendcloud';
 import { db } from '$lib/server/db';
 import { product } from '$lib/server/db/catalog.schema';
@@ -74,7 +75,8 @@ export const load: PageServerLoad = async (event) => {
 		cartTotalTtc: cart.totals.totalTtc
 	});
 
-	return { cart, addresses, quote };
+	// Le paiement par carte n'est proposé que si le contrat est configuré.
+	return { cart, addresses, quote, cardPaymentAvailable: isMoneticoConfigured() };
 };
 
 export const actions: Actions = {
@@ -159,6 +161,16 @@ export const actions: Actions = {
 			cartTotalTtc: cart.totals.totalTtc
 		});
 
+		/*
+		 * Moyen de paiement retenu. La carte n'est proposée que si le contrat
+		 * Monetico est configuré : sans clé, le formulaire scellé serait
+		 * impossible à produire.
+		 */
+		const paymentMethod =
+			form.get('paymentMethod')?.toString() === 'card' && isMoneticoConfigured()
+				? 'card'
+				: 'bank_transfer';
+
 		const option = quote.options.find((o) => o.code === optionCode);
 		if (!option) return fail(400, { message: 'Mode de livraison indisponible.' });
 
@@ -188,7 +200,17 @@ export const actions: Actions = {
 				}
 			});
 
-			redirect(303, `/commande/confirmation/${created.reference}`);
+			/*
+			 * Le moyen de paiement décide de la suite : la carte passe par la
+			 * page de redirection Monetico, le virement va droit à la
+			 * confirmation puisqu'il n'engage aucun prestataire.
+			 */
+			redirect(
+				303,
+				paymentMethod === 'card'
+					? `/commande/paiement/${created.reference}`
+					: `/commande/confirmation/${created.reference}`
+			);
 		} catch (error) {
 			if (error instanceof CheckoutError) return fail(400, { message: error.message });
 			throw error;

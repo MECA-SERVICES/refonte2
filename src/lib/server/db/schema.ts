@@ -4,6 +4,7 @@ export * from './account-validation.schema';
 export * from './catalog.schema';
 export * from './compatibility.schema';
 export * from './order.schema';
+export * from './payment.schema';
 export * from './cms.schema';
 export * from './blog.schema';
 export * from './machine.schema';

@@ -14,6 +14,20 @@
 
 	const suffix = $derived(priceSuffix(data.tax.displayMode));
 
+	/*
+	 * Moyen de paiement retenu. La carte est proposée par défaut quand le
+	 * contrat le permet : c'est le règlement immédiat, celui qui met la
+	 * commande en préparation sans attendre.
+	 *
+	 * `null` signifie « pas encore choisi » : le choix effectif suit alors la
+	 * disponibilité, qui vient du serveur et peut changer d'un chargement à
+	 * l'autre.
+	 */
+	let pickedPayment = $state<'card' | 'bank_transfer' | null>(null);
+	const paymentMethod = $derived(
+		pickedPayment ?? (data.cardPaymentAvailable ? 'card' : 'bank_transfer')
+	);
+
 	/** Les offres sont groupées par mode de retrait, du plus courant au moins. */
 	const MODE_ORDER = ['home', 'service_point', 'locker'] as const;
 
@@ -366,13 +380,64 @@
 			<!-- ================= Paiement ================= -->
 			<Panel class="p-5">
 				<Heading size="card">3 · Paiement</Heading>
-				<div class="mt-3 border-[1.5px] border-shop-ink bg-shop-border-soft p-4">
-					<p class="text-[14.5px] font-bold text-shop-ink">Virement bancaire</p>
-					<p class="mt-1 text-[13.5px] leading-relaxed text-shop-ink-soft">
-						Nos coordonnées bancaires vous seront communiquées après validation. Votre commande est
-						préparée dès réception du règlement.
-					</p>
-				</div>
+
+				{#if data.cardPaymentAvailable}
+					<!-- Deux moyens disponibles : le choix conditionne la suite du
+					     tunnel, carte vers la banque ou virement vers la confirmation. -->
+					<div class="mt-3 space-y-3">
+						<label
+							class="flex cursor-pointer gap-3 border-[1.5px] p-4 {paymentMethod === 'card'
+								? 'border-shop-ink bg-shop-border-soft'
+								: 'border-shop-border bg-white hover:border-shop-ink'}"
+						>
+							<input
+								type="radio"
+								name="paymentMethod"
+								value="card"
+								checked={paymentMethod === 'card'}
+								onchange={() => (pickedPayment = 'card')}
+								class="mt-1 shrink-0"
+							/>
+							<span>
+								<span class="block text-[14.5px] font-bold text-shop-ink">Carte bancaire</span>
+								<span class="mt-1 block text-[13.5px] leading-relaxed text-shop-ink-soft">
+									Paiement sécurisé par notre banque. Votre commande part en préparation dès
+									l'acceptation.
+								</span>
+							</span>
+						</label>
+
+						<label
+							class="flex cursor-pointer gap-3 border-[1.5px] p-4 {paymentMethod === 'bank_transfer'
+								? 'border-shop-ink bg-shop-border-soft'
+								: 'border-shop-border bg-white hover:border-shop-ink'}"
+						>
+							<input
+								type="radio"
+								name="paymentMethod"
+								value="bank_transfer"
+								checked={paymentMethod === 'bank_transfer'}
+								onchange={() => (pickedPayment = 'bank_transfer')}
+								class="mt-1 shrink-0"
+							/>
+							<span>
+								<span class="block text-[14.5px] font-bold text-shop-ink">Virement bancaire</span>
+								<span class="mt-1 block text-[13.5px] leading-relaxed text-shop-ink-soft">
+									Nos coordonnées bancaires vous seront communiquées après validation. Votre
+									commande est préparée dès réception du règlement.
+								</span>
+							</span>
+						</label>
+					</div>
+				{:else}
+					<div class="mt-3 border-[1.5px] border-shop-ink bg-shop-border-soft p-4">
+						<p class="text-[14.5px] font-bold text-shop-ink">Virement bancaire</p>
+						<p class="mt-1 text-[13.5px] leading-relaxed text-shop-ink-soft">
+							Nos coordonnées bancaires vous seront communiquées après validation. Votre commande
+							est préparée dès réception du règlement.
+						</p>
+					</div>
+				{/if}
 			</Panel>
 		</div>
 

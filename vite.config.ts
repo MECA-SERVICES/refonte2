@@ -16,6 +16,18 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 			adapter: adapter(),
+			csrf: {
+				/*
+				 * La notification de paiement Monetico est un POST émis par le
+				 * serveur de la banque : son origine n'est pas celle du site, et
+				 * la protection CSRF la rejetterait.
+				 *
+				 * Seul ce domaine est admis, et l'authenticité du message tient
+				 * de toute façon à son sceau HMAC — un contrôle plus fort que
+				 * l'origine, vérifié route par route.
+				 */
+				trustedOrigins: ['https://paiement.creditmutuel.fr']
+			},
 			preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
 			extensions: ['.svelte', '.svx', '.md'],
 			typescript: {
