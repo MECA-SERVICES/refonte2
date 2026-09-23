@@ -20,6 +20,7 @@ export { default as TabPanel } from './TabPanel.svelte';
 export { default as ProductMediaGrid } from './ProductMediaGrid.svelte';
 export { default as BlogArticleForm } from './BlogArticleForm.svelte';
 export { default as CmsPageForm } from './CmsPageForm.svelte';
+export { default as PopupForm } from './PopupForm.svelte';
 export { default as CategoryTree } from './CategoryTree.svelte';
 export { default as CategoryPicker } from './CategoryPicker.svelte';
 

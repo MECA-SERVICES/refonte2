@@ -211,6 +211,13 @@
       "when": 1790071875964,
       "tag": "0031_paiement_monetico",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790158275964,
+      "tag": "0032_popups_boutique",
+      "breakpoints": true
     }
   ]
 }

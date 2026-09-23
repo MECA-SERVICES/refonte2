@@ -175,6 +175,11 @@
 							"href": "/admin/cms-pages"
 						},
 						{
+							"id": "popups",
+							"label": "Annonces",
+							"href": "/admin/popups"
+						},
+						{
 							"id": "positions",
 							"label": "Positions",
 							"href": "/admin/positions"

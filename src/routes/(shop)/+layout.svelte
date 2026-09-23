@@ -22,6 +22,7 @@
 	import MegaMenu from '$lib/components/shop/MegaMenu.svelte';
 	import NavigationIndicator from '$lib/components/shop/NavigationIndicator.svelte';
 	import CartToast from '$lib/components/shop/CartToast.svelte';
+	import AnnouncementPopup from '$lib/components/shop/AnnouncementPopup.svelte';
 	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import { cartFeedback } from '$lib/components/shop/cart-feedback.svelte';
 	import type { LayoutProps } from './$types';
@@ -61,6 +62,9 @@
 
 <NavigationIndicator />
 <CartToast bind:message={cartFeedback.message} />
+
+<!-- Annonce en cours, choisie côté serveur selon l'adresse consultée. -->
+<AnnouncementPopup popup={data.popup} />
 
 <div class="flex min-h-screen flex-col bg-shop-subtle">
 	<header class="sticky top-0 z-50">

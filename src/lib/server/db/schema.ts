@@ -6,6 +6,7 @@ export * from './compatibility.schema';
 export * from './order.schema';
 export * from './payment.schema';
 export * from './cms.schema';
+export * from './popup.schema';
 export * from './blog.schema';
 export * from './machine.schema';
 export * from './repair.schema';
