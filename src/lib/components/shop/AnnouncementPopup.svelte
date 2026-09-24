@@ -88,7 +88,7 @@
 		onclick={onBackdropClick}
 		onclose={() => popup && remember(popup.id)}
 		aria-labelledby={popup.title ? `popup-title-${popup.id}` : undefined}
-		class="max-h-[90vh] w-full max-w-md border-[1.5px] border-shop-ink bg-white p-0 shadow-xl backdrop:bg-shop-ink/60"
+		class="fixed top-1/2 left-1/2 max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto border-[1.5px] border-shop-ink bg-white p-0 shadow-xl backdrop:bg-shop-ink/60"
 	>
 		<div class="relative">
 			<button
