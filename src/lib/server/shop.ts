@@ -631,6 +631,8 @@ export async function getShopProduct(id: number) {
 			metaTitle: product.metaTitle,
 			metaDescription: product.metaDescription,
 			stock: product.stock,
+			/** Lot de vente minimal, appliqué au sélecteur de quantité. */
+			minOrderQuantity: product.minOrderQuantity,
 			weightKg: product.weightKg,
 			priceHt: product.priceHt,
 			priceTtc: priceTtcSql,

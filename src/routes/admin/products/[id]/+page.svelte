@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Button, Card, Input, Label, Select, Textarea, Toggle } from 'flowbite-svelte';
-	import { TrashBinOutline, PlusOutline } from 'flowbite-svelte-icons';
+	import {
+		TrashBinOutline,
+		PlusOutline,
+		ArrowUpRightFromSquareOutline
+	} from 'flowbite-svelte-icons';
 	import {
 		PageHeader,
 		ProductForm,
@@ -9,6 +13,7 @@
 		ConfirmDialog,
 		ProductMediaGrid
 	} from '$lib/components/admin';
+	import { shopProductPath } from '$lib/shop';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -61,6 +66,22 @@
 >
 	{#snippet actions()}
 		<ActiveBadge active={p.isActive} />
+		<!--
+			Nouvel onglet : la fiche peut porter des modifications non
+			enregistrées, quitter la page les perdrait.
+
+			L'adresse vient du slug **enregistré** : le champ « URL simplifiée »
+			peut avoir été modifié sans être soumis, et le lien mènerait alors à
+			une page introuvable.
+		-->
+		<Button
+			color="alternative"
+			href={shopProductPath({ id: p.id, slug: p.slug })}
+			target="_blank"
+			rel="noopener"
+		>
+			<ArrowUpRightFromSquareOutline class="me-2 h-4 w-4" /> Voir sur la boutique
+		</Button>
 		<Button color="red" onclick={() => (confirmOpen = true)}>
 			<TrashBinOutline class="me-2 h-4 w-4" /> Supprimer
 		</Button>

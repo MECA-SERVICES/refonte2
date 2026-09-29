@@ -395,7 +395,7 @@ export async function deleteProduct(id: number) {
 
 /** Extrait et valide les champs d'un produit depuis un FormData. */
 export function parseProductForm(form: FormData): ParseResult<NewProduct> {
-	const { str, num, int, bool } = formFields(form);
+	const { str, num, int, bool, date } = formFields(form);
 
 	const name = str('name');
 	const reference = str('reference');
@@ -430,6 +430,13 @@ export function parseProductForm(form: FormData): ParseResult<NewProduct> {
 			priceHtStrike: num('priceHtStrike'),
 			purchasePrice: num('purchasePrice'),
 			stock: int('stock'),
+			// Quantité minimale par commande : au moins 1, sinon le produit
+			// deviendrait inachetable.
+			minOrderQuantity: Math.max(1, int('minOrderQuantity', 1)),
+			stockLocation: str('stockLocation'),
+			// 0 désactive l'alerte de réapprovisionnement.
+			lowStockThreshold: Math.max(0, int('lowStockThreshold', 0)),
+			availableDate: date('availableDate'),
 			weightKg: num('weightKg'),
 			lengthCm: num('lengthCm'),
 			widthCm: num('widthCm'),

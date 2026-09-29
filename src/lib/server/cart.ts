@@ -194,20 +194,28 @@ export async function addToCart(
 	owner: CartOwner,
 	input: { productId: number; variantId?: number | null; quantity: number }
 ): Promise<AddResult> {
-	const quantity = Math.max(1, Math.trunc(input.quantity) || 1);
+	const requested = Math.max(1, Math.trunc(input.quantity) || 1);
 
 	const [item] = await db
 		.select({
 			stock: product.stock,
 			isActive: product.isActive,
 			availableForOrder: product.availableForOrder,
-			priceHt: product.priceHt
+			priceHt: product.priceHt,
+			minOrderQuantity: product.minOrderQuantity
 		})
 		.from(product)
 		.where(eq(product.id, input.productId))
 		.limit(1);
 
 	if (!item) return { ok: false, reason: 'not_found' };
+
+	/*
+	 * Lot de vente minimal, appliqué ici et pas seulement dans le formulaire :
+	 * l'attribut `min` du navigateur se contourne, une requête forgée passerait
+	 * outre. Le panier ne doit jamais contenir moins d'un lot.
+	 */
+	const quantity = Math.max(requested, item.minOrderQuantity ?? 1);
 	// Un article inactif, réservé à la boutique physique, ou sans disponibilité
 	// ne peut pas être ajouté (règle R7).
 	if (!item.isActive || !item.availableForOrder || item.stock <= 0) {

@@ -102,16 +102,9 @@ export type PopupInput = {
 	priority: number;
 };
 
-/** Lit une date de formulaire (`datetime-local`), ou null si absente. */
-function parseDate(value: string | null): Date | null {
-	if (!value) return null;
-	const date = new Date(value);
-	return Number.isNaN(date.getTime()) ? null : date;
-}
-
 /** Champs d'une pop-up, extraits d'un formulaire. */
 export function parsePopupForm(form: FormData): ParseResult<PopupInput> {
-	const { str, int, bool } = formFields(form);
+	const { str, int, bool, date } = formFields(form);
 
 	const name = str('name');
 	if (!name) return { ok: false, error: 'Le nom interne est obligatoire.' };
@@ -121,8 +114,8 @@ export function parsePopupForm(form: FormData): ParseResult<PopupInput> {
 		? (rawScope as PopupScope)
 		: 'all';
 
-	const startsAt = parseDate(str('startsAt'));
-	const endsAt = parseDate(str('endsAt'));
+	const startsAt = date('startsAt');
+	const endsAt = date('endsAt');
 
 	// Une fenêtre inversée ne diffuserait jamais : le signaler vaut mieux que
 	// de laisser une pop-up muette sans explication.

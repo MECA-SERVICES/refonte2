@@ -185,7 +185,32 @@ export const product = pgTable(
 		ecotax: numeric('ecotax', { precision: 10, scale: 2 }).notNull().default('0'),
 
 		// Stock & logistique
+		/** Quantité physiquement détenue. */
 		stock: integer('stock').notNull().default(0),
+
+		/*
+		 * Quantité minimale par commande.
+		 *
+		 * Distincte du stock : elle ne dit pas ce qu'on possède mais ce qu'un
+		 * client doit acheter d'un coup — visserie vendue par 10, joints par
+		 * lot. Le sélecteur de quantité de la fiche produit part de cette
+		 * valeur et n'accepte pas moins.
+		 */
+		minOrderQuantity: integer('min_order_quantity').notNull().default(1),
+
+		/** Emplacement physique en atelier : allée, étagère, bac. */
+		stockLocation: text('stock_location'),
+
+		/*
+		 * Seuil d'alerte de réapprovisionnement.
+		 *
+		 * `0` désactive l'alerte. Sert au back-office, jamais affiché au
+		 * client.
+		 */
+		lowStockThreshold: integer('low_stock_threshold').notNull().default(0),
+
+		/** Date de réapprovisionnement annoncée, si elle est connue. */
+		availableDate: timestamp('available_date', { withTimezone: true }),
 		weightKg: numeric('weight_kg', { precision: 10, scale: 3 }),
 		lengthCm: numeric('length_cm', { precision: 10, scale: 2 }),
 		widthCm: numeric('width_cm', { precision: 10, scale: 2 }),

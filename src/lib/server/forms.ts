@@ -44,6 +44,18 @@ export function formFields(form: FormData) {
 		/** Case à cocher : présente = vrai. */
 		bool(key: string): boolean {
 			return form.get(key) != null;
+		},
+		/**
+		 * Date issue d'un champ `date` ou `datetime-local`, ou null.
+		 *
+		 * Une saisie illisible vaut « non renseigné » plutôt qu'une date
+		 * invalide, qui ferait échouer l'insertion en base.
+		 */
+		date(key: string): Date | null {
+			const raw = form.get(key)?.toString().trim();
+			if (!raw) return null;
+			const parsed = new Date(raw);
+			return Number.isNaN(parsed.getTime()) ? null : parsed;
 		}
 	};
 }

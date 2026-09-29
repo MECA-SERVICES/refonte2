@@ -225,6 +225,13 @@
       "when": 1790244675964,
       "tag": "0033_delai_expedition_produit",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790331075964,
+      "tag": "0034_quantites_produit",
+      "breakpoints": true
     }
   ]
 }

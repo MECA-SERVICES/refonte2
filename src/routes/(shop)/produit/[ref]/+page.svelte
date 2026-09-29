@@ -25,8 +25,21 @@
 	});
 
 	/** Quantité à ajouter au panier, bornée par le stock. */
+	/**
+	 * Quantité minimale par commande, telle que réglée en back-office.
+	 *
+	 * Certaines références ne se vendent que par lot : visserie par 10, joints
+	 * par jeu. Le sélecteur part de là et n'accepte pas moins.
+	 */
+	const minQuantity = $derived(Math.max(1, product.minOrderQuantity ?? 1));
+
 	let quantity = $state(1);
-	const maxQuantity = $derived(Math.max(1, product.stock));
+	// Le minimum peut dépasser la valeur initiale : on s'y aligne.
+	$effect(() => {
+		if (quantity < minQuantity) quantity = minQuantity;
+	});
+
+	const maxQuantity = $derived(Math.max(minQuantity, product.stock));
 
 	/** Éco-participation incluse dans le prix, affichée à part (R6). */
 	const ecotax = $derived(Number(product.ecotax ?? 0));
@@ -222,6 +235,12 @@
 				{/if}
 			</p>
 
+			{#if minQuantity > 1}
+				<p class="mt-2 text-[13px] text-shop-muted">
+					Vendu par {minQuantity} — quantité minimale de commande.
+				</p>
+			{/if}
+
 			<form
 				method="POST"
 				action="?/add"
@@ -233,8 +252,8 @@
 				<div class="flex border-[1.5px] border-shop-border bg-shop-subtle">
 					<button
 						type="button"
-						onclick={() => (quantity = Math.max(1, quantity - 1))}
-						disabled={!available || quantity <= 1}
+						onclick={() => (quantity = Math.max(minQuantity, quantity - 1))}
+						disabled={!available || quantity <= minQuantity}
 						aria-label="Diminuer la quantité"
 						class="px-4 text-lg text-shop-ink disabled:opacity-40"
 					>
@@ -245,7 +264,7 @@
 						id="quantity"
 						name="quantity"
 						type="number"
-						min="1"
+						min={minQuantity}
 						max={maxQuantity}
 						bind:value={quantity}
 						disabled={!available}

@@ -36,7 +36,6 @@
 		DELIVERY_TIME_MODE_LABELS,
 		normalizeDeliveryMode
 	} from '$lib/delivery-time';
-	import { shopProductPath } from '$lib/shop';
 
 	let {
 		product,
@@ -120,17 +119,6 @@
 		if (s < 5) return 'bg-yellow-400';
 		return 'bg-green-500';
 	});
-
-	/**
-	 * Adresse publique du produit, à la création près.
-	 *
-	 * Construite depuis le slug enregistré : le champ « URL simplifiée » peut
-	 * avoir été modifié sans être soumis, et le lien mènerait alors à une page
-	 * introuvable.
-	 */
-	const shopUrl = $derived(
-		productId && product?.slug ? shopProductPath({ id: productId, slug: product.slug }) : null
-	);
 
 	const tabItemClass = 'rounded-t-lg px-4 py-3 text-sm font-medium whitespace-nowrap';
 </script>
@@ -322,7 +310,8 @@
 							/>
 							<div class="mt-1 flex flex-wrap items-baseline justify-between gap-2">
 								<p class="text-xs text-gray-500 dark:text-gray-400">
-									Affiché en haut de la fiche produit, sous le nom.
+									Contenu principal de la fiche : affiché dans l'onglet « Description » quand le
+									champ Description est vide, et repris par les moteurs de recherche.
 								</p>
 								<!-- Compteur façon PrestaShop : le résumé alimente les listes
 								     et les balises meta, sa longueur se surveille. -->
@@ -365,11 +354,15 @@
 
 			<!-- ===== Quantités ===== -->
 			<TabPanel id="stock" {selected}>
+				<!--
+					Trois blocs, comme PrestaShop : ce qu'on détient, où c'est rangé,
+					et ce qui se passe en rupture.
+				-->
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Quantités</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
-							<Label for="stock" class="mb-2">Quantité en stock</Label>
+							<Label for="stock" class="mb-2">Quantité</Label>
 							<Input
 								id="stock"
 								name="stock"
@@ -377,13 +370,86 @@
 								value={val(product?.stock ?? 0)}
 								disabled={!!stockPanel}
 							/>
-							{#if stockPanel}
-								<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								{#if stockPanel}
 									Piloté par les mouvements de stock ci-dessous.
-								</p>
-							{/if}
+								{:else}
+									Ce que vous avez en réserve.
+								{/if}
+							</p>
+						</div>
+						<div>
+							<Label for="minOrderQuantity" class="mb-2">Quantité minimale pour la vente</Label>
+							<Input
+								id="minOrderQuantity"
+								name="minOrderQuantity"
+								type="number"
+								min="1"
+								value={val(product?.minOrderQuantity ?? 1)}
+							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Nombre d'exemplaires qu'un client doit prendre d'un coup — visserie par 10, joints
+								par lot. `1` pour une vente à l'unité.
+							</p>
 						</div>
 					</div>
+				</Card>
+
+				<Card class="max-w-none p-6">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Stock</h2>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div>
+							<Label for="stockLocation" class="mb-2">Emplacement du stock</Label>
+							<Input
+								id="stockLocation"
+								name="stockLocation"
+								value={product?.stockLocation ?? ''}
+								placeholder="Allée B · étagère 3"
+							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Repère interne à l'atelier, jamais affiché au client.
+							</p>
+						</div>
+						<div>
+							<Label for="lowStockThreshold" class="mb-2">Niveau de stock bas</Label>
+							<Input
+								id="lowStockThreshold"
+								name="lowStockThreshold"
+								type="number"
+								min="0"
+								value={val(product?.lowStockThreshold ?? 0)}
+							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Seuil d'alerte de réapprovisionnement. `0` désactive.
+							</p>
+						</div>
+					</div>
+				</Card>
+
+				<Card class="max-w-none p-6">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+						Préférences de disponibilité
+					</h2>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div>
+							<Label for="availableDate" class="mb-2">Date de disponibilité</Label>
+							<Input
+								id="availableDate"
+								name="availableDate"
+								type="date"
+								value={product?.availableDate
+									? new Date(product.availableDate).toISOString().slice(0, 10)
+									: ''}
+							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Réapprovisionnement annoncé, si la date est connue.
+							</p>
+						</div>
+					</div>
+					<p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+						Le comportement en rupture est porté par « Disponible à la commande » dans l'onglet «
+						Options » ; les messages affichés au client se règlent dans « Livraison ».
+					</p>
 				</Card>
 
 				{#if stockPanel}
@@ -762,16 +828,33 @@
 				<Card class="max-w-none p-4">
 					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Quantité</h3>
 					<!--
-						Raccourci de lecture : la saisie qui fait foi est celle de
-						l'onglet « Quantités ». Sans `name`, ce champ n'est pas envoyé
-						et ne peut pas écraser l'autre.
+						Deux notions distinctes, souvent confondues : ce qu'on détient,
+						et ce qu'un client doit prendre d'un coup.
+
+						Raccourcis de lecture seulement : la saisie qui fait foi est
+						celle de l'onglet « Quantités ». Sans `name`, ces champs ne
+						sont pas envoyés et ne peuvent pas écraser les autres.
 					-->
-					<Input
-						type="number"
-						value={val(product?.stock ?? 0)}
-						disabled
-						aria-label="Quantité en stock"
-					/>
+					<div class="space-y-3">
+						<div>
+							<Label class="mb-1.5 text-xs">En stock</Label>
+							<Input
+								type="number"
+								value={val(product?.stock ?? 0)}
+								disabled
+								aria-label="Quantité en stock"
+							/>
+						</div>
+						<div>
+							<Label class="mb-1.5 text-xs">Minimum par commande</Label>
+							<Input
+								type="number"
+								value={val(product?.minOrderQuantity ?? 1)}
+								disabled
+								aria-label="Quantité minimale pour la vente"
+							/>
+						</div>
+					</div>
 					{@render advancedLink('Quantités', 'stock')}
 				</Card>
 
@@ -834,26 +917,6 @@
 				<Card class="max-w-none p-4">
 					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Raccourcis</h3>
 					<div class="flex flex-col gap-2">
-						{#if shopUrl}
-							<!--
-								Nouvel onglet : le formulaire peut porter des modifications
-								non enregistrées, quitter la page les perdrait.
-
-								L'adresse vient du slug **enregistré**, pas du champ en
-								cours de saisie : tant que la modification n'est pas
-								soumise, la boutique sert encore l'ancienne URL.
-							-->
-							<Button
-								size="sm"
-								color="alternative"
-								href={shopUrl}
-								target="_blank"
-								rel="noopener"
-								class="justify-start"
-							>
-								<ArrowUpRightFromSquareOutline class="me-2 h-4 w-4" /> Voir sur la boutique
-							</Button>
-						{/if}
 						<Button size="sm" color="alternative" href="/admin/products" class="justify-start">
 							<ListOutline class="me-2 h-4 w-4" /> Liste des produits
 						</Button>
