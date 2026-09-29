@@ -22,6 +22,7 @@
 		SearchOutline,
 		CogOutline,
 		EyeOutline,
+		ArrowUpRightFromSquareOutline,
 		ListOutline,
 		ChartMixedOutline
 	} from 'flowbite-svelte-icons';
@@ -79,6 +80,10 @@
 	let purchasePrice = $state(untrack(() => val(product?.purchasePrice)));
 	let isActive = $state(untrack(() => product?.isActive ?? true));
 	let availableForOrder = $state(untrack(() => product?.availableForOrder ?? true));
+	// Lié pour alimenter le compteur de caractères du résumé.
+	let shortDescription = $state(untrack(() => product?.shortDescription ?? ''));
+	/** Sous-onglet du bloc de description : « summary » ou « full ». */
+	let descTab = $state('summary');
 	let mainCategoryId = $state(untrack(() => val(product?.categoryId)));
 	let selectedCategoryIds = $state(untrack(() => [...initialCategoryIds]));
 
@@ -109,6 +114,25 @@
 
 	const tabItemClass = 'rounded-t-lg px-4 py-3 text-sm font-medium whitespace-nowrap';
 </script>
+
+<!--
+	Renvoi vers l'onglet qui porte le détail d'un réglage, comme le
+	« Paramètres avancés dans → … » de PrestaShop. Un bouton plutôt qu'un lien :
+	la cible est un panneau de la même page, pas une adresse.
+-->
+{#snippet advancedLink(label: string, tab: string)}
+	<button
+		type="button"
+		onclick={() => (selected = tab)}
+		class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:underline dark:text-primary-400"
+	>
+		Paramètres avancés dans
+		<span class="inline-flex items-center gap-1">
+			<ArrowUpRightFromSquareOutline class="h-3 w-3" />
+			{label}
+		</span>
+	</button>
+{/snippet}
 
 <form method="POST" {action} use:enhance class="pb-24">
 	{#if message}
@@ -148,9 +172,14 @@
 	</div>
 
 	<!--
-		Barre d'onglets PrestaShop (ordre officiel : Paramètres de base, Quantités,
-		Livraison, Tarifs, SEO, Options). Les <TabItem> ne portent pas de contenu :
-		ils ne servent qu'à la navigation, les panneaux sont rendus plus bas.
+		Barre d'onglets PrestaShop (ordre et libellés officiels : Essentiel,
+		Quantités, Livraison, Prix, Référencement - SEO, Options). Les <TabItem>
+		ne portent pas de contenu : ils ne servent qu'à la navigation, les
+		panneaux sont rendus plus bas.
+
+		L'onglet « Modules » de PrestaShop n'a pas d'équivalent ici — MSShop n'a
+		pas d'architecture de modules — et un onglet vide dégraderait l'écran
+		plutôt que de le rapprocher du modèle.
 	-->
 	<Tabs
 		tabStyle="underline"
@@ -164,9 +193,7 @@
 			class={tabItemClass}
 		>
 			{#snippet titleSlot()}
-				<span class="flex items-center gap-2"
-					><FileLinesOutline class="h-4 w-4" /> Paramètres de base</span
-				>
+				<span class="flex items-center gap-2"><FileLinesOutline class="h-4 w-4" /> Essentiel</span>
 			{/snippet}
 		</TabItem>
 		<TabItem open={selected === 'stock'} onclick={() => (selected = 'stock')} class={tabItemClass}>
@@ -187,12 +214,14 @@
 		</TabItem>
 		<TabItem open={selected === 'price'} onclick={() => (selected = 'price')} class={tabItemClass}>
 			{#snippet titleSlot()}
-				<span class="flex items-center gap-2"><DollarOutline class="h-4 w-4" /> Tarifs</span>
+				<span class="flex items-center gap-2"><DollarOutline class="h-4 w-4" /> Prix</span>
 			{/snippet}
 		</TabItem>
 		<TabItem open={selected === 'seo'} onclick={() => (selected = 'seo')} class={tabItemClass}>
 			{#snippet titleSlot()}
-				<span class="flex items-center gap-2"><SearchOutline class="h-4 w-4" /> SEO</span>
+				<span class="flex items-center gap-2"
+					><SearchOutline class="h-4 w-4" /> Référencement - SEO</span
+				>
 			{/snippet}
 		</TabItem>
 		<TabItem
@@ -208,18 +237,26 @@
 
 	<!--
 		Deux colonnes comme PrestaShop : le formulaire à gauche, les actions et
-		raccourcis contextuels dans la colonne de droite (empilée sous le
-		formulaire en dessous de lg).
+		raccourcis contextuels dans la colonne de droite.
+		
+		Le seuil est `xl` et non `lg` : à 1024 px, réserver 20rem à la colonne
+		latérale ne laissait pas de quoi saisir une description confortablement.
+		En dessous, la colonne passe sous le formulaire et chaque champ retrouve
+		toute la largeur.
 	-->
-	<div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+	<div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
 		<div>
-			<!-- ===== Paramètres de base ===== -->
+			<!-- ===== Essentiel ===== -->
 			<TabPanel id="general" {selected}>
 				<!--
-					Ordre de l'onglet « Paramètres de base » de PrestaShop 1.7 :
-					nom, images, résumé, description, catégories, marque, prix.
-					Les références (SKU, EAN, fournisseur) sont dans « Options »,
-					comme chez PrestaShop.
+					Ordre de l'onglet « Essentiel » de PrestaShop 1.7 : nom, images,
+					récapitulatif / description, marque, produits associés.
+
+					Référence, quantité, prix et catégories vivent dans la colonne
+					latérale, à droite — c'est là que PrestaShop les place, et ils
+					n'apparaissent que sur cet onglet.
+
+					Les autres références (EAN, fournisseur) restent dans « Options ».
 				-->
 				<Card class="max-w-none p-6">
 					<div>
@@ -232,41 +269,58 @@
 					{@render mediaPanel()}
 				{/if}
 
-				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Description</h2>
-					<div class="space-y-4">
-						<div>
-							<Label for="shortDescription" class="mb-2">Résumé</Label>
+				<!--
+					Récapitulatif et Description en sous-onglets, comme PrestaShop :
+					les deux champs occupent la même place et se consultent l'un
+					après l'autre. Les deux restent dans le DOM — c'est un
+					formulaire mono-soumission.
+				-->
+				<Card class="max-w-none p-0">
+					<div class="flex border-b border-gray-200 dark:border-gray-700">
+						{#each [{ id: 'summary', label: 'Récapitulatif' }, { id: 'full', label: 'Description' }] as t (t.id)}
+							<button
+								type="button"
+								onclick={() => (descTab = t.id)}
+								class="border-b-2 px-5 py-3 text-sm font-medium transition-colors {descTab === t.id
+									? 'border-primary-600 text-primary-700 dark:border-primary-500 dark:text-primary-400'
+									: 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
+							>
+								{t.label}
+							</button>
+						{/each}
+					</div>
+
+					<div class="p-6">
+						<div class={descTab === 'summary' ? '' : 'hidden'}>
 							<Textarea
 								id="shortDescription"
 								name="shortDescription"
-								rows={2}
-								value={product?.shortDescription ?? ''}
+								rows={6}
+								bind:value={shortDescription}
+								placeholder="Quelques lignes reprises en haut de la fiche produit."
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-								Affiché en haut de la fiche produit, sous le nom.
-							</p>
+							<div class="mt-1 flex flex-wrap items-baseline justify-between gap-2">
+								<p class="text-xs text-gray-500 dark:text-gray-400">
+									Affiché en haut de la fiche produit, sous le nom.
+								</p>
+								<!-- Compteur façon PrestaShop : le résumé alimente les listes
+								     et les balises meta, sa longueur se surveille. -->
+								<p class="text-xs text-gray-400 dark:text-gray-500">
+									{shortDescription.length} caractère{shortDescription.length > 1 ? 's' : ''}
+								</p>
+							</div>
 						</div>
-						<div>
-							<Label for="description" class="mb-2">Description</Label>
+
+						<div class={descTab === 'full' ? '' : 'hidden'}>
 							<Textarea
 								id="description"
 								name="description"
-								rows={6}
+								rows={12}
 								value={product?.description ?? ''}
+								placeholder="Description complète, affichée dans l'onglet « Description » de la fiche."
 							/>
 						</div>
 					</div>
-				</Card>
-
-				<!-- Rattachement aux catégories : principale + arborescence. -->
-				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Catégories</h2>
-					<CategoryPicker
-						categories={categoryTree}
-						bind:mainCategoryId
-						bind:selectedIds={selectedCategoryIds}
-					/>
 				</Card>
 
 				<Card class="max-w-none p-6">
@@ -280,44 +334,18 @@
 					/>
 				</Card>
 
-				<!--
-					Rappel du prix en bas de l'onglet, comme PrestaShop : on saisit
-					ici le prix courant sans quitter la page, le détail restant dans
-					l'onglet « Tarifs ».
-				-->
-				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prix</h2>
-					<div class="grid gap-4 sm:grid-cols-3">
-						<div>
-							<Label for="priceHtQuick" class="mb-2">Prix HT (€)</Label>
-							<Input
-								id="priceHtQuick"
-								type="number"
-								step="0.01"
-								bind:value={priceHt}
-								aria-describedby="priceHtQuickHelp"
-							/>
-							<p id="priceHtQuickHelp" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-								Champ lié à l'onglet « Tarifs ».
-							</p>
-						</div>
-						<div>
-							<Label class="mb-2">Prix TTC</Label>
-							<div
-								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-							>
-								{ttcPreview ? `${ttcPreview} €` : '—'}
-							</div>
-						</div>
-					</div>
-				</Card>
+				<!-- Produits associés : sous la marque chez PrestaShop, pas dans
+				     « Options ». -->
+				{#if relationsPanel}
+					{@render relationsPanel()}
+				{/if}
 			</TabPanel>
 
 			<!-- ===== Quantités ===== -->
 			<TabPanel id="stock" {selected}>
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Quantités</h2>
-					<div class="grid gap-4 sm:grid-cols-3">
+					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="stock" class="mb-2">Quantité en stock</Label>
 							<Input
@@ -397,7 +425,7 @@
 
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Frais de port</h2>
-					<div class="grid gap-4 sm:grid-cols-3">
+					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="shippingExtraFee" class="mb-2">Frais de port supplémentaires (€)</Label>
 							<Input
@@ -417,7 +445,7 @@
 				<!-- Ordre PrestaShop : prix d'achat, puis prix de vente, écotaxe, TVA. -->
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prix d'achat</h2>
-					<div class="grid gap-4 sm:grid-cols-3">
+					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="purchasePrice" class="mb-2">Prix d'achat HT (€)</Label>
 							<Input
@@ -589,10 +617,6 @@
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Références</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
-							<Label for="reference" class="mb-2">Référence (SKU)</Label>
-							<Input id="reference" name="reference" required value={product?.reference ?? ''} />
-						</div>
-						<div>
 							<Label for="ean13" class="mb-2">Code-barres (EAN13)</Label>
 							<Input id="ean13" name="ean13" value={product?.ean13 ?? ''} maxlength={13} />
 						</div>
@@ -614,10 +638,6 @@
 						</div>
 					</div>
 				</Card>
-
-				{#if relationsPanel}
-					{@render relationsPanel()}
-				{/if}
 			</TabPanel>
 		</div>
 
@@ -625,7 +645,82 @@
 			Colonne latérale PrestaShop : état de publication + raccourcis. Sticky pour
 			rester visible pendant le défilement du formulaire.
 		-->
-		<aside class="space-y-4 lg:sticky lg:top-4">
+		<aside class="space-y-4 xl:sticky xl:top-4">
+			<!--
+				Sur l'onglet « Essentiel », PrestaShop place dans cette colonne les
+				réglages qu'on consulte en permanence : référence, quantité, prix,
+				catégories.
+
+				Masqué par `hidden`, jamais démonté : la référence est `required` et
+				n'existe qu'ici. Un `{#if}` la retirerait du DOM sur les autres
+				onglets, donc du FormData — le serveur l'écraserait à
+				l'enregistrement. Même raison que pour TabPanel.
+			-->
+			<div class={selected === 'general' ? 'space-y-4' : 'hidden'} inert={selected !== 'general'}>
+				<Card class="max-w-none p-4">
+					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Référence</h3>
+					<Input id="reference" name="reference" required value={product?.reference ?? ''} />
+				</Card>
+
+				<Card class="max-w-none p-4">
+					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Quantité</h3>
+					<!--
+						Raccourci de lecture : la saisie qui fait foi est celle de
+						l'onglet « Quantités ». Sans `name`, ce champ n'est pas envoyé
+						et ne peut pas écraser l'autre.
+					-->
+					<Input
+						type="number"
+						value={val(product?.stock ?? 0)}
+						disabled
+						aria-label="Quantité en stock"
+					/>
+					{@render advancedLink('Quantités', 'stock')}
+				</Card>
+
+				<Card class="max-w-none p-4">
+					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Prix</h3>
+					<div class="grid grid-cols-2 gap-3">
+						<div>
+							<Label for="priceHtQuick" class="mb-1.5 text-xs">HT</Label>
+							<Input id="priceHtQuick" type="number" step="0.01" bind:value={priceHt} />
+						</div>
+						<div>
+							<Label class="mb-1.5 text-xs">TTC</Label>
+							<div
+								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+							>
+								{ttcPreview ?? '—'}
+							</div>
+						</div>
+					</div>
+					<div class="mt-3">
+						<Label for="taxRuleIdQuick" class="mb-1.5 text-xs">Règle de taxe</Label>
+						<!-- Lié à l'onglet « Prix » par `bind:` ; c'est là-bas que le
+						     champ porte le `name` envoyé au serveur. -->
+						<Select
+							id="taxRuleIdQuick"
+							placeholder=""
+							bind:value={taxRuleId}
+							items={[
+								{ value: '', name: 'Aucune' },
+								...taxOptions.map((t) => ({ value: t.value, name: t.name }))
+							]}
+						/>
+					</div>
+					{@render advancedLink('Prix', 'price')}
+				</Card>
+
+				<Card class="max-w-none p-4">
+					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Catégories</h3>
+					<CategoryPicker
+						categories={categoryTree}
+						bind:mainCategoryId
+						bind:selectedIds={selectedCategoryIds}
+					/>
+				</Card>
+			</div>
+
 			<Card class="max-w-none p-4">
 				<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Publication</h3>
 				<Toggle bind:checked={isActive}>

@@ -34,7 +34,7 @@
 		<Alert color="red">{message}</Alert>
 	{/if}
 
-	<Card class="max-w-3xl p-6">
+	<Card class="max-w-none p-6">
 		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Identité</h2>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
@@ -56,7 +56,7 @@
 		</div>
 	</Card>
 
-	<Card class="max-w-3xl p-6">
+	<Card class="max-w-none p-6">
 		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Compte</h2>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
@@ -93,7 +93,7 @@
 		{/if}
 	</Card>
 
-	<Card class="max-w-3xl p-6">
+	<Card class="max-w-none p-6">
 		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Divers</h2>
 		<div class="space-y-4">
 			<div>
@@ -111,7 +111,7 @@
 		</div>
 	</Card>
 
-	<div class="flex max-w-3xl justify-end gap-3">
+	<div class="flex justify-end gap-3">
 		<Button color="alternative" href="/admin/customers">Annuler</Button>
 		<Button type="submit">{submitLabel}</Button>
 	</div>

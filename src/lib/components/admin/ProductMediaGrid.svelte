@@ -3,6 +3,11 @@
 	 * Galerie d'images du produit, façon PrestaShop : les visuels sont affichés en
 	 * vignettes (et non sous forme d'URL), la première image faisant office de
 	 * couverture. Les vidéos et PDF n'ont pas d'aperçu : on affiche une icône.
+	 *
+	 * Les vignettes ont une taille **fixe** et se suivent en bandeau, comme dans
+	 * PrestaShop 1.7. Une grille en fractions de largeur donnait des images de
+	 * 150 à 200 px sur grand écran, hors de proportion avec le reste du
+	 * formulaire.
 	 */
 	import { enhance } from '$app/forms';
 	import {
@@ -27,10 +32,12 @@
 </script>
 
 {#if sorted.length > 0}
-	<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+	<!-- Bandeau qui défile plutôt qu'il ne s'étire : la taille d'une vignette ne
+	     doit pas dépendre du nombre d'images ni de la largeur de l'écran. -->
+	<div class="flex flex-wrap gap-3">
 		{#each sorted as m, i (m.id)}
 			<div
-				class="group relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+				class="group relative h-28 w-28 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
 			>
 				{#if m.type === 'image'}
 					<img
@@ -43,19 +50,21 @@
 				{:else}
 					<div class="flex h-full w-full flex-col items-center justify-center gap-2 text-gray-400">
 						{#if m.type === 'pdf'}
-							<FilePdfOutline class="h-8 w-8" />
+							<FilePdfOutline class="h-6 w-6" />
 						{:else}
-							<VideoCameraOutline class="h-8 w-8" />
+							<VideoCameraOutline class="h-6 w-6" />
 						{/if}
-						<span class="px-2 text-center text-xs break-all">{m.url.split('/').pop()}</span>
+						<span class="line-clamp-2 px-1.5 text-center text-[10px] break-all">
+							{m.url.split('/').pop()}
+						</span>
 					</div>
 				{/if}
 
 				{#if i === 0}
 					<span
-						class="absolute top-1.5 left-1.5 rounded bg-cyan-600 px-1.5 py-0.5 text-[10px] font-semibold text-white"
+						class="absolute inset-x-0 bottom-0 bg-gray-700/85 py-0.5 text-center text-[10px] font-semibold text-white"
 					>
-						Couverture
+						Image de couverture
 					</span>
 				{/if}
 
@@ -70,19 +79,23 @@
 					<button
 						type="submit"
 						title="Supprimer l'image"
-						class="rounded bg-white/90 p-1.5 text-red-600 shadow-sm hover:bg-red-600 hover:text-white dark:bg-gray-900/90"
+						class="rounded bg-white/90 p-1 text-red-600 shadow-sm hover:bg-red-600 hover:text-white dark:bg-gray-900/90"
 					>
-						<TrashBinOutline class="h-4 w-4" />
+						<TrashBinOutline class="h-3.5 w-3.5" />
 					</button>
 				</form>
 			</div>
 		{/each}
 	</div>
 {:else}
-	<div
-		class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 py-10 text-center dark:border-gray-700"
-	>
-		<ImageOutline class="h-8 w-8 text-gray-300 dark:text-gray-600" />
-		<p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Aucune image pour ce produit.</p>
+	<!-- Même gabarit qu'une vignette : l'emplacement vide annonce la taille
+	     qu'auront les images. -->
+	<div class="flex items-center gap-3">
+		<div
+			class="flex h-28 w-28 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-center dark:border-gray-700"
+		>
+			<ImageOutline class="h-7 w-7 text-gray-300 dark:text-gray-600" />
+		</div>
+		<p class="text-sm text-gray-500 dark:text-gray-400">Aucune image pour ce produit.</p>
 	</div>
 {/if}

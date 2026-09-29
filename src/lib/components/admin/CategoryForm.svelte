@@ -23,34 +23,38 @@
 		<Alert color="red">{message}</Alert>
 	{/if}
 
-	<Card class="max-w-2xl p-6">
+	<Card class="max-w-none p-6">
 		<div class="space-y-4">
-			<div>
-				<Label for="name" class="mb-2">Nom</Label>
-				<Input id="name" name="name" required value={category?.name ?? ''} />
-			</div>
-			<div>
-				<Label for="slug" class="mb-2">Slug (optionnel)</Label>
-				<Input id="slug" name="slug" value={category?.slug ?? ''} />
-			</div>
-			<div>
-				<Label for="parentId" class="mb-2">Catégorie parente</Label>
-				<Select
-					id="parentId"
-					name="parentId"
-					placeholder=""
-					value={category?.parentId ? String(category.parentId) : ''}
-					items={[{ value: '', name: 'Aucune (racine)' }, ...parentOptions]}
-				/>
-			</div>
-			<div>
-				<Label for="position" class="mb-2">Position</Label>
-				<Input
-					id="position"
-					name="position"
-					type="number"
-					value={String(category?.position ?? 0)}
-				/>
+			<!-- Champs courts appariés : pleine largeur, un nom de catégorie
+			     s'étirerait sur tout l'écran sans gagner en lisibilité. -->
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div>
+					<Label for="name" class="mb-2">Nom</Label>
+					<Input id="name" name="name" required value={category?.name ?? ''} />
+				</div>
+				<div>
+					<Label for="slug" class="mb-2">Slug (optionnel)</Label>
+					<Input id="slug" name="slug" value={category?.slug ?? ''} />
+				</div>
+				<div>
+					<Label for="parentId" class="mb-2">Catégorie parente</Label>
+					<Select
+						id="parentId"
+						name="parentId"
+						placeholder=""
+						value={category?.parentId ? String(category.parentId) : ''}
+						items={[{ value: '', name: 'Aucune (racine)' }, ...parentOptions]}
+					/>
+				</div>
+				<div>
+					<Label for="position" class="mb-2">Position</Label>
+					<Input
+						id="position"
+						name="position"
+						type="number"
+						value={String(category?.position ?? 0)}
+					/>
+				</div>
 			</div>
 			<div>
 				<Label for="description" class="mb-2">Description</Label>
@@ -65,7 +69,7 @@
 		</div>
 	</Card>
 
-	<div class="flex max-w-2xl justify-end gap-3">
+	<div class="flex justify-end gap-3">
 		<Button color="alternative" href="/admin/categories">Annuler</Button>
 		<Button type="submit">{submitLabel}</Button>
 	</div>

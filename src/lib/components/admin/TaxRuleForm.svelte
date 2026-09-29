@@ -21,28 +21,31 @@
 		<Alert color="red">{message}</Alert>
 	{/if}
 
-	<Card class="max-w-xl p-6">
+	<Card class="max-w-none p-6">
 		<div class="space-y-4">
-			<div>
-				<Label for="name" class="mb-2">Libellé</Label>
-				<Input
-					id="name"
-					name="name"
-					required
-					value={taxRule?.name ?? ''}
-					placeholder="Taux normal 20 %"
-				/>
-			</div>
-			<div>
-				<Label for="rate" class="mb-2">Taux (%)</Label>
-				<Input
-					id="rate"
-					name="rate"
-					type="number"
-					step="0.001"
-					required
-					value={taxRule?.rate ?? ''}
-				/>
+			<!-- Deux champs courts : côte à côte plutôt qu'étirés sur tout l'écran. -->
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div>
+					<Label for="name" class="mb-2">Libellé</Label>
+					<Input
+						id="name"
+						name="name"
+						required
+						value={taxRule?.name ?? ''}
+						placeholder="Taux normal 20 %"
+					/>
+				</div>
+				<div>
+					<Label for="rate" class="mb-2">Taux (%)</Label>
+					<Input
+						id="rate"
+						name="rate"
+						type="number"
+						step="0.001"
+						required
+						value={taxRule?.rate ?? ''}
+					/>
+				</div>
 			</div>
 			<Toggle name="isActive" checked={taxRule?.isActive ?? true}>Taux actif</Toggle>
 			<Toggle name="isDefault" checked={taxRule?.isDefault ?? false}>
@@ -51,7 +54,7 @@
 		</div>
 	</Card>
 
-	<div class="flex max-w-xl justify-end gap-3">
+	<div class="flex justify-end gap-3">
 		<Button color="alternative" href="/admin/taxes">Annuler</Button>
 		<Button type="submit">{submitLabel}</Button>
 	</div>

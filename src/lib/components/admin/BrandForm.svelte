@@ -42,21 +42,26 @@
 		value={brand?.pageContent ?? ''}
 	/>
 
-	<Card class="max-w-2xl p-6">
+	<Card class="max-w-none p-6">
 		<div class="space-y-4">
-			<div>
-				<Label for="name" class="mb-2">Nom</Label>
-				<Input id="name" name="name" required value={brand?.name ?? ''} />
-			</div>
+			<!-- Nom et slug sont courts et liés : côte à côte. L'URL du logo, elle,
+			     garde toute la largeur — une adresse se lit mal tronquée. -->
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div>
+					<Label for="name" class="mb-2">Nom</Label>
+					<Input id="name" name="name" required value={brand?.name ?? ''} />
+				</div>
 
-			<div>
-				<Label for="slug" class="mb-2">Slug (optionnel)</Label>
-				<Input id="slug" name="slug" value={brand?.slug ?? ''} placeholder="ex : bosch" />
-				<p class="mt-1 text-xs text-gray-500">
-					La page de marque sera publiée sur
-					<code class="rounded bg-gray-100 px-1 dark:bg-gray-800">/marque/{brand?.slug ?? '…'}</code
-					>
-				</p>
+				<div>
+					<Label for="slug" class="mb-2">Slug (optionnel)</Label>
+					<Input id="slug" name="slug" value={brand?.slug ?? ''} placeholder="ex : bosch" />
+					<p class="mt-1 text-xs text-gray-500">
+						La page de marque sera publiée sur
+						<code class="rounded bg-gray-100 px-1 dark:bg-gray-800"
+							>/marque/{brand?.slug ?? '…'}</code
+						>
+					</p>
+				</div>
 			</div>
 
 			<div>
@@ -155,7 +160,7 @@
 	</Card>
 
 	<!-- ================= Référencement ================= -->
-	<Card class="max-w-2xl p-6">
+	<Card class="max-w-none p-6">
 		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Référencement</h2>
 
 		<div class="space-y-4">
@@ -179,7 +184,7 @@
 		</div>
 	</Card>
 
-	<div class="flex max-w-2xl justify-end gap-3">
+	<div class="flex justify-end gap-3">
 		<Button color="alternative" href="/admin/brands">Annuler</Button>
 		<Button type="submit">{submitLabel}</Button>
 	</div>

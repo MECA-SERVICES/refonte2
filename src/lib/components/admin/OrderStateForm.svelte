@@ -21,7 +21,7 @@
 		<Alert color="red">{message}</Alert>
 	{/if}
 
-	<Card class="max-w-2xl p-6">
+	<Card class="max-w-none p-6">
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
 				<Label for="label" class="mb-2">Libellé</Label>
@@ -64,7 +64,7 @@
 		</div>
 	</Card>
 
-	<div class="flex max-w-2xl justify-end gap-3">
+	<div class="flex justify-end gap-3">
 		<Button color="alternative" href="/admin/order-states">Annuler</Button>
 		<Button type="submit">{submitLabel}</Button>
 	</div>
