@@ -53,7 +53,7 @@
 	<label class="text-sm">
 		<span class="sr-only">Changer de planche</span>
 		<select
-			class="border-[1.5px] border-shop-ink bg-white px-3 py-2.5 text-sm text-shop-ink"
+			class="rounded-[10px] border-[1.5px] border-shop-border bg-white px-3 py-2.5 text-sm text-shop-ink focus:border-shop-blue focus:ring-0"
 			aria-label="Changer de planche"
 		>
 			{#each data.plates as item (item)}
@@ -65,7 +65,7 @@
 
 <div class="grid gap-6 lg:grid-cols-2 lg:items-start">
 	<!-- ================= Planche ================= -->
-	<div class="relative border-[1.5px] border-shop-border bg-white">
+	<div class="relative overflow-hidden rounded-2xl border-[1.5px] border-shop-border-soft bg-white">
 		<ImagePlaceholder label="Planche technique — {plate.label}" class="h-[520px] w-full border-0" />
 
 		{#each plate.parts as part (part.mark)}
@@ -88,9 +88,9 @@
 
 	<!-- ================= Nomenclature ================= -->
 	<div class="min-w-0">
-		<div class="border-[1.5px] border-shop-border bg-white">
+		<div class="overflow-hidden rounded-2xl border-[1.5px] border-shop-border-soft bg-white">
 			<div
-				class="flex justify-between gap-3 border-b-[1.5px] border-shop-border px-4 py-3.5 font-display text-[13px] font-extrabold tracking-[0.08em] text-shop-muted uppercase"
+				class="flex justify-between gap-3 border-b-[1.5px] border-shop-border-soft px-4 py-3.5 font-display text-[12.5px] font-extrabold tracking-[0.12em] text-shop-muted uppercase"
 			>
 				<span>Repère · Désignation</span>
 				<span>Prix {suffix}</span>
@@ -107,7 +107,7 @@
 				>
 					<div class="flex min-w-0 items-center gap-3">
 						<span
-							class="flex h-6.5 w-6.5 shrink-0 items-center justify-center font-display text-[12.5px] font-extrabold text-white transition-colors {active ===
+							class="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-md font-display text-[12.5px] font-extrabold text-white transition-colors {active ===
 							part.mark
 								? 'bg-shop-red'
 								: 'bg-shop-blue'}"
@@ -129,7 +129,7 @@
 						<button
 							type="button"
 							aria-label="Ajouter {part.name} au panier"
-							class="border-[1.5px] border-shop-ink bg-shop-subtle px-2.5 py-1.5 text-[13px] font-bold text-shop-ink transition-colors hover:bg-shop-ink hover:text-white"
+							class="rounded-lg border-[1.5px] border-shop-border bg-shop-subtle px-2.5 py-1.5 text-[13px] font-bold text-shop-ink transition-colors hover:border-shop-blue hover:bg-shop-blue hover:text-white"
 						>
 							+
 						</button>
@@ -139,7 +139,7 @@
 		</div>
 
 		<div
-			class="border-[1.5px] border-t-0 border-shop-border bg-shop-border-soft p-4 text-[13.5px] leading-relaxed text-shop-ink-soft"
+			class="mt-3 rounded-[14px] bg-shop-subtle p-4 text-[13.5px] leading-relaxed text-shop-ink-soft"
 		>
 			Un repère absent de la planche ou une référence remplacée par le constructeur ? Envoyez-nous
 			le numéro de série — on retrouve l'équivalence d'origine.

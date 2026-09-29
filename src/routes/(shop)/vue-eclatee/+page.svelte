@@ -58,10 +58,10 @@
 <div class="mt-6 flex flex-wrap gap-2.5">
 	{#each steps as label, i (label)}
 		<div
-			class="border-[1.5px] border-shop-ink px-3.5 py-2 font-display text-[13.5px] font-bold {i ===
+			class="rounded-full border-[1.5px] px-3.5 py-2 font-display text-[13.5px] font-bold {i ===
 			steps.length - 1
-				? 'bg-shop-ink text-white'
-				: 'bg-shop-border-soft text-shop-ink'}"
+				? 'border-shop-blue bg-shop-blue text-white'
+				: 'border-shop-border-soft bg-shop-subtle text-shop-ink'}"
 		>
 			{i + 1} · {label}
 		</div>
@@ -70,9 +70,9 @@
 
 <!-- ================= Sélecteur ================= -->
 {#snippet column(title: string, options: string[], current: string, pick: (v: string) => void)}
-	<div class="bg-white p-5">
+	<div class="rounded-2xl border-[1.5px] border-shop-border-soft bg-white p-5">
 		<p
-			class="mb-3.5 font-display text-[13px] font-extrabold tracking-[0.1em] text-shop-muted uppercase"
+			class="mb-3.5 font-display text-[12.5px] font-extrabold tracking-[0.12em] text-shop-muted uppercase"
 		>
 			{title}
 		</p>
@@ -82,10 +82,10 @@
 					type="button"
 					onclick={() => pick(option)}
 					aria-pressed={current === option}
-					class="block w-full border-[1.5px] px-3.5 py-2.5 text-left text-[14.5px] font-semibold transition-colors {current ===
+					class="block w-full rounded-[10px] border-[1.5px] px-3.5 py-2.5 text-left text-[14.5px] font-semibold transition-colors {current ===
 					option
-						? 'border-shop-ink bg-shop-ink text-white'
-						: 'border-shop-border bg-white text-shop-ink hover:border-shop-ink'}"
+						? 'border-shop-blue bg-shop-blue text-white'
+						: 'border-shop-border-soft bg-white text-shop-ink hover:border-shop-blue'}"
 				>
 					{option}
 				</button>
@@ -94,9 +94,7 @@
 	</div>
 {/snippet}
 
-<div
-	class="mt-6 grid gap-px border-[1.5px] border-shop-border bg-shop-border sm:grid-cols-2 lg:grid-cols-3"
->
+<div class="mt-6 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
 	{@render column('1 · Marque', data.brands, brand, (v) => (picked = { ...picked, brand: v }))}
 	{@render column('2 · Type de machine', data.types, machineType, pickType)}
 	{@render column('3 · Modèle', models, model, (v) => (picked = { ...picked, model: v }))}
@@ -104,7 +102,7 @@
 
 <!-- ================= Sélection ================= -->
 <div
-	class="text-shop-surface flex flex-wrap items-center justify-between gap-5 bg-shop-blue px-6 py-6"
+	class="mt-4 flex flex-wrap items-center justify-between gap-5 rounded-2xl bg-shop-blue px-6 py-6"
 >
 	<div>
 		<p class="mb-1.5 text-xs font-bold tracking-[0.12em] text-white/70 uppercase">

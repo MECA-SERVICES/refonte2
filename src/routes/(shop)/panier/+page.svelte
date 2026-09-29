@@ -5,6 +5,7 @@
 	import { ExclamationCircleOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
+	import Panel from '$lib/components/shop/Panel.svelte';
 	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import SummaryRow from '$lib/components/shop/SummaryRow.svelte';
@@ -123,16 +124,26 @@
 <Breadcrumb items={[{ label: 'Mon panier' }]} />
 
 <!-- ================= Étapes du tunnel ================= -->
-<ol class="mb-7 flex flex-wrap gap-2" aria-label="Étapes de la commande">
-	{#each steps as step (step.n)}
+<ol class="mb-7 flex items-center gap-3" aria-label="Étapes de la commande">
+	{#each steps as step, i (step.n)}
+		{#if i > 0}
+			<li aria-hidden="true" class="h-px min-w-6 flex-1 bg-shop-border-soft sm:max-w-16"></li>
+		{/if}
 		<li>
 			<span
 				aria-current={step.done ? 'step' : undefined}
-				class="block border-[1.5px] border-shop-ink px-4 py-2.5 font-display text-sm font-bold {step.done
-					? 'bg-shop-ink text-shop-subtle'
-					: 'bg-transparent text-shop-ink opacity-45'}"
+				class="flex items-center gap-2.5 {step.done ? '' : 'opacity-50'}"
 			>
-				{step.n} · {step.label}
+				<span
+					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold {step.done
+						? 'bg-shop-blue text-white'
+						: 'bg-shop-subtle text-shop-muted'}"
+				>
+					{step.n}
+				</span>
+				<span class="hidden font-display text-sm font-bold text-shop-ink sm:inline">
+					{step.label}
+				</span>
 			</span>
 		</li>
 	{/each}
@@ -140,7 +151,7 @@
 
 {#if form?.message}
 	<p
-		class="mb-5 border-[1.5px] border-shop-border bg-white px-4 py-3 text-sm font-medium text-shop-ink"
+		class="mb-5 rounded-[10px] border-[1.5px] border-shop-border-soft bg-white px-4 py-3 text-sm font-medium text-shop-ink"
 	>
 		{form.message}
 	</p>
@@ -148,24 +159,24 @@
 
 {#if lines.length === 0}
 	<!-- Panier vide : on renvoie vers le catalogue (parcours 5.7). -->
-	<div class="border-[1.5px] border-shop-border bg-white px-6 py-14 text-center">
+	<Panel padded={false} class="px-6 py-14 text-center">
 		<p class="font-display text-lg font-extrabold text-shop-ink">Votre panier est vide.</p>
 		<p class="mt-2 text-sm text-shop-muted">
 			Parcourez le catalogue pour trouver la pièce ou le matériel qu'il vous faut.
 		</p>
 		<ShopButton href="/recherche" size="lg" class="mt-6">Découvrir le catalogue</ShopButton>
-	</div>
+	</Panel>
 {:else}
 	<div class="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
 		<!-- ================= Lignes ================= -->
-		<div class="min-w-0 border-[1.5px] border-shop-border bg-white">
+		<Panel padded={false} class="min-w-0 overflow-hidden">
 			{#each lines as line (line.id)}
 				{@const drift = priceDrift(line)}
 				{@const quantity = shownQuantity(line)}
 				<div class="flex flex-wrap items-center gap-4 border-b border-shop-border-soft p-5">
 					<a
 						href={shopProductPath({ id: line.productId, slug: line.slug })}
-						class="flex h-24 w-24 shrink-0 items-center justify-center border border-shop-border bg-white p-1.5"
+						class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-shop-subtle p-1.5"
 					>
 						{#if line.imageUrl}
 							<img
@@ -175,13 +186,13 @@
 								class="max-h-full max-w-full object-contain"
 							/>
 						{:else}
-							<ImagePlaceholder label="Produit" class="border-0" />
+							<ImagePlaceholder label="Produit" class="border-0 bg-shop-subtle" />
 						{/if}
 					</a>
 
 					<div class="min-w-0 flex-1 basis-52">
 						{#if line.brandName}
-							<p class="text-xs font-bold tracking-[0.1em] text-shop-muted uppercase">
+							<p class="text-[11.5px] font-bold tracking-[0.1em] text-shop-muted uppercase">
 								{line.brandName}
 							</p>
 						{/if}
@@ -191,33 +202,35 @@
 						>
 							{line.name}
 						</a>
-						<p class="mt-0.5 text-[13px] text-shop-muted">
+						<p class="mt-0.5 text-[12.5px] text-shop-faint">
 							Réf. {line.reference} · {line.stock > 0 ? `En stock (${line.stock})` : 'Sur commande'}
 						</p>
 
 						{#if isBlocking(line)}
-							<p class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold text-shop-red">
+							<p
+								class="mt-1.5 inline-flex items-center gap-1.5 rounded-[10px] bg-shop-promo px-2.5 py-1 text-xs font-bold text-shop-orange-deep"
+							>
 								<ExclamationCircleOutline class="h-4 w-4" />
 								Indisponible — à retirer pour commander
 							</p>
 						{:else if drift > 0}
-							<p class="mt-1.5 text-xs text-shop-orange">Le prix a augmenté depuis l'ajout.</p>
+							<p class="mt-1.5 text-xs text-shop-orange-deep">Le prix a augmenté depuis l'ajout.</p>
 						{:else if drift < 0}
-							<p class="mt-1.5 text-xs text-green-700">Le prix a baissé depuis l'ajout.</p>
+							<p class="mt-1.5 text-xs text-shop-green">Le prix a baissé depuis l'ajout.</p>
 						{/if}
 					</div>
 
 					<!-- Quantité : réponse immédiate, envoi différé (dernier clic gagne) -->
 					<form method="POST" action="?/update" use:enhance={queueQuantity} class="shrink-0">
 						<input type="hidden" name="lineId" value={line.id} />
-						<div class="flex border-[1.5px] border-shop-border bg-shop-subtle">
+						<div class="flex overflow-hidden rounded-[10px] border-[1.5px] border-shop-border">
 							<button
 								type="submit"
 								name="quantity"
 								value={quantity - 1}
 								disabled={quantity <= 1}
 								aria-label="Diminuer la quantité"
-								class="px-3.5 text-[17px] text-shop-ink hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+								class="bg-shop-subtle px-3.5 text-[17px] text-shop-ink-soft hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
 							>
 								−
 							</button>
@@ -233,7 +246,7 @@
 								value={quantity + 1}
 								disabled={quantity >= line.stock}
 								aria-label="Augmenter la quantité"
-								class="px-3.5 text-[17px] text-shop-ink hover:bg-white disabled:opacity-40"
+								class="bg-shop-subtle px-3.5 text-[17px] text-shop-ink-soft hover:bg-white disabled:opacity-40"
 							>
 								+
 							</button>
@@ -241,7 +254,7 @@
 					</form>
 
 					<div class="ms-auto shrink-0 text-right whitespace-nowrap">
-						<p class="font-display text-lg font-extrabold text-shop-ink">
+						<p class="font-display text-lg font-extrabold tracking-[-0.01em] text-shop-red">
 							{formatPrice(Number(line.priceTtc) * quantity)}
 						</p>
 						<p class="text-xs text-shop-muted">
@@ -266,10 +279,12 @@
 				</a>
 				<span class="text-shop-muted">Préparation atelier : 24 h ouvrées</span>
 			</div>
-		</div>
+		</Panel>
 
 		<!-- ================= Récapitulatif ================= -->
-		<aside class="border-[1.5px] border-shop-ink bg-white p-5 lg:sticky lg:top-[12.5rem]">
+		<aside
+			class="rounded-2xl border-[1.5px] border-shop-border-soft bg-white p-5 lg:sticky lg:top-44"
+		>
 			<Heading size="card" class="mb-4">Récapitulatif</Heading>
 
 			<dl class="text-[14.5px] text-shop-ink-soft">
@@ -289,15 +304,19 @@
 				<SummaryRow label="Préparation">24 h ouvrées</SummaryRow>
 			</dl>
 
-			<div class="mt-3 flex justify-between gap-3 border-t-[1.5px] border-shop-border pt-3.5">
+			<div
+				class="mt-3 flex items-baseline justify-between gap-3 border-t-[1.5px] border-shop-border-soft pt-3.5"
+			>
 				<span class="font-display text-[17px] font-extrabold text-shop-ink">Total TTC</span>
-				<span class="font-display text-[22px] font-extrabold text-shop-ink">
+				<span class="font-display text-[22px] font-extrabold tracking-[-0.01em] text-shop-red">
 					{formatPrice(shownTotals.totalTtc)}
 				</span>
 			</div>
 
 			{#if cart.hasBlockingLine}
-				<p class="mt-4 border border-shop-red px-3 py-2 text-xs font-medium text-shop-red">
+				<p
+					class="mt-4 rounded-[10px] bg-shop-promo px-3 py-2 text-xs font-bold text-shop-orange-deep"
+				>
 					Retirez les articles indisponibles pour poursuivre.
 				</p>
 			{/if}
@@ -310,8 +329,12 @@
 				disabled={cart.hasBlockingLine}
 				class="mt-4"
 			>
-				Passer à la livraison
+				Passer la commande
 			</ShopButton>
+
+			<p class="mt-3 text-center text-[12.5px] text-shop-muted">
+				Paiement sécurisé · Retrait gratuit à l'atelier de Carantilly
+			</p>
 
 			<p
 				class="mt-4 border-t border-shop-border-soft pt-4 text-[13px] leading-relaxed text-shop-muted"

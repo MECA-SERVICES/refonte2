@@ -37,6 +37,10 @@
 		| 'phone';
 
 	const value = (key: TextField) => (editing as Address | null)?.[key] ?? '';
+
+	/** Style v2 des champs : angles à 10 px, focus bleu de marque. */
+	const inputClass =
+		'rounded-[10px] border-shop-border bg-white focus:border-shop-blue focus:ring-0';
 </script>
 
 <svelte:head>
@@ -50,7 +54,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-4">
 		<div>
 			<h1
-				class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]"
+				class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[30px]"
 			>
 				Mes adresses
 			</h1>
@@ -73,7 +77,7 @@
 
 	{#if form?.message}
 		<p
-			class="mt-5 border-[1.5px] border-shop-red bg-white px-4 py-3 text-sm font-medium text-shop-red"
+			class="mt-5 rounded-[10px] border-[1.5px] border-shop-red/40 bg-red-50 px-4 py-3 text-sm font-medium text-shop-red"
 		>
 			{form.message}
 		</p>
@@ -102,54 +106,84 @@
 
 				<div>
 					<Label for="label" class="mb-1.5">Libellé</Label>
-					<Input id="label" name="label" value={value('label')} placeholder="Domicile, Atelier…" />
+					<Input
+						id="label"
+						name="label"
+						value={value('label')}
+						placeholder="Domicile, Atelier…"
+						class={inputClass}
+					/>
 				</div>
 
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
 						<Label for="firstName" class="mb-1.5">Prénom *</Label>
-						<Input id="firstName" name="firstName" value={value('firstName')} required />
+						<Input
+							id="firstName"
+							name="firstName"
+							value={value('firstName')}
+							required
+							class={inputClass}
+						/>
 					</div>
 					<div>
 						<Label for="lastName" class="mb-1.5">Nom *</Label>
-						<Input id="lastName" name="lastName" value={value('lastName')} required />
+						<Input
+							id="lastName"
+							name="lastName"
+							value={value('lastName')}
+							required
+							class={inputClass}
+						/>
 					</div>
 				</div>
 
 				<div>
 					<Label for="company" class="mb-1.5">Société</Label>
-					<Input id="company" name="company" value={value('company')} />
+					<Input id="company" name="company" value={value('company')} class={inputClass} />
 				</div>
 
 				<div>
 					<Label for="line1" class="mb-1.5">Adresse *</Label>
-					<Input id="line1" name="line1" value={value('line1')} required />
+					<Input id="line1" name="line1" value={value('line1')} required class={inputClass} />
 				</div>
 
 				<div>
 					<Label for="line2" class="mb-1.5">Complément d'adresse</Label>
-					<Input id="line2" name="line2" value={value('line2')} />
+					<Input id="line2" name="line2" value={value('line2')} class={inputClass} />
 				</div>
 
 				<div class="grid gap-4 sm:grid-cols-[minmax(0,140px)_minmax(0,1fr)]">
 					<div>
 						<Label for="postalCode" class="mb-1.5">Code postal *</Label>
-						<Input id="postalCode" name="postalCode" value={value('postalCode')} required />
+						<Input
+							id="postalCode"
+							name="postalCode"
+							value={value('postalCode')}
+							required
+							class={inputClass}
+						/>
 					</div>
 					<div>
 						<Label for="city" class="mb-1.5">Ville *</Label>
-						<Input id="city" name="city" value={value('city')} required />
+						<Input id="city" name="city" value={value('city')} required class={inputClass} />
 					</div>
 				</div>
 
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
 						<Label for="country" class="mb-1.5">Pays</Label>
-						<Input id="country" name="country" value={value('country') || 'FR'} maxlength={2} />
+						<Input
+							id="country"
+							name="country"
+							value={value('country') || 'FR'}
+							maxlength={2}
+							class={inputClass}
+						/>
 					</div>
 					<div>
 						<Label for="phone" class="mb-1.5">Téléphone</Label>
-						<Input id="phone" name="phone" type="tel" value={value('phone')} />
+						<Input id="phone" name="phone" type="tel" value={value('phone')} class={inputClass} />
 					</div>
 				</div>
 
@@ -201,14 +235,14 @@
 								{/if}
 								{#if item.isDefaultShipping}
 									<span
-										class="bg-shop-blue px-2 py-0.5 font-display text-[11px] font-bold tracking-wide text-white uppercase"
+										class="rounded-full bg-shop-blue px-2.5 py-0.5 font-display text-[11px] font-extrabold tracking-[0.06em] text-white uppercase"
 									>
 										Livraison
 									</span>
 								{/if}
 								{#if item.isDefaultBilling}
 									<span
-										class="bg-shop-ink px-2 py-0.5 font-display text-[11px] font-bold tracking-wide text-white uppercase"
+										class="rounded-full bg-shop-ink px-2.5 py-0.5 font-display text-[11px] font-extrabold tracking-[0.06em] text-white uppercase"
 									>
 										Facturation
 									</span>

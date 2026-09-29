@@ -37,6 +37,6 @@
 		value={sort}
 		onchange={apply}
 		size="sm"
-		class="w-44 rounded-none border-shop-border"
+		class="w-44 rounded-[10px] border-[1.5px] border-shop-border focus:border-shop-blue focus:ring-0"
 	/>
 </label>

@@ -93,11 +93,23 @@
 
 {#if form?.message}
 	<p
-		class="mt-5 border-[1.5px] border-shop-red bg-white px-4 py-3 text-sm font-medium text-shop-red"
+		class="mt-5 rounded-[10px] border-[1.5px] border-shop-red bg-white px-4 py-3 text-sm font-medium text-shop-red"
 	>
 		{form.message}
 	</p>
 {/if}
+
+<!-- Pastille numérotée des trois blocs du tunnel. -->
+{#snippet stepHeading(n: number, label: string)}
+	<div class="flex items-center gap-2.5">
+		<span
+			class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-shop-blue font-display text-sm font-bold text-white"
+		>
+			{n}
+		</span>
+		<Heading size="card">{label}</Heading>
+	</div>
+{/snippet}
 
 <form method="POST" action="?/confirm" use:enhance>
 	<input type="hidden" name="shippingAddressId" value={shippingAddressId} />
@@ -117,15 +129,15 @@
 		<div class="space-y-6">
 			<!-- ================= Adresses ================= -->
 			<Panel class="p-5">
-				<Heading size="card">1 · Adresse de livraison</Heading>
+				{@render stepHeading(1, 'Adresse de livraison')}
 
 				<div class="mt-4 space-y-2.5">
 					{#each data.addresses as item (item.id)}
 						<label
-							class="flex cursor-pointer gap-3 border-[1.5px] p-3.5 transition-colors {shippingAddressId ===
+							class="flex cursor-pointer gap-3 rounded-[14px] border-[1.5px] p-3.5 transition-colors {shippingAddressId ===
 							item.id
-								? 'border-shop-ink bg-shop-border-soft'
-								: 'border-shop-border bg-white hover:border-shop-ink'}"
+								? 'border-shop-blue bg-primary-50'
+								: 'border-shop-border bg-white hover:border-shop-blue'}"
 						>
 							<input
 								type="radio"
@@ -186,11 +198,11 @@
 
 			<!-- ================= Livraison ================= -->
 			<Panel class="p-5">
-				<Heading size="card">2 · Mode de livraison</Heading>
+				{@render stepHeading(2, 'Mode de livraison')}
 
 				{#if data.quote.restriction}
 					<p
-						class="mt-3 border-[1.5px] border-shop-blue bg-shop-subtle px-3.5 py-2.5 text-[13.5px] text-shop-ink"
+						class="mt-3 rounded-[10px] border-[1.5px] border-shop-blue bg-primary-50 px-3.5 py-2.5 text-[13.5px] text-shop-ink"
 					>
 						{data.quote.restriction}
 					</p>
@@ -198,7 +210,7 @@
 
 				{#if data.quote.usedFallback}
 					<p
-						class="mt-3 border-[1.5px] border-shop-orange bg-white px-3.5 py-2.5 text-[13.5px] text-shop-ink"
+						class="mt-3 rounded-[10px] bg-shop-promo px-3.5 py-2.5 text-[13.5px] text-shop-orange-deep"
 					>
 						Le transporteur sera confirmé par notre équipe à la préparation de votre colis.
 					</p>
@@ -222,10 +234,10 @@
 								<div class="space-y-2.5">
 									{#each group as item (item.code)}
 										<label
-											class="flex cursor-pointer items-center gap-3 border-[1.5px] p-3.5 transition-colors {optionCode ===
+											class="flex cursor-pointer items-center gap-3 rounded-[14px] border-[1.5px] p-3.5 transition-colors {optionCode ===
 											item.code
-												? 'border-shop-ink bg-shop-border-soft'
-												: 'border-shop-border bg-white hover:border-shop-ink'}"
+												? 'border-shop-blue bg-primary-50'
+												: 'border-shop-border bg-white hover:border-shop-blue'}"
 										>
 											<input
 												type="radio"
@@ -285,7 +297,7 @@
 						</p>
 
 						{#if relay}
-							<div class="mt-3 border-[1.5px] border-shop-ink bg-shop-border-soft p-3.5">
+							<div class="mt-3 rounded-[14px] border-[1.5px] border-shop-blue bg-primary-50 p-3.5">
 								<p class="text-[14.5px] font-bold text-shop-ink">{relay.name}</p>
 								<p class="text-[13px] text-shop-muted">{relay.address}</p>
 								<button
@@ -304,13 +316,13 @@
 										form="relay-form"
 										name="postalCode"
 										value={data.addresses.find((a) => a.id === shippingAddressId)?.postalCode ?? ''}
-										class="border-[1.5px] border-shop-border px-3 py-2 text-sm"
+										class="rounded-[10px] border-[1.5px] border-shop-border px-3 py-2 text-sm focus:border-shop-blue focus:ring-0"
 									/>
 								</label>
 								<button
 									form="relay-form"
 									type="submit"
-									class="border-[1.5px] border-shop-ink bg-white px-4 py-2 text-sm font-bold text-shop-ink hover:bg-shop-ink hover:text-white"
+									class="rounded-[10px] bg-shop-blue px-4 py-2 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
 								>
 									Rechercher
 								</button>
@@ -327,7 +339,7 @@
 													name: point.name,
 													address: `${point.street} ${point.houseNumber}, ${point.postalCode} ${point.city}`
 												})}
-											class="flex w-full items-center gap-3 border-[1.5px] border-shop-border bg-white p-3 text-left hover:border-shop-ink"
+											class="flex w-full items-center gap-3 rounded-[14px] border-[1.5px] border-shop-border bg-white p-3 text-left transition-colors hover:border-shop-blue"
 										>
 											{#if point.carrierLogoUrl}
 												<img
@@ -344,7 +356,7 @@
 													</span>
 													{#if point.shopType === 'locker'}
 														<span
-															class="bg-shop-border-soft px-1.5 py-0.5 text-[10.5px] font-bold tracking-wide text-shop-ink uppercase"
+															class="rounded-full bg-shop-border-soft px-2 py-0.5 text-[10.5px] font-bold tracking-wide text-shop-ink uppercase"
 														>
 															Consigne
 														</span>
@@ -379,16 +391,17 @@
 
 			<!-- ================= Paiement ================= -->
 			<Panel class="p-5">
-				<Heading size="card">3 · Paiement</Heading>
+				{@render stepHeading(3, 'Paiement')}
 
 				{#if data.cardPaymentAvailable}
 					<!-- Deux moyens disponibles : le choix conditionne la suite du
 					     tunnel, carte vers la banque ou virement vers la confirmation. -->
 					<div class="mt-3 space-y-3">
 						<label
-							class="flex cursor-pointer gap-3 border-[1.5px] p-4 {paymentMethod === 'card'
-								? 'border-shop-ink bg-shop-border-soft'
-								: 'border-shop-border bg-white hover:border-shop-ink'}"
+							class="flex cursor-pointer gap-3 rounded-[14px] border-[1.5px] p-4 transition-colors {paymentMethod ===
+							'card'
+								? 'border-shop-blue bg-primary-50'
+								: 'border-shop-border-soft bg-white hover:border-shop-blue'}"
 						>
 							<input
 								type="radio"
@@ -408,9 +421,10 @@
 						</label>
 
 						<label
-							class="flex cursor-pointer gap-3 border-[1.5px] p-4 {paymentMethod === 'bank_transfer'
-								? 'border-shop-ink bg-shop-border-soft'
-								: 'border-shop-border bg-white hover:border-shop-ink'}"
+							class="flex cursor-pointer gap-3 rounded-[14px] border-[1.5px] p-4 transition-colors {paymentMethod ===
+							'bank_transfer'
+								? 'border-shop-blue bg-primary-50'
+								: 'border-shop-border-soft bg-white hover:border-shop-blue'}"
 						>
 							<input
 								type="radio"
@@ -430,7 +444,7 @@
 						</label>
 					</div>
 				{:else}
-					<div class="mt-3 border-[1.5px] border-shop-ink bg-shop-border-soft p-4">
+					<div class="mt-3 rounded-[14px] border-[1.5px] border-shop-border bg-shop-subtle p-4">
 						<p class="text-[14.5px] font-bold text-shop-ink">Virement bancaire</p>
 						<p class="mt-1 text-[13.5px] leading-relaxed text-shop-ink-soft">
 							Nos coordonnées bancaires vous seront communiquées après validation. Votre commande
@@ -442,7 +456,7 @@
 		</div>
 
 		<!-- ================= Récapitulatif ================= -->
-		<Panel class="p-5 lg:sticky lg:top-6">
+		<Panel class="p-5 lg:sticky lg:top-44">
 			<Heading size="card">Récapitulatif</Heading>
 
 			<ul class="mt-4 space-y-2 border-b-[1.5px] border-shop-border-soft pb-4">
@@ -470,9 +484,11 @@
 				<SummaryRow label="TVA">{formatPrice(totalTva)}</SummaryRow>
 			</div>
 
-			<div class="mt-3 flex items-baseline justify-between border-t-[1.5px] border-shop-ink pt-3">
+			<div
+				class="mt-3 flex items-baseline justify-between border-t-[1.5px] border-shop-border-soft pt-3"
+			>
 				<span class="font-display text-[17px] font-extrabold text-shop-ink">Total TTC</span>
-				<span class="font-display text-xl font-extrabold text-shop-ink">
+				<span class="font-display text-[22px] font-extrabold tracking-[-0.01em] text-shop-red">
 					{formatPrice(totalHt + totalTva)}
 				</span>
 			</div>

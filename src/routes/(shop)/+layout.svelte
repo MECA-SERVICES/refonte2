@@ -1,29 +1,18 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import {
-		CloseButton,
-		Drawer,
-		Accordion,
-		AccordionItem,
-		Dropdown,
-		Footer,
-		FooterCopyright,
-		FooterLink,
-		FooterLinkGroup
-	} from 'flowbite-svelte';
+	import { CloseButton, Drawer, Accordion, AccordionItem, Dropdown } from 'flowbite-svelte';
 	import {
 		ArrowRightToBracketOutline,
 		BarsOutline,
 		CartOutline,
-		PhoneSolid,
-		SearchOutline
+		SearchOutline,
+		UserOutline
 	} from 'flowbite-svelte-icons';
 	import MegaMenu from '$lib/components/shop/MegaMenu.svelte';
 	import NavigationIndicator from '$lib/components/shop/NavigationIndicator.svelte';
 	import CartToast from '$lib/components/shop/CartToast.svelte';
 	import AnnouncementPopup from '$lib/components/shop/AnnouncementPopup.svelte';
-	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import { cartFeedback } from '$lib/components/shop/cart-feedback.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -49,14 +38,20 @@
 		}))
 	);
 
+	/** Trois promesses du bandeau utilitaire — la réassurance avant tout. */
+	const topPromises = [
+		'Pièces détachées 100 % origine',
+		'S.A.V assuré dans notre atelier',
+		'Paiement sécurisé'
+	];
+
 	/** Liens d'information du footer (pages CMS à venir — placeholders du squelette). */
 	const infoLinks = [
+		'Livraison France, Europe & Outre-mer',
 		'Moyens de paiement',
-		'Modes de livraison',
-		'Conditions générales de vente',
-		'Mandat administratif ou Chorus',
-		'Services S.A.V',
-		'Paiement en 3 ou 4 fois'
+		'Mandat administratif & Chorus Pro',
+		'S.A.V & garantie',
+		'Conditions générales de vente'
 	];
 </script>
 
@@ -66,97 +61,92 @@
 <!-- Annonce en cours, choisie côté serveur selon l'adresse consultée. -->
 <AnnouncementPopup popup={data.popup} />
 
-<div class="flex min-h-screen flex-col bg-shop-subtle">
+<!-- `overflow-x-clip` : le hero de l'accueil déborde volontairement du
+     conteneur (pleine largeur d'écran), sans créer de défilement horizontal. -->
+<div class="flex min-h-screen flex-col overflow-x-clip bg-white text-shop-ink">
 	<header class="sticky top-0 z-50">
-		<!-- Bandeau utilitaire : ancrage local à gauche, contacts et accès à droite -->
+		<!-- Bandeau utilitaire : promesses à gauche, accès directs à droite -->
 		<div class="hidden bg-shop-blue-dark text-[13px] text-shop-on-dark sm:block">
 			<div
-				class="mx-auto flex w-full max-w-[1360px] flex-wrap items-center justify-between gap-4 px-4 py-2.5 sm:px-6 lg:px-8"
+				class="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-7 gap-y-2 px-4 py-2 sm:px-6"
 			>
-				<span>
-					Atelier &amp; expédition à Carantilly (50) — Normandie · Commandes préparées sous 24 h
-				</span>
-				<div class="flex flex-wrap items-center gap-5">
-					<a href="tel:0950922336" class="font-display font-bold text-white hover:underline">
-						<PhoneSolid class="me-1 inline h-3.5 w-3.5" /> 09 50 92 23 36
-					</a>
-					<a href="/compte" class="hover:text-white">Suivre ma commande</a>
-					<a href="/inscription" class="hover:text-white">Compte pro &amp; collectivités</a>
+				<div class="flex flex-wrap gap-x-5 gap-y-2">
+					{#each topPromises as promise (promise)}
+						<span class="flex items-center gap-2">
+							<span class="h-1.5 w-1.5 rounded-full bg-shop-orange-light" aria-hidden="true"></span>
+							{promise}
+						</span>
+					{/each}
+				</div>
+				<div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+					<a href="/inscription" class="hover:text-white">Mandat administratif · Chorus Pro</a>
+					<a href="/compte/commandes" class="hover:text-white">Suivre ma commande</a>
+					<a href="tel:0950922336" class="font-display font-bold text-white">09 50 92 23 36</a>
 				</div>
 			</div>
 		</div>
 
-		<!-- Ligne principale : identité, recherche catégorisée, actions -->
-		<div class="border-b border-shop-border bg-shop-subtle">
+		<!-- Ligne principale : identité, recherche, compte et panier -->
+		<div class="border-b border-shop-border-soft bg-white">
 			<div
-				class="mx-auto flex w-full max-w-[1360px] flex-wrap items-center gap-5 px-4 py-4 sm:px-6 lg:px-8"
+				class="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-7 gap-y-4 px-4 py-4 sm:px-6"
 			>
 				<a href={resolve('/')} class="flex shrink-0 items-center gap-3">
 					<span
-						class="flex h-[46px] w-[46px] items-center justify-center bg-shop-blue font-display text-[17px] font-extrabold tracking-[-0.02em] text-shop-subtle"
+						class="flex h-12 w-12 items-center justify-center rounded-xl bg-shop-blue font-display text-lg font-black tracking-[-0.03em] text-white"
 					>
 						MS
 					</span>
 					<span class="leading-[1.05]">
 						<span
-							class="block font-display text-[19px] font-extrabold tracking-[-0.01em] text-shop-ink"
+							class="block font-display text-xl font-extrabold tracking-[-0.02em] text-shop-ink"
 						>
 							MECA SERVICES
 						</span>
-						<span class="block text-[11px] tracking-[0.16em] text-shop-muted uppercase">
-							Motoculture &amp; pièces détachées
+						<span class="mt-0.5 block text-[11px] tracking-[0.14em] text-shop-muted uppercase">
+							Motoculture · Pièces détachées · Normandie
 						</span>
 					</span>
 				</a>
 
-				<!-- Recherche : le rayon se choisit avant de saisir, comme sur les
-				     catalogues techniques où le même mot existe dans dix familles. -->
 				<form
 					action="/recherche"
 					method="get"
-					class="flex min-w-0 flex-1 basis-[340px] border-[1.5px] border-shop-ink bg-white"
+					class="flex min-w-0 flex-1 basis-[340px] items-stretch overflow-hidden rounded-xl border-2 border-shop-border bg-white focus-within:border-shop-blue"
 				>
-					<label class="sr-only" for="search-scope">Périmètre de recherche</label>
-					<select
-						id="search-scope"
-						name="rayon"
-						class="hidden border-0 border-r-[1.5px] border-shop-ink bg-shop-border-soft py-0 pr-8 pl-3 text-sm text-shop-ink focus:ring-0 sm:block"
-					>
-						<option value="">Tout le catalogue</option>
-						{#each data.menu as entry (entry.id)}
-							<option value={entry.slug}>{entry.name}</option>
-						{/each}
-					</select>
-
 					<label class="sr-only" for="search-q">Rechercher</label>
 					<input
 						id="search-q"
 						type="search"
 						name="q"
-						placeholder="Référence, marque, modèle — ex. 587 42 07-01 ou Husqvarna 550 XP"
-						class="min-w-0 flex-1 border-0 px-3.5 py-3 text-sm text-shop-ink placeholder:text-shop-muted focus:ring-0"
+						placeholder="Référence, marque ou modèle — ex. 587 42 07-01, Iseki SA250"
+						class="min-w-0 flex-1 border-0 px-4 py-3 text-[15px] text-shop-ink placeholder:text-shop-muted focus:ring-0"
 					/>
 					<button
 						type="submit"
-						class="shrink-0 bg-shop-blue px-5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
+						class="flex shrink-0 items-center gap-2 bg-shop-blue px-5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
 					>
-						<SearchOutline class="inline h-4 w-4 sm:hidden" />
+						<SearchOutline class="h-4.5 w-4.5" />
 						<span class="hidden sm:inline">Rechercher</span>
 					</button>
 				</form>
 
-				<div class="flex shrink-0 items-center gap-2.5">
+				<div class="flex shrink-0 items-center gap-2">
 					{#if data.shopUser}
 						<button
 							type="button"
-							class="max-w-40 truncate border-[1.5px] border-shop-border px-3.5 py-2.5 text-sm font-medium text-shop-ink"
+							class="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-sm font-medium text-shop-ink hover:bg-shop-subtle"
 						>
-							{data.shopUser.name}
+							<UserOutline class="h-5.5 w-5.5" />
+							<span class="max-w-36 truncate text-left leading-[1.1]">
+								<span class="block text-[11px] text-shop-muted">Bonjour</span>
+								{data.shopUser.name}
+							</span>
 						</button>
-						<Dropdown simple class="w-52 rounded-none p-1">
+						<Dropdown simple class="w-52 rounded-xl p-1">
 							<a
 								href="/compte"
-								class="block px-3 py-2 text-sm font-medium text-shop-ink hover:bg-shop-subtle"
+								class="block rounded-lg px-3 py-2 text-sm font-medium text-shop-ink hover:bg-shop-subtle"
 							>
 								Mon compte
 							</a>
@@ -166,7 +156,7 @@
 								<input type="hidden" name="redirectTo" value={page.url.pathname} />
 								<button
 									type="submit"
-									class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-shop-ink hover:bg-shop-subtle"
+									class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-shop-ink hover:bg-shop-subtle"
 								>
 									<ArrowRightToBracketOutline class="h-4 w-4" /> Déconnexion
 								</button>
@@ -175,24 +165,28 @@
 					{:else}
 						<a
 							href="/connexion"
-							class="hidden border-[1.5px] border-shop-border px-3.5 py-2.5 text-sm font-medium text-shop-ink hover:border-shop-ink sm:block"
+							class="hidden items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-sm font-medium text-shop-ink hover:bg-shop-subtle sm:flex"
 						>
-							Mon compte
+							<UserOutline class="h-5.5 w-5.5" />
+							<span class="text-left leading-[1.1]">
+								<span class="block text-[11px] text-shop-muted">Bonjour</span>
+								Mon compte
+							</span>
 						</a>
 					{/if}
 
-					<ShopButton href="/inscription" variant="outline" size="sm" class="hidden lg:inline-flex">
-						Demander un devis
-					</ShopButton>
-
 					<a
 						href="/panier"
-						class="bg-shop-blue px-4 py-2.5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
+						class="flex items-center gap-2.5 rounded-[10px] bg-shop-ink px-4 py-2.5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue"
 					>
-						<CartOutline class="me-1 inline h-4 w-4" />
-						Panier ·
+						<CartOutline class="h-5 w-5" />
+						<span class="hidden sm:inline">Panier</span>
 						{#key data.cartCount}
-							<span class="inline-block animate-[cart-bump_0.4s_ease-out]">{data.cartCount}</span>
+							<span
+								class="inline-block animate-[cart-bump_0.4s_ease-out] rounded-full bg-shop-red px-2 py-px text-xs"
+							>
+								{data.cartCount}
+							</span>
 						{/key}
 					</a>
 				</div>
@@ -200,41 +194,27 @@
 
 			<!-- Accès au catalogue sur petit écran : le méga-menu cède la place
 			     au tiroir latéral, plus praticable au doigt. -->
-			<div class="px-4 pb-3.5 sm:px-6 lg:hidden lg:px-8">
+			<div class="px-4 pb-3.5 sm:px-6 lg:hidden">
 				<button
 					type="button"
 					onclick={() => (menuOpen = true)}
-					class="flex items-center gap-2 font-display text-[13.5px] font-semibold tracking-[0.02em] text-shop-ink uppercase"
+					class="flex items-center gap-2 font-display text-[13.5px] font-bold text-shop-ink"
 				>
-					<BarsOutline class="h-4 w-4" /> Tous nos rayons
+					<BarsOutline class="h-4.5 w-4.5" /> Tous nos rayons
 				</button>
 			</div>
 		</div>
+
 		<!-- Navigation principale : méga-menu du catalogue (écrans larges) -->
 		<div class="hidden lg:block">
 			<MegaMenu sections={megaSections} brands={data.topBrands} />
 		</div>
 	</header>
 
-	<!-- Bandeau promotionnel : une opération commerciale à la fois. -->
-	<div class="border-b border-shop-border bg-shop-promo">
-		<div
-			class="mx-auto flex w-full max-w-[1360px] flex-wrap justify-between gap-2.5 px-4 py-2.5 text-sm text-shop-ink sm:px-6 lg:px-8"
-		>
-			<span>
-				<strong class="font-display">Préparation d'hiver</strong>
-				— 15 % sur les fraises à neige et les produits de dégivrage jusqu'au 30 novembre.
-			</span>
-			<a href="/recherche" class="font-semibold text-shop-blue hover:underline">
-				Voir la sélection →
-			</a>
-		</div>
-	</div>
-
 	<!-- Menu latéral des rayons (mobile et desktop) -->
 	<Drawer bind:open={menuOpen} placement="left" class="w-80 p-0 sm:w-96">
-		<div class="flex items-center justify-between border-b border-shop-border px-5 py-4">
-			<h2 class="text-lg font-bold text-shop-ink">Nos rayons</h2>
+		<div class="flex items-center justify-between border-b border-shop-border-soft px-5 py-4">
+			<h2 class="font-display text-lg font-extrabold text-shop-ink">Nos rayons</h2>
 			<CloseButton onclick={() => (menuOpen = false)} />
 		</div>
 
@@ -251,7 +231,7 @@
 								<li>
 									<a
 										href={categoryHref(entry.slug)}
-										class="block rounded-md px-3 py-1.5 text-sm font-medium text-shop-blue hover:bg-shop-subtle"
+										class="block rounded-lg px-3 py-1.5 text-sm font-medium text-shop-blue hover:bg-shop-subtle"
 										onclick={() => (menuOpen = false)}
 									>
 										Tout « {entry.name} »
@@ -261,7 +241,7 @@
 									<li>
 										<a
 											href={categoryHref(child.slug)}
-											class="block rounded-md px-3 py-1.5 text-sm text-shop-muted hover:bg-shop-subtle hover:text-shop-ink"
+											class="block rounded-lg px-3 py-1.5 text-sm text-shop-muted hover:bg-shop-subtle hover:text-shop-ink"
 											onclick={() => (menuOpen = false)}
 										>
 											{child.name}
@@ -273,7 +253,7 @@
 					{:else}
 						<a
 							href={categoryHref(entry.slug)}
-							class="block border-b border-shop-border/70 px-0 py-3 text-sm font-semibold text-shop-ink hover:text-shop-blue"
+							class="block border-b border-shop-border-soft px-0 py-3 text-sm font-semibold text-shop-ink hover:text-shop-blue"
 							onclick={() => (menuOpen = false)}
 						>
 							{entry.name}
@@ -284,7 +264,7 @@
 
 			<a
 				href="/marques"
-				class="mt-4 block border border-shop-border bg-shop-subtle px-4 py-3 text-center text-sm font-semibold text-shop-blue hover:bg-primary-100"
+				class="mt-4 block rounded-[10px] border border-shop-border bg-shop-subtle px-4 py-3 text-center text-sm font-semibold text-shop-blue hover:bg-primary-100"
 				onclick={() => (menuOpen = false)}
 			>
 				Parcourir les marques
@@ -292,7 +272,7 @@
 
 			<a
 				href="/recherche"
-				class="mt-2 block border border-shop-border bg-shop-subtle px-4 py-3 text-center text-sm font-semibold text-shop-blue hover:bg-primary-100"
+				class="mt-2 block rounded-[10px] border border-shop-border bg-shop-subtle px-4 py-3 text-center text-sm font-semibold text-shop-blue hover:bg-primary-100"
 				onclick={() => (menuOpen = false)}
 			>
 				Voir tout le catalogue
@@ -301,89 +281,114 @@
 	</Drawer>
 
 	<!-- Contenu de la page -->
-	<main class="mx-auto w-full max-w-[1360px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
+	<main class="mx-auto w-full max-w-[1440px] flex-1 px-4 py-5 sm:px-6">
 		{@render children()}
 	</main>
 
 	<!-- Pied de page -->
 	{#snippet footerTitle(label: string)}
 		<h2
-			class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-orange-light uppercase"
+			class="mb-3 font-display text-[12.5px] font-extrabold tracking-[0.12em] text-white uppercase"
 		>
 			{label}
 		</h2>
 	{/snippet}
 
-	<Footer class="rounded-none bg-primary-800 text-white">
+	<footer class="bg-shop-ink text-shop-on-dark">
 		<div
-			class="mx-auto grid w-full max-w-[1360px] gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8"
+			class="mx-auto grid w-full max-w-[1440px] gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4"
 		>
 			<div>
-				{@render footerTitle('MS Shop')}
-				<p class="text-xs font-semibold tracking-wide text-primary-200 uppercase">Hotline</p>
-				<a href="tel:0950922336" class="mt-1 block text-2xl font-extrabold text-white">
-					09 50 92 23 36
-				</a>
-				<p class="mt-1 text-sm text-primary-200">9h/12h – 14h/18h · Fermé sam. dim.</p>
-				<p class="mt-4 text-sm leading-6 text-primary-200">
-					<span class="font-semibold text-white">Magasin & atelier</span><br />
-					4 La Merrerie, 50570 Carantilly
+				<div class="mb-3.5 flex items-center gap-2.5 text-white">
+					<span
+						class="flex h-10 w-10 items-center justify-center rounded-[10px] bg-shop-blue font-display text-[15px] font-black"
+					>
+						MS
+					</span>
+					<span class="font-display text-[17px] font-extrabold">MECA SERVICES</span>
+				</div>
+				<p class="text-sm leading-relaxed">
+					Atelier &amp; Click &amp; Collect<br />
+					4 La Merrerie, 50570 Carantilly — Manche, Normandie<br />
+					Lun – Ven · 9 h – 12 h / 14 h – 18 h
+				</p>
+				<p class="mt-3 font-display text-base font-bold text-white">
+					<a href="tel:0950922336" class="hover:underline">09 50 92 23 36</a>
 				</p>
 			</div>
 			<div>
-				{@render footerTitle('Informations')}
-				<FooterLinkGroup class="space-y-2 text-sm text-primary-200">
+				{@render footerTitle('Infos pratiques')}
+				<ul class="space-y-2 text-sm">
 					{#each infoLinks as label (label)}
-						<FooterLink href={resolve('/')} class="hover:text-white hover:underline">
-							{label}
-						</FooterLink>
+						<li>
+							<a href={resolve('/')} class="hover:text-white hover:underline">{label}</a>
+						</li>
 					{/each}
-				</FooterLinkGroup>
-			</div>
-			<div>
-				{@render footerTitle('Nos rayons')}
-				<FooterLinkGroup class="space-y-2 text-sm text-primary-200">
-					{#each data.menu.slice(0, 6) as entry (entry.id)}
-						<FooterLink href="/categorie/{entry.slug}" class="hover:text-white hover:underline">
-							{entry.name}
-						</FooterLink>
-					{/each}
-				</FooterLinkGroup>
-			</div>
-			<div>
-				{@render footerTitle('Nos univers marques')}
-				<ul class="space-y-2 text-sm text-primary-200">
-					<li>EGO Power+ — Outils sans fil 56V</li>
-					<li>Navimow Segway — Robots tondeuses</li>
-					<li>ISEKI — Micro-tracteurs & pièces</li>
-					<li>Etesia — Tondeuses professionnelles</li>
-					<li>Outils Wolf — Tondeuses & jardin</li>
-					<li>Roques & Lecoeur — Débroussaillage</li>
 				</ul>
 			</div>
-		</div>
-		<div class="border-t border-white/10">
-			<div
-				class="mx-auto flex w-full max-w-[1360px] flex-col items-center justify-between gap-3 px-4 py-4 sm:flex-row sm:px-6 lg:px-8"
-			>
-				<FooterCopyright
-					href={resolve('/')}
-					by="MS Shop — Meca Services"
-					year={new Date().getFullYear()}
-					class="text-primary-200"
-					classes={{ link: 'text-white hover:underline' }}
-				/>
-				<p class="flex flex-wrap items-center justify-center gap-2 text-xs text-primary-200">
-					<span>Paiement sécurisé</span>
-					{#each ['CB', 'Visa', 'Mastercard', 'Sofinco 3×-4×'] as mean (mean)}
-						<span class="rounded border border-white/20 px-2 py-0.5 font-semibold text-white">
+			<div>
+				{@render footerTitle('Nos univers')}
+				<ul class="space-y-2 text-sm">
+					{#each data.menu.slice(0, 5) as entry (entry.id)}
+						<li>
+							<a href="/categorie/{entry.slug}" class="hover:text-white hover:underline">
+								{entry.name}
+							</a>
+						</li>
+					{/each}
+					<li>
+						<a href="/vue-eclatee" class="hover:text-white hover:underline">
+							Pièces détachées &amp; vues éclatées
+						</a>
+					</li>
+				</ul>
+			</div>
+			<div>
+				{@render footerTitle('Newsletter')}
+				<p class="mb-3 text-sm leading-relaxed">
+					Les bons plans et nouveautés de l'atelier, une fois par mois.
+				</p>
+				<!-- Collecte à brancher (liste de diffusion) : le formulaire matérialise
+				     l'emplacement prévu par la maquette sans envoyer nulle part. -->
+				<form class="flex overflow-hidden rounded-[10px]" aria-label="Inscription à la newsletter">
+					<label class="sr-only" for="newsletter-email">Votre e-mail</label>
+					<input
+						id="newsletter-email"
+						type="email"
+						placeholder="Votre e-mail"
+						class="min-w-0 flex-1 border-0 bg-white px-3.5 py-3 text-sm text-shop-ink focus:ring-0"
+					/>
+					<button
+						type="submit"
+						class="border-0 bg-shop-orange px-4 font-display text-sm font-bold text-white transition-colors hover:bg-shop-orange-deep"
+					>
+						OK
+					</button>
+				</form>
+				<div class="mt-4 flex flex-wrap gap-1.5">
+					{#each ['CB', 'Visa', 'Mastercard', 'Virement', 'Mandat admin.'] as mean (mean)}
+						<span
+							class="rounded-md bg-shop-rule-dark px-2 py-1 text-[11.5px] font-bold tracking-[0.04em] text-white"
+						>
 							{mean}
 						</span>
 					{/each}
-				</p>
+				</div>
 			</div>
 		</div>
-	</Footer>
+		<div class="border-t border-shop-rule-dark">
+			<div
+				class="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-2 px-4 py-4 text-[12.5px] text-shop-on-dark-dim sm:px-6"
+			>
+				<span>© {new Date().getFullYear()} MECA SERVICES — mecaservicesshop.fr</span>
+				<div class="flex flex-wrap gap-4">
+					<a href={resolve('/')} class="hover:text-white">Mentions légales</a>
+					<a href={resolve('/')} class="hover:text-white">Protection des données</a>
+					<a href={resolve('/')} class="hover:text-white">Gestion des cookies</a>
+				</div>
+			</div>
+		</div>
+	</footer>
 </div>
 
 <style>

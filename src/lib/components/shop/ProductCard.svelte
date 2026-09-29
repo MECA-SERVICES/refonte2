@@ -34,18 +34,20 @@
 </script>
 
 <!--
-	Carte produit encadrée : la référence est affichée dès la liste, car c'est
-	elle qui fait foi sur un catalogue de pièces. Le prix reprend le bleu de
-	marque, le rouge reste réservé à l'action d'achat.
+	Carte produit de la charte v2 : angles à 14 px, prix en rouge d'achat,
+	pastille verte de disponibilité. La référence est affichée dès la liste,
+	car c'est elle qui fait foi sur un catalogue de pièces.
 -->
 <!--
 	`relative` sert de repère au lien d'ensemble posé plus bas : sans lui, la zone
 	cliquable se calerait sur la page entière.
 -->
-<article class="relative flex h-full flex-col border-[1.5px] border-shop-border bg-white">
+<article
+	class="relative flex h-full flex-col overflow-hidden rounded-[14px] border-[1.5px] border-shop-border-soft bg-white transition-[border-color,box-shadow] hover:border-primary-200 hover:shadow-[0_10px_30px_rgba(30,36,54,0.08)]"
+>
 	<a
 		href={shopProductPath(product)}
-		class="relative flex aspect-square items-center justify-center border-b border-shop-border/60 p-3"
+		class="relative flex h-[190px] items-center justify-center overflow-hidden border-b border-shop-border-soft"
 	>
 		{#if product.imageUrl}
 			<!--
@@ -53,32 +55,36 @@
 				n'en a aucune, et un logo renseigne mieux qu'un cadre vide. Le texte
 				alternatif reste celui de la marque, pour qu'un lecteur d'écran
 				n'annonce pas une photo du produit.
+
+				La photo couvre tout le cadre, sans marge ; le logo garde ses
+				proportions, un logo recadré serait illisible.
 			-->
 			<img
 				src={product.imageUrl}
 				alt={product.imageIsBrandLogo ? (product.brandName ?? '') : product.name}
 				loading="lazy"
-				class="max-h-full max-w-full object-contain"
+				class={product.imageIsBrandLogo
+					? 'max-h-full max-w-full object-contain p-4'
+					: 'h-full w-full object-cover'}
 			/>
 		{:else}
-			<ImagePlaceholder label="Photo produit" class="rounded-none border-0" />
+			<ImagePlaceholder label="Photo produit" class="border-0" />
 		{/if}
 
 		{#if saved > 0}
 			<span
-				class="pointer-events-none absolute top-2.5 left-2.5 bg-shop-red px-2 py-1.5 font-display text-[11px] font-bold tracking-[0.08em] text-white uppercase"
+				class="pointer-events-none absolute top-2.5 left-2.5 rounded-full bg-shop-orange px-2.5 py-1 font-display text-[11.5px] font-extrabold text-white"
 			>
 				−{formatPrice(saved)}
 			</span>
 		{/if}
 	</a>
 
-	<div class="flex flex-1 flex-col gap-1.5 px-4 pt-3 pb-3.5">
+	<div class="flex flex-1 flex-col gap-1.5 px-4 pt-3.5 pb-4">
 		<!-- Ligne marque toujours présente, même vide : sans elle, les titres
 		     ne s'aligneraient pas d'une carte à l'autre. -->
-		<p class="min-h-4 text-xs font-bold tracking-[0.1em] text-shop-muted uppercase">
-			<!-- Le préfixe n'apparaît qu'avec une marque : seul, il n'annoncerait rien. -->
-			{#if product.brandName}Marque : {product.brandName}{/if}
+		<p class="min-h-4 text-[11.5px] font-bold tracking-[0.1em] text-shop-muted uppercase">
+			{#if product.brandName}{product.brandName}{/if}
 		</p>
 
 		<!--
@@ -87,7 +93,7 @@
 			que prix et bouton restent alignés sur toute la rangée. Le nom complet
 			reste lisible au survol et pour les lecteurs d'écran.
 		-->
-		<h3 class="font-display text-[15.5px] leading-tight font-semibold text-shop-ink">
+		<h3 class="font-display text-[15px] leading-[1.3] font-bold text-shop-ink">
 			<!--
 				`after:absolute after:inset-0` étend la zone cliquable à toute la
 				carte : marque, référence et prix ne captaient rien, et le bouton
@@ -104,7 +110,7 @@
 			</a>
 		</h3>
 
-		<p class="truncate text-[13px] text-shop-muted">Réf. {product.reference}</p>
+		<p class="truncate text-[12.5px] text-shop-faint">Réf. {product.reference}</p>
 
 		<!--
 			Prix, disponibilité et action forment un bloc solidaire poussé en bas de
@@ -112,19 +118,24 @@
 			tout l'espace des cartes plus courtes s'ouvrait juste avant le montant.
 		-->
 		<div class="mt-auto flex flex-col gap-1.5">
-			<div class="flex items-baseline gap-2">
-				<span class="font-display text-xl font-extrabold text-shop-blue">
+			<div class="flex flex-wrap items-baseline gap-2">
+				<span class="font-display text-[21px] font-extrabold tracking-[-0.01em] text-shop-red">
 					{formatPrice(product.priceTtc)}
 				</span>
-				<span class="text-xs text-shop-muted">TTC</span>
 				{#if product.priceTtcStrike}
-					<span class="text-xs text-shop-muted line-through">
+					<span class="text-[13.5px] text-shop-faint line-through">
 						{formatPrice(product.priceTtcStrike)}
 					</span>
 				{/if}
+				<span class="text-xs text-shop-muted">TTC</span>
 			</div>
 
-			<p class="text-[13px] font-bold {available ? 'text-green-700' : 'text-shop-orange'}">
+			<p class="flex items-center gap-2 text-[13px] text-shop-ink-soft">
+				<span
+					class="h-2 w-2 shrink-0 rounded-full {available
+						? 'bg-shop-green'
+						: 'bg-shop-orange-light'}"
+				></span>
 				{available ? `En stock (${product.stock})` : 'Sur commande'}
 			</p>
 

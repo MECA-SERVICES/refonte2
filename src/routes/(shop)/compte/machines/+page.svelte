@@ -38,6 +38,10 @@
 	const pendingCount = $derived(
 		data.machines.filter((m) => m.status === 'pending_confirmation').length
 	);
+
+	/** Style v2 des champs : angles à 10 px, focus bleu de marque. */
+	const inputClass =
+		'w-full rounded-[10px] border-shop-border bg-white focus:border-shop-blue focus:ring-0';
 </script>
 
 <svelte:head>
@@ -50,7 +54,7 @@
 <div class="flex flex-wrap items-end justify-between gap-4">
 	<div>
 		<h1
-			class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]"
+			class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[30px]"
 		>
 			Mon parc machines
 		</h1>
@@ -73,7 +77,7 @@
 
 {#if form?.message}
 	<p
-		class="mt-5 border-[1.5px] border-shop-red bg-white px-4 py-3 text-sm font-medium text-shop-red"
+		class="mt-5 rounded-[10px] border-[1.5px] border-shop-red/40 bg-red-50 px-4 py-3 text-sm font-medium text-shop-red"
 	>
 		{form.message}
 	</p>
@@ -82,7 +86,9 @@
 {#if pendingCount > 0}
 	<!-- Une proposition automatique attend son numéro de série : tant qu'elle
 	     n'est pas confirmée, elle ne sert pas à identifier les pièces (R11). -->
-	<p class="mt-5 border-[1.5px] border-shop-orange bg-white px-4 py-3 text-[14.5px] text-shop-ink">
+	<p
+		class="mt-5 rounded-[10px] border-[1.5px] border-shop-orange/50 bg-shop-promo px-4 py-3 text-[14.5px] text-shop-ink"
+	>
 		<span class="font-bold">
 			{pendingCount} machine{pendingCount > 1 ? 's' : ''} à compléter.
 		</span>
@@ -118,6 +124,7 @@
 						required
 						value={current?.name ?? ''}
 						placeholder="Tondeuse du fond"
+						class={inputClass}
 					/>
 				</div>
 				<div>
@@ -128,6 +135,7 @@
 						items={typeOptions}
 						value={current?.equipmentType ?? ''}
 						required
+						class={inputClass}
 					/>
 				</div>
 			</div>
@@ -135,15 +143,20 @@
 			<div class="grid gap-4 sm:grid-cols-3">
 				<div>
 					<Label for="brand" class="mb-1.5">Marque</Label>
-					<Input id="brand" name="brand" value={current?.brand ?? ''} />
+					<Input id="brand" name="brand" value={current?.brand ?? ''} class={inputClass} />
 				</div>
 				<div>
 					<Label for="model" class="mb-1.5">Modèle</Label>
-					<Input id="model" name="model" value={current?.model ?? ''} />
+					<Input id="model" name="model" value={current?.model ?? ''} class={inputClass} />
 				</div>
 				<div>
 					<Label for="serialNumber" class="mb-1.5">Numéro de série</Label>
-					<Input id="serialNumber" name="serialNumber" value={current?.serialNumber ?? ''} />
+					<Input
+						id="serialNumber"
+						name="serialNumber"
+						value={current?.serialNumber ?? ''}
+						class={inputClass}
+					/>
 				</div>
 			</div>
 
@@ -155,7 +168,12 @@
 			<div class="grid gap-4 sm:grid-cols-2">
 				<div>
 					<Label for="engineModel" class="mb-1.5">Modèle du moteur</Label>
-					<Input id="engineModel" name="engineModel" value={current?.engineModel ?? ''} />
+					<Input
+						id="engineModel"
+						name="engineModel"
+						value={current?.engineModel ?? ''}
+						class={inputClass}
+					/>
 				</div>
 				<div>
 					<Label for="engineSerialNumber" class="mb-1.5">N° de série du moteur</Label>
@@ -163,6 +181,7 @@
 						id="engineSerialNumber"
 						name="engineSerialNumber"
 						value={current?.engineSerialNumber ?? ''}
+						class={inputClass}
 					/>
 				</div>
 			</div>
@@ -175,17 +194,29 @@
 						name="warrantyEndDate"
 						type="date"
 						value={asDateInput(current?.warrantyEndDate ?? null)}
+						class={inputClass}
 					/>
 				</div>
 				<div>
 					<Label for="warrantyInfo" class="mb-1.5">Informations de garantie</Label>
-					<Input id="warrantyInfo" name="warrantyInfo" value={current?.warrantyInfo ?? ''} />
+					<Input
+						id="warrantyInfo"
+						name="warrantyInfo"
+						value={current?.warrantyInfo ?? ''}
+						class={inputClass}
+					/>
 				</div>
 			</div>
 
 			<div>
 				<Label for="notes" class="mb-1.5">Notes personnelles</Label>
-				<Textarea class="w-full" id="notes" name="notes" rows={2} value={current?.notes ?? ''} />
+				<Textarea
+					id="notes"
+					name="notes"
+					rows={2}
+					value={current?.notes ?? ''}
+					class={inputClass}
+				/>
 			</div>
 
 			<div class="flex flex-wrap gap-3">
@@ -207,7 +238,7 @@
 			value={data.search}
 			placeholder="Nom, marque, modèle ou numéro de série…"
 			aria-label="Rechercher dans mon parc"
-			class="max-w-md"
+			class="max-w-md {inputClass}"
 		/>
 		<ShopButton variant="outline" type="submit">Rechercher</ShopButton>
 		{#if data.search}
@@ -250,13 +281,13 @@
 								{machine.name}
 							</span>
 							<span
-								class="bg-shop-border-soft px-2 py-0.5 font-display text-[11px] font-bold tracking-wide text-shop-ink uppercase"
+								class="rounded-full bg-shop-border-soft px-2.5 py-0.5 font-display text-[11px] font-extrabold tracking-[0.06em] text-shop-ink uppercase"
 							>
 								{machine.equipmentType}
 							</span>
 							{#if isPending}
 								<span
-									class="bg-shop-orange px-2 py-0.5 font-display text-[11px] font-bold tracking-wide text-white uppercase"
+									class="rounded-full bg-shop-orange px-2.5 py-0.5 font-display text-[11px] font-extrabold tracking-[0.06em] text-white uppercase"
 								>
 									À compléter
 								</span>
@@ -341,7 +372,7 @@
 								<input type="hidden" name="id" value={machine.id} />
 								<div>
 									<Label for="serial-{machine.id}" class="mb-1.5">Numéro de série</Label>
-									<Input id="serial-{machine.id}" name="serialNumber" required />
+									<Input id="serial-{machine.id}" name="serialNumber" required class={inputClass} />
 								</div>
 								<ShopButton variant="buy" size="sm" type="submit">Confirmer</ShopButton>
 								<ShopButton

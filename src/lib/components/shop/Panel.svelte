@@ -2,11 +2,10 @@
 	import type { Snippet } from 'svelte';
 
 	/**
-	 * Bloc encadré de la charte : trait de 1,5 px, angles droits.
+	 * Bloc encadré de la charte v2 : trait de 1,5 px, angles arrondis à 16 px.
 	 *
-	 * Flowbite `Card` impose un rayon, une ombre et son propre espacement ;
-	 * le motif carré de la maquette revient près de 40 fois dans la boutique,
-	 * d'où ce conteneur unique.
+	 * Flowbite `Card` impose une ombre et son propre espacement ; ce motif
+	 * revient près de 40 fois dans la boutique, d'où ce conteneur unique.
 	 */
 
 	type Tone = 'default' | 'strong' | 'subtle';
@@ -26,12 +25,12 @@
 	} = $props();
 
 	const tones: Record<Tone, string> = {
-		default: 'border-shop-border bg-white',
-		strong: 'border-shop-ink bg-white',
-		subtle: 'border-shop-border bg-shop-subtle'
+		default: 'border-shop-border-soft bg-white',
+		strong: 'border-shop-border bg-white',
+		subtle: 'border-shop-border-soft bg-shop-subtle'
 	};
 </script>
 
-<div class="border-[1.5px] {tones[tone]} {padded ? 'p-5' : ''} {className}">
+<div class="rounded-2xl border-[1.5px] {tones[tone]} {padded ? 'p-5' : ''} {className}">
 	{@render children()}
 </div>

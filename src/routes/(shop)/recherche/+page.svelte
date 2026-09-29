@@ -5,6 +5,9 @@
 	import ActiveFilters from '$lib/components/shop/ActiveFilters.svelte';
 	import SortSelect from '$lib/components/shop/SortSelect.svelte';
 	import Pagination from '$lib/components/shop/Pagination.svelte';
+	import Panel from '$lib/components/shop/Panel.svelte';
+	import Heading from '$lib/components/shop/Heading.svelte';
+	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -29,6 +32,15 @@
 
 <Breadcrumb items={[{ label: data.q ? 'Recherche' : 'Catalogue' }]} />
 
+<div class="mb-6">
+	<Heading as="h1" size="page">{title}</Heading>
+	{#if !data.q}
+		<p class="mt-2 max-w-[62ch] text-[15px] text-shop-muted">
+			Les dernières références ajoutées au catalogue. Affinez par marque ou par disponibilité.
+		</p>
+	{/if}
+</div>
+
 <div class="grid items-start gap-7 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
 	<!-- ================= Filtres ================= -->
 	<CatalogSidebar
@@ -42,32 +54,17 @@
 
 	<!-- ================= Résultats ================= -->
 	<div class="min-w-0">
-		<div class="mb-2 flex flex-wrap items-end justify-between gap-4">
-			<div>
-				<h1
-					class="font-display text-[28px] font-extrabold tracking-[-0.025em] text-shop-ink sm:text-[34px]"
-				>
-					{title}
-				</h1>
-				{#if !data.q}
-					<p class="mt-1.5 max-w-[60ch] text-[15px] text-shop-muted">
-						Les dernières références ajoutées au catalogue. Affinez par marque ou par disponibilité.
-					</p>
-				{/if}
-			</div>
-
-			<div class="flex items-center gap-2.5">
-				<span class="text-[13.5px] text-shop-muted">
-					{data.products.rows.length} produit{data.products.rows.length > 1 ? 's' : ''}
-				</span>
-				<SortSelect sort={data.sort} />
-			</div>
+		<div class="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+			<span class="text-[13.5px] text-shop-muted">
+				{data.products.rows.length} produit{data.products.rows.length > 1 ? 's' : ''}
+			</span>
+			<SortSelect sort={data.sort} />
 		</div>
 
 		<ActiveFilters {chips} />
 
 		{#if data.products.rows.length === 0}
-			<div class="mt-6 border-[1.5px] border-shop-border bg-white px-6 py-12 text-center">
+			<Panel class="mt-6 px-6 py-12 text-center">
 				<p class="font-display font-bold text-shop-ink">
 					{#if data.q}
 						Aucun résultat pour « {data.q} ».
@@ -82,7 +79,12 @@
 					</a>
 					: nous identifions la pièce avec vous.
 				</p>
-			</div>
+				<div class="mt-5">
+					<ShopButton href="/recherche" variant="primary" size="sm">
+						Voir tout le catalogue
+					</ShopButton>
+				</div>
+			</Panel>
 		{:else}
 			<div class="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
 				{#each data.products.rows as item (item.id)}

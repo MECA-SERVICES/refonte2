@@ -39,12 +39,13 @@
 	--color-secondary-900: #0c4a6e;
 
 	/* ------------------------------------------------------------------
-	   Charte boutique — chaque accent garde UN rôle, pour que le client
+	   Charte boutique v2 — chaque accent garde UN rôle, pour que le client
 	   apprenne à le lire :
 
 	     bleu   → marque, navigation, éléments actifs
-	     rouge  → achat, uniquement (prix, ajout au panier)
-	     orange → commercial, uniquement (promotions, déstockage)
+	     rouge  → achat (prix affichés, ajout au panier)
+	     orange → commercial, uniquement (promotions, badges, déstockage)
+	     vert   → disponibilité, uniquement (pastilles de stock)
 	   ------------------------------------------------------------------ */
 	--color-shop-blue: #314192;
 	--color-shop-blue-dark: #222d6b;
@@ -56,6 +57,8 @@
 	/* Orange assourdi pour les aplats larges : la teinte pure ne tient que
 	   sur les petits éléments (badges, pilules). */
 	--color-shop-orange-deep: #c05408;
+	/* Pastilles de disponibilité (« En stock atelier »). */
+	--color-shop-green: #2e9e5b;
 
 	/* Neutres légèrement teintés du bleu de marque : les gris froids de
 	   Tailwind vibrent contre ce bleu violacé, ceux-ci s'y accordent.

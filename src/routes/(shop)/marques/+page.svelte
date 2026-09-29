@@ -78,37 +78,37 @@
 <Breadcrumb items={[{ label: 'Marques' }]} />
 
 <h1
-	class="font-display text-[28px] leading-tight font-extrabold tracking-[-0.025em] text-shop-ink sm:text-[34px]"
+	class="font-display text-[30px] leading-[1.05] font-extrabold tracking-[-0.025em] text-shop-ink sm:text-[38px] lg:text-[44px]"
 >
-	Toutes les <span class="text-shop-orange">marques</span>
+	Toutes nos <span class="text-shop-blue">marques</span>
 </h1>
-<p class="mt-2 max-w-[70ch] text-[15px] leading-relaxed text-shop-ink-soft">
+<p class="mt-2 max-w-[70ch] text-[15.5px] leading-relaxed text-shop-muted">
 	{formatNumber(data.brands.length)} marques référencées, pièces d'origine et adaptables homologuées.
 	Choisissez la vôtre pour accéder à son catalogue.
 </p>
 
 <!-- ================= Filtres ================= -->
-<div class="mt-6 border-[1.5px] border-shop-border bg-white p-4">
+<div class="mt-6 rounded-2xl border-[1.5px] border-shop-border-soft bg-white p-4 sm:p-5">
 	<label class="block">
 		<span class="sr-only">Rechercher une marque</span>
 		<input
 			type="search"
 			bind:value={query}
 			placeholder="Rechercher une marque (ex. Husqvarna, Stiga…)"
-			class="w-full border-[1.5px] border-shop-border px-3.5 py-2.5 text-sm text-shop-ink placeholder:text-shop-muted focus:border-shop-ink focus:ring-0"
+			class="w-full rounded-xl border-2 border-shop-border px-4 py-3 text-[15px] text-shop-ink placeholder:text-shop-muted focus:border-shop-blue focus:ring-0"
 		/>
 	</label>
 
 	<!-- Navigation alphabétique : sur un millier d'entrées, elle reste le moyen
 	     le plus rapide d'atteindre une marque dont on connaît le nom. -->
-	<div class="mt-3 flex flex-wrap gap-1">
+	<div class="mt-3.5 flex flex-wrap gap-1.5">
 		<button
 			type="button"
 			onclick={() => (letter = null)}
-			class="border-[1.5px] px-2.5 py-1 font-display text-[13px] font-bold transition-colors {letter ===
+			class="rounded-full border-[1.5px] px-3 py-1.5 font-display text-[13px] font-bold transition-colors {letter ===
 			null
 				? 'border-shop-ink bg-shop-ink text-white'
-				: 'border-shop-border text-shop-ink hover:border-shop-ink'}"
+				: 'border-shop-border bg-white text-shop-ink hover:border-shop-ink'}"
 		>
 			Tout
 		</button>
@@ -116,10 +116,10 @@
 			<button
 				type="button"
 				onclick={() => (letter = letter === l ? null : l)}
-				class="min-w-8 border-[1.5px] px-2 py-1 font-display text-[13px] font-bold transition-colors {letter ===
+				class="min-w-9 rounded-full border-[1.5px] px-2 py-1.5 font-display text-[13px] font-bold transition-colors {letter ===
 				l
 					? 'border-shop-ink bg-shop-ink text-white'
-					: 'border-shop-border text-shop-ink hover:border-shop-ink'}"
+					: 'border-shop-border bg-white text-shop-ink hover:border-shop-ink'}"
 			>
 				{l}
 			</button>
@@ -129,7 +129,9 @@
 
 <!-- ================= Résultats ================= -->
 {#if filtered.length === 0}
-	<div class="mt-6 border-[1.5px] border-shop-border bg-shop-subtle p-8 text-center">
+	<div
+		class="mt-6 rounded-2xl border-[1.5px] border-shop-border-soft bg-shop-subtle p-8 text-center"
+	>
 		<p class="font-display text-base font-bold text-shop-ink">Aucune marque ne correspond.</p>
 		<p class="mt-1 text-sm text-shop-muted">
 			Vérifiez l'orthographe, ou consultez la liste complète.
@@ -137,7 +139,7 @@
 		<button
 			type="button"
 			onclick={reset}
-			class="mt-4 border-[1.5px] border-shop-ink px-4 py-2 font-display text-sm font-bold text-shop-ink hover:bg-shop-ink hover:text-white"
+			class="mt-4 rounded-[10px] border-[1.5px] border-shop-ink px-4 py-2.5 font-display text-sm font-bold text-shop-ink transition-colors hover:bg-shop-ink hover:text-white"
 		>
 			Réinitialiser
 		</button>
@@ -151,7 +153,7 @@
 	{#each groups as group (group.key)}
 		<section class="mt-6">
 			<h2
-				class="mb-3 border-b-[1.5px] border-shop-border pb-1.5 font-display text-lg font-extrabold text-shop-ink"
+				class="mb-3 border-b-[1.5px] border-shop-border-soft pb-1.5 font-display text-lg font-extrabold text-shop-ink"
 			>
 				{group.key}
 			</h2>
@@ -160,7 +162,7 @@
 					<li>
 						<a
 							href="/marque/{item.slug}"
-							class="flex h-full items-center gap-3 border-[1.5px] border-shop-border bg-white p-3 transition-colors hover:border-shop-ink"
+							class="flex h-full items-center gap-3 rounded-xl border-[1.5px] border-shop-border-soft bg-white p-3 transition-colors hover:border-shop-blue"
 						>
 							{#if item.logoUrl}
 								<img
@@ -174,9 +176,10 @@
 								<span class="block truncate font-display text-sm font-bold text-shop-ink">
 									{item.name}
 								</span>
-								<span class="block text-xs text-shop-muted">
+								<span class="flex items-center gap-1.5 text-xs text-shop-muted">
 									{formatNumber(item.total)} réf.{#if item.inStock > 0}
-										· {formatNumber(item.inStock)} en stock{/if}
+										<span class="h-1.5 w-1.5 rounded-full bg-shop-green" aria-hidden="true"></span>
+										{formatNumber(item.inStock)} en stock{/if}
 								</span>
 							</span>
 						</a>

@@ -741,7 +741,20 @@ export async function shopBrandRanges(brandId: number, limit = 6) {
 			id: category.id,
 			name: category.name,
 			slug: category.slug,
-			total: sql<number>`count(*)::int`
+			total: sql<number>`count(*)::int`,
+			// Visuel de la gamme : la première photo trouvée parmi les produits
+			// de la marque dans cette catégorie — un vrai produit illustre mieux
+			// la gamme qu'un cadre vide.
+			imageUrl: sql<string | null>`(
+				SELECT m.url FROM ${productMedia} m
+				JOIN ${product} p2 ON p2.id = m.product_id
+				WHERE p2.brand_id = ${brandId}
+					AND p2.category_id = ${category.id}
+					AND p2.is_active = true
+					AND m.type = 'image'
+				ORDER BY m.position, m.id
+				LIMIT 1
+			)`
 		})
 		.from(product)
 		.innerJoin(category, eq(product.categoryId, category.id))

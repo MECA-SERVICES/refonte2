@@ -17,48 +17,52 @@
 
 <Breadcrumb items={[{ label: 'Mon compte', href: '/compte' }, { label: 'Mes réparations' }]} />
 
-<Heading size="page">Mes réparations</Heading>
+<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[30px]">
+	Mes réparations
+</h1>
 
 {#if data.repairs.length === 0}
 	<Panel class="mt-5 p-8 text-center" tone="subtle">
-		<p class="font-display text-base font-bold text-shop-ink">Aucune réparation en cours.</p>
+		<Heading as="p" size="card">Aucune réparation en cours.</Heading>
 		<p class="mt-1 text-sm text-shop-muted">Vos interventions à l'atelier apparaîtront ici.</p>
 	</Panel>
 {:else}
 	<ul class="mt-5 space-y-3">
 		{#each data.repairs as repair (repair.id)}
-			<li class="border-[1.5px] border-shop-border bg-white p-4">
-				<div class="flex flex-wrap items-start justify-between gap-3">
-					<div class="min-w-0">
-						<p class="font-display text-base font-bold text-shop-ink">
-							{[repair.machineBrand, repair.machineModel].filter(Boolean).join(' ') || 'Machine'}
-						</p>
-						<p class="mt-0.5 text-xs text-shop-muted">
-							Ordre {repair.reference} · déposé le {date.format(new Date(repair.createdAt))}
-						</p>
-					</div>
-
-					<div class="text-right">
-						<span
-							class="inline-block bg-shop-subtle px-2.5 py-1 font-display text-[11px] font-bold tracking-wide text-shop-ink uppercase"
-						>
-							{REPAIR_STATUS_LABELS[repair.status]}
-						</span>
-						{#if repair.orderType === 'warranty'}
-							<p class="mt-1 text-xs text-shop-muted">{REPAIR_TYPE_LABELS.warranty}</p>
-						{:else if Number(repair.totalTtc) > 0}
-							<p class="mt-1 text-sm font-bold text-shop-ink">
-								{eur.format(Number(repair.totalTtc))}
+			<li>
+				<Panel class="p-5">
+					<div class="flex flex-wrap items-start justify-between gap-3">
+						<div class="min-w-0">
+							<p class="font-display text-base font-bold text-shop-ink">
+								{[repair.machineBrand, repair.machineModel].filter(Boolean).join(' ') || 'Machine'}
 							</p>
-						{/if}
-					</div>
-				</div>
+							<p class="mt-0.5 text-xs text-shop-muted">
+								Ordre {repair.reference} · déposé le {date.format(new Date(repair.createdAt))}
+							</p>
+						</div>
 
-				{#if repair.deliveredAt}
-					<p class="mt-2 text-xs text-shop-muted">
-						Machine restituée le {date.format(new Date(repair.deliveredAt))}
-					</p>
-				{/if}
+						<div class="text-right">
+							<span
+								class="inline-block rounded-full bg-shop-subtle px-3 py-1 font-display text-[11px] font-extrabold tracking-[0.06em] text-shop-ink uppercase"
+							>
+								{REPAIR_STATUS_LABELS[repair.status]}
+							</span>
+							{#if repair.orderType === 'warranty'}
+								<p class="mt-1 text-xs text-shop-muted">{REPAIR_TYPE_LABELS.warranty}</p>
+							{:else if Number(repair.totalTtc) > 0}
+								<p class="mt-1 font-display text-sm font-extrabold text-shop-red">
+									{eur.format(Number(repair.totalTtc))}
+								</p>
+							{/if}
+						</div>
+					</div>
+
+					{#if repair.deliveredAt}
+						<p class="mt-2 text-xs text-shop-muted">
+							Machine restituée le {date.format(new Date(repair.deliveredAt))}
+						</p>
+					{/if}
+				</Panel>
 			</li>
 		{/each}
 	</ul>

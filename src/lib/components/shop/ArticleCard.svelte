@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ImagePlaceholder from './ImagePlaceholder.svelte';
 
-	/** Vignette d'un article dans la liste du blog. */
+	/** Vignette d'un article dans les listes du blog et sur l'accueil. */
 
 	let {
 		article
@@ -15,7 +15,6 @@
 			externalUrl: string | null;
 			publishedAt: Date | null;
 			categoryName: string | null;
-			categoryColor: string | null;
 			authorName: string | null;
 		};
 	} = $props();
@@ -32,55 +31,55 @@
 	const isExternal = $derived(article.contentType === 'external_link');
 </script>
 
-<article class="flex h-full flex-col border-[1.5px] border-shop-border bg-white">
-	<a
-		{href}
-		target={isExternal ? '_blank' : undefined}
-		rel={isExternal ? 'noopener' : undefined}
-		class="block"
-	>
+<article
+	class="relative flex h-full flex-col overflow-hidden rounded-[14px] border-[1.5px] border-shop-border-soft bg-white transition-[border-color,box-shadow] hover:border-primary-200 hover:shadow-[0_10px_30px_rgba(30,36,54,0.08)]"
+>
+	<div class="relative">
 		{#if article.coverImageUrl}
-			<img src={article.coverImageUrl} alt="" loading="lazy" class="h-44 w-full object-cover" />
+			<img
+				src={article.coverImageUrl}
+				alt=""
+				loading="lazy"
+				class="h-[190px] w-full object-cover"
+			/>
 		{:else}
-			<ImagePlaceholder label={article.title} class="h-44 border-0" />
+			<ImagePlaceholder label={article.title} class="h-[190px] border-0" />
 		{/if}
-	</a>
 
-	<div class="flex flex-1 flex-col p-4">
-		<div class="mb-2 flex flex-wrap items-center gap-2">
-			{#if article.categoryName}
-				<span
-					class="px-2 py-0.5 font-display text-[11px] font-bold tracking-wide text-white uppercase"
-					style="background-color: {article.categoryColor ?? '#314192'}"
-				>
-					{article.categoryName}
-				</span>
-			{/if}
-			{#if article.contentType === 'video'}
-				<span class="text-[11px] font-bold tracking-wide text-shop-muted uppercase">Vidéo</span>
-			{:else if isExternal}
-				<span class="text-[11px] font-bold tracking-wide text-shop-muted uppercase">Lien</span>
-			{/if}
-		</div>
+		{#if article.contentType === 'video'}
+			<span
+				class="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-shop-ink/85 px-2.5 py-1 font-display text-xs font-bold text-white"
+			>
+				▶ Vidéo
+			</span>
+		{/if}
+	</div>
 
-		<h2 class="font-display text-[17px] font-extrabold tracking-[-0.015em] text-shop-ink">
+	<div class="flex flex-1 flex-col gap-2 p-4">
+		<p class="min-h-4 text-[11.5px] font-bold tracking-[0.1em] text-shop-blue uppercase">
+			{#if article.categoryName}{article.categoryName}{/if}
+			{#if isExternal}<span class="text-shop-faint normal-case">· Lien externe</span>{/if}
+		</p>
+
+		<h2 class="font-display text-[17px] leading-[1.3] font-bold text-shop-ink">
+			<!-- `after:absolute after:inset-0` étend la zone cliquable à toute la carte. -->
 			<a
 				{href}
 				target={isExternal ? '_blank' : undefined}
 				rel={isExternal ? 'noopener' : undefined}
-				class="hover:text-shop-blue"
+				class="line-clamp-2 block after:absolute after:inset-0 after:content-[''] hover:text-shop-blue"
 			>
 				{article.title}
 			</a>
 		</h2>
 
 		{#if article.excerpt}
-			<p class="mt-2 line-clamp-3 text-[14px] leading-relaxed text-shop-ink-soft">
+			<p class="line-clamp-3 text-sm leading-normal text-shop-muted">
 				{article.excerpt}
 			</p>
 		{/if}
 
-		<p class="mt-auto pt-3 text-[12.5px] text-shop-muted">
+		<p class="mt-auto pt-1.5 text-[12.5px] text-shop-faint">
 			{#if article.publishedAt}{dateFmt.format(new Date(article.publishedAt))}{/if}
 			{#if article.authorName}
 				· {article.authorName}{/if}

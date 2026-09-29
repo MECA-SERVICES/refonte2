@@ -2,6 +2,7 @@
 	import Panel from '$lib/components/shop/Panel.svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
+	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import SummaryRow from '$lib/components/shop/SummaryRow.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
 	import { priceSuffix } from '$lib/tax';
@@ -58,7 +59,7 @@
 		{order.reference}
 	</h1>
 	<span
-		class="px-2.5 py-1 font-display text-[11px] font-bold tracking-wide text-white uppercase"
+		class="rounded-full px-3 py-1 font-display text-[11px] font-extrabold tracking-[0.06em] text-white uppercase"
 		style="background-color: {order.stateColor ?? '#314192'}"
 	>
 		{order.stateLabel}
@@ -95,14 +96,15 @@
 			<p class="text-[14.5px] text-shop-ink">
 				<span class="font-semibold">Facture {data.invoiceNumber}</span>
 			</p>
-			<a
+			<ShopButton
+				variant="outline"
+				size="sm"
 				href="/compte/commandes/{order.id}/facture"
 				target="_blank"
 				rel="noopener"
-				class="border-[1.5px] border-shop-ink px-3.5 py-2 font-display text-sm font-bold text-shop-ink hover:bg-shop-ink hover:text-white"
 			>
 				Télécharger le PDF
-			</a>
+			</ShopButton>
 		</div>
 	</Panel>
 {/if}
@@ -115,6 +117,22 @@
 		<ul class="mt-4 divide-y divide-shop-border-soft">
 			{#each order.lines as line (line.id)}
 				<li class="flex gap-4 py-4 first:pt-0 last:pb-0">
+					<!-- Vignette : le catalogue étant surtout des pièces, le repli
+					     « photo manquante » reste discret à cette taille. -->
+					<div
+						class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border-[1.5px] border-shop-border-soft bg-white p-1"
+					>
+						{#if line.productImageUrl}
+							<img
+								src={line.productImageUrl}
+								alt=""
+								loading="lazy"
+								class="max-h-full max-w-full object-contain"
+							/>
+						{:else}
+							<span class="h-full w-full rounded-md bg-shop-subtle" aria-hidden="true"></span>
+						{/if}
+					</div>
 					<div class="min-w-0 flex-1">
 						{#if line.productId && line.productSlug}
 							<a
@@ -167,9 +185,11 @@
 				<SummaryRow label="TVA">{formatPrice(order.totalTva)}</SummaryRow>
 			</div>
 
-			<div class="mt-3 flex items-baseline justify-between border-t-[1.5px] border-shop-ink pt-3">
+			<div
+				class="mt-3 flex items-baseline justify-between border-t-[1.5px] border-shop-border pt-3"
+			>
 				<span class="font-display text-[17px] font-extrabold text-shop-ink">Total TTC</span>
-				<span class="font-display text-xl font-extrabold text-shop-ink">
+				<span class="font-display text-xl font-extrabold text-shop-red">
 					{formatPrice(order.totalTtc)}
 				</span>
 			</div>

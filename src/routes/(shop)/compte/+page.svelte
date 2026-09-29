@@ -35,13 +35,13 @@
 
 <Breadcrumb items={[{ label: 'Mon compte' }]} />
 
-<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]">
+<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[30px]">
 	Mon compte
 </h1>
 
 {#if data.justRegistered}
 	<p
-		class="mt-5 border border-shop-blue bg-primary-50 px-4 py-3 text-sm font-medium text-primary-800"
+		class="mt-5 rounded-[10px] border-[1.5px] border-primary-200 bg-primary-50 px-4 py-3 text-sm font-medium text-primary-800"
 	>
 		Votre compte est créé. Notre équipe vérifie vos informations avant de vous donner accès aux
 		conditions tarifaires dédiées ; vous pouvez déjà commander aux tarifs standard.
@@ -80,13 +80,21 @@
 
 			{#if data.profile.type !== 'particulier'}
 				<p
-					class="mt-5 inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold {data.profile
-						.status === 'validated'
-						? 'bg-green-50 text-green-700'
+					class="mt-5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-display text-[13px] font-bold {data
+						.profile.status === 'validated'
+						? 'bg-green-50 text-shop-green'
 						: data.profile.status === 'rejected'
 							? 'bg-red-50 text-shop-red'
 							: 'bg-shop-subtle text-shop-ink'}"
 				>
+					<span
+						class="h-2 w-2 rounded-full {data.profile.status === 'validated'
+							? 'bg-shop-green'
+							: data.profile.status === 'rejected'
+								? 'bg-shop-red'
+								: 'bg-shop-orange-light'}"
+						aria-hidden="true"
+					></span>
 					{STATUS_LABELS[data.profile.status] ?? data.profile.status}
 				</p>
 			{/if}
@@ -132,7 +140,7 @@
 								{dateFormat.format(item.createdAt)} · {item.stateLabel}
 							</p>
 						</div>
-						<p class="shrink-0 font-display font-bold text-shop-ink">
+						<p class="shrink-0 font-display font-extrabold text-shop-red">
 							{formatPrice(data.tax.displayMode === 'ht' ? item.totalHt : item.totalTtc)}
 							<span class="text-[12px] font-bold text-shop-muted">
 								{priceSuffix(data.tax.displayMode)}

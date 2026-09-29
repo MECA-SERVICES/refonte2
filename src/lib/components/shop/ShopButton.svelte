@@ -6,9 +6,9 @@
 	 * Bouton de la boutique.
 	 *
 	 * Flowbite impose ses propres rayons et sa palette `primary` ; la charte
-	 * MS Shop est carrée et repose sur les rôles de couleur `shop-*` (rouge =
-	 * achat, bleu = navigation). Plutôt que de neutraliser le thème Flowbite à
-	 * chaque appel, ce composant porte les quatre variantes du design.
+	 * MS Shop v2 (angles à 10 px, rôles de couleur `shop-*` : rouge = achat,
+	 * bleu = navigation) ne s'y retrouve pas. Plutôt que de neutraliser le
+	 * thème Flowbite à chaque appel, ce composant porte les variantes du design.
 	 *
 	 * Il rend un `<a>` dès qu'un `href` est fourni, un `<button>` sinon.
 	 */
@@ -36,12 +36,13 @@
 	} & (HTMLButtonAttributes | HTMLAnchorAttributes) = $props();
 
 	const base =
-		'inline-flex items-center justify-center gap-2 font-display font-bold text-center transition-colors disabled:cursor-not-allowed disabled:bg-shop-border disabled:text-shop-muted disabled:border-shop-border';
+		'inline-flex items-center justify-center gap-2 rounded-[10px] font-display font-bold text-center transition-colors disabled:cursor-not-allowed disabled:bg-shop-border disabled:text-shop-muted disabled:border-shop-border';
 
 	const variants: Record<Variant, string> = {
 		buy: 'bg-shop-red text-white hover:bg-shop-red-dark',
 		primary: 'bg-shop-blue text-white hover:bg-shop-blue-dark',
-		outline: 'border-[1.5px] border-shop-ink bg-white text-shop-ink hover:bg-shop-subtle',
+		outline:
+			'border-[1.5px] border-shop-border bg-white text-shop-ink hover:border-shop-blue hover:text-shop-blue',
 		secondary:
 			'border-[1.5px] border-shop-border bg-white text-shop-ink hover:border-shop-ink font-medium'
 	};

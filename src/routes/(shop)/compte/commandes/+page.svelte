@@ -4,6 +4,7 @@
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import Pagination from '$lib/components/shop/Pagination.svelte';
+	import { TruckOutline } from 'flowbite-svelte-icons';
 	import { formatPrice } from '$lib/shop';
 	import { priceSuffix } from '$lib/tax';
 	import type { PageProps } from './$types';
@@ -29,7 +30,7 @@
 
 <Breadcrumb items={[{ label: 'Mon compte', href: '/compte' }, { label: 'Mes commandes' }]} />
 
-<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[32px]">
+<h1 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[30px]">
 	Mes commandes
 </h1>
 <p class="mt-1 text-sm text-shop-muted">
@@ -64,7 +65,7 @@
 								{item.reference}
 							</a>
 							<span
-								class="px-2 py-0.5 font-display text-[11px] font-bold tracking-wide text-white uppercase"
+								class="rounded-full px-2.5 py-1 font-display text-[11px] font-extrabold tracking-[0.06em] text-white uppercase"
 								style="background-color: {item.stateColor ?? '#314192'}"
 							>
 								{item.stateLabel}
@@ -76,7 +77,8 @@
 						</p>
 
 						{#if item.isShipped && item.trackingNumber}
-							<p class="mt-1 text-[13.5px] text-shop-muted">
+							<p class="mt-1.5 flex items-center gap-1.5 text-[13.5px] text-shop-muted">
+								<TruckOutline class="h-4 w-4 text-shop-blue" />
 								Suivi :
 								{#if item.trackingUrl}
 									<a
@@ -94,17 +96,14 @@
 						{/if}
 					</div>
 
-					<div class="shrink-0 text-right">
-						<p class="font-display text-lg font-extrabold text-shop-ink">
+					<div class="flex shrink-0 flex-col items-end gap-2">
+						<p class="font-display text-lg font-extrabold text-shop-red">
 							{formatPrice(amountOf(item))}
 							<span class="text-[13px] font-bold text-shop-muted">{suffix}</span>
 						</p>
-						<a
-							href="/compte/commandes/{item.id}"
-							class="mt-1 inline-block text-[13.5px] font-semibold text-shop-blue hover:underline"
-						>
-							Voir le détail →
-						</a>
+						<ShopButton variant="outline" size="sm" href="/compte/commandes/{item.id}">
+							Voir le détail
+						</ShopButton>
 					</div>
 				</div>
 			</Panel>

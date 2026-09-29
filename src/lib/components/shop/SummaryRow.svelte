@@ -15,7 +15,9 @@
 	} = $props();
 </script>
 
-<div class="flex justify-between gap-3 py-1.5">
-	<dt>{label}</dt>
-	<dd class={muted ? 'text-shop-muted' : 'font-bold text-shop-ink'}>{@render children()}</dd>
+<div class="flex justify-between gap-3 py-1.5 text-[14.5px]">
+	<dt class="text-shop-muted">{label}</dt>
+	<dd class={muted ? 'text-shop-muted' : 'font-display font-bold text-shop-ink'}>
+		{@render children()}
+	</dd>
 </div>

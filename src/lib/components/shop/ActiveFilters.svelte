@@ -28,9 +28,9 @@
 		{#each chips as chip (chip.key + chip.value)}
 			<a
 				href={removeHref(chip)}
-				class="border-[1.5px] border-shop-ink bg-shop-border-soft px-3 py-1.5 text-[13px] font-bold text-shop-ink hover:bg-white"
+				class="rounded-full border-[1.5px] border-shop-border-soft bg-shop-subtle px-3.5 py-1.5 text-[13px] font-bold text-shop-ink transition-colors hover:border-shop-blue hover:text-shop-blue"
 			>
-				{chip.label} ✕
+				{chip.label} <span aria-hidden="true">✕</span>
 			</a>
 		{/each}
 

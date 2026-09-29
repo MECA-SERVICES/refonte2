@@ -80,8 +80,11 @@
 		return filterHref({ spec: next });
 	}
 
+	const blockTitleClass =
+		'mb-2.5 font-display text-[12.5px] font-extrabold tracking-[0.12em] text-shop-muted uppercase';
+
 	const optionClass =
-		'flex w-full items-center justify-between gap-2 border-l-[3px] px-2.5 py-1.5 text-left text-sm transition-colors';
+		'flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors';
 </script>
 
 <!--
@@ -90,20 +93,16 @@
 	défilement interne évitent qu'une longue liste de marques ne dépasse l'écran.
 -->
 <aside
-	class="border-[1.5px] border-shop-border bg-white lg:sticky lg:top-[12.5rem] lg:max-h-[calc(100vh-13.5rem)] lg:overflow-y-auto"
+	class="rounded-2xl border-[1.5px] border-shop-border-soft bg-white lg:sticky lg:top-[12.5rem] lg:max-h-[calc(100vh-13.5rem)] lg:overflow-y-auto"
 >
 	{#if tree.length > 0}
-		<div class="border-b border-shop-border-soft p-4">
-			<p
-				class="mb-3 font-display text-[13px] font-extrabold tracking-[0.1em] text-shop-ink uppercase"
-			>
-				{treeTitle}
-			</p>
+		<div class="border-b border-shop-border-soft p-5">
+			<p class={blockTitleClass}>{treeTitle}</p>
 			{#each tree as entry (entry.id)}
 				<a
 					href="/categorie/{entry.slug}"
 					class="flex justify-between gap-2 py-1.5 text-sm hover:text-shop-blue {entry.current
-						? 'font-bold text-shop-red'
+						? 'font-bold text-shop-blue'
 						: 'text-shop-ink-soft'}"
 				>
 					<span class="min-w-0 truncate">{entry.name}</span>
@@ -118,31 +117,34 @@
 	<!-- Disponibilité : la facette la plus utile ici, l'essentiel du catalogue
 	     étant en commande fournisseur. -->
 	{#if inStockTotal > 0}
-		<div class="border-b border-shop-border-soft p-4">
-			<p class="mb-2.5 font-display text-[13.5px] font-bold text-shop-ink">Disponibilité</p>
+		<div class="border-b border-shop-border-soft p-5">
+			<p class={blockTitleClass}>Disponibilité</p>
 			<a
 				href={filterHref({ stock: !inStockOnly })}
 				class="{optionClass} {inStockOnly
-					? 'border-shop-red bg-shop-border-soft font-bold text-shop-ink'
-					: 'border-transparent text-shop-ink-soft hover:bg-shop-subtle'}"
+					? 'bg-primary-50 font-bold text-shop-blue'
+					: 'text-shop-ink-soft hover:bg-shop-subtle'}"
 			>
-				<span>En stock atelier</span>
-				<span class="text-shop-faint">{formatNumber(inStockTotal)}</span>
+				<span class="flex min-w-0 items-center gap-2">
+					<span class="h-2 w-2 shrink-0 rounded-full bg-shop-green" aria-hidden="true"></span>
+					En stock atelier
+				</span>
+				<span class="shrink-0 text-shop-faint">{formatNumber(inStockTotal)}</span>
 			</a>
 		</div>
 	{/if}
 
 	{#if brands.length > 0}
-		<div class="border-b border-shop-border-soft p-4">
-			<p class="mb-2.5 font-display text-[13.5px] font-bold text-shop-ink">Marque</p>
+		<div class="border-b border-shop-border-soft p-5">
+			<p class={blockTitleClass}>Marque</p>
 			<div class="max-h-72 overflow-y-auto">
 				{#each brands as item (item.value)}
 					{@const selected = selectedBrands.includes(item.value)}
 					<a
 						href={toggleBrand(item.value)}
 						class="{optionClass} {selected
-							? 'border-shop-red bg-shop-border-soft font-bold text-shop-ink'
-							: 'border-transparent text-shop-ink-soft hover:bg-shop-subtle'}"
+							? 'bg-primary-50 font-bold text-shop-blue'
+							: 'text-shop-ink-soft hover:bg-shop-subtle'}"
 					>
 						<span class="min-w-0 truncate">{item.label}</span>
 						<span class="shrink-0 text-shop-faint">{formatNumber(item.total)}</span>
@@ -153,16 +155,16 @@
 	{/if}
 
 	{#each specs as facet (facet.name)}
-		<div class="border-b border-shop-border-soft p-4">
-			<p class="mb-2.5 font-display text-[13.5px] font-bold text-shop-ink">{facet.name}</p>
+		<div class="border-b border-shop-border-soft p-5">
+			<p class={blockTitleClass}>{facet.name}</p>
 			<div class="max-h-64 overflow-y-auto">
 				{#each facet.values as item (item.value)}
 					{@const selected = selectedSpecs.includes(`${facet.name}:${item.value}`)}
 					<a
 						href={toggleSpec(facet.name, item.value)}
 						class="{optionClass} {selected
-							? 'border-shop-red bg-shop-border-soft font-bold text-shop-ink'
-							: 'border-transparent text-shop-ink-soft hover:bg-shop-subtle'}"
+							? 'bg-primary-50 font-bold text-shop-blue'
+							: 'text-shop-ink-soft hover:bg-shop-subtle'}"
 					>
 						<span class="min-w-0 truncate">{item.value}</span>
 						<span class="shrink-0 text-shop-faint">{formatNumber(item.total)}</span>
@@ -172,7 +174,7 @@
 		</div>
 	{/each}
 
-	<div class="p-4 text-[13px] leading-relaxed text-shop-muted">
+	<div class="p-5 text-[13px] leading-relaxed text-shop-muted">
 		Besoin d'un conseil ?
 		<a href="tel:0950922336" class="font-bold text-shop-ink hover:text-shop-blue">
 			09 50 92 23 36

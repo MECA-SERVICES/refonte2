@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { ArrowRightToBracketOutline } from 'flowbite-svelte-icons';
-	import ShopButton from '$lib/components/shop/ShopButton.svelte';
 	import Panel from '$lib/components/shop/Panel.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import type { Snippet } from 'svelte';
@@ -37,41 +36,48 @@
 	<Panel padded={false} class="p-5 lg:sticky lg:top-6">
 		<Heading size="card">Mon espace</Heading>
 
-		<nav class="mt-4 space-y-2" aria-label="Espace client">
+		<nav class="mt-4 space-y-1" aria-label="Espace client">
 			{#each links as link (link.href)}
 				{@const current = isCurrent(link.href)}
 				<a
 					href={link.href}
 					aria-current={current ? 'page' : undefined}
-					class="block border-[1.5px] px-4 py-2.5 text-sm font-semibold transition-colors {current
-						? 'border-shop-ink bg-shop-ink text-white'
-						: 'border-shop-border bg-white text-shop-ink hover:border-shop-ink hover:text-shop-blue'}"
+					class="block rounded-[10px] px-3.5 py-2.5 text-sm transition-colors {current
+						? 'bg-primary-50 font-bold text-shop-blue'
+						: 'font-semibold text-shop-ink hover:bg-shop-subtle'}"
 				>
 					{link.label}
 				</a>
 			{/each}
 		</nav>
 
-		<div class="mt-5 space-y-2 border-t-[1.5px] border-shop-border-soft pt-5">
+		<div class="mt-4 space-y-1 border-t-[1.5px] border-shop-border-soft pt-4">
 			<a
 				href="/panier"
-				class="block border border-shop-border bg-white px-4 py-2.5 text-sm font-semibold text-shop-ink hover:text-shop-blue"
+				class="block rounded-[10px] px-3.5 py-2.5 text-sm font-semibold text-shop-ink hover:bg-shop-subtle"
 			>
 				Mon panier
 			</a>
 			<a
 				href="/recherche"
-				class="block border border-shop-border bg-white px-4 py-2.5 text-sm font-semibold text-shop-ink hover:text-shop-blue"
+				class="block rounded-[10px] px-3.5 py-2.5 text-sm font-semibold text-shop-ink hover:bg-shop-subtle"
 			>
 				Continuer mes achats
 			</a>
 		</div>
 
-		<form method="POST" action="/deconnexion" class="mt-5">
+		<form
+			method="POST"
+			action="/deconnexion"
+			class="mt-4 border-t-[1.5px] border-shop-border-soft pt-4"
+		>
 			<input type="hidden" name="redirectTo" value="/" />
-			<ShopButton type="submit" variant="outline" size="sm" block>
-				<ArrowRightToBracketOutline class="me-2 h-4 w-4" /> Déconnexion
-			</ShopButton>
+			<button
+				type="submit"
+				class="flex w-full items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-left text-sm font-medium text-shop-muted transition-colors hover:bg-shop-subtle hover:text-shop-ink"
+			>
+				<ArrowRightToBracketOutline class="h-4 w-4" /> Déconnexion
+			</button>
 		</form>
 	</Panel>
 

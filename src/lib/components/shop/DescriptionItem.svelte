@@ -19,6 +19,6 @@
 </script>
 
 <div>
-	<dt class="text-xs tracking-wide text-shop-muted uppercase">{label}</dt>
-	<dd class="mt-0.5 font-semibold break-words text-shop-ink">{@render children()}</dd>
+	<dt class="text-[11.5px] font-bold tracking-[0.1em] text-shop-muted uppercase">{label}</dt>
+	<dd class="mt-1 text-[15px] font-medium break-words text-shop-ink">{@render children()}</dd>
 </div>

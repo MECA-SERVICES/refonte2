@@ -34,13 +34,6 @@
 	/** Nombre de sous-familles listées sous chaque famille. */
 	const SUB_LIMIT = 6;
 
-	/** Accès directs, à droite de la barre. */
-	const shortcuts = [
-		{ label: 'Vues éclatées', href: '/vue-eclatee' },
-		{ label: 'Blog', href: '/blog' },
-		{ label: 'SAV & atelier', href: '/compte' }
-	];
-
 	const toggle = (id: string) => (openId = openId === id ? null : id);
 	const close = () => (openId = null);
 
@@ -58,24 +51,21 @@
 
 <nav class="relative z-40 bg-shop-blue" aria-label="Navigation du catalogue" onmouseleave={close}>
 	<div
-		class="mx-auto flex w-full max-w-[1360px] flex-wrap items-stretch justify-between gap-0.5 px-4 sm:px-6 lg:px-8"
+		class="mx-auto flex w-full max-w-[1440px] flex-wrap items-stretch justify-between gap-x-2 px-4 sm:px-6"
 	>
-		<div class="flex flex-wrap gap-0.5">
+		<div class="flex flex-wrap">
 			{#each sections as section (section.id)}
 				<button
 					type="button"
 					onclick={() => toggle(section.id)}
 					onmouseenter={() => (openId = section.id)}
 					aria-expanded={openId === section.id}
-					class="px-4 py-4 font-display text-sm font-bold tracking-[0.04em] text-white uppercase transition-colors {openId ===
+					class="border-b-[3px] px-3 py-3.5 font-display text-[13.5px] font-semibold text-white transition-colors {openId ===
 					section.id
-						? 'bg-shop-blue-dark'
-						: 'hover:bg-shop-blue-dark/60'}"
+						? 'border-shop-orange-light bg-white/10'
+						: 'border-transparent hover:border-shop-orange-light hover:bg-white/10'}"
 				>
 					{section.label}
-					<span class="ms-0.5 text-[11px] {openId === section.id ? 'opacity-100' : 'opacity-60'}">
-						▾
-					</span>
 				</button>
 			{/each}
 
@@ -91,28 +81,35 @@
 					onclick={() => toggle(BRANDS_ID)}
 					onmouseenter={() => (openId = BRANDS_ID)}
 					aria-expanded={openId === BRANDS_ID}
-					class="px-4 py-4 font-display text-sm font-bold tracking-[0.04em] text-white uppercase transition-colors {openId ===
+					class="border-b-[3px] px-3 py-3.5 font-display text-[13.5px] font-semibold text-white transition-colors {openId ===
 					BRANDS_ID
-						? 'bg-shop-blue-dark'
-						: 'hover:bg-shop-blue-dark/60'}"
+						? 'border-shop-orange-light bg-white/10'
+						: 'border-transparent hover:border-shop-orange-light hover:bg-white/10'}"
 				>
 					Marques
-					<span class="ms-0.5 text-[11px] {openId === BRANDS_ID ? 'opacity-100' : 'opacity-60'}">
-						▾
-					</span>
 				</button>
 			{/if}
 		</div>
 
-		<div class="flex flex-wrap items-center gap-0.5">
-			{#each shortcuts as shortcut (shortcut.href)}
-				<a
-					href={shortcut.href}
-					class="px-3.5 py-4 font-display text-[13px] font-semibold tracking-[0.04em] text-white uppercase hover:underline"
-				>
-					{shortcut.label}
-				</a>
-			{/each}
+		<div class="flex flex-wrap items-center gap-1.5 py-1.5">
+			<a
+				href="/vue-eclatee"
+				class="rounded-full border-[1.5px] border-white/45 px-3.5 py-1.5 font-display text-[13.5px] font-bold text-white transition-colors hover:bg-white hover:text-shop-blue"
+			>
+				Pièces détachées
+			</a>
+			<a
+				href="/blog"
+				class="px-3 py-1.5 font-display text-[13.5px] font-semibold text-white hover:underline"
+			>
+				Blog
+			</a>
+			<a
+				href="/recherche"
+				class="rounded-full bg-shop-orange px-3.5 py-1.5 font-display text-[13px] font-extrabold tracking-[0.02em] text-white transition-colors hover:bg-shop-orange-deep"
+			>
+				Bons plans
+			</a>
 		</div>
 	</div>
 
@@ -120,7 +117,7 @@
 		<div
 			class="absolute inset-x-0 top-full max-h-[70vh] overflow-y-auto border-b-[3px] border-shop-blue bg-white shadow-[0_18px_40px_rgba(30,36,54,0.18)]"
 		>
-			<div class="mx-auto w-full max-w-[1360px] px-4 py-6 sm:px-6 lg:px-8">
+			<div class="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6">
 				<p
 					class="mb-3 font-display text-[13px] font-bold tracking-[0.1em] text-shop-muted uppercase"
 				>
@@ -132,7 +129,7 @@
 						<li>
 							<a
 								href="/marque/{brandLink.slug}"
-								class="flex h-full items-center gap-2.5 border-[1.5px] border-shop-border p-2 transition-colors hover:border-shop-ink"
+								class="flex h-full items-center gap-2.5 rounded-xl border-[1.5px] border-shop-border-soft p-2 transition-colors hover:border-shop-blue"
 							>
 								{#if brandLink.logoUrl}
 									<img
@@ -155,7 +152,7 @@
 				>
 					<a
 						href="/marques"
-						class="font-display text-[13.5px] font-bold text-shop-red hover:underline"
+						class="font-display text-[13.5px] font-bold text-shop-blue hover:underline"
 					>
 						Voir toutes les marques →
 					</a>
@@ -169,7 +166,7 @@
 		<div
 			class="absolute inset-x-0 top-full max-h-[70vh] overflow-y-auto border-b-[3px] border-shop-blue bg-white shadow-[0_18px_40px_rgba(30,36,54,0.18)]"
 		>
-			<div class="mx-auto w-full max-w-[1360px] px-4 py-6 sm:px-6 lg:px-8">
+			<div class="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6">
 				<!--
 					Toutes les familles côte à côte. Le titre de colonne mène à la
 					famille entière, les liens en dessous aux sous-familles.
@@ -220,13 +217,13 @@
 				>
 					<a
 						href={active.href}
-						class="font-display text-[13.5px] font-bold text-shop-red hover:underline"
+						class="font-display text-[13.5px] font-bold text-shop-blue hover:underline"
 					>
 						{active.cta} →
 					</a>
 					<span>
 						Besoin d'aide pour identifier une pièce ?
-						<a href="tel:0950922336" class="font-bold text-shop-red hover:underline">
+						<a href="tel:0950922336" class="font-bold text-shop-blue hover:underline">
 							09 50 92 23 36
 						</a>
 					</span>
