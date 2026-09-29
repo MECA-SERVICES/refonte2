@@ -59,6 +59,7 @@
 			<div>
 				<Label for="description" class="mb-2">Description</Label>
 				<Textarea
+					class="w-full"
 					id="description"
 					name="description"
 					rows={3}

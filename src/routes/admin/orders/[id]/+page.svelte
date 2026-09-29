@@ -447,7 +447,7 @@
 
 			<form method="POST" action="?/changeState" use:enhance class="space-y-3">
 				<Select name="stateId" items={stateOptions} value={String(o.stateId)} />
-				<Textarea name="note" rows={2} placeholder="Note interne (facultative)" />
+				<Textarea class="w-full" name="note" rows={2} placeholder="Note interne (facultative)" />
 				<Button type="submit" color="primary" class="w-full">Appliquer</Button>
 			</form>
 		</Card>

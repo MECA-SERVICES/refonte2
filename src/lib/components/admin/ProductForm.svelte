@@ -30,6 +30,13 @@
 	import CategoryPicker from './CategoryPicker.svelte';
 	import type { Product } from '$lib/server/db/catalog.schema';
 	import type { Snippet } from 'svelte';
+	import {
+		DEFAULT_DELIVERY_TIME,
+		DELIVERY_TIME_MODES,
+		DELIVERY_TIME_MODE_LABELS,
+		normalizeDeliveryMode
+	} from '$lib/delivery-time';
+	import { shopProductPath } from '$lib/shop';
 
 	let {
 		product,
@@ -84,6 +91,8 @@
 	let shortDescription = $state(untrack(() => product?.shortDescription ?? ''));
 	/** Sous-onglet du bloc de description : « summary » ou « full ». */
 	let descTab = $state('summary');
+	/** Régime de délai de livraison retenu (onglet « Livraison »). */
+	let deliveryMode = $state(untrack(() => normalizeDeliveryMode(product?.deliveryTimeMode)));
 	let mainCategoryId = $state(untrack(() => val(product?.categoryId)));
 	let selectedCategoryIds = $state(untrack(() => [...initialCategoryIds]));
 
@@ -111,6 +120,17 @@
 		if (s < 5) return 'bg-yellow-400';
 		return 'bg-green-500';
 	});
+
+	/**
+	 * Adresse publique du produit, à la création près.
+	 *
+	 * Construite depuis le slug enregistré : le champ « URL simplifiée » peut
+	 * avoir été modifié sans être soumis, et le lien mènerait alors à une page
+	 * introuvable.
+	 */
+	const shopUrl = $derived(
+		productId && product?.slug ? shopProductPath({ id: productId, slug: product.slug }) : null
+	);
 
 	const tabItemClass = 'rounded-t-lg px-4 py-3 text-sm font-medium whitespace-nowrap';
 </script>
@@ -293,6 +313,7 @@
 					<div class="p-6">
 						<div class={descTab === 'summary' ? '' : 'hidden'}>
 							<Textarea
+								class="w-full"
 								id="shortDescription"
 								name="shortDescription"
 								rows={6}
@@ -313,6 +334,7 @@
 
 						<div class={descTab === 'full' ? '' : 'hidden'}>
 							<Textarea
+								class="w-full"
 								id="description"
 								name="description"
 								rows={12}
@@ -423,6 +445,79 @@
 					</div>
 				</Card>
 
+				<!--
+					Délai de livraison, repris de l'onglet « Livraison » de PrestaShop :
+					trois régimes, puis deux messages libres. Les champs ne
+					s'affichent qu'en mode « spécifique » — les montrer grisés
+					n'apprendrait rien.
+				-->
+				<Card class="max-w-none p-6">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+						Délai de livraison
+					</h2>
+
+					<div class="space-y-2">
+						{#each DELIVERY_TIME_MODES as mode (mode)}
+							<label class="flex cursor-pointer items-start gap-2.5 text-sm">
+								<input
+									type="radio"
+									name="deliveryTimeMode"
+									value={mode}
+									checked={deliveryMode === mode}
+									onchange={() => (deliveryMode = mode)}
+									class="mt-0.5 shrink-0"
+								/>
+								<span class="text-gray-900 dark:text-white">
+									{DELIVERY_TIME_MODE_LABELS[mode]}
+									{#if mode === 'default'}
+										<span class="block text-xs text-gray-500 dark:text-gray-400">
+											« {DEFAULT_DELIVERY_TIME.inStock} » en stock, « {DEFAULT_DELIVERY_TIME.outOfStock}
+											» sinon.
+										</span>
+									{/if}
+								</span>
+							</label>
+						{/each}
+					</div>
+
+					<!--
+						Masqué plutôt que démonté : les deux champs restent dans le
+						FormData, si bien qu'un passage en « spécifique » puis retour
+						ne perd pas la saisie.
+					-->
+					<div
+						class={deliveryMode === 'specific' ? 'mt-5 grid gap-4 sm:grid-cols-2' : 'hidden'}
+						inert={deliveryMode !== 'specific'}
+					>
+						<div>
+							<Label for="deliveryTimeInStock" class="mb-2">Délai pour les produits en stock</Label>
+							<Input
+								id="deliveryTimeInStock"
+								name="deliveryTimeInStock"
+								value={product?.deliveryTimeInStock ?? ''}
+								placeholder="EXPEDITION SOUS 24H A 48H"
+							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Laisser vide pour ne rien afficher.
+							</p>
+						</div>
+						<div>
+							<Label for="deliveryTimeOutOfStock" class="mb-2">
+								Délai en rupture, commande autorisée
+							</Label>
+							<Input
+								id="deliveryTimeOutOfStock"
+								name="deliveryTimeOutOfStock"
+								value={product?.deliveryTimeOutOfStock ?? ''}
+								placeholder="Nous consulter"
+							/>
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Laisser vide pour ne rien afficher.
+							</p>
+						</div>
+					</div>
+				</Card>
+
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Frais de port</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
@@ -512,7 +607,7 @@
 							</p>
 						</div>
 						<div>
-							<Label for="priceHtStrike" class="mb-2">Prix barré HT (€)</Label>
+							<Label for="priceHtStrike" class="mb-2">Prix barré HT (€) — facultatif</Label>
 							<Input
 								id="priceHtStrike"
 								name="priceHtStrike"
@@ -521,7 +616,8 @@
 								value={val(product?.priceHtStrike)}
 							/>
 							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-								Prix de référence barré, pour une promotion.
+								Ancien prix affiché barré à côté du prix courant. À laisser vide tant qu'aucune
+								promotion n'est en cours.
 							</p>
 						</div>
 					</div>
@@ -571,6 +667,7 @@
 						<div>
 							<Label for="metaDescription" class="mb-2">Meta description</Label>
 							<Textarea
+								class="w-full"
 								id="metaDescription"
 								name="metaDescription"
 								rows={3}
@@ -737,6 +834,26 @@
 				<Card class="max-w-none p-4">
 					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Raccourcis</h3>
 					<div class="flex flex-col gap-2">
+						{#if shopUrl}
+							<!--
+								Nouvel onglet : le formulaire peut porter des modifications
+								non enregistrées, quitter la page les perdrait.
+
+								L'adresse vient du slug **enregistré**, pas du champ en
+								cours de saisie : tant que la modification n'est pas
+								soumise, la boutique sert encore l'ancienne URL.
+							-->
+							<Button
+								size="sm"
+								color="alternative"
+								href={shopUrl}
+								target="_blank"
+								rel="noopener"
+								class="justify-start"
+							>
+								<ArrowUpRightFromSquareOutline class="me-2 h-4 w-4" /> Voir sur la boutique
+							</Button>
+						{/if}
 						<Button size="sm" color="alternative" href="/admin/products" class="justify-start">
 							<ListOutline class="me-2 h-4 w-4" /> Liste des produits
 						</Button>

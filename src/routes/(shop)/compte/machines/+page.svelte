@@ -185,7 +185,7 @@
 
 			<div>
 				<Label for="notes" class="mb-1.5">Notes personnelles</Label>
-				<Textarea id="notes" name="notes" rows={2} value={current?.notes ?? ''} />
+				<Textarea class="w-full" id="notes" name="notes" rows={2} value={current?.notes ?? ''} />
 			</div>
 
 			<div class="flex flex-wrap gap-3">

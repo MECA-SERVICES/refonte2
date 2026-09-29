@@ -22,6 +22,7 @@ import {
 } from '$lib/server/listing';
 import { formFields, type ParseResult } from '$lib/server/forms';
 import { firstImageSql } from '$lib/server/pricing';
+import { normalizeDeliveryMode } from '$lib/delivery-time';
 import type {
 	NewBrand,
 	NewCategory,
@@ -434,6 +435,11 @@ export function parseProductForm(form: FormData): ParseResult<NewProduct> {
 			widthCm: num('widthCm'),
 			heightCm: num('heightCm'),
 			shippingExtraFee: num('shippingExtraFee'),
+			// Messages de délai d'expédition (onglet « Livraison »). Un message
+			// laissé vide désactive l'affichage, comme chez PrestaShop.
+			deliveryTimeMode: normalizeDeliveryMode(str('deliveryTimeMode')),
+			deliveryTimeInStock: str('deliveryTimeInStock'),
+			deliveryTimeOutOfStock: str('deliveryTimeOutOfStock'),
 			// Écotaxe : déjà affichée sur la fiche et comptée au panier, elle
 			// n'était jusqu'ici modifiable que directement en base. La colonne
 			// est NOT NULL : un champ vide vaut zéro, pas « non renseigné ».

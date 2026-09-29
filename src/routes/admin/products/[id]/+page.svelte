@@ -192,6 +192,7 @@
 			<div class="sm:col-span-2">
 				<Label for="v-attrs" class="mb-2">Attributs (une paire clé=valeur par ligne)</Label>
 				<Textarea
+					class="w-full"
 					id="v-attrs"
 					name="attributes"
 					form="variant-form"

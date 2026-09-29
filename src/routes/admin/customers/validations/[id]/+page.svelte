@@ -268,14 +268,14 @@
 						{#if needsMessage}
 							<div>
 								<Label for="message" class="mb-2">{messageLabel}</Label>
-								<Textarea id="message" name="message" rows={4} required />
+								<Textarea class="w-full" id="message" name="message" rows={4} required />
 							</div>
 						{/if}
 
 						<div>
 							<!-- R13 : réservée à l'équipe, jamais transmise. -->
 							<Label for="reviewNotes" class="mb-2">Note interne (facultative)</Label>
-							<Textarea id="reviewNotes" name="reviewNotes" rows={2} />
+							<Textarea class="w-full" id="reviewNotes" name="reviewNotes" rows={2} />
 						</div>
 
 						{#if decision === 'validate' && missingSiret}

@@ -13,6 +13,7 @@ import {
 	type AnyPgColumn
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
+import type { DeliveryTimeMode } from '$lib/delivery-time';
 
 /**
  * Domaine « Catalogue » — marques, catégories, produits, variantes, médias, relations.
@@ -203,6 +204,26 @@ export const product = pgTable(
 		 * Sans cette colonne, ils seraient tous vendables à tort.
 		 */
 		availableForOrder: boolean('available_for_order').notNull().default(true),
+		/*
+		 * Messages de délai affichés sur la fiche produit.
+		 *
+		 * Repris de PrestaShop, onglet « Livraison » : trois régimes possibles —
+		 * aucun message, le message par défaut de la boutique, ou un message
+		 * propre au produit.
+		 *
+		 * Deux textes libres plutôt qu'un délai en jours : l'atelier écrit
+		 * « EXPEDITION SOUS 24H A 48H » comme « Nous consulter », et un nombre ne
+		 * saurait porter le second cas.
+		 */
+		deliveryTimeMode: text('delivery_time_mode')
+			.$type<DeliveryTimeMode>()
+			.notNull()
+			.default('default'),
+		/** Message affiché quand le produit est en stock. */
+		deliveryTimeInStock: text('delivery_time_in_stock'),
+		/** Message affiché en rupture, quand la commande reste autorisée. */
+		deliveryTimeOutOfStock: text('delivery_time_out_of_stock'),
+
 		/** Transporteur forcé — FK à brancher quand le domaine livraison existera. */
 		forcedCarrierId: integer('forced_carrier_id'),
 		/** Fournisseur — FK à brancher quand le domaine fournisseurs existera. */

@@ -99,6 +99,7 @@
 			<div>
 				<Label for="privateNote" class="mb-2">Note privée</Label>
 				<Textarea
+					class="w-full"
 					id="privateNote"
 					name="privateNote"
 					rows={3}

@@ -639,6 +639,10 @@ export async function getShopProduct(id: number) {
 			ecotax: product.ecotax,
 			/** Faux : article présenté au catalogue mais non vendu en ligne (R7). */
 			availableForOrder: product.availableForOrder,
+			/** Messages de délai paramétrés en back-office (onglet « Livraison »). */
+			deliveryTimeMode: product.deliveryTimeMode,
+			deliveryTimeInStock: product.deliveryTimeInStock,
+			deliveryTimeOutOfStock: product.deliveryTimeOutOfStock,
 			taxRate: taxRule.rate,
 			brandName: brand.name,
 			brandSlug: brand.slug,

@@ -74,7 +74,13 @@
 
 			<div>
 				<Label for="description" class="mb-2">Description</Label>
-				<Textarea id="description" name="description" rows={3} value={brand?.description ?? ''} />
+				<Textarea
+					class="w-full"
+					id="description"
+					name="description"
+					rows={3}
+					value={brand?.description ?? ''}
+				/>
 			</div>
 
 			<Toggle name="isActive" checked={brand?.isActive ?? true}>Marque active</Toggle>
@@ -150,7 +156,7 @@
 						</ToolbarRowWrapper>
 					</TextEditor>
 				{:catch}
-					<Textarea name="pageContent" rows={12} value={brand?.pageContent ?? ''} />
+					<Textarea class="w-full" name="pageContent" rows={12} value={brand?.pageContent ?? ''} />
 					<p class="mt-2 text-xs text-red-600">
 						L'éditeur n'a pas pu être chargé ; le contenu est modifiable en HTML.
 					</p>
@@ -175,6 +181,7 @@
 			<div>
 				<Label for="metaDescription" class="mb-2">Description de la page</Label>
 				<Textarea
+					class="w-full"
 					id="metaDescription"
 					name="metaDescription"
 					rows={2}

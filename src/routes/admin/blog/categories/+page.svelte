@@ -130,7 +130,13 @@
 
 			<div>
 				<Label for="description" class="mb-2">Description</Label>
-				<Textarea id="description" name="description" rows={2} value={current?.description ?? ''} />
+				<Textarea
+					class="w-full"
+					id="description"
+					name="description"
+					rows={2}
+					value={current?.description ?? ''}
+				/>
 			</div>
 
 			<div class="grid gap-4 sm:grid-cols-3">

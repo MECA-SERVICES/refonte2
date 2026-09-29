@@ -94,7 +94,13 @@
 
 					<div>
 						<Label for="excerpt" class="mb-2">Extrait</Label>
-						<Textarea id="excerpt" name="excerpt" rows={2} value={article?.excerpt ?? ''} />
+						<Textarea
+							class="w-full"
+							id="excerpt"
+							name="excerpt"
+							rows={2}
+							value={article?.excerpt ?? ''}
+						/>
 						<p class="mt-1 text-xs text-gray-500">
 							Affiché dans la liste des articles. Requis avant publication.
 						</p>
@@ -158,7 +164,7 @@
 							</ToolbarRowWrapper>
 						</TextEditor>
 					{:catch}
-						<Textarea name="content" rows={14} value={article?.content ?? ''} />
+						<Textarea class="w-full" name="content" rows={14} value={article?.content ?? ''} />
 						<p class="mt-2 text-xs text-red-600">
 							L'éditeur n'a pas pu être chargé ; le contenu est modifiable en HTML.
 						</p>
@@ -178,6 +184,7 @@
 					<div>
 						<Label for="metaDescription" class="mb-2">Description</Label>
 						<Textarea
+							class="w-full"
 							id="metaDescription"
 							name="metaDescription"
 							rows={2}

@@ -8,6 +8,7 @@
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
 	import { formatPrice } from '$lib/shop';
 	import type { PageProps } from './$types';
+	import { resolveDeliveryTime } from '$lib/delivery-time';
 
 	let { data, form }: PageProps = $props();
 
@@ -38,6 +39,9 @@
 	 * stock : le serveur refuserait l'ajout, autant ne pas proposer le bouton.
 	 */
 	const available = $derived(product.stock > 0 && product.availableForOrder !== false);
+
+	/** Message de délai paramétré en back-office, ou celui de la boutique. */
+	const deliveryTime = $derived(resolveDeliveryTime(product, available));
 
 	/**
 	 * `use:enhance` sans argument recharge déjà les données après l'action — donc
@@ -204,12 +208,17 @@
 				</p>
 			{/if}
 
+			<!--
+				Le message de délai vient du back-office (onglet « Livraison ») ;
+				à défaut de réglage propre, celui de la boutique s'applique. Un
+				produit configuré sans message n'affiche que l'état du stock.
+			-->
 			<p class="mt-2 text-sm font-bold {available ? 'text-shop-blue' : 'text-shop-orange'}">
 				{#if available}
 					En stock atelier · {product.stock}
-					unité{product.stock > 1 ? 's' : ''} · expédié sous 24 à 48 h
+					unité{product.stock > 1 ? 's' : ''}{deliveryTime ? ` · ${deliveryTime}` : ''}
 				{:else}
-					Sur commande — nous consulter pour le délai
+					{deliveryTime ?? 'Sur commande'}
 				{/if}
 			</p>
 

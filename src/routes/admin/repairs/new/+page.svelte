@@ -123,7 +123,7 @@
 			</div>
 			<div class="sm:col-span-2">
 				<Label for="machineCondition" class="mb-2">État constaté à la prise en charge</Label>
-				<Textarea id="machineCondition" name="machineCondition" rows={2} />
+				<Textarea class="w-full" id="machineCondition" name="machineCondition" rows={2} />
 			</div>
 		</div>
 	</Card>
@@ -134,7 +134,7 @@
 		<div class="space-y-4">
 			<div>
 				<Label for="workDescription" class="mb-2">Description des travaux</Label>
-				<Textarea id="workDescription" name="workDescription" rows={3} />
+				<Textarea class="w-full" id="workDescription" name="workDescription" rows={3} />
 				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 					Peut être complétée en cours d'intervention. Obligatoire avant l'achèvement.
 				</p>
@@ -159,11 +159,11 @@
 		<div class="space-y-4">
 			<div>
 				<Label for="notes" class="mb-2">Note visible du client</Label>
-				<Textarea id="notes" name="notes" rows={2} />
+				<Textarea class="w-full" id="notes" name="notes" rows={2} />
 			</div>
 			<div>
 				<Label for="privateNote" class="mb-2">Note interne</Label>
-				<Textarea id="privateNote" name="privateNote" rows={2} />
+				<Textarea class="w-full" id="privateNote" name="privateNote" rows={2} />
 				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 					Jamais visible du client ni portée sur un document.
 				</p>

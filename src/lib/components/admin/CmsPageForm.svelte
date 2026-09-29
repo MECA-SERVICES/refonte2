@@ -106,7 +106,7 @@
 		{:catch}
 			<!-- Repli : sans l'éditeur, la page reste modifiable en HTML brut plutôt
 			     que bloquée. -->
-			<Textarea name="content" rows={14} value={page?.content ?? ''} />
+			<Textarea class="w-full" name="content" rows={14} value={page?.content ?? ''} />
 			<p class="mt-2 text-xs text-red-600">
 				L'éditeur n'a pas pu être chargé ; le contenu est modifiable en HTML.
 			</p>
@@ -127,6 +127,7 @@
 			<div>
 				<Label for="metaDescription" class="mb-2">Description</Label>
 				<Textarea
+					class="w-full"
 					id="metaDescription"
 					name="metaDescription"
 					rows={2}

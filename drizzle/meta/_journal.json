@@ -218,6 +218,13 @@
       "when": 1790158275964,
       "tag": "0032_popups_boutique",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790244675964,
+      "tag": "0033_delai_expedition_produit",
+      "breakpoints": true
     }
   ]
 }

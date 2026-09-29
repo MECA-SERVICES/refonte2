@@ -141,6 +141,7 @@
 					<div class="sm:col-span-2">
 						<Label for="machineCondition" class="mb-2">État constaté à la prise en charge</Label>
 						<Textarea
+							class="w-full"
 							id="machineCondition"
 							name="machineCondition"
 							rows={2}
@@ -159,6 +160,7 @@
 					<div>
 						<Label for="workDescription" class="mb-2">Description des travaux réalisés</Label>
 						<Textarea
+							class="w-full"
 							id="workDescription"
 							name="workDescription"
 							rows={4}
@@ -204,11 +206,19 @@
 				<div class="space-y-4">
 					<div>
 						<Label for="notes" class="mb-2">Note visible du client</Label>
-						<Textarea id="notes" name="notes" rows={2} value={o.notes ?? ''} disabled={frozen} />
+						<Textarea
+							class="w-full"
+							id="notes"
+							name="notes"
+							rows={2}
+							value={o.notes ?? ''}
+							disabled={frozen}
+						/>
 					</div>
 					<div>
 						<Label for="privateNote" class="mb-2">Note interne</Label>
 						<Textarea
+							class="w-full"
 							id="privateNote"
 							name="privateNote"
 							rows={2}

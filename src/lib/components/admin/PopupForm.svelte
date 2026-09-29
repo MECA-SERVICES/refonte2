@@ -143,7 +143,7 @@
 		{:catch}
 			<!-- Repli : sans l'éditeur, le message reste modifiable en HTML brut
 			     plutôt que bloqué. -->
-			<Textarea name="content" rows={8} value={popup?.content ?? ''} />
+			<Textarea class="w-full" name="content" rows={8} value={popup?.content ?? ''} />
 			<p class="mt-2 text-xs text-red-600">
 				L'éditeur n'a pas pu être chargé ; le message est modifiable en HTML.
 			</p>
@@ -211,7 +211,7 @@
 			{#if scope === 'paths'}
 				<div>
 					<Label for="paths" class="mb-2">Adresses ciblées</Label>
-					<Textarea id="paths" name="paths" rows={4} value={popup?.paths ?? ''} />
+					<Textarea class="w-full" id="paths" name="paths" rows={4} value={popup?.paths ?? ''} />
 					<p class="mt-1 text-xs text-gray-500">
 						Une adresse par ligne, par exemple <code>/panier</code>. Un astérisque final couvre tout
 						ce qui suit : <code>/blog*</code> vise le blog entier.
