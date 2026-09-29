@@ -6,10 +6,10 @@
 		ArrowRightToBracketOutline,
 		BarsOutline,
 		CartOutline,
-		SearchOutline,
 		UserOutline
 	} from 'flowbite-svelte-icons';
 	import MegaMenu from '$lib/components/shop/MegaMenu.svelte';
+	import SearchBox from '$lib/components/shop/SearchBox.svelte';
 	import NavigationIndicator from '$lib/components/shop/NavigationIndicator.svelte';
 	import CartToast from '$lib/components/shop/CartToast.svelte';
 	import AnnouncementPopup from '$lib/components/shop/AnnouncementPopup.svelte';
@@ -91,45 +91,16 @@
 			<div
 				class="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-7 gap-y-4 px-4 py-4 sm:px-6"
 			>
-				<a href={resolve('/')} class="flex shrink-0 items-center gap-3">
-					<span
-						class="flex h-12 w-12 items-center justify-center rounded-xl bg-shop-blue font-display text-lg font-black tracking-[-0.03em] text-white"
-					>
-						MS
-					</span>
-					<span class="leading-[1.05]">
-						<span
-							class="block font-display text-xl font-extrabold tracking-[-0.02em] text-shop-ink"
-						>
-							MECA SERVICES
-						</span>
-						<span class="mt-0.5 block text-[11px] tracking-[0.14em] text-shop-muted uppercase">
-							Motoculture · Pièces détachées · Normandie
-						</span>
-					</span>
+				<a href={resolve('/')} class="shrink-0">
+					<img
+						src="/logo-msshop.png"
+						alt="MSSHOP.FR — Meca Services, revendeur agréé, S.A.V assuré"
+						class="h-16 w-auto"
+					/>
 				</a>
 
-				<form
-					action="/recherche"
-					method="get"
-					class="flex min-w-0 flex-1 basis-[340px] items-stretch overflow-hidden rounded-xl border-2 border-shop-border bg-white focus-within:border-shop-blue"
-				>
-					<label class="sr-only" for="search-q">Rechercher</label>
-					<input
-						id="search-q"
-						type="search"
-						name="q"
-						placeholder="Référence, marque ou modèle — ex. 587 42 07-01, Iseki SA250"
-						class="min-w-0 flex-1 border-0 px-4 py-3 text-[15px] text-shop-ink placeholder:text-shop-muted focus:ring-0"
-					/>
-					<button
-						type="submit"
-						class="flex shrink-0 items-center gap-2 bg-shop-blue px-5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
-					>
-						<SearchOutline class="h-4.5 w-4.5" />
-						<span class="hidden sm:inline">Rechercher</span>
-					</button>
-				</form>
+				<!-- Recherche avec aperçu instantané (tolérante aux fautes). -->
+				<SearchBox id="search-header" class="flex-1 basis-[340px]" />
 
 				<div class="flex shrink-0 items-center gap-2">
 					{#if data.shopUser}
@@ -299,14 +270,15 @@
 			class="mx-auto grid w-full max-w-[1440px] gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4"
 		>
 			<div>
-				<div class="mb-3.5 flex items-center gap-2.5 text-white">
-					<span
-						class="flex h-10 w-10 items-center justify-center rounded-[10px] bg-shop-blue font-display text-[15px] font-black"
-					>
-						MS
-					</span>
-					<span class="font-display text-[17px] font-extrabold">MECA SERVICES</span>
-				</div>
+				<!-- Le logo est sur fond blanc : le cartouche l'isole du footer sombre. -->
+				<span class="mb-3.5 inline-flex overflow-hidden rounded-xl bg-white p-2">
+					<img
+						src="/logo-msshop.png"
+						alt="MSSHOP.FR — Meca Services"
+						loading="lazy"
+						class="h-12 w-auto"
+					/>
+				</span>
 				<p class="text-sm leading-relaxed">
 					Atelier &amp; Click &amp; Collect<br />
 					4 La Merrerie, 50570 Carantilly — Manche, Normandie<br />

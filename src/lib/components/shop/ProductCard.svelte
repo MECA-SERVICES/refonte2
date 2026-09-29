@@ -56,16 +56,15 @@
 				alternatif reste celui de la marque, pour qu'un lecteur d'écran
 				n'annonce pas une photo du produit.
 
-				La photo couvre tout le cadre, sans marge ; le logo garde ses
-				proportions, un logo recadré serait illisible.
+				La photo occupe le cadre sans marge ni rognage (`contain`) ; le
+				logo garde en plus une respiration, collé aux bords il serait
+				illisible.
 			-->
 			<img
 				src={product.imageUrl}
 				alt={product.imageIsBrandLogo ? (product.brandName ?? '') : product.name}
 				loading="lazy"
-				class={product.imageIsBrandLogo
-					? 'max-h-full max-w-full object-contain p-4'
-					: 'h-full w-full object-cover'}
+				class="h-full w-full object-contain {product.imageIsBrandLogo ? 'p-4' : ''}"
 			/>
 		{:else}
 			<ImagePlaceholder label="Photo produit" class="border-0" />

@@ -150,7 +150,7 @@
 							src={media.url}
 							alt={media.alt ?? ''}
 							loading="lazy"
-							class="h-full w-full object-cover"
+							class="h-full w-full object-contain"
 						/>
 					</button>
 				{/each}
@@ -161,11 +161,11 @@
 			class="relative flex h-[380px] items-center justify-center overflow-hidden rounded-2xl border-[1.5px] border-shop-border-soft bg-shop-subtle sm:h-[520px]"
 		>
 			{#if images.length > 0}
-				<!-- La photo occupe tout le cadre, sans marge. -->
+				<!-- La photo occupe tout le cadre, sans marge ni rognage. -->
 				<img
 					src={images[activeIndex]?.url}
 					alt={images[activeIndex]?.alt ?? product.name}
-					class="h-full w-full object-cover"
+					class="h-full w-full object-contain"
 				/>
 			{:else if product.brandLogoUrl}
 				<!-- Aucune photo : le logo de la marque vaut mieux qu'un cadre vide

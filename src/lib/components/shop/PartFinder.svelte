@@ -1,21 +1,23 @@
 <script lang="ts">
+	import SearchBox from './SearchBox.svelte';
+
 	/**
 	 * Sélecteur de pièce de la charte v2 : carte blanche posée en chevauchement
 	 * du hero, deux entrées — décrire sa machine (marque → type → modèle) ou
-	 * taper directement une référence.
+	 * taper directement une référence, avec aperçu instantané.
 	 */
 
 	let {
 		brands,
 		types,
 		models,
-		action = '/vue-eclatee',
+		action = '/recherche',
 		class: className = ''
 	}: {
 		brands: string[];
 		types: string[];
 		models: string[];
-		/** Destination du formulaire : le sélecteur de pièce par machine. */
+		/** Destination du formulaire « par machine ». */
 		action?: string;
 		class?: string;
 	} = $props();
@@ -153,22 +155,10 @@
 			</button>
 		</form>
 	{:else}
-		<form method="GET" action="/recherche" class="grid grid-cols-[minmax(0,1fr)_auto] gap-2.5">
-			<label class="sr-only" for="finder-ref">Référence</label>
-			<input
-				id="finder-ref"
-				type="search"
-				name="q"
-				placeholder="Saisissez la référence de la pièce ou de la machine — ex. 5313087-01"
-				class="w-full rounded-[10px] border-[1.5px] border-shop-border px-3.5 py-3 text-[15px] text-shop-ink placeholder:text-shop-muted focus:border-shop-blue focus:ring-0"
-			/>
-			<button
-				type="submit"
-				class="rounded-[10px] bg-shop-blue px-5 py-3 font-display text-[15px] font-bold text-white transition-colors hover:bg-shop-blue-dark"
-			>
-				Rechercher
-			</button>
-		</form>
+		<SearchBox
+			id="search-finder"
+			placeholder="Saisissez la référence de la pièce ou de la machine — ex. 5313087-01"
+		/>
 	{/if}
 
 	<p class="mt-3.5 flex flex-wrap gap-x-5 gap-y-1.5 text-[13.5px] text-shop-muted">

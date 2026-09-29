@@ -17,7 +17,6 @@ import {
 	eq,
 	exists,
 	gt,
-	ilike,
 	inArray,
 	notInArray,
 	or,
@@ -26,6 +25,7 @@ import {
 } from 'drizzle-orm';
 import type { Category } from '$lib/server/db/catalog.schema';
 import { cached } from './cache';
+import { searchCondition, searchRank } from './search';
 import {
 	isBrandLogoSql,
 	priceTtcSql,
@@ -259,15 +259,9 @@ function listConditions(params: ShopListParams & { secondaryCategories?: boolean
 	}
 
 	if (params.search) {
-		const term = `%${params.search}%`;
-		conditions.push(
-			or(
-				ilike(product.name, term),
-				ilike(product.reference, term),
-				ilike(product.supplierReference, term),
-				ilike(product.ean13, term)
-			)!
-		);
+		// Recherche trigramme tolérante aux fautes — cf. $lib/server/search.ts.
+		const condition = searchCondition(params.search);
+		if (condition) conditions.push(condition);
 	}
 
 	if (params.brandIds?.length) conditions.push(inArray(product.brandId, params.brandIds));
@@ -434,6 +428,10 @@ export async function listShopProducts(params: ShopListParams = {}) {
 
 	const where = and(...listConditions(params));
 
+	// Une recherche sans tri explicite se classe par pertinence : la référence
+	// exacte d'abord, puis les fiches les plus proches de la saisie.
+	const byRelevance = params.search && (params.sort ?? 'new') === 'new';
+
 	// Charger perPage + 1 pour savoir s'il y a une page suivante (évite COUNT coûteux)
 	const rows = await db
 		.select(productCardFields)
@@ -441,7 +439,10 @@ export async function listShopProducts(params: ShopListParams = {}) {
 		.leftJoin(brand, eq(product.brandId, brand.id))
 		.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
 		.where(where)
-		.orderBy(shopOrderBy(params.sort), desc(product.id))
+		.orderBy(
+			byRelevance ? desc(searchRank(params.search!)) : shopOrderBy(params.sort),
+			desc(product.id)
+		)
 		.limit(perPage + 1)
 		.offset((page - 1) * perPage);
 
