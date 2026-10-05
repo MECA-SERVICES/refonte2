@@ -8,7 +8,8 @@ import {
 	cart,
 	cartItem,
 	customer,
-	product
+	product,
+	user
 } from '$lib/server/db/schema';
 import {
 	and,
@@ -234,14 +235,20 @@ export async function getOrderFull(id: number) {
 				id: orderStateHistory.id,
 				note: orderStateHistory.note,
 				changedBy: orderStateHistory.changedBy,
+				/** Nom de l'employé à l'origine du changement ; nul s'il est automatique. */
+				changedByName: user.name,
 				createdAt: orderStateHistory.createdAt,
+				stateId: orderStateHistory.stateId,
 				stateLabel: orderState.label,
-				stateColor: orderState.color
+				stateColor: orderState.color,
+				/** L'état prévoit un e-mail au client : il peut être renvoyé. */
+				sendsEmail: orderState.sendEmailOnChange
 			})
 			.from(orderStateHistory)
 			.leftJoin(orderState, eq(orderStateHistory.stateId, orderState.id))
+			.leftJoin(user, eq(orderStateHistory.changedBy, user.id))
 			.where(eq(orderStateHistory.orderId, id))
-			.orderBy(desc(orderStateHistory.createdAt))
+			.orderBy(desc(orderStateHistory.createdAt), desc(orderStateHistory.id))
 	]);
 
 	return { ...row, lines, customer: cust[0], state: state[0], history };

@@ -72,7 +72,7 @@
 	const itemIconClass = 'h-5 w-5 shrink-0 text-gray-400 group-hover:text-white';
 </script>
 
-<div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900 print:bg-white">
 	<!-- Sidebar (style PrestaShop : sombre, fixe) -->
 	<Sidebar
 		{activeUrl}
@@ -81,7 +81,7 @@
 		breakpoint="lg"
 		position="fixed"
 		params={{ x: 0, duration: 0 }}
-		class="h-screen w-64 border-e border-gray-700 bg-gray-800"
+		class="h-screen w-64 border-e border-gray-700 bg-gray-800 print:hidden"
 		classes={{
 			div: 'flex h-full flex-col overflow-y-auto bg-gray-800 px-3 py-4',
 			nonactive:
@@ -141,11 +141,11 @@
 	</Sidebar>
 
 	<!-- Contenu principal -->
-	<div class="flex min-h-screen flex-col lg:ms-64">
+	<div class="flex min-h-screen flex-col lg:ms-64 print:ms-0">
 		<!-- Navbar du haut -->
 		<Navbar
 			fluid
-			class="sticky top-0 z-30 border-b border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800"
+			class="sticky top-0 z-30 border-b border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800 print:hidden"
 		>
 			<div class="flex w-full items-center justify-between">
 				<div class="flex items-center gap-3">

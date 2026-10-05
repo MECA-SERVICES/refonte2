@@ -2,7 +2,31 @@
 	import { formatPrice } from '$lib/money';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { Badge, Button, Card, Select, Input, Label, Textarea } from 'flowbite-svelte';
+	import {
+		Badge,
+		Button,
+		Card,
+		Select,
+		Input,
+		Label,
+		Table,
+		TableBody,
+		TableBodyCell,
+		TableBodyRow,
+		TableHead,
+		TableHeadCell,
+		Textarea
+	} from 'flowbite-svelte';
+	import {
+		ArrowsRepeatOutline,
+		ClockOutline,
+		CreditCardOutline,
+		FileLinesOutline,
+		PrinterOutline,
+		ReplyOutline,
+		TruckOutline
+	} from 'flowbite-svelte-icons';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import { PageHeader, StateBadge, Thumbnail } from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
@@ -11,6 +35,7 @@
 	const o = $derived(data.order);
 	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
 	const dayFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' });
+	const secondsFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'medium' });
 
 	const stateOptions = $derived(data.states.map((s) => ({ value: String(s.id), name: s.label })));
 
@@ -51,7 +76,58 @@
 
 	/** Une commande expédiée ne se remballe pas : l'écran s'adapte à cet état. */
 	const isShipped = $derived(Boolean(o.trackingNumber));
+
+	// ---- Bloc « Commande » à onglets, sur le modèle de PrestaShop ----
+
+	type Tab = 'payment' | 'state' | 'documents';
+	let tab = $state<Tab>('state');
+
+	const hasPayment = $derived(Boolean(o.paidAt || o.paymentProvider));
+	const paymentLabel = $derived(
+		o.paymentProvider === 'bank_transfer' ? 'Virement' : (o.paymentProvider ?? '—')
+	);
+	const documentCount = $derived((data.invoiceNumber ? 1 : 0) + (o.sendcloudParcelId ? 1 : 0));
+
+	const tabs = $derived([
+		{
+			key: 'payment' as const,
+			label: 'Paiement',
+			count: hasPayment ? 1 : 0,
+			icon: CreditCardOutline
+		},
+		{ key: 'state' as const, label: 'État', count: o.history.length, icon: ClockOutline },
+		{ key: 'documents' as const, label: 'Documents', count: documentCount, icon: FileLinesOutline }
+	]);
+
+	/**
+	 * L'étiquette Sendcloud arrive en base64 dans la réponse de l'action : on
+	 * la télécharge aussitôt plutôt que d'afficher un lien de plus. Un
+	 * téléchargement n'est pas bloqué comme une fenêtre surgissante.
+	 */
+	const downloadLabel: SubmitFunction = () => {
+		return async ({ result, update }) => {
+			if (result.type === 'success' && typeof result.data?.labelBase64 === 'string') {
+				const bytes = Uint8Array.from(atob(result.data.labelBase64), (c) => c.charCodeAt(0));
+				const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+				const link = document.createElement('a');
+				link.href = url;
+				link.download = `etiquette-${o.reference}.pdf`;
+				link.click();
+				URL.revokeObjectURL(url);
+			}
+			await update();
+		};
+	};
+
+	const soon = 'Bientôt disponible';
 </script>
+
+<!-- Titre de panneau, visible seulement à l'impression (les onglets y sont masqués). -->
+{#snippet panelTitle(label: string, count: number)}
+	<h3 class="mb-2 hidden text-sm font-semibold text-gray-900 print:block">
+		{label} ({count})
+	</h3>
+{/snippet}
 
 <svelte:head><title>{o.reference} · Commandes</title></svelte:head>
 
@@ -126,6 +202,261 @@
 <div class="grid gap-6 lg:grid-cols-3">
 	<!-- ================= Colonne principale ================= -->
 	<div class="space-y-6 lg:col-span-2">
+		<!-- ================= Commande ================= -->
+		<Card class="max-w-none p-0 print:border-0 print:shadow-none">
+			<div
+				class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-6 py-4 dark:border-gray-700"
+			>
+				<CreditCardOutline class="h-4 w-4 text-gray-500" />
+				<h2 class="text-sm font-semibold tracking-wide text-gray-700 uppercase dark:text-gray-200">
+					Commande
+				</h2>
+				<Badge color="gray" rounded>{o.reference}</Badge>
+				<Badge color="gray" rounded>N°{o.id}</Badge>
+			</div>
+
+			<!-- Actions : masquées à l'impression, comme sur PrestaShop. -->
+			<div
+				class="flex flex-wrap gap-2 border-b border-gray-200 px-6 py-4 dark:border-gray-700 print:hidden"
+			>
+				<Button color="alternative" size="sm" onclick={() => window.print()}>
+					<PrinterOutline class="me-1.5 h-4 w-4" /> Imprimer la commande
+				</Button>
+				<Button
+					color="alternative"
+					size="sm"
+					href="/admin/orders/{o.id}/facture"
+					target="_blank"
+					rel="noopener"
+				>
+					<FileLinesOutline class="me-1.5 h-4 w-4" /> Voir la facture
+				</Button>
+				<form method="POST" action="?/label" use:enhance={downloadLabel}>
+					<Button
+						type="submit"
+						color="alternative"
+						size="sm"
+						disabled={!o.sendcloudParcelId}
+						title={o.sendcloudParcelId ? undefined : 'Disponible une fois le colis créé'}
+					>
+						<TruckOutline class="me-1.5 h-4 w-4" /> Voir le bon de livraison
+					</Button>
+				</form>
+				<Button color="alternative" size="sm" disabled title={soon}>
+					<ArrowsRepeatOutline class="me-1.5 h-4 w-4" /> Retourner les produits
+				</Button>
+				<Button color="alternative" size="sm" disabled title={soon}>
+					<ArrowsRepeatOutline class="me-1.5 h-4 w-4" /> Remboursement partiel
+				</Button>
+			</div>
+
+			<!-- Onglets : à l'impression, tous les panneaux s'affichent à la suite. -->
+			<div
+				class="flex gap-1 overflow-x-auto border-b border-gray-200 px-6 dark:border-gray-700 print:hidden"
+				role="tablist"
+			>
+				{#each tabs as t (t.key)}
+					{@const Icon = t.icon}
+					<button
+						type="button"
+						role="tab"
+						id="order-tab-{t.key}"
+						aria-selected={tab === t.key}
+						aria-controls="order-panel-{t.key}"
+						onclick={() => (tab = t.key)}
+						class="-mb-px flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-medium whitespace-nowrap {tab ===
+						t.key
+							? 'border-primary-600 text-primary-700 dark:text-primary-400'
+							: 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}"
+					>
+						<Icon class="h-4 w-4" />
+						{t.label}
+						<span
+							class="rounded-full border border-gray-300 px-1.5 text-xs text-gray-500 dark:border-gray-600"
+						>
+							{t.count}
+						</span>
+					</button>
+				{/each}
+			</div>
+
+			<div class="space-y-6 p-6 print:p-0 print:pt-4">
+				<!-- Paiement -->
+				<div
+					id="order-panel-payment"
+					role="tabpanel"
+					aria-labelledby="order-tab-payment"
+					class={tab === 'payment' ? '' : 'hidden print:block'}
+				>
+					{@render panelTitle('Paiement', hasPayment ? 1 : 0)}
+					{#if hasPayment}
+						<Table>
+							<TableHead>
+								<TableHeadCell>Date</TableHeadCell>
+								<TableHeadCell>Moyen de paiement</TableHeadCell>
+								<TableHeadCell>ID de la transaction</TableHeadCell>
+								<TableHeadCell class="text-right">Montant</TableHeadCell>
+								<TableHeadCell>Facture</TableHeadCell>
+							</TableHead>
+							<TableBody>
+								<TableBodyRow>
+									<TableBodyCell>
+										{o.paidAt ? dateFmt.format(new Date(o.paidAt)) : 'En attente'}
+									</TableBodyCell>
+									<TableBodyCell>{paymentLabel}</TableBodyCell>
+									<TableBodyCell class="font-mono">{o.paymentReference ?? '—'}</TableBodyCell>
+									<TableBodyCell class="text-right tabular-nums">
+										{formatPrice(Number(o.totalTtc))}
+									</TableBodyCell>
+									<TableBodyCell>{data.invoiceNumber ?? '—'}</TableBodyCell>
+								</TableBodyRow>
+							</TableBody>
+						</Table>
+					{:else}
+						<p class="text-sm text-gray-500">Aucun paiement enregistré.</p>
+					{/if}
+				</div>
+
+				<!-- État -->
+				<div
+					id="order-panel-state"
+					role="tabpanel"
+					aria-labelledby="order-tab-state"
+					class={tab === 'state' ? '' : 'hidden print:block'}
+				>
+					{@render panelTitle('État', o.history.length)}
+					{#if o.history.length > 0}
+						<div class="overflow-x-auto">
+							<table class="w-full text-sm">
+								<tbody>
+									{#each o.history as h, i (h.id)}
+										<!-- L'état courant (le plus récent) est surligné de sa couleur. -->
+										<tr
+											class={i === 0
+												? 'font-medium text-gray-900'
+												: 'border-b border-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300'}
+											style={i === 0 ? `background-color: ${h.stateColor ?? '#6b7280'}` : undefined}
+										>
+											<td class="w-6 py-2.5 ps-3">
+												<span
+													class="block h-2.5 w-2.5 rounded-full {i === 0 ? 'bg-gray-900' : ''}"
+													style={i === 0
+														? undefined
+														: `background-color: ${h.stateColor ?? '#6b7280'}`}
+												></span>
+											</td>
+											<td class="px-3 py-2.5">
+												{h.stateLabel ?? '—'}
+												{#if h.note}
+													<span class="block text-xs font-normal opacity-80">{h.note}</span>
+												{/if}
+											</td>
+											<td class="px-3 py-2.5 whitespace-nowrap">{h.changedByName ?? ''}</td>
+											<td class="px-3 py-2.5 whitespace-nowrap tabular-nums">
+												{secondsFmt.format(new Date(h.createdAt))}
+											</td>
+											<td class="py-1.5 pe-2 text-right print:hidden">
+												{#if h.sendsEmail}
+													<Button
+														color="alternative"
+														size="xs"
+														disabled
+														title={soon}
+														class="whitespace-nowrap"
+													>
+														<ReplyOutline class="me-1 h-3.5 w-3.5" /> Renvoyer l'e-mail
+													</Button>
+												{/if}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{:else}
+						<p class="text-sm text-gray-500">Aucun changement d'état enregistré.</p>
+					{/if}
+
+					<form
+						method="POST"
+						action="?/changeState"
+						use:enhance
+						class="mt-4 flex flex-wrap items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800 print:hidden"
+					>
+						<Select
+							name="stateId"
+							items={stateOptions}
+							value={String(o.stateId)}
+							class="min-w-0 flex-1 basis-60"
+						/>
+						<Textarea
+							class="min-w-0 flex-1 basis-60"
+							name="note"
+							rows={1}
+							placeholder="Note interne"
+						/>
+						<Button type="submit" color="primary">Mettre à jour l'état</Button>
+					</form>
+				</div>
+
+				<!-- Documents -->
+				<div
+					id="order-panel-documents"
+					role="tabpanel"
+					aria-labelledby="order-tab-documents"
+					class={tab === 'documents' ? '' : 'hidden print:block'}
+				>
+					{@render panelTitle('Documents', documentCount)}
+					<Table>
+						<TableHead>
+							<TableHeadCell>Date</TableHeadCell>
+							<TableHeadCell>Document</TableHeadCell>
+							<TableHeadCell>Numéro</TableHeadCell>
+							<TableHeadCell class="text-right">Montant</TableHeadCell>
+							<TableHeadCell class="print:hidden"></TableHeadCell>
+						</TableHead>
+						<TableBody>
+							<TableBodyRow>
+								<TableBodyCell>{data.invoiceIssuedAt ?? '—'}</TableBodyCell>
+								<TableBodyCell>Facture</TableBodyCell>
+								<TableBodyCell>{data.invoiceNumber ?? 'Non émise'}</TableBodyCell>
+								<TableBodyCell class="text-right tabular-nums">
+									{formatPrice(Number(o.totalTtc))}
+								</TableBodyCell>
+								<TableBodyCell class="text-right print:hidden">
+									<!-- Le numéro n'est attribué qu'au premier téléchargement. -->
+									<Button
+										href="/admin/orders/{o.id}/facture"
+										target="_blank"
+										rel="noopener"
+										color="alternative"
+										size="xs"
+									>
+										{data.invoiceNumber ? 'Voir' : 'Générer'}
+									</Button>
+								</TableBodyCell>
+							</TableBodyRow>
+							{#if o.sendcloudParcelId}
+								<TableBodyRow>
+									<TableBodyCell>
+										{o.lastTrackingUpdate ? dayFmt.format(new Date(o.lastTrackingUpdate)) : '—'}
+									</TableBodyCell>
+									<TableBodyCell>Étiquette Sendcloud</TableBodyCell>
+									<TableBodyCell class="font-mono">{o.trackingNumber ?? '—'}</TableBodyCell>
+									<TableBodyCell class="text-right">--</TableBodyCell>
+									<TableBodyCell class="text-right print:hidden">
+										<form method="POST" action="?/label" use:enhance={downloadLabel}>
+											<Button type="submit" color="alternative" size="xs">Voir</Button>
+										</form>
+									</TableBodyCell>
+								</TableBodyRow>
+							{/if}
+						</TableBody>
+					</Table>
+				</div>
+			</div>
+		</Card>
+
 		<!-- Articles -->
 		<Card class="max-w-none p-6">
 			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">
@@ -388,70 +719,10 @@
 				</form>
 			{/if}
 		</Card>
-
-		<!-- Documents (CDC 24) -->
-		<Card class="max-w-none p-6">
-			<h2 class="mb-1 text-base font-semibold text-gray-900 dark:text-white">Documents</h2>
-			<p class="mb-4 text-xs text-gray-500">
-				{#if data.invoiceNumber}
-					Facture {data.invoiceNumber} — émise le {data.invoiceIssuedAt}.
-				{:else}
-					Aucune facture émise. Le numéro sera attribué au premier téléchargement.
-				{/if}
-			</p>
-
-			<Button href="/admin/orders/{o.id}/facture" target="_blank" rel="noopener" size="sm">
-				Facture PDF
-			</Button>
-		</Card>
-
-		<!-- Historique -->
-		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Historique</h2>
-
-			{#if o.history.length > 0}
-				<!-- Chronologie verticale : l'ordre des changements se lit d'un coup
-				     d'œil, ce qu'une suite de lignes séparées ne montrait pas. -->
-				<ol class="relative space-y-4 border-l border-gray-200 pl-5 dark:border-gray-700">
-					{#each o.history as h (h.id)}
-						<li class="relative">
-							<span
-								class="absolute top-1.5 -left-[1.4rem] h-2.5 w-2.5 rounded-full ring-4 ring-white dark:ring-gray-800"
-								style="background-color: {h.stateColor ?? '#6b7280'}"
-							></span>
-							<div class="flex flex-wrap items-center justify-between gap-2">
-								<div class="flex items-center gap-2">
-									{#if h.stateLabel}
-										<StateBadge label={h.stateLabel} color={h.stateColor ?? '#6b7280'} />
-									{/if}
-									{#if h.note}<span class="text-sm text-gray-500">{h.note}</span>{/if}
-								</div>
-								<time class="text-xs text-gray-400">
-									{dateFmt.format(new Date(h.createdAt))}
-								</time>
-							</div>
-						</li>
-					{/each}
-				</ol>
-			{:else}
-				<p class="text-sm text-gray-500">Aucun changement d'état enregistré.</p>
-			{/if}
-		</Card>
 	</div>
 
 	<!-- ================= Colonne latérale ================= -->
 	<div class="space-y-6">
-		<!-- Changement d'état : action principale, donc placée en tête. -->
-		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Changer l'état</h2>
-
-			<form method="POST" action="?/changeState" use:enhance class="space-y-3">
-				<Select name="stateId" items={stateOptions} value={String(o.stateId)} />
-				<Textarea class="w-full" name="note" rows={2} placeholder="Note interne (facultative)" />
-				<Button type="submit" color="primary" class="w-full">Appliquer</Button>
-			</form>
-		</Card>
-
 		<!-- Adresses -->
 		{#snippet addressCard(title: string, a: Addr)}
 			<Card class="max-w-none p-6">
@@ -473,24 +744,5 @@
 
 		{@render addressCard('Adresse de livraison', shipping)}
 		{@render addressCard('Adresse de facturation', billing)}
-
-		<!-- Paiement -->
-		<Card class="max-w-none p-6">
-			<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Paiement</h2>
-			<dl class="space-y-2 text-sm">
-				<div class="flex justify-between gap-4">
-					<dt class="text-gray-500">Moyen</dt>
-					<dd class="font-medium text-gray-900 dark:text-white">
-						{o.paymentProvider === 'bank_transfer' ? 'Virement' : (o.paymentProvider ?? '—')}
-					</dd>
-				</div>
-				<div class="flex justify-between gap-4">
-					<dt class="text-gray-500">Réglé le</dt>
-					<dd class="text-gray-900 dark:text-white">
-						{o.paidAt ? dateFmt.format(new Date(o.paidAt)) : 'En attente'}
-					</dd>
-				</div>
-			</dl>
-		</Card>
 	</div>
 </div>
