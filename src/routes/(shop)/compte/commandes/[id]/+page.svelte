@@ -122,12 +122,12 @@
 					<div
 						class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border-[1.5px] border-shop-border-soft bg-white p-1"
 					>
-						{#if line.productImageUrl}
+						{#if line.imageUrl}
 							<img
-								src={line.productImageUrl}
-								alt=""
+								src={line.imageUrl}
+								alt={line.imageIsBrandLogo ? (line.brandName ?? '') : ''}
 								loading="lazy"
-								class="max-h-full max-w-full object-contain"
+								class="max-h-full max-w-full object-contain {line.imageIsBrandLogo ? 'p-2' : ''}"
 							/>
 						{:else}
 							<span class="h-full w-full rounded-md bg-shop-subtle" aria-hidden="true"></span>
