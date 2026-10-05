@@ -27,7 +27,7 @@
 		TruckOutline
 	} from 'flowbite-svelte-icons';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { PageHeader, StateBadge, Thumbnail } from '$lib/components/admin';
+	import { PageHeader, StateBadge, SupportThreadsCard, Thumbnail } from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -723,6 +723,13 @@
 
 	<!-- ================= Colonne latérale ================= -->
 	<div class="space-y-6">
+		<SupportThreadsCard
+			threads={data.messages.rows}
+			total={data.messages.total}
+			listHref="/admin/customer-service?queue=all&order={o.id}"
+			newHref="/admin/customer-service/new?order={o.id}"
+		/>
+
 		<!-- Adresses -->
 		{#snippet addressCard(title: string, a: Addr)}
 			<Card class="max-w-none p-6">

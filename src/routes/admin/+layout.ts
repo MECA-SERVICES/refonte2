@@ -30,5 +30,5 @@ export const load: LayoutLoad = async ({ fetch, data }) => {
 	const response = await fetch('/admin-menu.json');
 	const menu: AdminMenu = await response.json();
 
-	return { menu, adminUser: data.adminUser };
+	return { menu, adminUser: data.adminUser, supportUnread: data.supportUnread };
 };

@@ -23,6 +23,7 @@ export { default as CmsPageForm } from './CmsPageForm.svelte';
 export { default as PopupForm } from './PopupForm.svelte';
 export { default as CategoryTree } from './CategoryTree.svelte';
 export { default as CategoryPicker } from './CategoryPicker.svelte';
+export { default as SupportThreadsCard } from './SupportThreadsCard.svelte';
 
 /**
  * Assemble une query string à partir de paires clé/valeur, en ignorant les

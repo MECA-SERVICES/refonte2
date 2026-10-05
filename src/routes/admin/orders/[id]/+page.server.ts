@@ -10,6 +10,7 @@ import {
 	TEST_SHIPPING_OPTION_CODE
 } from '$lib/server/sendcloud';
 import { formatInvoiceNumber, getInvoiceForOrder } from '$lib/server/invoicing';
+import { listThreadsFor } from '$lib/server/support';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const id = Number(params.id);
@@ -20,10 +21,14 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	// Facture déjà émise, s'il y en a une : le numéro n'est attribué qu'au
 	// premier téléchargement, pour ne pas consommer la séquence inutilement.
-	const invoice = await getInvoiceForOrder(order.id);
+	const [invoice, messages] = await Promise.all([
+		getInvoiceForOrder(order.id),
+		listThreadsFor({ orderId: order.id })
+	]);
 
 	return {
 		order,
+		messages,
 		invoiceNumber: invoice ? formatInvoiceNumber(invoice.number) : null,
 		invoiceIssuedAt: invoice
 			? new Intl.DateTimeFormat('fr-FR').format(new Date(invoice.issuedAt ?? invoice.createdAt))

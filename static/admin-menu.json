@@ -95,8 +95,13 @@
 						},
 						{
 							"id": "customer-service-list",
-							"label": "SAV",
+							"label": "Service client",
 							"href": "/admin/customer-service"
+						},
+						{
+							"id": "customer-service-categories",
+							"label": "Catégories de messages",
+							"href": "/admin/customer-service/categories"
 						},
 						{
 							"id": "order-messages",

@@ -89,13 +89,13 @@
 		<!-- Ligne principale : identité, recherche, compte et panier -->
 		<div class="border-b border-shop-border-soft bg-white">
 			<div
-				class="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-7 gap-y-4 px-4 py-4 sm:px-6"
+				class="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-7 gap-y-4 px-4 py-3 sm:px-6"
 			>
 				<a href={resolve('/')} class="shrink-0">
 					<img
 						src="/logo-msshop.png"
 						alt="MSSHOP.FR — Meca Services, revendeur agréé, S.A.V assuré"
-						class="h-16 w-auto"
+						class="h-20 w-auto"
 					/>
 				</a>
 

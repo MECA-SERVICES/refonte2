@@ -7,7 +7,8 @@
 		PageHeader,
 		ConfirmDialog,
 		CUSTOMER_TYPE_BADGES,
-		CUSTOMER_STATUS_BADGES
+		CUSTOMER_STATUS_BADGES,
+		SupportThreadsCard
 	} from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
@@ -296,6 +297,13 @@
 				</div>
 			</dl>
 		</Card>
+
+		<SupportThreadsCard
+			threads={data.messages.rows}
+			total={data.messages.total}
+			listHref="/admin/customer-service?queue=all&customer={c.id}"
+			newHref="/admin/customer-service/new?customer={c.id}"
+		/>
 
 		<!-- Note interne : jamais exposée au client (R13). -->
 		<Card class="max-w-none p-6">

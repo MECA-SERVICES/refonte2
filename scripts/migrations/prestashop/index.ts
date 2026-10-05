@@ -55,6 +55,7 @@ import { accessoriesTask } from './tasks/16-accessories.ts';
 import { customersTask } from './tasks/13-customers.ts';
 import { orderStatesTask } from './tasks/14-order-states.ts';
 import { ordersTask } from './tasks/15-orders.ts';
+import { supportTask } from './tasks/17-support.ts';
 
 /**
  * Ordre d'import, dicté par les dépendances de clés étrangères :
@@ -113,6 +114,9 @@ const tasks = [
 	customersTask,
 	orderStatesTask,
 	ordersTask,
+	// Historique du service client : rattaché aux clients et aux commandes,
+	// il passe après eux.
+	supportTask,
 	verifyTask
 ];
 

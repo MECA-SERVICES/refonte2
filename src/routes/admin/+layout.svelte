@@ -124,7 +124,18 @@
 									label={subItem.label}
 									href={menuHref(subItem.href)}
 									spanClass="ms-3 text-sm"
-								/>
+								>
+									{#snippet subtext()}
+										<!-- Conversations qui attendent une réponse de l'équipe. -->
+										{#if subItem.href === '/admin/customer-service' && data.supportUnread > 0}
+											<span
+												class="ms-auto rounded-full bg-red-600 px-2 text-xs font-semibold text-white"
+											>
+												{data.supportUnread}
+											</span>
+										{/if}
+									{/snippet}
+								</SidebarItem>
 							{/each}
 						</SidebarDropdownWrapper>
 					{:else}
