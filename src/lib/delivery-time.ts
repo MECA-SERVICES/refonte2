@@ -26,15 +26,14 @@ export const DELIVERY_TIME_MODE_LABELS: Record<DeliveryTimeMode, string> = {
 /**
  * Messages par défaut de la boutique.
  *
- * Ils reprennent mot pour mot ce qui était codé en dur sur la fiche produit
- * avant que ces champs existent, pour que rien ne change à l'affichage tant
- * qu'un produit n'a pas de message propre.
+ * En stock physique, le colis part de l'atelier ; sinon la pièce est
+ * commandée chez le fabricant, d'où le délai plus long.
  *
  * À déplacer dans le paramétrage entreprise (CDC 41) quand il existera.
  */
 export const DEFAULT_DELIVERY_TIME = {
-	inStock: 'Expédié sous 24 à 48 h',
-	outOfStock: 'Sur commande — nous consulter pour le délai'
+	inStock: 'Expédition sous 24 à 48 h ouvrées',
+	outOfStock: 'Expédition sous 5 à 10 jours ouvrés'
 } as const;
 
 /** Champs de délai portés par un produit. */

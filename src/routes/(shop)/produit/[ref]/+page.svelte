@@ -88,10 +88,7 @@
 	 */
 	const specs = $derived([
 		...product.specs.map((s) => ({ k: s.name, v: s.value })),
-		{ k: 'Référence MS Shop', v: product.reference },
-		...(product.supplierReference
-			? [{ k: 'Référence constructeur', v: product.supplierReference }]
-			: []),
+		{ k: 'Référence', v: product.reference },
 		...(product.ean13 ? [{ k: 'Code EAN', v: product.ean13 }] : []),
 		...(product.brandName ? [{ k: 'Marque', v: product.brandName }] : [])
 	]);
@@ -217,6 +214,7 @@
 	<div class="min-w-0 lg:sticky lg:top-40">
 		{#if product.brandName}
 			<p class="text-xs font-bold tracking-[0.12em] uppercase">
+				<span class="text-shop-muted">Marque :</span>
 				<a href="/marque/{product.brandSlug}" class="text-shop-blue hover:underline">
 					{product.brandName}
 				</a>
@@ -230,10 +228,7 @@
 		</h1>
 
 		<p class="mt-2 text-[13.5px] text-shop-muted">
-			Réf. MS SHOP <strong class="text-shop-ink">{product.reference}</strong>
-			{#if product.supplierReference}
-				· Réf. constructeur <strong class="text-shop-ink">{product.supplierReference}</strong>
-			{/if}
+			Référence : <strong class="text-shop-ink">{product.reference}</strong>
 		</p>
 
 		<!-- Bloc d'achat : prix, disponibilité et action dans une même carte -->
@@ -244,7 +239,10 @@
 				>
 					{formatPrice(product.priceTtc)}
 				</span>
-				<span class="text-sm text-shop-muted">TTC · soit {formatPrice(product.priceHt)} HT</span>
+				<span class="text-sm text-shop-muted">
+					<span class="font-display font-extrabold text-shop-red">TTC</span>
+					· soit {formatPrice(product.priceHt)} HT
+				</span>
 				{#if product.priceTtcStrike}
 					<s class="text-[15px] text-shop-faint">{formatPrice(product.priceTtcStrike)}</s>
 				{/if}
@@ -282,6 +280,9 @@
 				-->
 				{#if available}
 					En stock atelier · {product.stock} unité{product.stock > 1 ? 's' : ''}
+				{:else if product.availableForOrder === false}
+					<!-- Article non commandable en ligne : pas de délai fabricant à promettre. -->
+					Sur commande — nous consulter pour le délai
 				{:else}
 					{deliveryTime ?? 'Sur commande — nous consulter pour le délai'}
 				{/if}
