@@ -369,8 +369,13 @@
 				<ShopButton href="/inscription" variant="outline" size="sm" class="flex-1 basis-40">
 					Demander un devis pro
 				</ShopButton>
-				<ShopButton href="tel:0950922336" variant="outline" size="sm" class="flex-1 basis-40">
-					Retrait atelier gratuit
+				<ShopButton
+					href="/contact?produit={product.id}"
+					variant="outline"
+					size="sm"
+					class="flex-1 basis-40"
+				>
+					Poser une question
 				</ShopButton>
 			</div>
 		</div>
@@ -396,7 +401,9 @@
 			<p class="text-[13.5px] leading-normal text-shop-ink-soft">
 				<strong class="text-shop-ink">Compatible avec ma machine ?</strong>
 				Donnez-nous la marque et le modèle, on vérifie la référence avant que vous commandiez :
-				<a href="tel:0950922336" class="font-bold text-shop-blue hover:underline">09 50 92 23 36</a>
+				<a href="/contact?produit={product.id}" class="font-bold text-shop-blue hover:underline">
+					nous écrire
+				</a>
 			</p>
 		</div>
 	</div>
@@ -438,9 +445,12 @@
 				</div>
 			{:else}
 				<p class="text-[15.5px] text-shop-muted">
-					Aucune description détaillée pour cette référence. Appelez-nous au
-					<a href="tel:0950922336" class="font-semibold text-shop-blue hover:underline">
-						09 50 92 23 36
+					Aucune description détaillée pour cette référence.
+					<a
+						href="/contact?produit={product.id}"
+						class="font-semibold text-shop-blue hover:underline"
+					>
+						Écrivez-nous
 					</a>
 					: nous avons la documentation constructeur.
 				</p>

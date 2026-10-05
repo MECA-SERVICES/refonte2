@@ -69,6 +69,14 @@
 	Passée le {dateFormat.format(order.createdAt)}
 	{#if order.deliveredAt}· Livrée le {dateFormat.format(order.deliveredAt)}{/if}
 </p>
+<p class="mt-2 text-sm">
+	<a
+		href="/compte/messages/nouveau?commande={order.id}"
+		class="font-semibold text-shop-blue hover:underline"
+	>
+		Une question sur cette commande ? Écrivez-nous
+	</a>
+</p>
 
 {#if order.trackingNumber}
 	<Panel class="mt-5 p-4" tone="subtle">

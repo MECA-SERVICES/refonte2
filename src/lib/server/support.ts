@@ -514,6 +514,33 @@ function messageContent(form: FormData) {
 	return content;
 }
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Ouvre la suite d'une conversation de l'historique, qui ne se rouvre pas :
+ * mêmes demandeur, objet, catégorie et commande, reliée à l'originale.
+ */
+async function openContinuation(
+	tx: Tx,
+	current: typeof supportThreadAll.$inferSelect,
+	status: SupportStatus
+) {
+	const { id, reference } = await nextThreadId();
+	await tx.insert(supportThread).values({
+		id,
+		reference,
+		customerId: current.customerId,
+		guestEmail: current.guestEmail,
+		guestName: current.guestName,
+		subject: current.subject,
+		categoryId: current.categoryId,
+		orderId: current.orderId,
+		continuesThreadId: current.id,
+		status
+	});
+	return id;
+}
+
 /**
  * Réponse ou note interne de l'équipe.
  *
@@ -536,20 +563,7 @@ export async function postStaffMessage(threadId: number, form: FormData, userId:
 		let target = threadId;
 
 		if (current.isLegacy) {
-			const { id, reference } = await nextThreadId();
-			await tx.insert(supportThread).values({
-				id,
-				reference,
-				customerId: current.customerId,
-				guestEmail: current.guestEmail,
-				guestName: current.guestName,
-				subject: current.subject,
-				categoryId: current.categoryId,
-				orderId: current.orderId,
-				continuesThreadId: threadId,
-				status: internal ? 'open' : 'pending_customer'
-			});
-			target = id;
+			target = await openContinuation(tx, current, internal ? 'open' : 'pending_customer');
 		}
 
 		await tx.insert(supportMessage).values({
@@ -695,5 +709,197 @@ export async function createStaffThread(form: FormData, userId: string) {
 		});
 	});
 
+	return id;
+}
+
+// ---------------------------------------------------------------------------
+// Espace client
+// ---------------------------------------------------------------------------
+
+/**
+ * Une conversation n'est montrée au client que si elle contient au moins un
+ * message qui lui est destiné : un fil fait uniquement de notes internes
+ * n'existe pas pour lui (R12, R13).
+ */
+const visibleToCustomer = sql`EXISTS (
+	SELECT 1 FROM ${supportMessageAll} vm
+	WHERE vm.thread_id = ${supportThreadAll.id} AND vm.kind IN ('customer', 'staff')
+)`;
+
+/** Conversations du client, la plus récente d'abord. */
+export async function listCustomerThreads(customerId: number) {
+	return db
+		.select({
+			id: supportThreadAll.id,
+			reference: supportThreadAll.reference,
+			subject: supportThreadAll.subject,
+			status: supportThreadAll.status,
+			unreadByCustomer: supportThreadAll.unreadByCustomer,
+			lastMessageAt: supportThreadAll.lastMessageAt,
+			orderReference: order.reference
+		})
+		.from(supportThreadAll)
+		.leftJoin(order, eq(order.id, supportThreadAll.orderId))
+		.where(and(eq(supportThreadAll.customerId, customerId), visibleToCustomer))
+		.orderBy(desc(supportThreadAll.lastMessageAt), desc(supportThreadAll.id));
+}
+
+/** Conversations portant une réponse non lue : pastille de l'en-tête. */
+export async function countUnreadForCustomer(customerId: number) {
+	const [{ n }] = await db
+		.select({ n: count() })
+		.from(supportThread)
+		.where(and(eq(supportThread.customerId, customerId), gt(supportThread.unreadByCustomer, 0)));
+	return n;
+}
+
+/**
+ * Fil d'une conversation du client, ou `undefined` si elle ne lui appartient
+ * pas : même réponse qu'une conversation inexistante (R1).
+ *
+ * Le client ne voit ni les notes internes, ni les changements de statut, ni
+ * le nom des membres de l'équipe (R12).
+ */
+export async function getCustomerThread(customerId: number, id: number) {
+	const thread = await getSupportThread(id);
+	if (!thread || thread.customerId !== customerId) return undefined;
+
+	const messages = thread.messages
+		.filter((m) => m.kind === 'customer' || m.kind === 'staff')
+		.map((m) => ({
+			id: m.id,
+			fromTeam: m.kind === 'staff',
+			author: m.kind === 'staff' ? TEAM_FALLBACK_NAME : m.author,
+			html: m.html,
+			createdAt: m.createdAt,
+			files: m.files
+		}));
+	if (messages.length === 0) return undefined;
+
+	return {
+		id: thread.id,
+		reference: thread.reference,
+		subject: thread.subject,
+		status: thread.status,
+		isLegacy: thread.isLegacy,
+		unreadByCustomer: thread.unreadByCustomer,
+		createdAt: thread.createdAt,
+		categoryLabel: thread.categoryLabel,
+		order: thread.order ? { id: thread.order.id, reference: thread.order.reference } : null,
+		previous: thread.previous,
+		followUps: thread.followUps,
+		messages
+	};
+}
+
+/** Le client a ouvert le fil : les réponses de l'équipe sont lues. */
+export async function markReadByCustomer(customerId: number, threadId: number) {
+	await db.transaction(async (tx) => {
+		const [t] = await tx
+			.update(supportThread)
+			.set({ unreadByCustomer: 0 })
+			.where(
+				and(
+					eq(supportThread.id, threadId),
+					eq(supportThread.customerId, customerId),
+					gt(supportThread.unreadByCustomer, 0)
+				)
+			)
+			.returning({ id: supportThread.id });
+		if (!t) return;
+		await tx
+			.update(supportMessage)
+			.set({ readAt: new Date() })
+			.where(
+				and(
+					eq(supportMessage.threadId, threadId),
+					eq(supportMessage.senderType, 'staff'),
+					isNull(supportMessage.readAt)
+				)
+			);
+	});
+}
+
+/** Message du client : la conversation passe en attente de l'équipe (R5), et se rouvre si besoin (R9). */
+async function appendCustomerMessage(tx: Tx, threadId: number, content: string) {
+	await tx.insert(supportMessage).values({ threadId, senderType: 'customer', content });
+	await tx
+		.update(supportThread)
+		.set({
+			status: 'pending_staff',
+			unreadByStaff: sql`${supportThread.unreadByStaff} + 1`,
+			lastMessageAt: new Date(),
+			closedAt: null,
+			updatedAt: new Date()
+		})
+		.where(eq(supportThread.id, threadId));
+}
+
+/**
+ * Réponse du client dans une de ses conversations. Dans une conversation de
+ * l'historique, la réponse ouvre sa suite ; l'identifiant renvoyé est celui
+ * où le message a été écrit.
+ */
+export async function postCustomerMessage(customerId: number, threadId: number, form: FormData) {
+	const content = messageContent(form);
+	const [current] = await db
+		.select()
+		.from(supportThreadAll)
+		.where(and(eq(supportThreadAll.id, threadId), eq(supportThreadAll.customerId, customerId)))
+		.limit(1);
+	if (!current) throw new SupportError('Conversation introuvable.');
+
+	return db.transaction(async (tx) => {
+		const target = current.isLegacy
+			? await openContinuation(tx, current, 'pending_staff')
+			: threadId;
+		await appendCustomerMessage(tx, target, content);
+		return target;
+	});
+}
+
+/**
+ * Nouvelle conversation ouverte par le client (§8.1). La commande, facultative,
+ * doit lui appartenir.
+ */
+export async function createCustomerThread(customerId: number, form: FormData) {
+	const { str, int } = formFields(form);
+	const subject = str('subject');
+	if (!subject) throw new SupportError("Indiquez l'objet de votre demande.");
+	const content = messageContent(form);
+
+	let orderId: number | null = int('orderId', 0) || null;
+	if (orderId) {
+		const [owned] = await db
+			.select({ id: order.id })
+			.from(order)
+			.where(and(eq(order.id, orderId), eq(order.customerId, customerId)))
+			.limit(1);
+		if (!owned) orderId = null;
+	}
+
+	const categoryId = int('categoryId', 0) || null;
+	if (categoryId) {
+		const [cat] = await db
+			.select({ id: supportCategory.id })
+			.from(supportCategory)
+			.where(and(eq(supportCategory.id, categoryId), eq(supportCategory.isActive, true)))
+			.limit(1);
+		if (!cat) throw new SupportError('Catégorie invalide.');
+	}
+
+	const { id, reference } = await nextThreadId();
+	await db.transaction(async (tx) => {
+		await tx.insert(supportThread).values({
+			id,
+			reference,
+			customerId,
+			subject: subject.slice(0, 255),
+			categoryId,
+			orderId,
+			status: 'pending_staff'
+		});
+		await appendCustomerMessage(tx, id, content);
+	});
 	return id;
 }

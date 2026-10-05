@@ -6,6 +6,7 @@
 		ArrowRightToBracketOutline,
 		BarsOutline,
 		CartOutline,
+		EnvelopeOutline,
 		UserOutline
 	} from 'flowbite-svelte-icons';
 	import MegaMenu from '$lib/components/shop/MegaMenu.svelte';
@@ -81,6 +82,7 @@
 				<div class="flex flex-wrap items-center gap-x-5 gap-y-2">
 					<a href="/inscription" class="hover:text-white">Mandat administratif · Chorus Pro</a>
 					<a href="/compte/commandes" class="hover:text-white">Suivre ma commande</a>
+					<a href="/contact" class="hover:text-white">Nous contacter</a>
 					<a href="tel:0950922336" class="font-display font-bold text-white">09 50 92 23 36</a>
 				</div>
 			</div>
@@ -121,6 +123,17 @@
 							>
 								Mon compte
 							</a>
+							<a
+								href="/compte/messages"
+								class="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-shop-ink hover:bg-shop-subtle"
+							>
+								Mes messages
+								{#if data.messagesUnread > 0}
+									<span class="rounded-full bg-shop-red px-2 text-xs font-bold text-white">
+										{data.messagesUnread}
+									</span>
+								{/if}
+							</a>
 							<!-- Formulaire hors DropdownItem : celui-ci rend un lien, qui ne
 							     peut pas contenir de bouton de soumission. -->
 							<form method="POST" action="/deconnexion" class="block">
@@ -145,6 +158,35 @@
 							</span>
 						</a>
 					{/if}
+
+					<!--
+						Service client : icône et libellé, comme « Mon compte ». Le client
+						connecté arrive sur ses messages, le visiteur sur le formulaire de
+						contact (qui l'invite à se connecter). La pastille signale une
+						réponse non lue.
+					-->
+					<a
+						href={data.shopUser ? '/compte/messages' : '/contact'}
+						class="relative flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-sm font-medium text-shop-ink hover:bg-shop-subtle"
+						aria-label={data.messagesUnread > 0
+							? `Mes messages, ${data.messagesUnread} non lu${data.messagesUnread > 1 ? 's' : ''}`
+							: undefined}
+					>
+						<span class="relative">
+							<EnvelopeOutline class="h-5.5 w-5.5" />
+							{#if data.messagesUnread > 0}
+								<span
+									class="absolute -top-2 -right-2.5 min-w-5 rounded-full bg-shop-red px-1.5 text-center text-[11px] leading-5 font-bold text-white"
+								>
+									{data.messagesUnread}
+								</span>
+							{/if}
+						</span>
+						<span class="hidden text-left leading-[1.1] sm:block">
+							<span class="block text-[11px] text-shop-muted">Service client</span>
+							{data.shopUser ? 'Mes messages' : 'Nous contacter'}
+						</span>
+					</a>
 
 					<a
 						href="/panier"

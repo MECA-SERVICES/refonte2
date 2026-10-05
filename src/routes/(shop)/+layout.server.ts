@@ -2,7 +2,8 @@ import type { LayoutServerLoad } from './$types';
 import { getShopMenu, topShopBrands } from '$lib/server/shop';
 import { countCartItems } from '$lib/server/cart';
 import { resolveCartOwner } from '$lib/server/cart-session';
-import { taxContextForUser } from '$lib/server/account';
+import { customerForUser, taxContextForUser } from '$lib/server/account';
+import { countUnreadForCustomer } from '$lib/server/support';
 import { popupForPath } from '$lib/server/popups';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -17,6 +18,10 @@ export const load: LayoutServerLoad = async (event) => {
 	// navigation (CDC 23, R1-R3 et P2-P3).
 	const tax = await taxContextForUser(locals.user?.id);
 
+	// Réponses du service client non lues : pastille de l'en-tête.
+	const profile = locals.user ? await customerForUser(locals.user.id) : undefined;
+	const messagesUnread = profile ? await countUnreadForCustomer(profile.id) : 0;
+
 	return {
 		menu: await getShopMenu(),
 		// Annonce éligible pour cette adresse, s'il y en a une : le navigateur
@@ -27,6 +32,7 @@ export const load: LayoutServerLoad = async (event) => {
 		tax,
 		// Client connecté (better-auth) — null pour les visiteurs.
 		shopUser: locals.user ? { name: locals.user.name } : null,
-		cartCount: owner ? await countCartItems(owner) : 0
+		cartCount: owner ? await countCartItems(owner) : 0,
+		messagesUnread
 	};
 };

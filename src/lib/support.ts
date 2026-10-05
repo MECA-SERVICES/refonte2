@@ -42,3 +42,14 @@ export const HISTORY_STATUS_LABELS: Record<string, string> = {
 
 /** Auteur affiché quand le membre de l'équipe n'est plus identifiable. */
 export const TEAM_FALLBACK_NAME = 'Équipe MS Shop';
+
+/**
+ * États vus par le client : il n'a pas à connaître la file de l'équipe, seulement
+ * s'il a une réponse à lire ou si sa demande est en cours.
+ */
+export const SUPPORT_CUSTOMER_STATUS: Record<SupportStatus, { label: string; tone: string }> = {
+	open: { label: 'En cours de traitement', tone: 'bg-primary-50 text-shop-blue' },
+	pending_staff: { label: 'En cours de traitement', tone: 'bg-primary-50 text-shop-blue' },
+	pending_customer: { label: 'Réponse reçue', tone: 'bg-shop-promo text-shop-orange-deep' },
+	closed: { label: 'Clôturée', tone: 'bg-shop-subtle text-shop-muted' }
+};

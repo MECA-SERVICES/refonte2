@@ -18,6 +18,7 @@
 	const links = [
 		{ href: '/compte', label: 'Tableau de bord' },
 		{ href: '/compte/commandes', label: 'Mes commandes' },
+		{ href: '/compte/messages', label: 'Mes messages' },
 		{ href: '/compte/machines', label: 'Mon parc machines' },
 		{ href: '/compte/reparations', label: 'Mes réparations' },
 		{ href: '/compte/adresses', label: 'Mes adresses' }
@@ -27,6 +28,9 @@
 	 * Rubrique courante. La comparaison est exacte sur « /compte » — un préfixe
 	 * marquerait le tableau de bord actif sur toutes les sous-pages.
 	 */
+	/** Réponses non lues, fournies par le layout de la boutique. */
+	const unread = $derived(Number(page.data.messagesUnread ?? 0));
+
 	const isCurrent = (href: string) =>
 		href === '/compte' ? page.url.pathname === href : page.url.pathname.startsWith(href);
 </script>
@@ -47,6 +51,11 @@
 						: 'font-semibold text-shop-ink hover:bg-shop-subtle'}"
 				>
 					{link.label}
+					{#if link.href === '/compte/messages' && unread > 0}
+						<span class="float-right rounded-full bg-shop-red px-2 text-xs font-bold text-white">
+							{unread}
+						</span>
+					{/if}
 				</a>
 			{/each}
 		</nav>
