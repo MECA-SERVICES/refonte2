@@ -767,28 +767,6 @@
 			newHref="/admin/customer-service/new?order={o.id}"
 		/>
 
-		<!-- Adresses -->
-		{#snippet addressCard(title: string, a: Addr)}
-			<Card class="max-w-none p-6">
-				<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
-				{#if a}
-					<address class="text-sm leading-relaxed text-gray-700 not-italic dark:text-gray-300">
-						{a.firstName}
-						{a.lastName}{#if a.company}<br />{a.company}{/if}<br />
-						{a.line1}{#if a.line2}<br />{a.line2}{/if}<br />
-						{a.postalCode}
-						{a.city}{#if a.country && a.country !== 'FR'}<br />{a.country}{/if}
-						{#if a.phone}<br />{a.phone}{/if}
-					</address>
-				{:else}
-					<p class="text-sm text-gray-500">Non renseignée.</p>
-				{/if}
-			</Card>
-		{/snippet}
-
-		{@render addressCard('Adresse de livraison', shipping)}
-		{@render addressCard('Adresse de facturation', billing)}
-
 		<!-- Note interne : une seule par commande, enregistrée à la saisie. -->
 		<Card class="max-w-none p-6">
 			<div class="mb-3 flex items-center justify-between gap-2">
@@ -817,5 +795,27 @@
 				Visible uniquement en back-office. Enregistrement automatique.
 			</p>
 		</Card>
+
+		<!-- Adresses -->
+		{#snippet addressCard(title: string, a: Addr)}
+			<Card class="max-w-none p-6">
+				<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
+				{#if a}
+					<address class="text-sm leading-relaxed text-gray-700 not-italic dark:text-gray-300">
+						{a.firstName}
+						{a.lastName}{#if a.company}<br />{a.company}{/if}<br />
+						{a.line1}{#if a.line2}<br />{a.line2}{/if}<br />
+						{a.postalCode}
+						{a.city}{#if a.country && a.country !== 'FR'}<br />{a.country}{/if}
+						{#if a.phone}<br />{a.phone}{/if}
+					</address>
+				{:else}
+					<p class="text-sm text-gray-500">Non renseignée.</p>
+				{/if}
+			</Card>
+		{/snippet}
+
+		{@render addressCard('Adresse de livraison', shipping)}
+		{@render addressCard('Adresse de facturation', billing)}
 	</div>
 </div>
