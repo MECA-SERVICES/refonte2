@@ -146,7 +146,7 @@
 <!-- ================= Synthèse ================= -->
 <!--
 	Quatre repères que l'opérateur cherche en premier lorsqu'il ouvre une
-	commande : quand, combien, pour qui, et où elle en est logistiquement.
+	commande : quand, combien, pour qui, et où elle en est (son état).
 -->
 <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 	<Card class="max-w-none p-4">
@@ -186,15 +186,15 @@
 
 	<Card class="max-w-none p-4">
 		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			Expédition
+			État de commande
 		</p>
-		<p
-			class="mt-1 truncate text-lg font-semibold {isShipped
-				? 'text-green-600 dark:text-green-400'
-				: 'text-gray-900 dark:text-white'}"
-		>
-			{isShipped ? o.trackingNumber : (o.carrierName ?? 'À préparer')}
-		</p>
+		<div class="mt-1.5">
+			{#if o.state}
+				<StateBadge label={o.state.label} color={o.state.color} />
+			{:else}
+				<span class="text-lg font-semibold text-gray-400">—</span>
+			{/if}
+		</div>
 	</Card>
 </div>
 
