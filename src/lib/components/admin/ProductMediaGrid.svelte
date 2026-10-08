@@ -9,7 +9,6 @@
 	 * 150 à 200 px sur grand écran, hors de proportion avec le reste du
 	 * formulaire.
 	 */
-	import { enhance } from '$app/forms';
 	import {
 		TrashBinOutline,
 		ImageOutline,
@@ -25,7 +24,16 @@
 		position: number;
 	};
 
-	let { media, productName }: { media: Media[]; productName: string } = $props();
+	let {
+		media,
+		productName,
+		deleteFormId
+	}: {
+		media: Media[];
+		productName: string;
+		/** Formulaire de suppression, déclaré hors du formulaire principal du produit. */
+		deleteFormId: string;
+	} = $props();
 
 	// La couverture est la première par position — même règle que PrestaShop.
 	const sorted = $derived([...media].sort((a, b) => a.position - b.position));
@@ -68,22 +76,24 @@
 					</span>
 				{/if}
 
-				<!-- Suppression au survol : garde la grille lisible au repos. -->
-				<form
-					method="POST"
-					action="?/deleteMedia"
-					use:enhance
-					class="absolute top-1.5 right-1.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100"
+				<!--
+					Suppression au survol : garde la grille lisible au repos.
+
+					Un bouton rattaché à un formulaire extérieur (`form="…"`), et non un
+					<form> : la galerie est rendue dans le formulaire principal du
+					produit, et un formulaire imbriqué le refermait à la lecture du
+					HTML — tous les champs suivants partaient vides à l'enregistrement.
+				-->
+				<button
+					type="submit"
+					form={deleteFormId}
+					name="mediaId"
+					value={m.id}
+					title="Supprimer l'image"
+					class="absolute top-1.5 right-1.5 rounded bg-white/90 p-1 text-red-600 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-600 hover:text-white focus:opacity-100 dark:bg-gray-900/90"
 				>
-					<input type="hidden" name="mediaId" value={m.id} />
-					<button
-						type="submit"
-						title="Supprimer l'image"
-						class="rounded bg-white/90 p-1 text-red-600 shadow-sm hover:bg-red-600 hover:text-white dark:bg-gray-900/90"
-					>
-						<TrashBinOutline class="h-3.5 w-3.5" />
-					</button>
-				</form>
+					<TrashBinOutline class="h-3.5 w-3.5" />
+				</button>
 			</div>
 		{/each}
 	</div>

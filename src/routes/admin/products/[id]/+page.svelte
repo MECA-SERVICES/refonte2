@@ -186,10 +186,16 @@
 								{attrText(v.attributes)} · Stock : {v.stock} · Impact prix : {v.priceImpact} €
 							</span>
 						</div>
-						<form method="POST" action="?/deleteVariant" use:enhance>
-							<input type="hidden" name="variantId" value={v.id} />
-							<Button type="submit" size="xs" color="red">Supprimer</Button>
-						</form>
+						<Button
+							type="submit"
+							form="variant-delete-form"
+							name="variantId"
+							value={v.id}
+							size="xs"
+							color="red"
+						>
+							Supprimer
+						</Button>
 					</div>
 				{/each}
 			</div>
@@ -253,7 +259,7 @@
 		</h2>
 
 		<div class="mb-4">
-			<ProductMediaGrid media={p.media} productName={p.name} />
+			<ProductMediaGrid media={p.media} productName={p.name} deleteFormId="media-delete-form" />
 		</div>
 
 		{#if form?.mediaError}
@@ -317,10 +323,16 @@
 								{#if !relation.isActive}· inactif{/if}
 							</span>
 						</div>
-						<form method="POST" action="?/removeRelation" use:enhance>
-							<input type="hidden" name="relationId" value={relation.id} />
-							<Button type="submit" size="xs" color="alternative">Retirer</Button>
-						</form>
+						<Button
+							type="submit"
+							form="relation-remove-form"
+							name="relationId"
+							value={relation.id}
+							size="xs"
+							color="alternative"
+						>
+							Retirer
+						</Button>
 					</li>
 				{/each}
 			</ul>
@@ -375,6 +387,22 @@
 <form id="variant-form" method="POST" action="?/addVariant" use:enhance class="hidden"></form>
 <form id="media-form" method="POST" action="?/addMedia" use:enhance class="hidden"></form>
 <form id="relation-form" method="POST" action="?/addRelation" use:enhance class="hidden"></form>
+<!-- Suppressions par ligne : le bouton porte l'identifiant (name/value). -->
+<form id="media-delete-form" method="POST" action="?/deleteMedia" use:enhance class="hidden"></form>
+<form
+	id="variant-delete-form"
+	method="POST"
+	action="?/deleteVariant"
+	use:enhance
+	class="hidden"
+></form>
+<form
+	id="relation-remove-form"
+	method="POST"
+	action="?/removeRelation"
+	use:enhance
+	class="hidden"
+></form>
 
 <form method="POST" action="?/delete" bind:this={deleteForm} class="hidden"></form>
 
