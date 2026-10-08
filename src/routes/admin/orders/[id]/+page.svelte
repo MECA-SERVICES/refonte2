@@ -727,6 +727,51 @@
 
 	<!-- ================= Colonne latérale ================= -->
 	<div class="space-y-6">
+		<!-- Fiche client résumée : qui commande, et son poids pour la boutique. -->
+		{#if o.customer}
+			<Card class="max-w-none p-6">
+				<div class="mb-3 flex items-center justify-between gap-2">
+					<h2 class="text-base font-semibold text-gray-900 dark:text-white">Client</h2>
+					<a
+						href={resolve('/admin/customers/[id]', { id: String(o.customer.id) })}
+						class="text-xs font-medium text-primary-700 hover:underline dark:text-primary-400 print:hidden"
+					>
+						Voir la fiche →
+					</a>
+				</div>
+				<p class="font-medium text-gray-900 dark:text-white">
+					{o.customer.firstName}
+					{o.customer.lastName}
+				</p>
+				<a
+					href="mailto:{o.customer.email}"
+					class="text-sm break-all text-primary-700 hover:underline dark:text-primary-400"
+				>
+					{o.customer.email}
+				</a>
+				<dl class="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm dark:border-gray-800">
+					<div class="flex justify-between gap-4">
+						<dt class="text-gray-500">Compte créé le</dt>
+						<dd class="text-gray-900 tabular-nums dark:text-white">
+							{dayFmt.format(new Date(o.customer.createdAt))}
+						</dd>
+					</div>
+					<div class="flex justify-between gap-4">
+						<dt class="text-gray-500">Commandes validées</dt>
+						<dd class="font-medium text-gray-900 tabular-nums dark:text-white">
+							{data.customerStats?.validCount ?? 0}
+						</dd>
+					</div>
+					<div class="flex justify-between gap-4">
+						<dt class="text-gray-500">Total payé</dt>
+						<dd class="font-medium text-gray-900 tabular-nums dark:text-white">
+							{formatPrice(data.customerStats?.validTotal ?? 0)}
+						</dd>
+					</div>
+				</dl>
+			</Card>
+		{/if}
+
 		<SupportThreadsCard
 			threads={data.messages.rows}
 			total={data.messages.total}

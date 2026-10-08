@@ -10,7 +10,7 @@ import {
 	product,
 	session
 } from '$lib/server/db/schema';
-import { count, desc, eq, sql } from 'drizzle-orm';
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 import type { NewCustomer, NewAddress } from '$lib/server/db/customer.schema';
 import {
 	buildOrderBy,
@@ -303,4 +303,20 @@ export async function getCustomerOverview(customerId: number, userId: string) {
 		lastVisitAt: sessions[0]?.updatedAt ?? null,
 		sessions
 	};
+}
+
+/**
+ * Commandes valides d'un client (état considéré payé) et montant total réglé
+ * depuis l'ouverture de la boutique — encart client de la page commande.
+ */
+export async function customerPaidStats(customerId: number) {
+	const [row] = await db
+		.select({
+			count: sql<number>`count(*)::int`,
+			total: sql<string>`coalesce(sum(${order.totalTtc}), 0)::text`
+		})
+		.from(order)
+		.innerJoin(orderState, eq(orderState.id, order.stateId))
+		.where(and(eq(order.customerId, customerId), eq(orderState.isPaid, true)));
+	return { validCount: row?.count ?? 0, validTotal: Number(row?.total ?? 0) };
 }
