@@ -25,6 +25,7 @@ import {
 } from 'drizzle-orm';
 import type { Category } from '$lib/server/db/catalog.schema';
 import { cached } from './cache';
+import { categoryKind, type CategoryKind } from '$lib/catalog-kinds';
 import { searchCondition, searchRank } from './search';
 import {
 	isBrandLogoSql,
@@ -112,6 +113,48 @@ async function activeCategories() {
 }
 
 /**
+ * Catégories qui contiennent au moins un produit actif, elles-mêmes ou dans
+ * leur descendance (rattachement principal ou secondaire).
+ *
+ * Une catégorie vide (« Micro-tracteurs », « Équipement cheval »…) n'a rien à
+ * faire dans le menu : y entrer mène à une page sans produit.
+ */
+async function populatedCategoryIds() {
+	return cached(
+		'populated-categories',
+		async () => {
+			const rows = await db.execute<{ id: number }>(sql`
+				SELECT DISTINCT category_id AS id FROM ${product}
+				 WHERE is_active AND category_id IS NOT NULL
+				UNION
+				SELECT DISTINCT pc.category_id FROM ${productCategory} pc
+				  JOIN ${product} p ON p.id = pc.product_id
+				 WHERE p.is_active`);
+			const all = await activeCategories();
+			const parentOf = new Map(all.map((c) => [c.id, c.parentId]));
+			const ids = new Set<number>();
+			// Une catégorie peuplée rend visibles tous ses ancêtres.
+			for (const { id } of rows) {
+				let current: number | null | undefined = Number(id);
+				while (current != null && !ids.has(current)) {
+					ids.add(current);
+					current = parentOf.get(current);
+				}
+			}
+			return [...ids];
+		},
+		600
+	);
+}
+
+/** Catégories affichées dans la navigation : actives et non vides. */
+async function navigableCategories() {
+	const [all, populated] = await Promise.all([activeCategories(), populatedCategoryIds()]);
+	const keep = new Set(populated);
+	return all.filter((c) => keep.has(c.id));
+}
+
+/**
  * Construit l'arborescence des catégories jusqu'à une profondeur donnée.
  *
  * L'arbre complet pèse près de 600 entrées, sérialisées dans chaque page :
@@ -139,7 +182,9 @@ export async function getShopMenu(): Promise<ShopMenuEntry[]> {
 	return cached(
 		'shop-menu',
 		async () => {
-			const rows = await activeCategories(); // Utilise le cache
+			// Les catégories vides sont écartées du menu (point 5 de l'analyse
+			// du rangement, 2026-10-08).
+			const rows = await navigableCategories();
 
 			const { level } = menuLevel(rows);
 			// Construire l'arbre complet pour chaque catégorie racine
@@ -185,6 +230,19 @@ async function getCategoryBreadcrumb(categoryId: number) {
 	return ancestorsOf(all, cat).filter((c) => !skipped.has(c.id));
 }
 
+/**
+ * Garde-fou de rangement : une catégorie machine n'affiche pas de pièce, et
+ * l'arbre des pièces n'affiche pas de machine, même mal rattachées.
+ */
+export function excludedTypesFor(rootSlug: string, kind: CategoryKind): string[] | undefined {
+	if (rootSlug === 'pieces-detachees') return ['machine'];
+	if (rootSlug !== 'produits-machines') return undefined;
+	// Une catégorie de machines (« Tracteurs tondeuse ») n'affiche que des
+	// machines : bacs, lames et batteries restent dans leur sous-catégorie
+	// d'accessoires, qui, elle, les montre.
+	return kind === 'machine' ? ['part', 'consumable'] : ['part'];
+}
+
 /** Une catégorie active par slug, avec enfants, ancêtres et ids de sa descendance. */
 export async function getShopCategory(slug: string) {
 	const all = await activeCategories();
@@ -194,13 +252,21 @@ export async function getShopCategory(slug: string) {
 	// Les racines techniques n'apparaissent ni dans le menu ni dans le fil d'Ariane.
 	const { skipped } = menuLevel(all);
 
+	const populated = new Set(await populatedCategoryIds());
+	const ancestors = ancestorsOf(all, cat);
+
 	return {
 		...cat,
-		breadcrumb: ancestorsOf(all, cat).filter((c) => !skipped.has(c.id)),
+		breadcrumb: ancestors.filter((c) => !skipped.has(c.id)),
+		// Sous-catégories vides masquées, comme dans le menu.
 		children: all
-			.filter((c) => c.parentId === cat.id)
+			.filter((c) => c.parentId === cat.id && populated.has(c.id))
 			.sort((a, b) => a.position - b.position || a.name.localeCompare(b.name)),
-		subtreeIds: descendantIds(all, cat.id)
+		subtreeIds: descendantIds(all, cat.id),
+		/** Racine de l'arbre : « pieces-detachees » ou « produits-machines ». */
+		rootSlug: ancestors[0]?.slug ?? cat.slug,
+		/** Machines, accessoires ou autre — même règle que le typage des produits. */
+		kind: categoryKind(ancestors)
 	};
 }
 
@@ -217,6 +283,11 @@ export type ShopListParams = {
 	brandIds?: number[];
 	/** Ne garde que les articles disponibles immédiatement. */
 	inStockOnly?: boolean;
+	/**
+	 * Natures de produit écartées (`product.type`) : les pièces d'une catégorie
+	 * machine, les machines de l'arbre des pièces.
+	 */
+	excludeTypes?: string[];
 	/** Caractéristiques retenues : « Matériau=Acier », « Largeur=12 mm »… */
 	specs?: { name: string; value: string }[];
 	sort?: ShopSort;
@@ -235,6 +306,8 @@ export type ShopListParams = {
  */
 function listConditions(params: ShopListParams & { secondaryCategories?: boolean }): SQL[] {
 	const conditions: SQL[] = [eq(product.isActive, true)];
+
+	if (params.excludeTypes?.length) conditions.push(notInArray(product.type, params.excludeTypes));
 
 	if (params.categoryIds?.length) {
 		const direct = inArray(product.categoryId, params.categoryIds);
@@ -528,7 +601,7 @@ function activeBrandOptions() {
  */
 export async function loadShopListing(
 	url: URL,
-	scope: { categoryIds?: number[]; search?: string } = {}
+	scope: { categoryIds?: number[]; search?: string; excludeTypes?: string[] } = {}
 ) {
 	const parsed = parseShopListParams(url);
 
@@ -538,6 +611,7 @@ export async function loadShopListing(
 	const filters: ShopListParams = {
 		categoryIds: scope.categoryIds,
 		search: scope.search || undefined,
+		excludeTypes: scope.excludeTypes,
 		brandIds: selected.length > 0 ? selected.map((b) => b.id) : undefined,
 		inStockOnly: parsed.inStockOnly,
 		specs: parsed.specs.length > 0 ? parsed.specs : undefined

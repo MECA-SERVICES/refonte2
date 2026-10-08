@@ -1,13 +1,16 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getShopCategory, loadShopListing } from '$lib/server/shop';
+import { excludedTypesFor, getShopCategory, loadShopListing } from '$lib/server/shop';
 import { sanitizeHtml } from '$lib/server/sanitize';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const category = await getShopCategory(params.slug);
 	if (!category) error(404, 'Catégorie introuvable');
 
-	const listing = await loadShopListing(url, { categoryIds: category.subtreeIds });
+	const listing = await loadShopListing(url, {
+		categoryIds: category.subtreeIds,
+		excludeTypes: excludedTypesFor(category.rootSlug, category.kind)
+	});
 
 	return {
 		category: {
