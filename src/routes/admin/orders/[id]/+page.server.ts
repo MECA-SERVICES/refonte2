@@ -1,6 +1,12 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getOrderFull, getOrderState, listOrderStates, changeOrderState } from '$lib/server/orders';
+import {
+	getOrderFull,
+	getOrderState,
+	listOrderStates,
+	changeOrderState,
+	updateOrderPrivateNote
+} from '$lib/server/orders';
 import { shipOrder, FulfillmentError } from '$lib/server/fulfillment';
 import {
 	fetchLabelPdf,
@@ -63,10 +69,25 @@ export const actions: Actions = {
 		await changeOrderState({
 			orderId: id,
 			stateId,
-			changedBy: locals.user?.id ?? null,
-			note: form.get('note')?.toString().trim() || null
+			changedBy: locals.user?.id ?? null
 		});
 		return { success: true };
+	},
+
+	/**
+	 * Note interne de la commande, enregistrée automatiquement pendant la
+	 * saisie. Une seule note par commande, jamais visible du client.
+	 */
+	saveNote: async ({ request, params }) => {
+		const id = Number(params.id);
+		if (!Number.isInteger(id)) throw error(404, 'Commande introuvable');
+
+		const form = await request.formData();
+		const note = form.get('privateNote')?.toString() ?? '';
+		if (note.length > 10000) return fail(400, { message: 'Note trop longue.' });
+
+		await updateOrderPrivateNote(id, note.trim() || null);
+		return { noteSaved: true };
 	},
 
 	/** Crée le colis chez Sendcloud et enregistre le suivi (R12, R13). */

@@ -255,6 +255,11 @@ export async function getOrderFull(id: number) {
 	return { ...row, lines, customer: cust[0], state: state[0], history };
 }
 
+/** Note interne de la commande (back-office uniquement). */
+export async function updateOrderPrivateNote(id: number, note: string | null) {
+	await db.update(order).set({ privateNote: note, updatedAt: new Date() }).where(eq(order.id, id));
+}
+
 /** Change l'état d'une commande et journalise le changement. */
 export async function changeOrderState(input: {
 	orderId: number;
