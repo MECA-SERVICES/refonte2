@@ -350,7 +350,8 @@ export function parseOrderStateForm(form: FormData): ParseResult<NewOrderState> 
 			isShipped: bool('isShipped'),
 			isFinal: bool('isFinal'),
 			sendEmailOnChange: bool('sendEmailOnChange'),
-			hideFromClient: bool('hideFromClient')
+			hideFromClient: bool('hideFromClient'),
+			isActive: bool('isActive')
 		}
 	};
 }

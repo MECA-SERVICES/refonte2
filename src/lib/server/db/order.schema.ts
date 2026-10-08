@@ -43,6 +43,11 @@ export const orderState = pgTable(
 		isFinal: boolean('is_final').notNull().default(false),
 		/** Cache l'état côté client (usage interne). */
 		hideFromClient: boolean('hide_from_client').notNull().default(false),
+		/**
+		 * Un état inactif n'est plus proposé au changement d'état d'une
+		 * commande ; les commandes qui le portent le conservent.
+		 */
+		isActive: boolean('is_active').notNull().default(true),
 		/** Envoie un email au client lors du passage à cet état. */
 		sendEmailOnChange: boolean('send_email_on_change').notNull().default(false),
 

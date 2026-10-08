@@ -48,6 +48,9 @@
 		</div>
 
 		<div class="mt-4 space-y-3">
+			<Toggle name="isActive" checked={state?.isActive ?? true}>
+				Active (proposée au changement d'état des commandes)
+			</Toggle>
 			<Toggle name="isPaid" checked={state?.isPaid ?? false}>Considérée comme payée</Toggle>
 			<Toggle name="isShipped" checked={state?.isShipped ?? false}>
 				Considérée comme expédiée

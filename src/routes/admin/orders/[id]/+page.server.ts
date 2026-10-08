@@ -1,6 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getOrderFull, listOrderStates, changeOrderState } from '$lib/server/orders';
+import { getOrderFull, getOrderState, listOrderStates, changeOrderState } from '$lib/server/orders';
 import { shipOrder, FulfillmentError } from '$lib/server/fulfillment';
 import {
 	fetchLabelPdf,
@@ -33,7 +33,11 @@ export const load: PageServerLoad = async ({ params }) => {
 		invoiceIssuedAt: invoice
 			? new Intl.DateTimeFormat('fr-FR').format(new Date(invoice.issuedAt ?? invoice.createdAt))
 			: null,
-		states: states.map((s) => ({ id: s.id, label: s.label, color: s.color })),
+		// États proposés au changement : les actifs, plus l'état courant même
+		// désactivé, pour que la liste déroulante affiche la valeur réelle.
+		states: states
+			.filter((s) => s.isActive || s.id === order.stateId)
+			.map((s) => ({ id: s.id, label: s.label, color: s.color })),
 		sendcloudReady: isSendcloudConfigured(),
 		/** Offre de test Sendcloud : étiquette créée sans transporteur ni facturation. */
 		testOptionCode: TEST_SHIPPING_OPTION_CODE,
@@ -50,6 +54,11 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const stateId = Number(form.get('stateId'));
 		if (!Number.isInteger(stateId)) return fail(400, { message: 'État invalide.' });
+
+		// Un état désactivé n'est plus applicable depuis le back-office.
+		const target = await getOrderState(stateId);
+		if (!target) return fail(400, { message: 'État invalide.' });
+		if (!target.isActive) return fail(400, { message: 'Cet état est désactivé.' });
 
 		await changeOrderState({
 			orderId: id,

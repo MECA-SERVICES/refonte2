@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button, Badge } from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
-	import { PageHeader, DataTable, StateBadge } from '$lib/components/admin';
+	import { PageHeader, DataTable, StateBadge, ActiveBadge } from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -27,6 +27,10 @@
 	<StateBadge label={row.label} color={row.color} />
 {/snippet}
 
+{#snippet activeCell(row: StateRow)}
+	<ActiveBadge active={row.isActive} />
+{/snippet}
+
 {#snippet flagsCell(row: StateRow)}
 	<div class="flex flex-wrap gap-1">
 		{#if row.isPaid}<Badge color="green">Payé</Badge>{/if}
@@ -42,7 +46,8 @@
 		{ key: 'state', label: 'État', cell: stateCell },
 		{ key: 'code', label: 'Code' },
 		{ key: 'position', label: 'Ordre' },
-		{ key: 'flags', label: 'Propriétés', cell: flagsCell }
+		{ key: 'flags', label: 'Propriétés', cell: flagsCell },
+		{ key: 'active', label: 'État', cell: activeCell }
 	]}
 	emptyMessage="Aucun état."
 	rowHref={(row) => `/admin/order-states/${row.id}`}
