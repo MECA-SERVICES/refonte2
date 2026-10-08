@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
 	import { formatPrice } from '$lib/money';
 	import { paymentMethodLabel } from '$lib/payment-methods';
 	import { enhance } from '$app/forms';
@@ -16,8 +15,7 @@
 		TableBodyCell,
 		TableBodyRow,
 		TableHead,
-		TableHeadCell,
-		Textarea
+		TableHeadCell
 	} from 'flowbite-svelte';
 	import {
 		ArrowsRepeatOutline,
@@ -29,7 +27,13 @@
 		TruckOutline
 	} from 'flowbite-svelte-icons';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { PageHeader, StateBadge, SupportThreadsCard, Thumbnail } from '$lib/components/admin';
+	import {
+		AutosaveNote,
+		PageHeader,
+		StateBadge,
+		SupportThreadsCard,
+		Thumbnail
+	} from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -74,49 +78,6 @@
 
 		const amount = revenue - cost;
 		return { amount, percent: (amount / revenue) * 100 };
-	}
-
-	// ---- Note interne, enregistrée automatiquement ----
-
-	let note = $state(untrack(() => data.order.privateNote ?? ''));
-	let lastSaved = untrack(() => data.order.privateNote ?? '');
-	let noteStatus = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
-	let noteTimer: ReturnType<typeof setTimeout> | undefined;
-
-	/** Envoie la note à l'action `saveNote`, sans recharger la page. */
-	async function saveNote() {
-		const value = note;
-		if (value === lastSaved) return;
-		noteStatus = 'saving';
-		const body = new FormData();
-		body.set('privateNote', value);
-		try {
-			const response = await fetch('?/saveNote', {
-				method: 'POST',
-				body,
-				headers: { 'x-sveltekit-action': 'true' }
-			});
-			const result = await response.json();
-			if (result.type !== 'success') throw new Error(result.type);
-			lastSaved = value;
-			// Une saisie survenue pendant l'envoi relance un enregistrement.
-			noteStatus = note === value ? 'saved' : 'saving';
-			if (note !== value) scheduleNoteSave();
-		} catch {
-			noteStatus = 'error';
-		}
-	}
-
-	/** Enregistre une seconde après la dernière frappe. */
-	function scheduleNoteSave() {
-		clearTimeout(noteTimer);
-		noteTimer = setTimeout(saveNote, 1000);
-	}
-
-	/** En quittant le champ, on n'attend pas le délai. */
-	function flushNoteSave() {
-		clearTimeout(noteTimer);
-		saveNote();
 	}
 
 	/** Une commande expédiée ne se remballe pas : l'écran s'adapte à cet état. */
@@ -222,6 +183,12 @@
 			>
 				{o.customer.firstName}
 				{o.customer.lastName}
+			</a>
+			<a
+				href={resolve('/admin/customers/[id]', { id: String(o.customer.id) })}
+				class="mt-0.5 inline-block text-xs font-medium text-primary-700 hover:underline dark:text-primary-400 print:hidden"
+			>
+				En savoir plus →
 			</a>
 		{:else}
 			<p class="mt-1 text-lg font-semibold text-gray-400">Compte supprimé</p>
@@ -768,33 +735,11 @@
 		/>
 
 		<!-- Note interne : une seule par commande, enregistrée à la saisie. -->
-		<Card class="max-w-none p-6">
-			<div class="mb-3 flex items-center justify-between gap-2">
-				<h2 class="text-base font-semibold text-gray-900 dark:text-white">Note interne</h2>
-				<span class="text-xs text-gray-500 print:hidden" aria-live="polite">
-					{#if noteStatus === 'saving'}
-						Enregistrement…
-					{:else if noteStatus === 'saved'}
-						Enregistrée
-					{:else if noteStatus === 'error'}
-						<span class="text-red-600 dark:text-red-400">Échec de l'enregistrement</span>
-					{/if}
-				</span>
-			</div>
-			<Textarea
-				class="w-full text-sm print:hidden"
-				rows={6}
-				bind:value={note}
-				oninput={scheduleNoteSave}
-				onblur={flushNoteSave}
-				placeholder="Informations utiles à l'équipe sur cette commande…"
-			/>
-			<!-- À l'impression, le texte remplace le champ. -->
-			<p class="hidden text-sm whitespace-pre-line print:block">{note || '—'}</p>
-			<p class="mt-2 text-xs text-gray-400 print:hidden">
-				Visible uniquement en back-office. Enregistrement automatique.
-			</p>
-		</Card>
+		<AutosaveNote
+			value={o.privateNote}
+			action="?/saveNote"
+			placeholder="Informations utiles à l'équipe sur cette commande…"
+		/>
 
 		<!-- Adresses -->
 		{#snippet addressCard(title: string, a: Addr)}

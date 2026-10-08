@@ -1,6 +1,16 @@
 import { db } from '$lib/server/db';
-import { customer, address } from '$lib/server/db/schema';
-import { count, desc, eq } from 'drizzle-orm';
+import {
+	customer,
+	address,
+	order,
+	orderLine,
+	orderState,
+	cart,
+	cartItem,
+	product,
+	session
+} from '$lib/server/db/schema';
+import { count, desc, eq, sql } from 'drizzle-orm';
 import type { NewCustomer, NewAddress } from '$lib/server/db/customer.schema';
 import {
 	buildOrderBy,
@@ -183,5 +193,114 @@ export function parseCustomerForm(form: FormData): ParseResult<Omit<NewCustomer,
 			privateNote: str('privateNote'),
 			newsletterSubscribed: bool('newsletterSubscribed')
 		}
+	};
+}
+
+// ===========================================================================
+// Fiche client du back-office (vue d'ensemble façon PrestaShop)
+// ===========================================================================
+
+/**
+ * Tout ce que l'équipe consulte sur la fiche d'un client : commandes,
+ * paniers, produits achetés, rang parmi les meilleurs clients, connexions.
+ *
+ * Une commande « valide » est une commande dont l'état est considéré payé ;
+ * c'est aussi la base du classement des meilleurs clients.
+ */
+export async function getCustomerOverview(customerId: number, userId: string) {
+	const isPaid = sql<boolean>`coalesce(${orderState.isPaid}, false)`;
+
+	const [orders, carts, products, [rankRow], sessions] = await Promise.all([
+		db
+			.select({
+				id: order.id,
+				reference: order.reference,
+				createdAt: order.createdAt,
+				totalTtc: order.totalTtc,
+				paymentProvider: order.paymentProvider,
+				stateLabel: orderState.label,
+				stateColor: orderState.color,
+				isPaid,
+				itemCount: sql<number>`(
+					SELECT coalesce(sum(ol.quantity), 0)::int FROM ${orderLine} ol
+					WHERE ol.order_id = ${order.id}
+				)`
+			})
+			.from(order)
+			.leftJoin(orderState, eq(orderState.id, order.stateId))
+			.where(eq(order.customerId, customerId))
+			.orderBy(desc(order.createdAt)),
+		db
+			.select({
+				id: cart.id,
+				createdAt: cart.createdAt,
+				lastActivityAt: cart.lastActivityAt,
+				itemCount: sql<number>`coalesce(sum(${cartItem.quantity}), 0)::int`,
+				// Estimation au prix HT courant : le panier ne fige aucun prix.
+				totalHt: sql<string>`coalesce(sum(${cartItem.quantity} * ${product.priceHt}), 0)::numeric(12,2)::text`
+			})
+			.from(cart)
+			.leftJoin(cartItem, eq(cartItem.cartId, cart.id))
+			.leftJoin(product, eq(product.id, cartItem.productId))
+			.where(eq(cart.customerId, customerId))
+			.groupBy(cart.id)
+			.orderBy(desc(cart.lastActivityAt))
+			.limit(10),
+		db
+			.select({
+				productId: orderLine.productId,
+				name: orderLine.productName,
+				reference: orderLine.productReference,
+				quantity: sql<number>`sum(${orderLine.quantity})::int`,
+				lastBoughtAt: sql<Date>`max(${order.createdAt})`.mapWith(order.createdAt)
+			})
+			.from(orderLine)
+			.innerJoin(order, eq(order.id, orderLine.orderId))
+			.where(eq(order.customerId, customerId))
+			.groupBy(orderLine.productId, orderLine.productName, orderLine.productReference)
+			.orderBy(sql`max(${order.createdAt}) desc`)
+			.limit(50),
+		// Rang : nombre de clients ayant davantage dépensé, plus un.
+		db.execute<{ rank: number | null; spent: string }>(sql`
+			WITH spent AS (
+				SELECT o.customer_id, sum(o.total_ttc) AS total
+				FROM ${order} o JOIN ${orderState} s ON s.id = o.state_id
+				WHERE s.is_paid
+				GROUP BY o.customer_id
+			)
+			SELECT
+				(SELECT count(*)::int + 1 FROM spent WHERE total > me.total) AS rank,
+				me.total::text AS spent
+			FROM (SELECT coalesce((SELECT total FROM spent WHERE customer_id = ${customerId}), 0) AS total) me
+		`),
+		db
+			.select({
+				createdAt: session.createdAt,
+				updatedAt: session.updatedAt,
+				ipAddress: session.ipAddress,
+				userAgent: session.userAgent
+			})
+			.from(session)
+			.where(eq(session.userId, userId))
+			.orderBy(desc(session.updatedAt))
+			.limit(10)
+	]);
+
+	const valid = orders.filter((o) => o.isPaid);
+	const spent = Number(rankRow?.spent ?? 0);
+
+	return {
+		orders,
+		orderStats: {
+			validCount: valid.length,
+			validTotal: valid.reduce((sum, o) => sum + Number(o.totalTtc), 0),
+			invalidCount: orders.length - valid.length
+		},
+		carts,
+		products,
+		// Sans commande réglée, le client n'est pas classé.
+		rank: spent > 0 ? (rankRow?.rank ?? null) : null,
+		lastVisitAt: sessions[0]?.updatedAt ?? null,
+		sessions
 	};
 }
