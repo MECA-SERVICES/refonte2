@@ -184,7 +184,8 @@ export async function listOrders(params: OrderListParams = {}) {
 			customerFirstName: customer.firstName,
 			customerLastName: customer.lastName,
 			stateLabel: orderState.label,
-			stateColor: orderState.color
+			stateColor: orderState.color,
+			paymentProvider: order.paymentProvider
 		})
 		.from(order)
 		.leftJoin(customer, eq(order.customerId, customer.id))
@@ -359,6 +360,59 @@ export function parseOrderStateForm(form: FormData): ParseResult<NewOrderState> 
 // ===========================================================================
 // Paniers (lecture seule côté admin)
 // ===========================================================================
+
+/** Fenêtre des indicateurs de la page Paniers, comme PrestaShop : 30 jours glissants. */
+const CART_STATS_DAYS = 30;
+/** Un panier garni sans activité depuis ce délai est considéré abandonné. */
+const ABANDONED_AFTER_HOURS = 24;
+
+/**
+ * Indicateurs de la page Paniers.
+ *
+ * Une commande vide le panier qui l'a produite sans garder de lien vers lui :
+ * la transformation se mesure donc en rapportant les commandes passées aux
+ * paniers créés sur la même période.
+ */
+export async function cartStats() {
+	const since = sql`now() - make_interval(days => ${CART_STATS_DAYS})`;
+	const idleSince = sql`now() - make_interval(hours => ${ABANDONED_AFTER_HOURS})`;
+
+	const [[carts], [orders], [abandoned]] = await Promise.all([
+		db
+			.select({ n: count() })
+			.from(cart)
+			.where(sql`${cart.createdAt} >= ${since}`),
+		db
+			.select({
+				n: count(),
+				// Panier moyen : commandes réglées seulement, pour ne pas compter
+				// les paiements refusés ni les virements jamais reçus.
+				average: sql<string | null>`avg(${order.totalTtc}) filter (where ${orderState.isPaid})`
+			})
+			.from(order)
+			.leftJoin(orderState, eq(orderState.id, order.stateId))
+			.where(sql`${order.createdAt} >= ${since}`),
+		db
+			.select({ n: count() })
+			.from(cart)
+			.where(
+				and(
+					sql`${cart.lastActivityAt} >= ${since}`,
+					sql`${cart.lastActivityAt} < ${idleSince}`,
+					sql`EXISTS (SELECT 1 FROM ${cartItem} ci WHERE ci.cart_id = ${cart.id})`
+				)
+			)
+	]);
+
+	return {
+		days: CART_STATS_DAYS,
+		abandonedAfterHours: ABANDONED_AFTER_HOURS,
+		/** En pourcentage, `null` sans panier sur la période. */
+		conversionRate: carts.n > 0 ? Math.min(100, (orders.n / carts.n) * 100) : null,
+		abandonedCarts: abandoned.n,
+		averageOrder: orders.average === null ? null : Number(orders.average)
+	};
+}
 
 export async function listCarts(page = 1, perPage = 20) {
 	const p = Math.max(1, page);

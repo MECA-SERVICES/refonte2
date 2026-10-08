@@ -20,6 +20,12 @@ import { moneticoConfig, verifyReturn, type MoneticoConfig, type ReturnVerdict }
 const PAID_STATE = 'paiement-accepte';
 const FAILED_STATE = 'erreur-de-paiement';
 const AWAITING_STATE = 'en-attente-de-votre-reglement-cb';
+/**
+ * État d'arrivée d'une commande payée par carte : l'équipe la vérifie avant
+ * préparation, comme sous PrestaShop où « Paiement accepté » était aussitôt
+ * suivi de « En cours de validation par notre équipe ».
+ */
+const REVIEW_STATE = 'en-cours-de-validation-par-notre-equipe';
 
 export const MONETICO_PROVIDER = 'monetico';
 
@@ -177,6 +183,27 @@ export async function applyPaymentResult(
 					}).`,
 			changedBy: options.actor ?? 'Monetico'
 		});
+
+		// Le paiement est tracé, puis la commande passe en validation par
+		// l'équipe : c'est l'état où elle attend réellement un traitement.
+		if (verdict.accepted) {
+			const [review] = await tx
+				.select({ id: orderState.id })
+				.from(orderState)
+				.where(eq(orderState.code, REVIEW_STATE))
+				.limit(1);
+			if (!review) throw new PaymentError(`État « ${REVIEW_STATE} » introuvable.`);
+
+			await tx
+				.update(order)
+				.set({ stateId: review.id, updatedAt: now })
+				.where(eq(order.id, current.id));
+			await tx.insert(orderStateHistory).values({
+				orderId: current.id,
+				stateId: review.id,
+				changedBy: options.actor ?? 'Monetico'
+			});
+		}
 
 		return { applied: true, orderId: current.id };
 	});

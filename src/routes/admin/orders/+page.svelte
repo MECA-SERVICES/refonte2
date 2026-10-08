@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatPrice } from '$lib/money';
+	import { paymentMethodLabel } from '$lib/payment-methods';
 	import {
 		PageHeader,
 		FilterableTable,
@@ -242,6 +243,10 @@
 	{#if row.stateLabel}<StateBadge label={row.stateLabel} color={row.stateColor ?? '#6b7280'} />{/if}
 {/snippet}
 
+{#snippet paymentCell(row: OrderRow)}
+	<span class="whitespace-nowrap">{paymentMethodLabel(row.paymentProvider)}</span>
+{/snippet}
+
 {#snippet totalCell(row: OrderRow)}
 	<span class="font-medium text-gray-900 dark:text-white">{formatPrice(Number(row.totalTtc))}</span>
 {/snippet}
@@ -265,6 +270,7 @@
 		},
 		{ key: 'customer', label: 'Client', cell: customerCell, filterKey: 'customer' },
 		{ key: 'state', label: 'État', cell: stateCell },
+		{ key: 'payment', label: 'Paiement', cell: paymentCell },
 		{ key: 'total', label: 'Total TTC', cell: totalCell, sortKey: 'totalTtc' },
 		{ key: 'date', label: 'Date', cell: dateCell, sortKey: 'createdAt' }
 	]}

@@ -6,12 +6,15 @@
 		label,
 		value,
 		icon,
-		href
+		href,
+		hint
 	}: {
 		label: string;
 		value: string | number;
 		icon?: Component;
 		href?: string;
+		/** Précision sous la valeur : période, mode de calcul. */
+		hint?: string;
 	} = $props();
 
 	const Icon = $derived(icon);
@@ -22,6 +25,9 @@
 		<div>
 			<p class="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p>
 			<p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
+			{#if hint}
+				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{hint}</p>
+			{/if}
 		</div>
 		{#if Icon}
 			<div

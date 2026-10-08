@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatPrice } from '$lib/money';
+	import { paymentMethodLabel } from '$lib/payment-methods';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import {
@@ -83,9 +84,7 @@
 	let tab = $state<Tab>('state');
 
 	const hasPayment = $derived(Boolean(o.paidAt || o.paymentProvider));
-	const paymentLabel = $derived(
-		o.paymentProvider === 'bank_transfer' ? 'Virement' : (o.paymentProvider ?? '—')
-	);
+	const paymentLabel = $derived(paymentMethodLabel(o.paymentProvider));
 	const documentCount = $derived((data.invoiceNumber ? 1 : 0) + (o.sendcloudParcelId ? 1 : 0));
 
 	const tabs = $derived([

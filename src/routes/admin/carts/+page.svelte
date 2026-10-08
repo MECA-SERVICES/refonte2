@@ -1,11 +1,16 @@
 <script lang="ts">
-	import { PageHeader, DataTable, Pagination } from '$lib/components/admin';
+	import { PageHeader, DataTable, Pagination, StatCard } from '$lib/components/admin';
+	import { CartSolid, ChartLineUpOutline, CashOutline } from 'flowbite-svelte-icons';
+	import { formatPrice } from '$lib/money';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
 	type CartRow = (typeof data.rows)[number];
 	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+	const percentFmt = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
+
+	const s = $derived(data.stats);
 </script>
 
 <svelte:head><title>Paniers · Administration</title></svelte:head>
@@ -15,6 +20,28 @@
 	subtitle="{data.total} panier{data.total > 1 ? 's' : ''}"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Paniers' }]}
 />
+
+<!-- Indicateurs sur 30 jours glissants, comme la page Paniers de PrestaShop. -->
+<div class="mb-6 grid gap-4 sm:grid-cols-3">
+	<StatCard
+		label="Taux de transformation"
+		value={s.conversionRate === null ? '—' : `${percentFmt.format(s.conversionRate)} %`}
+		icon={ChartLineUpOutline}
+		hint="Commandes / paniers créés · {s.days} jours"
+	/>
+	<StatCard
+		label="Paniers abandonnés"
+		value={s.abandonedCarts}
+		icon={CartSolid}
+		hint="Garnis, inactifs depuis plus de {s.abandonedAfterHours} h · {s.days} jours"
+	/>
+	<StatCard
+		label="Panier moyen"
+		value={s.averageOrder === null ? '—' : formatPrice(s.averageOrder)}
+		icon={CashOutline}
+		hint="Commandes réglées, TTC · {s.days} jours"
+	/>
+</div>
 
 {#snippet idCell(row: CartRow)}
 	<span class="text-gray-500">{row.id}</span>
