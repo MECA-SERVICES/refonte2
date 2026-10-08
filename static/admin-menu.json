@@ -31,11 +31,6 @@
 							"id": "shopping-carts",
 							"label": "Paniers",
 							"href": "/admin/carts"
-						},
-						{
-							"id": "order-states",
-							"label": "États de commande",
-							"href": "/admin/order-states"
 						}
 					]
 				},
@@ -282,6 +277,11 @@
 							"id": "order-settings",
 							"label": "Commandes",
 							"href": "/admin/order-settings"
+						},
+						{
+							"id": "order-states",
+							"label": "États de commande",
+							"href": "/admin/order-states"
 						},
 						{
 							"id": "product-settings",
