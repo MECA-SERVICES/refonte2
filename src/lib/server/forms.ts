@@ -6,6 +6,8 @@
  * avant d'en redéfinir un dans un module, vérifier qu'il n'est pas déjà là.
  */
 
+import { round2 } from '$lib/money';
+
 /**
  * Résultat d'une analyse de formulaire.
  *
@@ -35,6 +37,13 @@ export function formFields(form: FormData) {
 			const s = form.get(key)?.toString().trim().replace(',', '.');
 			if (!s) return null;
 			return Number.isNaN(Number(s)) ? null : s;
+		},
+		/** Montant arrondi au centime (colonnes numeric SQL), ou null. */
+		money(key: string): string | null {
+			const s = form.get(key)?.toString().trim().replace(',', '.');
+			if (!s) return null;
+			const n = Number(s);
+			return Number.isFinite(n) ? round2(n).toFixed(2) : null;
 		},
 		/** Entier, avec repli si la saisie n'en est pas un. */
 		int(key: string, fallback = 0): number {

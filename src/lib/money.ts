@@ -20,6 +20,19 @@ export function computeTtc(priceHt: string | number, rate: string | number): num
 	return round2(Number(priceHt) * (1 + Number(rate) / 100));
 }
 
+/**
+ * Valeur d'un champ de saisie de prix : deux décimales, vide si absente.
+ *
+ * Les prix repris de PrestaShop sont stockés sur quatre décimales
+ * (`numeric(12,4)`) ; affichés tels quels, un champ montrait « 12.3400 » et
+ * le navigateur refusait la valeur au regard de `step="0.01"`.
+ */
+export function toMoneyInput(value: string | number | null | undefined): string {
+	if (value === null || value === undefined || value === '') return '';
+	const n = Number(value);
+	return Number.isFinite(n) ? round2(n).toFixed(2) : '';
+}
+
 const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 const eurWhole = new Intl.NumberFormat('fr-FR', {
 	style: 'currency',

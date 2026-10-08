@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { computeTtc, formatPrice } from '$lib/money';
+	import { computeTtc, formatPrice, toMoneyInput } from '$lib/money';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import {
@@ -81,9 +81,9 @@
 
 	// Prix HT saisi + taux sélectionné → aperçu TTC en direct.
 	// untrack : on ne capture que la valeur initiale (le produit ne change pas pendant l'édition).
-	let priceHt = $state(untrack(() => val(product?.priceHt)));
+	let priceHt = $state(untrack(() => toMoneyInput(product?.priceHt)));
 	let taxRuleId = $state(untrack(() => val(product?.taxRuleId)));
-	let purchasePrice = $state(untrack(() => val(product?.purchasePrice)));
+	let purchasePrice = $state(untrack(() => toMoneyInput(product?.purchasePrice)));
 	let isActive = $state(untrack(() => product?.isActive ?? true));
 	let availableForOrder = $state(untrack(() => product?.availableForOrder ?? true));
 	// Lié pour alimenter le compteur de caractères du résumé.
@@ -142,7 +142,23 @@
 	</button>
 {/snippet}
 
-<form method="POST" {action} use:enhance class="pb-24">
+<!--
+	`reset: false` : après un enregistrement réussi, SvelteKit réinitialise
+	par défaut le formulaire, et les champs remplis par `value={…}` se
+	retrouvaient vides. Les données rechargées alimentent déjà les champs.
+-->
+<form
+	method="POST"
+	{action}
+	use:enhance={() =>
+		async ({ update }) => {
+			await update({ reset: false });
+			// Les prix liés reprennent la valeur enregistrée (arrondie au centime).
+			priceHt = toMoneyInput(product?.priceHt);
+			purchasePrice = toMoneyInput(product?.purchasePrice);
+		}}
+	class="pb-24"
+>
 	{#if message}
 		<Alert color="red" class="mb-4">{message}</Alert>
 	{/if}
@@ -594,7 +610,7 @@
 								name="shippingExtraFee"
 								type="number"
 								step="0.01"
-								value={val(product?.shippingExtraFee)}
+								value={toMoneyInput(product?.shippingExtraFee)}
 							/>
 						</div>
 					</div>
@@ -666,7 +682,7 @@
 								type="number"
 								step="0.01"
 								min="0"
-								value={val(product?.ecotax)}
+								value={toMoneyInput(product?.ecotax)}
 							/>
 							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 								Incluse dans le prix affiché, détaillée sur la fiche produit.
@@ -679,7 +695,7 @@
 								name="priceHtStrike"
 								type="number"
 								step="0.01"
-								value={val(product?.priceHtStrike)}
+								value={toMoneyInput(product?.priceHtStrike)}
 							/>
 							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 								Ancien prix affiché barré à côté du prix courant. À laisser vide tant qu'aucune

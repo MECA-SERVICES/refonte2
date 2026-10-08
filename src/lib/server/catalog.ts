@@ -395,11 +395,12 @@ export async function deleteProduct(id: number) {
 
 /** Extrait et valide les champs d'un produit depuis un FormData. */
 export function parseProductForm(form: FormData): ParseResult<NewProduct> {
-	const { str, num, int, bool, date } = formFields(form);
+	const { str, num, money, int, bool, date } = formFields(form);
 
 	const name = str('name');
 	const reference = str('reference');
-	const priceHt = num('priceHt');
+	// Montants arrondis au centime : deux décimales au plus (prix saisis en euros).
+	const priceHt = money('priceHt');
 
 	if (!name || !reference || priceHt === null) {
 		return { ok: false, error: 'Le nom, la référence (SKU) et le prix HT sont requis.' };
@@ -427,8 +428,8 @@ export function parseProductForm(form: FormData): ParseResult<NewProduct> {
 			description: str('description'),
 			metaTitle: str('metaTitle'),
 			metaDescription: str('metaDescription'),
-			priceHtStrike: num('priceHtStrike'),
-			purchasePrice: num('purchasePrice'),
+			priceHtStrike: money('priceHtStrike'),
+			purchasePrice: money('purchasePrice'),
 			stock: int('stock'),
 			// Quantité minimale par commande : au moins 1, sinon le produit
 			// deviendrait inachetable.
@@ -441,7 +442,7 @@ export function parseProductForm(form: FormData): ParseResult<NewProduct> {
 			lengthCm: num('lengthCm'),
 			widthCm: num('widthCm'),
 			heightCm: num('heightCm'),
-			shippingExtraFee: num('shippingExtraFee'),
+			shippingExtraFee: money('shippingExtraFee'),
 			// Messages de délai d'expédition (onglet « Livraison »). Un message
 			// laissé vide désactive l'affichage, comme chez PrestaShop.
 			deliveryTimeMode: normalizeDeliveryMode(str('deliveryTimeMode')),
@@ -450,7 +451,7 @@ export function parseProductForm(form: FormData): ParseResult<NewProduct> {
 			// Écotaxe : déjà affichée sur la fiche et comptée au panier, elle
 			// n'était jusqu'ici modifiable que directement en base. La colonne
 			// est NOT NULL : un champ vide vaut zéro, pas « non renseigné ».
-			ecotax: num('ecotax') ?? '0',
+			ecotax: money('ecotax') ?? '0',
 			/*
 			 * Disponibilité à la commande.
 			 *
