@@ -27,6 +27,7 @@ import type { Category } from '$lib/server/db/catalog.schema';
 import { cached } from './cache';
 import { categoryKind, type CategoryKind } from '$lib/catalog-kinds';
 import { searchCondition, searchRank } from './search';
+import { searchCatalog } from './meili';
 import {
 	isBrandLogoSql,
 	priceTtcSql,
@@ -458,6 +459,18 @@ async function computeSpecFacets(
 		.orderBy(desc(sql`count(*)`))
 		.limit(maxNames * maxValues * 4);
 
+	return groupSpecFacets(rows, maxNames, maxValues);
+}
+
+/**
+ * Regroupe des couples « libellé / valeur » comptés (ordre de fréquence
+ * décroissante) en facettes : partagé entre l'agrégation SQL et Meilisearch.
+ */
+function groupSpecFacets(
+	rows: { name: string; value: string; total: number }[],
+	maxNames: number,
+	maxValues: number
+) {
 	// Regroupement par libellé, en conservant l'ordre de fréquence.
 	const byName = new Map<string, { value: string; total: number }[]>();
 	for (const row of rows) {
@@ -617,12 +630,21 @@ export async function loadShopListing(
 		specs: parsed.specs.length > 0 ? parsed.specs : undefined
 	};
 
-	const [products, brandFacets, inStockTotal, specFacets] = await Promise.all([
-		listShopProducts({ ...filters, sort: parsed.sort, page: parsed.page }),
-		shopBrandFacets(filters),
-		shopStockFacet(filters),
-		shopSpecFacets(filters)
-	]);
+	// Une recherche passe par Meilisearch ; en son absence (ou en panne), par
+	// la recherche SQL. Les rayons restent en SQL : sans saisie, rien à classer.
+	const searched =
+		filters.search && !filters.categoryIds
+			? await searchShopListing(filters, parsed, brands)
+			: null;
+
+	const [products, brandFacets, inStockTotal, specFacets] = searched
+		? [searched.products, searched.brandFacets, searched.inStockTotal, searched.specFacets]
+		: await Promise.all([
+				listShopProducts({ ...filters, sort: parsed.sort, page: parsed.page }),
+				shopBrandFacets(filters),
+				shopStockFacet(filters),
+				shopSpecFacets(filters)
+			]);
 
 	// Les facettes portent l'id de marque ; l'URL, le slug, plus lisible.
 	const byId = new Map(brands.map((b) => [b.id, b]));
@@ -643,6 +665,84 @@ export async function loadShopListing(
 			specs: parsed.specs.map((s) => `${s.name}:${s.value}`)
 		}
 	};
+}
+
+/**
+ * Listing de recherche servi par Meilisearch, au format de `loadShopListing`.
+ *
+ * Meilisearch fournit l'ordre des résultats et les compteurs de facettes ;
+ * les cartes sont relues en base pour afficher prix et stock exacts.
+ * `null` si Meilisearch est indisponible : l'appelant retombe sur le SQL.
+ */
+async function searchShopListing(
+	filters: ShopListParams,
+	parsed: ParsedShopListParams,
+	brands: { id: number; name: string }[]
+) {
+	const perPage = SHOP_PAGE_SIZE;
+	const page = Math.max(1, parsed.page);
+	const result = await searchCatalog({
+		q: filters.search!,
+		brandIds: filters.brandIds,
+		inStockOnly: filters.inStockOnly,
+		excludeTypes: filters.excludeTypes,
+		specs: filters.specs,
+		sort: parsed.sort,
+		page,
+		perPage
+	});
+	if (!result) return null;
+
+	const rows = await shopProductCardsByIds(result.ids);
+
+	// Mêmes règles que les facettes SQL : douze marques au plus, les plus
+	// représentées d'abord ; caractéristiques au seuil adapté à la taille du
+	// périmètre (cf. `shopSpecFacets`).
+	const brandFacets = brands
+		.filter((b) => result.brandCounts.has(b.id))
+		.map((b) => ({ id: b.id, name: b.name, total: result.brandCounts.get(b.id)! }))
+		.sort((a, b) => b.total - a.total)
+		.slice(0, 12);
+
+	const threshold = result.specScopeTotal < 300 ? 2 : 5;
+	const specRows = result.specCounts
+		.filter((s) => s.total >= threshold)
+		.sort((a, b) => b.total - a.total)
+		.map(({ token, total }) => {
+			const at = token.indexOf('=');
+			return { name: token.slice(0, at), value: token.slice(at + 1), total };
+		});
+
+	return {
+		products: {
+			rows,
+			page,
+			perPage,
+			hasNextPage: page < result.totalPages,
+			total: result.totalHits,
+			pageCount: Math.max(1, result.totalPages)
+		},
+		brandFacets,
+		inStockTotal: result.inStockTotal,
+		specFacets: groupSpecFacets(specRows, 6, 8)
+	};
+}
+
+/**
+ * Cartes produit dans l'ordre des ids donnés — résultats d'un classement
+ * Meilisearch. Un produit désactivé depuis la dernière indexation est écarté.
+ */
+export async function shopProductCardsByIds(ids: number[]) {
+	if (ids.length === 0) return [];
+	const rows = await db
+		.select(productCardFields)
+		.from(product)
+		.leftJoin(brand, eq(product.brandId, brand.id))
+		.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
+		.where(and(eq(product.isActive, true), inArray(product.id, ids)));
+
+	const byId = new Map(rows.map((row) => [row.id, row]));
+	return ids.map((id) => byId.get(id)).filter((row) => row !== undefined);
 }
 
 /** Marques actives mises en avant sur l'accueil (celles avec logo d'abord). */

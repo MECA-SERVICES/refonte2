@@ -12,6 +12,8 @@ import {
 	searchRank
 } from '$lib/server/search';
 import { isBrandLogoSql, priceTtcSql, thumbnailWithBrandFallbackSql } from '$lib/server/pricing';
+import { searchPreview } from '$lib/server/meili';
+import { shopProductCardsByIds } from '$lib/server/shop';
 
 /**
  * Aperçu de recherche — alimente la liste déroulante des barres de recherche.
@@ -20,6 +22,10 @@ import { isBrandLogoSql, priceTtcSql, thumbnailWithBrandFallbackSql } from '$lib
  * plus les catégories et marques dont le nom correspond — taper « robot
  * tondeuse » propose d'ouvrir tout le rayon. La page /recherche reste la vue
  * complète (filtres, pagination) ; ici on répond vite, à chaque frappe.
+ *
+ * Meilisearch classe (une seule requête pour les trois listes) ; la
+ * recherche trigramme ci-dessous ne sert plus qu'en repli, s'il est absent
+ * ou en panne.
  */
 const categoryNameSql = sql`f_unaccent(lower(${category.name}))`;
 const brandNameSql = sql`f_unaccent(lower(${brand.name}))`;
@@ -32,8 +38,19 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
 
 	if (q.length < 2) return json({ products: [], categories: [], brands: [] });
 
+	const preview = await searchPreview(q);
+	if (preview) {
+		const products = await shopProductCardsByIds(preview.productIds);
+		return json({ products, categories: preview.categories, brands: preview.brands });
+	}
+
+	return json(await sqlPreview(q));
+};
+
+/** Aperçu par la recherche trigramme (`$lib/server/search`) — chemin de repli. */
+async function sqlPreview(q: string) {
 	const condition = searchCondition(q);
-	if (!condition) return json({ products: [], categories: [], brands: [] });
+	if (!condition) return { products: [], categories: [], brands: [] };
 
 	const [products, categories, brands] = await Promise.all([
 		db
@@ -80,5 +97,5 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
 
 	const uniqueCategories = [...new Map(categories.map((c) => [c.name, c])).values()].slice(0, 3);
 
-	return json({ products, categories: uniqueCategories, brands });
-};
+	return { products, categories: uniqueCategories, brands };
+}

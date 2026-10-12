@@ -23,6 +23,7 @@ import {
 import { formFields, type ParseResult } from '$lib/server/forms';
 import { firstImageSql } from '$lib/server/pricing';
 import { normalizeDeliveryMode } from '$lib/delivery-time';
+import { removeProducts, syncBrand, syncCategory, syncProducts } from '$lib/server/meili';
 import type {
 	NewBrand,
 	NewCategory,
@@ -36,6 +37,11 @@ import type {
 // Le mécanisme générique de listing (liste blanche de colonnes, recherche,
 // tri, pagination) vit dans $lib/server/listing ; ré-exporté pour les routes.
 export type { ListParams } from '$lib/server/listing';
+
+// Index de recherche : chaque écriture ci-dessous qui change ce qu'on trouve
+// en vitrine le signale à Meilisearch ($lib/server/meili). Ces appels partent
+// en tâche de fond et n'échouent jamais : un enregistrement admin ne dépend
+// pas de la disponibilité du moteur de recherche.
 
 // ===========================================================================
 // Marques
@@ -73,20 +79,26 @@ export async function getBrand(id: number) {
 
 export async function createBrand(values: NewBrand) {
 	const [row] = await db.insert(brand).values(values).returning();
+	syncBrand(row.id, { withProducts: false });
 	return row;
 }
 
 export async function updateBrand(id: number, values: Partial<NewBrand>) {
+	const before = await getBrand(id);
 	const [row] = await db
 		.update(brand)
 		.set({ ...values, updatedAt: new Date() })
 		.where(eq(brand.id, id))
 		.returning();
+	// Seul le nom figure sur les fiches produit indexées : un changement de
+	// logo ou de texte ne justifie pas de réindexer des milliers d'articles.
+	if (row) syncBrand(id, { withProducts: before?.name !== row.name });
 	return row;
 }
 
 export async function deleteBrand(id: number) {
 	await db.delete(brand).where(eq(brand.id, id));
+	syncBrand(id, { withProducts: true });
 }
 
 /** Extrait et valide les champs d'une marque depuis un FormData. */
@@ -164,16 +176,32 @@ export async function createCategory(values: NewCategory) {
 }
 
 export async function updateCategory(id: number, values: Partial<NewCategory>) {
+	const before = await getCategory(id);
 	const [row] = await db
 		.update(category)
 		.set({ ...values, updatedAt: new Date() })
 		.where(eq(category.id, id))
 		.returning();
+	// Nom, parent et activation changent les rayons cherchables sur les fiches
+	// rangées en dessous ; description et position, non.
+	if (row) {
+		const lineageChanged =
+			before?.name !== row.name ||
+			before?.parentId !== row.parentId ||
+			before?.isActive !== row.isActive;
+		syncCategory(id, { withProducts: lineageChanged });
+	}
 	return row;
 }
 
+/**
+ * Les produits du rayon supprimé perdent leur rattachement (`set null`) : on
+ * ne peut plus les retrouver par ce rayon pour les réindexer. Ils gardent son
+ * nom dans l'index jusqu'à la prochaine reconstruction (`search:reindex`).
+ */
 export async function deleteCategory(id: number) {
 	await db.delete(category).where(eq(category.id, id));
+	syncCategory(id, { withProducts: false });
 }
 
 /** Extrait et valide les champs d'une catégorie depuis un FormData. */
@@ -373,10 +401,12 @@ export async function setProductCategories(
 				.values(wanted.map((categoryId) => ({ productId, categoryId })));
 		}
 	});
+	syncProducts([productId]);
 }
 
 export async function createProduct(values: NewProduct) {
 	const [row] = await db.insert(product).values(values).returning();
+	syncProducts([row.id]);
 	return row;
 }
 
@@ -386,11 +416,14 @@ export async function updateProduct(id: number, values: Partial<NewProduct>) {
 		.set({ ...values, updatedAt: new Date() })
 		.where(eq(product.id, id))
 		.returning();
+	// Un produit désactivé est retiré de l'index par la même synchronisation.
+	syncProducts([id]);
 	return row;
 }
 
 export async function deleteProduct(id: number) {
 	await db.delete(product).where(eq(product.id, id));
+	removeProducts([id]);
 }
 
 /** Extrait et valide les champs d'un produit depuis un FormData. */
@@ -572,7 +605,7 @@ export async function recordStockMovement(input: {
 	note?: string | null;
 	createdBy?: string | null;
 }) {
-	return db.transaction(async (tx) => {
+	const result = await db.transaction(async (tx) => {
 		const [movement] = await tx
 			.insert(stockMovement)
 			.values({
@@ -600,6 +633,9 @@ export async function recordStockMovement(input: {
 
 		return movement;
 	});
+	// « En stock » est un filtre et un critère de classement de la recherche.
+	syncProducts([input.productId]);
+	return result;
 }
 
 // ----- Produits associés -----
