@@ -19,7 +19,6 @@ import { cached, invalidate } from './cache';
 import {
 	BRANDS_INDEX,
 	CATEGORIES_INDEX,
-	cleanSearchQuery,
 	PRODUCTS_INDEX,
 	SUGGESTIONS_INDEX
 } from './search-index/settings';
@@ -40,6 +39,13 @@ const SEARCH_TIMEOUT_MS = 800;
 const WRITE_TIMEOUT_MS = 15_000;
 /** Lot de réindexation d'une marque ou d'un rayon entier. */
 const SYNC_BATCH = 5_000;
+
+/**
+ * Quand trop peu de fiches contiennent tous les mots, abandonner d'abord les
+ * plus fréquents : « de » avant « refroidissement ». La saisie est envoyée
+ * telle quelle, mots vides compris (cf. `FRENCH_STOP_WORDS`).
+ */
+const MATCHING = { matchingStrategy: 'frequency' } as const;
 
 let searchClient: Meilisearch | null | undefined;
 let writeClient: Meilisearch | null | undefined;
@@ -116,7 +122,7 @@ export async function searchCatalog(
 	const client = searcher();
 	if (!client) return null;
 
-	const q = cleanSearchQuery(params.q);
+	const q = params.q.trim();
 	const filters = {
 		type: params.excludeTypes?.length
 			? `type NOT IN [${params.excludeTypes.map(quote).join(', ')}]`
@@ -138,6 +144,7 @@ export async function searchCatalog(
 	): SearchParams & { indexUid: string } => ({
 		indexUid: PRODUCTS_INDEX,
 		q,
+		...MATCHING,
 		filter: filterWithout(skip),
 		facets: [facet],
 		limit: 0
@@ -147,6 +154,7 @@ export async function searchCatalog(
 		{
 			indexUid: PRODUCTS_INDEX,
 			q,
+			...MATCHING,
 			filter: filterWithout(),
 			sort: SORTS[params.sort ?? 'new'],
 			page: params.page,
@@ -202,20 +210,32 @@ export async function searchPreview(raw: string): Promise<PreviewSearchResult | 
 	const client = searcher();
 	if (!client) return null;
 
-	const q = cleanSearchQuery(raw);
+	const q = raw.trim();
 	try {
 		const { results } = await client.multiSearch<MultiSearchParams>({
 			queries: [
-				{ indexUid: PRODUCTS_INDEX, q, limit: 6, attributesToRetrieve: ['id'] },
+				{ indexUid: PRODUCTS_INDEX, q, ...MATCHING, limit: 6, attributesToRetrieve: ['id'] },
 				// Davantage que nécessaire : la reprise compte des rayons homonymes
 				// (« Accessoires » ×7), dédoublonnés par nom ci-dessous.
-				{ indexUid: CATEGORIES_INDEX, q, limit: 8, attributesToRetrieve: ['name', 'slug'] },
+				{
+					indexUid: CATEGORIES_INDEX,
+					q,
+					...MATCHING,
+					limit: 8,
+					attributesToRetrieve: ['name', 'slug']
+				},
 				{ indexUid: BRANDS_INDEX, q, limit: 3, attributesToRetrieve: ['name', 'slug', 'logoUrl'] },
 				// Quelques-unes de plus que les 4 affichées : certaines sont écartées
-				// ci-dessous comme doublons de la saisie ou d'un rayon. Saisie brute,
-				// mots vides compris : « filtre a h » doit compléter « filtre à huile »,
-				// pas « filtre h(ydraulique) ».
-				{ indexUid: SUGGESTIONS_INDEX, q: raw, limit: 8, attributesToRetrieve: ['text'] }
+				// ci-dessous comme doublons de la saisie ou d'un rayon. Une suggestion
+				// complète toute la saisie : « liquide de refroidissement » ne
+				// propose pas « liquide de frein ».
+				{
+					indexUid: SUGGESTIONS_INDEX,
+					q,
+					matchingStrategy: 'all',
+					limit: 8,
+					attributesToRetrieve: ['text']
+				}
 			]
 		});
 		const [products, categories, brands, suggestions] = results;

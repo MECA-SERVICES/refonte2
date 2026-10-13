@@ -14,11 +14,7 @@
 import { Meilisearch } from 'meilisearch';
 import { requireEnv } from './lib/env.ts';
 import { color, log } from './lib/logger.ts';
-import {
-	cleanSearchQuery,
-	PRODUCTS_INDEX,
-	SUGGESTIONS_INDEX
-} from '../src/lib/server/search-index/settings.ts';
+import { PRODUCTS_INDEX, SUGGESTIONS_INDEX } from '../src/lib/server/search-index/settings.ts';
 
 type Case = {
 	q: string;
@@ -62,6 +58,14 @@ const CASES: Case[] = [
 	{ q: 'robot tondeuse', top: { match: /robot/i, count: 5 } },
 	{ q: 'courroie', top: { match: /courroie|belt/i, count: 10 } },
 
+	// Retour client : ce qui commence par la saisie passe devant les fiches qui
+	// ne font que la contenir (« Filtre liquide refroidissement »).
+	{
+		q: 'liquide de refroidissement',
+		top: { match: /^liquide (de )?refroidissement/i, count: 8 },
+		never: /^filtre/i
+	},
+
 	// Synonymes : langue des fournisseurs (désignations anglaises, allemandes)
 	{ q: 'courroie crantee', top: { match: /crant|dent|timing/i, count: 6 } },
 	{ q: 'roulement', top: { match: /roulement|bearing/i, count: 10 } },
@@ -100,8 +104,9 @@ let failures = 0;
 
 for (const testCase of CASES.filter((c) => !filter || c.q.includes(filter))) {
 	const started = Date.now();
-	// Même nettoyage de la saisie que la boutique (`$lib/server/meili`).
-	const { hits } = await index.search(cleanSearchQuery(testCase.q), {
+	// Mêmes paramètres que la boutique (`$lib/server/meili`).
+	const { hits } = await index.search(testCase.q, {
+		matchingStrategy: 'frequency',
 		limit: 10,
 		attributesToRetrieve: ['id', 'name', 'reference']
 	});
@@ -135,6 +140,7 @@ for (const testCase of CASES.filter((c) => !filter || c.q.includes(filter))) {
 const suggestions = client.index<{ text: string }>(SUGGESTIONS_INDEX);
 for (const testCase of SUGGESTION_CASES.filter((c) => !filter || c.q.includes(filter))) {
 	const { hits } = await suggestions.search(testCase.q, {
+		matchingStrategy: 'all',
 		limit: 5,
 		attributesToRetrieve: ['text']
 	});

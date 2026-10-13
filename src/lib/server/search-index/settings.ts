@@ -21,16 +21,19 @@ export const SUGGESTIONS_INDEX = 'suggestions';
 export const PRODUCTS_REBUILD_INDEX = 'products_rebuild';
 
 /**
- * Mots vides : retirés de la saisie du client avant recherche (`cleanSearchQuery`).
+ * Mots vides du français : « à », « de », « pour »…
  *
- * C'est le premier défaut de l'ancienne recherche : dans « savon a main »,
- * le « a » était cherché comme un mot et se trouvait partout. « sans » n'en
+ * Ni retirés de la saisie, ni déclarés à l'index (`stopWords: []`). Ils
+ * comptent dans l'ordre des mots : « Liquide de refroidissement » doit passer
+ * devant « Filtre liquide refroidissement » quand le client tape « liquide de
+ * refroidissement ». Deux réglages évitent qu'ils ne nuisent :
+ * - la recherche abandonne d'abord les mots les plus fréquents quand il
+ *   manque des résultats (`matchingStrategy: 'frequency'`) — « de » avant
+ *   « refroidissement » ;
+ * - les synonymes sont déclinés avec les mots de liaison (`joinerVariants`).
+ *
+ * Servent aussi à découper les suggestions (`./suggestions.ts`). « sans » n'en
  * fait pas partie : « perceuse sans fil » ne doit pas devenir « perceuse fil ».
- *
- * Volontairement absents des réglages d'index (`stopWords: []`) : un mot vide
- * déclaré à Meilisearch disparaît des fiches mais y garde sa place, et plus
- * aucune expression ne colle au texte — le synonyme « nettoyant pour mains »
- * n'atteignait plus « Nettoyant pour mains SF7850 ».
  */
 export const FRENCH_STOP_WORDS = [
 	'a',
@@ -58,30 +61,6 @@ export const FRENCH_STOP_WORDS = [
 	'un',
 	'une'
 ];
-
-/** Article élidé en tête de mot : « d'air », « l’huile ». */
-const ELISION = /\b[dl]['’]/gi;
-
-/**
- * Saisie du client débarrassée de ses mots vides, avant envoi à Meilisearch.
- *
- * Retirés ici plutôt que déclarés à l'index : « savon à main » devient
- * « savon main », dont les mots se suivent — l'expression synonyme
- * « savon main » se déclenche, quelle que soit la formulation du client.
- */
-export function cleanSearchQuery(raw: string): string {
-	const words = raw.replace(ELISION, '').split(/\s+/).filter(Boolean);
-	const kept = words.filter(
-		(word) =>
-			!FRENCH_STOP_WORDS.includes(
-				word
-					.normalize('NFD')
-					.replace(/[\u0300-\u036f]/g, '')
-					.toLowerCase()
-			)
-	);
-	return (kept.length > 0 ? kept : words).join(' ');
-}
 
 /**
  * Index produits.

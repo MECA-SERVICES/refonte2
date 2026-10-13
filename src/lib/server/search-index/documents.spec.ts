@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { categoryLineage, cleanEan, compactReferences, htmlToText } from './documents';
-import { SYNONYM_GROUPS, SYNONYMS } from './synonyms';
-import { cleanSearchQuery, FRENCH_STOP_WORDS } from './settings';
+import { joinerVariants, SYNONYM_GROUPS, SYNONYMS } from './synonyms';
 
 describe('htmlToText', () => {
 	it('retire les balises et resserre les espaces', () => {
@@ -94,35 +93,20 @@ describe('SYNONYMS', () => {
 		);
 		expect(invalid).toEqual([]);
 	});
-
-	it('garde dans chaque groupe une expression saisissable sans mot vide', () => {
-		// La saisie du client est débarrassée de ses mots vides : un groupe dont
-		// toutes les expressions en contiennent ne se déclencherait jamais.
-		const unreachable = SYNONYM_GROUPS.filter((group) =>
-			group.every((term) => term.split(' ').some((word) => FRENCH_STOP_WORDS.includes(word)))
-		);
-		expect(unreachable).toEqual([]);
-	});
 });
 
-describe('cleanSearchQuery', () => {
-	it('retire les mots vides, accentués ou non', () => {
-		expect(cleanSearchQuery('savon à main')).toBe('savon main');
-		expect(cleanSearchQuery('Savon a Main')).toBe('Savon Main');
-		expect(cleanSearchQuery('pantalon pour la tronçonneuse')).toBe('pantalon tronçonneuse');
+describe('joinerVariants', () => {
+	it('décline une expression avec les mots de liaison', () => {
+		expect(joinerVariants('savon main')).toContain('savon a main');
+		expect(joinerVariants('filtre air')).toContain('filtre d air');
+		expect(joinerVariants('pantalon tronconneuse')).toContain('pantalon pour tronconneuse');
 	});
 
-	it("retire les articles élidés : « d' », « l' »", () => {
-		expect(cleanSearchQuery("filtre d'air")).toBe('filtre air');
-		expect(cleanSearchQuery('huile de l’embrayage')).toBe('huile embrayage');
+	it('laisse un mot seul tel quel', () => {
+		expect(joinerVariants('courroie')).toEqual(['courroie']);
 	});
 
-	it('laisse intactes les références', () => {
-		expect(cleanSearchQuery('A-123 de')).toBe('A-123');
-		expect(cleanSearchQuery('587 42 07-01')).toBe('587 42 07-01');
-	});
-
-	it('garde la saisie si elle ne contient que des mots vides', () => {
-		expect(cleanSearchQuery('le a')).toBe('le a');
+	it('fait déclencher les synonymes par les variantes', () => {
+		expect(SYNONYMS['savon a main']).toContain('nettoyant pour mains');
 	});
 });

@@ -16,12 +16,12 @@
  * Règles de saisie :
  * - chaque groupe est réciproque : chaque expression appelle toutes les autres ;
  * - sans accent, en minuscules ;
- * - côté client, sans mot vide : sa saisie en est débarrassée avant envoi
- *   (`cleanSearchQuery`), « filtre d'air » devient « filtre air » ;
- * - côté fiche, telle qu'elle est rédigée, mots vides compris : une expression
- *   ne joue que si ses mots se suivent dans la fiche, et « nettoyant mains »
- *   n'atteint pas « Nettoyant pour mains » — on ajoute donc « nettoyant pour
- *   mains » au groupe ;
+ * - une expression ne joue que si ses mots se suivent, mots vides compris ;
+ * - côté client, sans mot vide : les variantes avec mots de liaison sont
+ *   générées (`joinerVariants`) — « savon main » se déclenche aussi sur
+ *   « savon à main », « savon pour main », et « filtre air » sur « filtre d'air » ;
+ * - côté fiche, telle qu'elle est rédigée : « nettoyant mains » n'atteint pas
+ *   « Nettoyant pour mains », on ajoute donc « nettoyant pour mains » au groupe ;
  * - préférer l'expression précise au mot seul quand le mot est ambigu :
  *   « savon » ⇄ « nettoyant » ferait remonter les nettoyants freins, « plate »
  *   (anglais : plaque) capterait les « rondelles plates », « valve » (anglais :
@@ -216,9 +216,35 @@ export const SYNONYM_GROUPS: string[][] = [
 	['lieuse', 'attacheuse', 'lieuse vigne']
 ];
 
-/** Format attendu par Meilisearch : chaque expression vers toutes les autres. */
+/** Petits mots que le client glisse entre les mots d'une expression. */
+const JOINERS = ['a', 'au', 'aux', 'd', 'de', 'des', 'du', 'en', 'l', 'la', 'le', 'les', 'pour'];
+
+/**
+ * Une expression et ses variantes de saisie : « savon main » → « savon a
+ * main », « savon de main », « savon pour main »… — un mot de liaison dans
+ * l'un des intervalles. La saisie est envoyée telle quelle à Meilisearch, qui
+ * ne reconnaît une expression synonyme que mot pour mot.
+ */
+export function joinerVariants(term: string): string[] {
+	const words = term.split(' ');
+	const variants = [term];
+	for (let gap = 1; gap < words.length; gap++) {
+		for (const joiner of JOINERS) {
+			variants.push([...words.slice(0, gap), joiner, ...words.slice(gap)].join(' '));
+		}
+	}
+	return variants;
+}
+
+/**
+ * Format attendu par Meilisearch : chaque expression, sous toutes ses
+ * variantes de saisie, vers les autres expressions de son groupe.
+ */
 export const SYNONYMS: Record<string, string[]> = Object.fromEntries(
 	SYNONYM_GROUPS.flatMap((group) =>
-		group.map((term) => [term, group.filter((other) => other !== term)])
+		group.flatMap((term) => {
+			const others = group.filter((other) => other !== term);
+			return joinerVariants(term).map((variant) => [variant, others]);
+		})
 	)
 );
