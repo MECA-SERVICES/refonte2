@@ -12,6 +12,9 @@ node_modules
 .DS_Store
 Thumbs.db
 
+# Rapports des scripts (CSV de classement, retours arrière) : données de travail
+/reports
+
 # Env
 .env
 .env.*

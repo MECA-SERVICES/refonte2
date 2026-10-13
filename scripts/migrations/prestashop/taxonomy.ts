@@ -83,7 +83,7 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				name: 'Vis',
 				children: [
 					{ name: 'Vis à métaux', keywords: ['VIS'] },
-					{ name: 'Vis anglaises', keywords: ['SCREW'] }
+					{ name: 'Vis anglaises', keywords: ['SCREW', 'HHCS'] }
 				]
 			},
 			{
@@ -100,16 +100,19 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Rondelles & cales',
 				children: [
-					{ name: 'Rondelles', keywords: ['RONDELLE', 'WASHER'] },
+					{ name: 'Rondelles', keywords: ['RONDELLE', 'WASHER', 'RDLE'] },
 					{ name: 'Cales & shims', keywords: ['SHIM', 'CALE'] }
 				]
 			},
 			{
 				name: 'Goupilles & circlips',
 				children: [
-					{ name: 'Goupilles', keywords: ['GOUPILLE', 'PIN'] },
-					{ name: 'Circlips & anneaux', keywords: ['CIRCLIP', 'CIRCLIPS', 'ANNEAU', 'RING'] },
-					{ name: 'Clips & agrafes', keywords: ['CLIP', 'AGRAFE'] }
+					{ name: 'Goupilles', keywords: ['GOUPILLE', 'PIN', 'EPINGLE', 'CHEVILLE'] },
+					{
+						name: 'Circlips & anneaux',
+						keywords: ['CIRCLIP', 'CIRCLIPS', 'ANNEAU', 'RING', 'SNAP', 'RETAINING']
+					},
+					{ name: 'Clips & agrafes', keywords: ['CLIP', 'AGRAFE', 'CLIPS'] }
 				]
 			},
 			{
@@ -131,7 +134,7 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 		children: [
 			{
 				name: 'Roulements',
-				children: [{ name: 'Roulements', keywords: ['ROULEMENT', 'BEARING'] }]
+				children: [{ name: 'Roulements', keywords: ['ROULEMENT', 'BEARING', 'BILLE'] }]
 			},
 			{
 				name: 'Paliers',
@@ -140,10 +143,10 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Bagues & douilles',
 				children: [
-					{ name: 'Bagues', keywords: ['BAGUE', 'BUSHING'] },
+					{ name: 'Bagues', keywords: ['BAGUE', 'BUSHING', 'BUSH', 'BAQUE', 'COLLAR'] },
 					{ name: 'Douilles', keywords: ['DOUILLE'] },
 					{ name: 'Coussinets', keywords: ['COUSSINET'] },
-					{ name: 'Manchons', keywords: ['MANCHON'] }
+					{ name: 'Manchons', keywords: ['MANCHON', 'SLEEVE'] }
 				]
 			},
 			{
@@ -168,17 +171,21 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Joints',
 				children: [
-					{ name: 'Joints plats', keywords: ['JOINT', 'GASKET'] },
+					{ name: 'Joints plats', keywords: ['JOINT', 'GASKET', 'SEALING'] },
 					{ name: 'Joints spi', keywords: ['SEAL'] }
 				]
 			},
 			{
 				name: 'Joints toriques',
-				children: [{ name: 'Joints toriques', keywords: ['O-RING', 'ORING', 'TORIQUE'] }]
+				children: [
+					{ name: 'Joints toriques', keywords: ['O-RING', 'ORING', 'TORIQUE', "O'RING", 'JO'] }
+				]
 			},
 			{
 				name: 'Membranes',
-				children: [{ name: 'Membranes & garnitures', keywords: ['MEMBRANE', 'GARNITURE'] }]
+				children: [
+					{ name: 'Membranes & garnitures', keywords: ['MEMBRANE', 'GARNITURE', 'SOUFFLET'] }
+				]
 			}
 		]
 	},
@@ -188,7 +195,7 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Courroies',
 				children: [
-					{ name: 'Courroies trapézoïdales', keywords: ['COURROIE', 'BELT'] },
+					{ name: 'Courroies trapézoïdales', keywords: ['COURROIE', 'BELT', 'V-BELT'] },
 					{ name: 'Courroies crantées', keywords: ['TIMING'] },
 					{ name: 'Courroies striées', keywords: ['RIBBED', 'KRAFTBANDS', 'POLY-V'] }
 				]
@@ -204,8 +211,11 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				name: 'Poulies & pignons',
 				children: [
 					{ name: 'Poulies', keywords: ['POULIE', 'PULLEY'] },
-					{ name: 'Pignons', keywords: ['PIGNON', 'SPROCKET'] },
-					{ name: 'Engrenages', keywords: ['ENGRENAGE', 'GEAR'] }
+					{ name: 'Pignons', keywords: ['PIGNON', 'SPROCKET', 'PINION'] },
+					{
+						name: 'Engrenages',
+						keywords: ['ENGRENAGE', 'GEAR', 'RENVOI', 'GEARBOX', 'GEARCASE']
+					}
 				]
 			},
 			{
@@ -213,12 +223,12 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				children: [
 					{ name: 'Arbres', keywords: ['ARBRE', 'SHAFT'] },
 					{ name: 'Cardans & PDF', keywords: ['CARDAN', 'PTO'] },
-					{ name: 'Essieux', keywords: ['ESSIEU', 'AXLE'] }
+					{ name: 'Essieux', keywords: ['ESSIEU', 'AXLE', 'FUSEE'] }
 				]
 			},
 			{
 				name: 'Embrayages',
-				children: [{ name: 'Embrayages', keywords: ['EMBRAYAGE', 'CLUTCH'] }]
+				children: [{ name: 'Embrayages', keywords: ['EMBRAYAGE', 'CLUTCH', 'CLOCHE'] }]
 			},
 			{
 				name: 'Tendeurs',
@@ -233,16 +243,16 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				name: 'Flexibles & durites',
 				children: [
 					{ name: 'Flexibles', keywords: ['FLEXIBLE', 'HOSE'] },
-					{ name: 'Durites', keywords: ['DURITE'] },
-					{ name: 'Tuyaux', keywords: ['TUYAU', 'PIPE'] }
+					{ name: 'Durites', keywords: ['DURITE', 'DURIT'] },
+					{ name: 'Tuyaux', keywords: ['TUYAU', 'PIPE', 'CONDUITE', 'CONDUIT', 'TUBULURE'] }
 				]
 			},
 			{
 				name: 'Raccords',
 				children: [
-					{ name: 'Raccords', keywords: ['RACCORD', 'RACC', 'FITTING'] },
-					{ name: 'Coudes', keywords: ['COUDE'] },
-					{ name: 'Bouchons hydrauliques', keywords: ['PLUG', 'NIPPLE'] }
+					{ name: 'Raccords', keywords: ['RACCORD', 'RACC', 'FITTING', 'TEE', 'REDUCTION'] },
+					{ name: 'Coudes', keywords: ['COUDE', 'ELBOW'] },
+					{ name: 'Bouchons hydrauliques', keywords: ['PLUG', 'NIPPLE', 'GRAISSEUR'] }
 				]
 			},
 			{
@@ -256,22 +266,22 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Vannes & clapets',
 				children: [
-					{ name: 'Vannes', keywords: ['VANNE', 'VALVE'] },
+					{ name: 'Vannes', keywords: ['VANNE', 'VALVE', 'ROBINET'] },
 					{ name: 'Clapets', keywords: ['CLAPET'] },
-					{ name: 'Distributeurs', keywords: ['DISTRIBUTEUR'] }
+					{ name: 'Distributeurs', keywords: ['DISTRIBUTEUR', 'MANIFOLD'] }
 				]
 			},
 			{
 				name: 'Buses & gicleurs',
 				children: [
-					{ name: 'Buses', keywords: ['BUSE', 'NOZZLE'] },
-					{ name: 'Gicleurs', keywords: ['GICLEUR'] }
+					{ name: 'Buses', keywords: ['BUSE', 'NOZZLE', 'LANCE', 'DIFFUSEUR'] },
+					{ name: 'Gicleurs', keywords: ['GICLEUR', 'JET-MAIN'] }
 				]
 			},
 			{
 				name: 'Instruments',
 				children: [
-					{ name: 'Manomètres & jauges', keywords: ['MANOMETRE', 'JAUGE'] },
+					{ name: 'Manomètres & jauges', keywords: ['MANOMETRE', 'JAUGE', 'INDICATEUR'] },
 					{ name: 'Divers hydraulique', keywords: ['HYDRAULIC'] }
 				]
 			}
@@ -283,8 +293,8 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Câblage',
 				children: [
-					{ name: 'Câbles', keywords: ['CABLE'] },
-					{ name: 'Faisceaux', keywords: ['FAISCEAU', 'HARNESS'] },
+					{ name: 'Câbles', keywords: ['CABLE', 'CORDON'] },
+					{ name: 'Faisceaux', keywords: ['FAISCEAU', 'HARNESS', 'CABLAGE', 'WIRING'] },
 					{ name: 'Fils', keywords: ['FIL', 'WIRE'] }
 				]
 			},
@@ -293,19 +303,24 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				// `ELEC.` (3 163) : abréviation d'import, tronquée par PrestaShop.
 				// Le mot ne dit pas quel composant, seulement qu'il est électrique —
 				// d'où ce nœud d'attente, à affiner au palier 4.
-				children: [{ name: 'Composants électriques', keywords: ['ELEC'] }]
+				children: [
+					{
+						name: 'Composants électriques',
+						keywords: ['ELEC', 'CONDENSATEUR', 'REGULATEUR', 'CIRCUIT']
+					}
+				]
 			},
 			{
 				name: 'Commande électrique',
 				children: [
-					{ name: 'Interrupteurs', keywords: ['INTERRUPTEUR', 'SWITCH'] },
-					{ name: 'Contacteurs & relais', keywords: ['CONTACTEUR', 'RELAIS'] }
+					{ name: 'Interrupteurs', keywords: ['INTERRUPTEUR', 'SWITCH', 'COMMUTATEUR'] },
+					{ name: 'Contacteurs & relais', keywords: ['CONTACTEUR', 'RELAIS', 'RELAY'] }
 				]
 			},
 			{
 				name: 'Éclairage',
 				children: [
-					{ name: 'Phares & feux', keywords: ['FEU', 'PHARE', 'GYROPHARE'] },
+					{ name: 'Phares & feux', keywords: ['FEU', 'PHARE', 'GYROPHARE', 'CABOCHON'] },
 					{ name: 'Ampoules', keywords: ['AMPOULE', 'LAMP', 'LAMPE'] }
 				]
 			},
@@ -319,21 +334,27 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Électronique',
 				children: [
-					{ name: 'Capteurs & sondes', keywords: ['CAPTEUR', 'SENSOR', 'SONDE'] },
-					{ name: 'Modules', keywords: ['MODULE'] }
+					{ name: 'Capteurs & sondes', keywords: ['CAPTEUR', 'SENSOR', 'SONDE', 'THERMOSTAT'] },
+					{ name: 'Modules', keywords: ['MODULE', 'CARTE', 'CONTROLEUR'] }
 				]
 			},
 			{
 				name: 'Connectique',
 				children: [
-					{ name: 'Connecteurs & fiches', keywords: ['CONNECTEUR', 'FICHE', 'PRISE', 'COSSE'] },
+					{
+						name: 'Connecteurs & fiches',
+						keywords: ['CONNECTEUR', 'FICHE', 'PRISE', 'COSSE', 'TERMINAL', 'CONNECTOR']
+					},
 					{ name: 'Fusibles', keywords: ['FUSIBLE'] }
 				]
 			},
 			{
 				name: 'Moteurs électriques',
 				children: [
-					{ name: 'Rotors & stators', keywords: ['ROTOR', 'STATOR', 'INDUIT'] },
+					{
+						name: 'Rotors & stators',
+						keywords: ['ROTOR', 'STATOR', 'INDUIT', 'INDUCTEUR', 'ARMATURE']
+					},
 					{ name: 'Charbons', keywords: ['CHARBON'] }
 				]
 			}
@@ -351,14 +372,19 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			},
 			{
 				name: 'Carburation',
-				children: [{ name: 'Carburateurs', keywords: ['CARBURATEUR'] }]
+				children: [
+					{
+						name: 'Carburateurs',
+						keywords: ['CARBURATEUR', 'CARBURETOR-ASSY', 'CARBURETOR', 'CARBURETTOR', 'FLOTTEUR']
+					}
+				]
 			},
 			{
 				name: 'Bas moteur',
 				children: [
 					{ name: 'Pistons & segments', keywords: ['PISTON', 'SEGMENT'] },
 					{ name: 'Cylindres', keywords: ['CYLINDRE', 'CYLINDER'] },
-					{ name: 'Vilebrequins & bielles', keywords: ['VILEBREQUIN', 'BIELLE'] }
+					{ name: 'Vilebrequins & bielles', keywords: ['VILEBREQUIN', 'BIELLE', 'CRANKSHAFT'] }
 				]
 			},
 			{
@@ -375,11 +401,13 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			},
 			{
 				name: 'Échappement',
-				children: [{ name: 'Silencieux & pots', keywords: ['SILENCIEUX', 'ECHAPPEMENT', 'POT'] }]
+				children: [
+					{ name: 'Silencieux & pots', keywords: ['SILENCIEUX', 'ECHAPPEMENT', 'POT', 'MUFFLER'] }
+				]
 			},
 			{
 				name: 'Moteurs complets',
-				children: [{ name: 'Moteurs', keywords: ['MOTEUR', 'ENGINE'] }]
+				children: [{ name: 'Moteurs', keywords: ['MOTEUR', 'ENGINE', 'MOTOR'] }]
 			}
 		]
 	},
@@ -402,7 +430,7 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Lames & couteaux',
 				children: [
-					{ name: 'Lames', keywords: ['LAME', 'BLADE'] },
+					{ name: 'Lames', keywords: ['LAME', 'BLADE', 'LAM', 'SCRAPER', 'RACLEUR'] },
 					{ name: 'Couteaux', keywords: ['COUTEAU', 'KNIFE'] }
 				]
 			},
@@ -413,7 +441,7 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Perçage & fraisage',
 				children: [
-					{ name: 'Forets & mèches', keywords: ['FORET', 'DRILL', 'MECHE'] },
+					{ name: 'Forets & mèches', keywords: ['FORET', 'DRILL', 'MECHE', 'MANDRIN'] },
 					{ name: 'Fraises', keywords: ['FRAISE'] },
 					{ name: 'Pointes', keywords: ['POINTE'] }
 				]
@@ -421,13 +449,13 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Dents & socs',
 				children: [
-					{ name: 'Dents', keywords: ['DENT', 'TOOTH'] },
-					{ name: 'Socs', keywords: ['SOC'] }
+					{ name: 'Dents', keywords: ['DENT', 'TOOTH', 'TINE'] },
+					{ name: 'Socs', keywords: ['SOC', 'COUTRE', 'RASETTE'] }
 				]
 			},
 			{
 				name: 'Guides',
-				children: [{ name: 'Guides & mâchoires', keywords: ['GUIDE', 'MACHOIRE'] }]
+				children: [{ name: 'Guides & mâchoires', keywords: ['GUIDE', 'MACHOIRE', 'GUIDAGE'] }]
 			},
 			{
 				name: 'Brosses',
@@ -442,15 +470,20 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				name: 'Carters & capots',
 				children: [
 					{ name: 'Carters', keywords: ['CARTER'] },
-					{ name: 'Capots', keywords: ['CAPOT', 'HOOD'] },
-					{ name: 'Couvercles', keywords: ['COUVERCLE', 'COVER', 'CACHE', 'CAPOTAGE'] }
+					{ name: 'Capots', keywords: ['CAPOT', 'HOOD', 'SHROUD-ENGINE', 'COUVERTURE'] },
+					{
+						name: 'Couvercles',
+						keywords: ['COUVERCLE', 'COVER', 'CACHE', 'CAPOTAGE', 'LID', 'ENJOLIVEUR']
+					}
 				]
 			},
 			{
 				name: 'Tôlerie',
 				children: [
 					{ name: 'Tôles & plaques', keywords: ['TOLE', 'PLAQUE', 'PLATE', 'SHEET'] },
-					{ name: 'Panneaux', keywords: ['PANNEAU'] }
+					{ name: 'Panneaux', keywords: ['PANNEAU'] },
+					// Ajouté le 2026-10-13 (rangement de « À classer ») : ~300 fiches.
+					{ name: 'Garde-boue & ailes', keywords: ['GARDE-BOUE', 'AILE'] }
 				]
 			},
 			{
@@ -458,10 +491,10 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				children: [
 					{
 						name: 'Protections & carters de sécurité',
-						keywords: ['PROTECTION', 'PROTECTEUR', 'GUARD', 'SHIELD']
+						keywords: ['PROTECTION', 'PROTECTEUR', 'GUARD', 'SHIELD', 'PROTEGE', 'CURTAIN']
 					},
 					{ name: 'Grilles', keywords: ['GRILLE'] },
-					{ name: 'Déflecteurs', keywords: ['DEFLECTEUR'] }
+					{ name: 'Déflecteurs', keywords: ['DEFLECTEUR', 'DEFLECTOR', 'BAVETTE', 'FLAP', 'CHUTE'] }
 				]
 			},
 			{
@@ -474,16 +507,42 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Châssis',
 				children: [
-					{ name: 'Châssis & cadres', keywords: ['CHASSIS', 'CADRE', 'FRAME'] },
+					{ name: 'Châssis & cadres', keywords: ['CHASSIS', 'CADRE', 'FRAME', 'POUTRE', 'BEAM'] },
 					{ name: 'Corps & bases', keywords: ['CARCASSE', 'CORPS', 'BASE'] }
 				]
 			},
 			{
 				name: 'Vitrage & portes',
 				children: [
-					{ name: 'Vitres', keywords: ['VITRE', 'GLACE'] },
+					{ name: 'Vitres', keywords: ['VITRE', 'GLACE', 'PARE-BRISE'] },
 					{ name: 'Portes', keywords: ['PORTE'] }
 				]
+			},
+			// Ajoutés le 2026-10-13 (rangement de « À classer ») : les autocollants
+			// et étiquettes constructeur (~15 000 fiches Kuhn, Husqvarna, Makita…)
+			// n'avaient aucun rayon, ni les sièges.
+			{
+				name: 'Marquage',
+				children: [
+					{
+						name: 'Autocollants & étiquettes',
+						keywords: [
+							'DECAL',
+							'AUTOCOLLANT',
+							'ETIQUETTE',
+							'ETIQ',
+							'ETIQ.ADH',
+							'LABEL',
+							'LABEL-BRAND',
+							'STICKER',
+							'ADESIVO'
+						]
+					}
+				]
+			},
+			{
+				name: 'Habitacle',
+				children: [{ name: 'Sièges & ceintures', keywords: ['SEAT', 'CEINTURE'] }]
 			}
 		]
 	},
@@ -493,24 +552,27 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Leviers',
 				children: [
-					{ name: 'Leviers & manettes', keywords: ['LEVIER', 'LEVER', 'MANETTE', 'COMMANDE'] }
+					{
+						name: 'Leviers & manettes',
+						keywords: ['LEVIER', 'LEVER', 'MANETTE', 'COMMANDE', 'GACHETTE']
+					}
 				]
 			},
 			{
 				name: 'Poignées',
 				children: [
-					{ name: 'Poignées', keywords: ['POIGNEE', 'HANDLE'] },
+					{ name: 'Poignées', keywords: ['POIGNEE', 'HANDLE', 'MANCHE'] },
 					{ name: 'Guidons', keywords: ['GUIDON'] }
 				]
 			},
 			{
 				name: 'Boutons',
-				children: [{ name: 'Boutons', keywords: ['BOUTON', 'KNOB'] }]
+				children: [{ name: 'Boutons', keywords: ['BOUTON', 'KNOB', 'MOLETTE'] }]
 			},
 			{
 				name: 'Tringlerie',
 				children: [
-					{ name: 'Tringles & biellettes', keywords: ['TRINGLE', 'ROD'] },
+					{ name: 'Tringles & biellettes', keywords: ['TRINGLE', 'ROD', 'BIELLETTE'] },
 					{ name: 'Pédales', keywords: ['PEDALE'] }
 				]
 			},
@@ -526,22 +588,25 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			{
 				name: 'Supports',
 				children: [
-					{ name: 'Supports', keywords: ['SUPPORT', 'BRACKET'] },
+					{
+						name: 'Supports',
+						keywords: ['SUPPORT', 'BRACKET', 'MOUNT', 'BRKT', 'EQUERRE', 'BEQUILLE']
+					},
 					{ name: 'Pattes & étriers', keywords: ['PATTE', 'ETRIER'] },
 					{ name: 'Brides', keywords: ['BRIDE', 'FLANGE'] },
-					{ name: 'Fixations', keywords: ['FIXATION'] }
+					{ name: 'Fixations', keywords: ['FIXATION', 'ATTACHMENT'] }
 				]
 			},
 			{
 				name: 'Bras & tiges',
 				children: [
 					{ name: 'Bras', keywords: ['BRAS', 'ARM'] },
-					{ name: 'Tiges & barres', keywords: ['TIGE', 'BARRE', 'BAR'] }
+					{ name: 'Tiges & barres', keywords: ['TIGE', 'BARRE', 'BAR', 'TIRANT', 'ROUND'] }
 				]
 			},
 			{
 				name: 'Tubes',
-				children: [{ name: 'Tubes & profilés', keywords: ['TUBE', 'PROFILE'] }]
+				children: [{ name: 'Tubes & profilés', keywords: ['TUBE', 'PROFILE', 'ACIER', 'RAIL'] }]
 			},
 			{
 				name: 'Axes & pivots',
@@ -552,7 +617,7 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			},
 			{
 				name: 'Entretoises',
-				children: [{ name: 'Entretoises', keywords: ['ENTRETOISE', 'SPACER'] }]
+				children: [{ name: 'Entretoises', keywords: ['ENTRETOISE', 'SPACER', 'ESPACEUR'] }]
 			},
 			{
 				name: 'Adaptateurs',
@@ -561,6 +626,20 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 					{ name: 'Embouts', keywords: ['EMBOUT'] },
 					{ name: 'Crochets & blocs', keywords: ['CROCHET', 'BLOC', 'EXTENSION'] }
 				]
+			},
+			// Ajoutés le 2026-10-13 (rangement de « À classer »).
+			{
+				name: 'Charnières & verrous',
+				children: [
+					{
+						name: 'Charnières & verrous',
+						keywords: ['CHARNIERE', 'HINGE', 'VERROU', 'VERROUILLAGE', 'LATCH']
+					}
+				]
+			},
+			{
+				name: 'Attelage',
+				children: [{ name: 'Attelages', keywords: ['ATTELAGE', 'HITCH'] }]
 			}
 		]
 	},
@@ -569,13 +648,13 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 		children: [
 			{
 				name: 'Ressorts',
-				children: [{ name: 'Ressorts', keywords: ['RESSORT', 'SPRING'] }]
+				children: [{ name: 'Ressorts', keywords: ['RESSORT', 'SPRING', 'PRINTEMPS'] }]
 			},
 			{
 				name: 'Amortisseurs',
 				children: [
 					{ name: 'Amortisseurs', keywords: ['AMORTISSEUR', 'DAMPER'] },
-					{ name: 'Silentblocs & tampons', keywords: ['SILENTBLOC', 'TAMPON'] }
+					{ name: 'Silentblocs & tampons', keywords: ['SILENTBLOC', 'TAMPON', 'SILENT'] }
 				]
 			}
 		]
@@ -585,15 +664,17 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 		children: [
 			{
 				name: 'Roues',
-				children: [{ name: 'Roues & jantes', keywords: ['ROUE', 'WHEEL', 'JANTE'] }]
+				children: [{ name: 'Roues & jantes', keywords: ['ROUE', 'WHEEL', 'JANTE', 'RIM'] }]
 			},
 			{
 				name: 'Pneumatiques',
-				children: [{ name: 'Pneus & chambres', keywords: ['PNEU', 'TYRE', 'CHAMBRE'] }]
+				children: [{ name: 'Pneus & chambres', keywords: ['PNEU', 'TYRE', 'CHAMBRE', 'TIRE'] }]
 			},
 			{
 				name: 'Freinage',
-				children: [{ name: 'Tambours & freins', keywords: ['TAMBOUR', 'FREIN', 'PLAQUETTE'] }]
+				children: [
+					{ name: 'Tambours & freins', keywords: ['TAMBOUR', 'FREIN', 'PLAQUETTE', 'BRAKE'] }
+				]
 			}
 		]
 	},
@@ -606,7 +687,9 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 			},
 			{
 				name: 'Bouchons',
-				children: [{ name: 'Bouchons & capuchons', keywords: ['BOUCHON', 'CAP', 'CAPUCHON'] }]
+				children: [
+					{ name: 'Bouchons & capuchons', keywords: ['BOUCHON', 'CAP', 'CAPUCHON', 'OBTURATEUR'] }
+				]
 			},
 			{
 				name: 'Sacs & bacs',
@@ -622,7 +705,7 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				children: [
 					{
 						name: 'Ventilateurs & turbines',
-						keywords: ['VENTILATEUR', 'FAN', 'TURBINE', 'PLATEAU']
+						keywords: ['VENTILATEUR', 'FAN', 'TURBINE', 'PLATEAU', 'VOLUTE', 'HOUSING-FAN']
 					}
 				]
 			},
@@ -637,11 +720,16 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 		children: [
 			{
 				name: 'Kits',
-				children: [{ name: 'Kits de réparation', keywords: ['KIT', 'SET'] }]
+				children: [{ name: 'Kits de réparation', keywords: ['KIT', 'SET', 'POCHETTE', 'SACHET'] }]
 			},
 			{
 				name: 'Jeux & ensembles',
-				children: [{ name: 'Jeux & ensembles', keywords: ['JEU', 'ENSEMBLE', 'ENS', 'PIECE'] }]
+				children: [
+					{
+						name: 'Jeux & ensembles',
+						keywords: ['JEU', 'ENSEMBLE', 'ENS', 'PIECE', 'ASSEMBLAGE']
+					}
+				]
 			}
 		]
 	},
@@ -661,7 +749,7 @@ export const PIECE_TAXONOMY: FamilyRule[] = [
 				children: [
 					{
 						name: 'Outils à main',
-						keywords: ['CLE', 'TOURNEVIS', 'PINCE', 'MARTEAU', 'BURIN', 'LIME', 'SCIE']
+						keywords: ['CLE', 'TOURNEVIS', 'PINCE', 'MARTEAU', 'BURIN', 'LIME', 'SCIE', 'COFFRET']
 					},
 					{ name: 'Douilles & embouts', keywords: ['EMBOUTS'] }
 				]

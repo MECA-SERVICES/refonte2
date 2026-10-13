@@ -83,7 +83,7 @@
 		<!-- Ligne marque toujours présente, même vide : sans elle, les titres
 		     ne s'aligneraient pas d'une carte à l'autre. -->
 		<p class="min-h-4 text-[11.5px] font-bold tracking-[0.1em] text-shop-muted uppercase">
-			{#if product.brandName}{product.brandName}{/if}
+			{#if product.brandName}Marque&nbsp;: {product.brandName}{/if}
 		</p>
 
 		<!--

@@ -27,6 +27,13 @@ export type ProductDocument = {
 	supplierCategory: string | null;
 	description: string;
 	type: string;
+	/**
+	 * Machine 2, consommable 1, pièce 0 : départage les résultats de pertinence
+	 * égale. « karcher » touche 29 149 pièces et 37 machines, toutes nommées
+	 * « … | KÄRCHER » : sans ce critère, des rondelles passaient devant les
+	 * nettoyeurs haute pression.
+	 */
+	typeRank: number;
 	inStock: boolean;
 	/** Caractéristiques « Libellé=Valeur », filtrables et comptées en facettes. */
 	specs: string[];
@@ -60,6 +67,9 @@ export type BrandDocument = {
 
 /** Longueur de description indexée : au-delà, le texte n'apporte que du bruit. */
 const DESCRIPTION_MAX = 600;
+
+/** Rang de chaque nature de produit, cf. `ProductDocument.typeRank`. */
+const TYPE_RANK: Record<string, number> = { machine: 2, consumable: 1, part: 0 };
 
 /** Caractéristiques retenues par produit : la longue traîne ne sert pas de filtre. */
 const SPECS_MAX = 40;
@@ -241,6 +251,7 @@ function toProductDocument(row: ProductRow, ctx: IndexContext): ProductDocument 
 		supplierCategory: row.supplierCategoryPath,
 		description: htmlToText(row.description),
 		type: row.type,
+		typeRank: TYPE_RANK[row.type] ?? 0,
 		inStock: row.stock > 0,
 		specs: (row.specs ?? []).slice(0, SPECS_MAX),
 		priceHt: row.priceHt,

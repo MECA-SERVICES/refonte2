@@ -16,6 +16,7 @@
 
 	const chips = $derived([
 		...(data.selected.inStockOnly ? [{ key: 'stock', value: '1', label: 'En stock magasin' }] : []),
+		...data.selected.natures.map((n) => ({ key: 'type', value: n.value, label: n.label })),
 		...data.selected.brands.map((b) => ({ key: 'marque', value: b.value, label: b.label })),
 		...data.selected.specs.map((token) => ({
 			key: 'spec',
@@ -44,6 +45,8 @@
 <div class="grid items-start gap-7 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
 	<!-- ================= Filtres ================= -->
 	<CatalogSidebar
+		natures={data.facets.natures}
+		selectedNatures={data.selected.natures.map((n) => n.value)}
 		brands={data.facets.brands}
 		selectedBrands={data.selected.brands.map((b) => b.value)}
 		inStockOnly={data.selected.inStockOnly}

@@ -56,6 +56,8 @@ const CASES: Case[] = [
 
 	// Vocabulaire courant
 	{ q: 'robot tondeuse', top: { match: /robot/i, count: 5 } },
+	// Marque devenue nom commun : ses machines avant ses 29 000 pièces.
+	{ q: 'karcher', top: { match: /nettoyeur|aspirateur|souffleur/i, count: 8 } },
 	{ q: 'courroie', top: { match: /courroie|belt/i, count: 10 } },
 
 	// Retour client : ce qui commence par la saisie passe devant les fiches qui

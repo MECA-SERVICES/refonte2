@@ -275,6 +275,21 @@ export async function getShopCategory(slug: string) {
 // Listes de produits (catégorie, recherche, accueil)
 // ---------------------------------------------------------------------------
 
+/**
+ * Familles du filtre « Type » de la recherche, reprises des deux entrées du
+ * menu : la nature du produit (`product.type`) recoupe exactement leurs
+ * arborescences.
+ */
+export const SHOP_NATURES = {
+	produits: { label: 'Produits', types: ['machine', 'consumable'] },
+	pieces: { label: 'Pièces détachées', types: ['part'] }
+} as const;
+export type ShopNature = keyof typeof SHOP_NATURES;
+
+function isShopNature(value: string): value is ShopNature {
+	return value in SHOP_NATURES;
+}
+
 export type ShopListParams = {
 	/** Restreint à une catégorie et sa descendance (ids pré-calculés). */
 	categoryIds?: number[];
@@ -289,6 +304,8 @@ export type ShopListParams = {
 	 * machine, les machines de l'arbre des pièces.
 	 */
 	excludeTypes?: string[];
+	/** Natures de produit retenues (`product.type`) : le filtre « Type ». */
+	types?: string[];
 	/** Caractéristiques retenues : « Matériau=Acier », « Largeur=12 mm »… */
 	specs?: { name: string; value: string }[];
 	sort?: ShopSort;
@@ -309,6 +326,7 @@ function listConditions(params: ShopListParams & { secondaryCategories?: boolean
 	const conditions: SQL[] = [eq(product.isActive, true)];
 
 	if (params.excludeTypes?.length) conditions.push(notInArray(product.type, params.excludeTypes));
+	if (params.types?.length) conditions.push(inArray(product.type, params.types));
 
 	if (params.categoryIds?.length) {
 		const direct = inArray(product.categoryId, params.categoryIds);
@@ -558,6 +576,7 @@ export type ParsedShopListParams = {
 	page: number;
 	sort: ShopSort;
 	brandSlugs: string[];
+	natures: ShopNature[];
 	inStockOnly: boolean;
 	specs: { name: string; value: string }[];
 };
@@ -593,6 +612,7 @@ export function parseShopListParams(url: URL): ParsedShopListParams {
 		page: Number(url.searchParams.get('page') ?? '1') || 1,
 		sort: triRaw && SHOP_SORTS.includes(triRaw) ? triRaw : 'new',
 		brandSlugs: url.searchParams.getAll('marque').slice(0, MAX_BRAND_FILTERS),
+		natures: [...new Set(url.searchParams.getAll('type').filter(isShopNature))],
 		inStockOnly: url.searchParams.get('stock') === '1',
 		specs
 	};
@@ -632,6 +652,10 @@ export async function loadShopListing(
 		search: scope.search || undefined,
 		excludeTypes: scope.excludeTypes,
 		brandIds: selected.length > 0 ? selected.map((b) => b.id) : undefined,
+		types:
+			parsed.natures.length > 0
+				? parsed.natures.flatMap((n) => [...SHOP_NATURES[n].types])
+				: undefined,
 		inStockOnly: parsed.inStockOnly,
 		specs: parsed.specs.length > 0 ? parsed.specs : undefined
 	};
@@ -676,10 +700,14 @@ export async function loadShopListing(
 				.filter((f) => f.value)
 				.sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' })),
 			inStockTotal,
-			specs: specFacets
+			specs: specFacets,
+			// Filtre « Type » : recherche seulement, compté par Meilisearch. Un
+			// rayon est déjà rangé sous l'une des deux familles.
+			natures: searched?.natureFacets ?? []
 		},
 		selected: {
 			brands: selected.map((b) => ({ value: b.slug, label: b.name })),
+			natures: parsed.natures.map((n) => ({ value: n, label: SHOP_NATURES[n].label })),
 			inStockOnly: parsed.inStockOnly,
 			specs: parsed.specs.map((s) => `${s.name}:${s.value}`)
 		}
@@ -703,6 +731,7 @@ async function searchShopListing(
 	const result = await searchCatalog({
 		q: filters.search!,
 		brandIds: filters.brandIds,
+		types: filters.types,
 		inStockOnly: filters.inStockOnly,
 		excludeTypes: filters.excludeTypes,
 		specs: filters.specs,
@@ -743,6 +772,14 @@ async function searchShopListing(
 			pageCount: Math.max(1, result.totalPages)
 		},
 		brandFacets,
+		// Une famille cochée reste affichée même vide, pour pouvoir la décocher.
+		natureFacets: Object.entries(SHOP_NATURES)
+			.map(([value, nature]) => ({
+				value,
+				label: nature.label,
+				total: nature.types.reduce((sum, type) => sum + (result.typeCounts.get(type) ?? 0), 0)
+			}))
+			.filter((f) => f.total > 0 || parsed.natures.includes(f.value as ShopNature)),
 		inStockTotal: result.inStockTotal,
 		specFacets: groupSpecFacets(specRows, 6, 8)
 	};

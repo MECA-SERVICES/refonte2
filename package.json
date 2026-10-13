@@ -37,9 +37,11 @@
 		"search:sync": "node --experimental-strip-types --no-warnings scripts/search-index.ts sync",
 		"search:settings": "node --experimental-strip-types --no-warnings scripts/search-index.ts settings",
 		"search:suggestions": "node --experimental-strip-types --no-warnings scripts/search-index.ts suggestions",
-		"search:eval": "node --experimental-strip-types --no-warnings scripts/search-eval.ts"
+		"search:eval": "node --experimental-strip-types --no-warnings scripts/search-eval.ts",
+		"classify:unclassified": "node --experimental-strip-types --no-warnings scripts/classify-unclassified.ts"
 	},
 	"devDependencies": {
+		"@anthropic-ai/sdk": "^0.133.0",
 		"@aws-sdk/client-s3": "^3.1094.0",
 		"@eslint/js": "^10.0.1",
 		"@flowbite-svelte-plugins/chart": "^0.2.4",

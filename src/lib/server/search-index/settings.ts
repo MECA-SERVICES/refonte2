@@ -93,8 +93,12 @@ export function significantQuery(raw: string): string {
  *
  * - L'ordre de `searchableAttributes` est la priorité des champs (CDC 08-R3) :
  *   une correspondance sur la désignation prime sur la description.
- * - `sales` puis `inStock` départagent les résultats de pertinence égale :
- *   le savon vendu chaque mois passe devant le garde-main jamais commandé.
+ * - `typeRank` départage les résultats dont le texte correspond aussi bien :
+ *   les machines avant les pièces (« karcher » montre ses nettoyeurs haute
+ *   pression avant ses rondelles). Placé avant `wordPosition`, sans quoi
+ *   « Rondelle | KÄRCHER », où la marque vient plus tôt, passerait devant ;
+ * - `sales` puis `inStock` départagent la fin : le savon vendu chaque mois passe
+ *   devant le garde-main jamais commandé.
  * - Références et EAN ne tolèrent aucune faute : « 5874207 » proche de
  *   « 5874208 » serait une autre pièce.
  */
@@ -118,6 +122,7 @@ export const PRODUCTS_SETTINGS: Settings = {
 		'typo',
 		'proximity',
 		'sort',
+		'typeRank:desc',
 		'wordPosition',
 		'exactness',
 		'sales:desc',

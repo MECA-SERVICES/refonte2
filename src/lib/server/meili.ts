@@ -76,6 +76,8 @@ export type CatalogSearchParams = {
 	brandIds?: number[];
 	inStockOnly?: boolean;
 	excludeTypes?: string[];
+	/** Natures retenues (`product.type`) : filtre « Produits / Pièces détachées ». */
+	types?: string[];
 	specs?: { name: string; value: string }[];
 	sort?: 'new' | 'price_asc' | 'price_desc' | 'name';
 	page: number;
@@ -88,6 +90,8 @@ export type CatalogSearchResult = {
 	totalPages: number;
 	/** Nombre d'articles par marque, sélection de marque ignorée. */
 	brandCounts: Map<number, number>;
+	/** Nombre d'articles par nature (`machine`, `part`…), sélection de nature ignorée. */
+	typeCounts: Map<string, number>;
 	/** Articles en stock, filtre « en stock » ignoré. */
 	inStockTotal: number;
 	/** Caractéristiques « Libellé=Valeur » et leur fréquence, sélection ignorée. */
@@ -128,6 +132,7 @@ export async function searchCatalog(
 		type: params.excludeTypes?.length
 			? `type NOT IN [${params.excludeTypes.map(quote).join(', ')}]`
 			: null,
+		nature: params.types?.length ? `type IN [${params.types.map(quote).join(', ')}]` : null,
 		brand: params.brandIds?.length ? `brandId IN [${params.brandIds.join(', ')}]` : null,
 		stock: params.inStockOnly ? 'inStock = true' : null,
 		specs: params.specs?.length
@@ -179,7 +184,8 @@ export async function searchCatalog(
 	// options restent visibles et cliquables. Les deux modes sont demandés
 	// d'emblée : le bon est retenu à la réponse.
 	for (const scope of ['strict', 'loose'] as const) {
-		named[`${scope}:all`] = count(scope, filterWithout(), ['brandId', 'inStock', 'specs']);
+		named[`${scope}:all`] = count(scope, filterWithout(), ['type', 'brandId', 'inStock', 'specs']);
+		if (filters.nature) named[`${scope}:nature`] = count(scope, filterWithout('nature'), ['type']);
 		if (filters.brand) named[`${scope}:brand`] = count(scope, filterWithout('brand'), ['brandId']);
 		if (filters.stock) named[`${scope}:stock`] = count(scope, filterWithout('stock'), ['inStock']);
 		if (filters.specs) named[`${scope}:specs`] = count(scope, filterWithout('specs'), ['specs']);
@@ -219,6 +225,7 @@ export async function searchCatalog(
 			brandCounts: new Map(
 				Object.entries(facetsOf('brand', 'brandId')).map(([id, n]) => [Number(id), n])
 			),
+			typeCounts: new Map(Object.entries(facetsOf('nature', 'type'))),
 			inStockTotal: facetsOf('stock', 'inStock').true ?? 0,
 			specCounts: Object.entries(facetsOf('specs', 'specs')).map(([token, n]) => ({
 				token,
