@@ -97,6 +97,8 @@ export function significantQuery(raw: string): string {
  *   les machines avant les pièces (« karcher » montre ses nettoyeurs haute
  *   pression avant ses rondelles). Placé avant `wordPosition`, sans quoi
  *   « Rondelle | KÄRCHER », où la marque vient plus tôt, passerait devant ;
+ *   mais après `exactness` : un mot trouvé tel quel l'emporte sur un début de
+ *   mot — « pneu » montre des pneus, pas des cloueurs « pneumatiques » ;
  * - `sales` puis `inStock` départagent la fin : le savon vendu chaque mois passe
  *   devant le garde-main jamais commandé.
  * - Références et EAN ne tolèrent aucune faute : « 5874207 » proche de
@@ -122,9 +124,9 @@ export const PRODUCTS_SETTINGS: Settings = {
 		'typo',
 		'proximity',
 		'sort',
+		'exactness',
 		'typeRank:desc',
 		'wordPosition',
-		'exactness',
 		'sales:desc',
 		'inStock:desc'
 	],

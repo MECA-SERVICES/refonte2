@@ -114,7 +114,9 @@ export const SYNONYM_GROUPS: string[][] = [
 	['dent', 'dents'],
 	['fil', 'fils'],
 	['soc', 'socs'],
-	['pneu', 'pneus', 'pneumatique', 'tyre'],
+	// Pas « pneumatique » : en atelier, c'est surtout « à air comprimé »
+	// (cloueurs, clés à chocs), pas un pneu.
+	['pneu', 'pneus', 'tyre'],
 	['gant', 'gants'],
 	['cle', 'cles'],
 	['axe', 'axes'],

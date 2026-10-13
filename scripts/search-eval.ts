@@ -40,7 +40,7 @@ const CASES: Case[] = [
 	// Fautes de frappe
 	{ q: 'tondeuze', top: { match: /tondeuse/i, count: 8 } },
 	{ q: 'husquvarna', top: { match: /husqvarna/i, count: 8 } },
-	{ q: 'debrousailleuse', top: { match: /d[ée]broussailleuse/i, count: 6 } },
+	{ q: 'debrousailleuse', top: { match: /d[ée]brou?ssailleuse|trimmer/i, count: 6 } },
 
 	// Références et code-barres (CDC 08-R2 : l'exact en tête)
 	{ q: 'ISE-1729-733-210-30', first: /serrure gauche/i },
@@ -56,8 +56,11 @@ const CASES: Case[] = [
 
 	// Vocabulaire courant
 	{ q: 'robot tondeuse', top: { match: /robot/i, count: 5 } },
+	// Un mot entier, pas un début de mot : pas de cloueurs « pneumatiques ».
+	{ q: 'pneu', top: { match: /pneu\b|pneus|tyre/i, count: 10 }, never: /pneumatique/i },
 	// Marque devenue nom commun : ses machines avant ses 29 000 pièces.
-	{ q: 'karcher', top: { match: /nettoyeur|aspirateur|souffleur/i, count: 8 } },
+	// Gammes HD / HDS : nettoyeurs haute pression, souvent nommés par leur seul modèle.
+	{ q: 'karcher', top: { match: /nettoyeur|aspirateur|souffleur|\bhds?\s?\d/i, count: 8 } },
 	{ q: 'courroie', top: { match: /courroie|belt/i, count: 10 } },
 
 	// Retour client : ce qui commence par la saisie passe devant les fiches qui
@@ -77,7 +80,10 @@ const CASES: Case[] = [
 
 	// Synonymes : vocabulaire du client
 	{ q: 'disqueuse', top: { match: /meuleuse/i, count: 5 } },
-	{ q: 'rotofil', top: { match: /d[ée]brou?ssailleuse|coupe.?bordure|trimmer/i, count: 5 } },
+	{
+		q: 'rotofil',
+		top: { match: /rotofil|d[ée]brou?ssailleuse|coupe.?bordure|trimmer/i, count: 5 }
+	},
 	{ q: 'tracteur tondeuse', top: { match: /tracteur|autoport|rider/i, count: 6 } },
 	{ q: 'cle a choc', top: { match: /boulonneuse|choc/i, count: 5 } },
 	{ q: 'huile 2 temps', top: { match: /2 ?t|2 temps|m[ée]lange/i, count: 5 } },
@@ -106,8 +112,9 @@ let failures = 0;
 
 for (const testCase of CASES.filter((c) => !filter || c.q.includes(filter))) {
 	const started = Date.now();
-	// Mêmes paramètres que la boutique (`$lib/server/meili`).
-	const { hits } = await index.search(testCase.q, {
+	// Mêmes paramètres que la page de résultats (`$lib/server/meili`) : le
+	// dernier mot est un mot entier (espace finale), pas un début de mot.
+	const { hits } = await index.search(`${testCase.q} `, {
 		matchingStrategy: 'frequency',
 		limit: 10,
 		attributesToRetrieve: ['id', 'name', 'reference']

@@ -127,7 +127,10 @@ export async function searchCatalog(
 	const client = searcher();
 	if (!client) return null;
 
-	const q = params.q.trim();
+	// Une espace finale : sur une recherche validée, le dernier mot est un mot
+	// entier, pas un début de mot — « pneu » ne doit pas ramener tous les
+	// outils « pneumatiques ». L'aperçu, lui, complète pendant la frappe.
+	const q = `${params.q.trim()} `;
 	const filters = {
 		type: params.excludeTypes?.length
 			? `type NOT IN [${params.excludeTypes.map(quote).join(', ')}]`
@@ -151,7 +154,7 @@ export async function searchCatalog(
 	//   facettes ne retiennent que les produits qui contiennent « plaquette » ET
 	//   « frein ». Sans cela, les 63 « Support plaquette » gonflaient le total
 	//   et poussaient leurs marques en tête du filtre.
-	const strictQ = significantQuery(q);
+	const strictQ = `${significantQuery(q)} `;
 	type Scope = 'strict' | 'loose';
 	const count = (scope: Scope, filter: string[], facets: string[]) => ({
 		indexUid: PRODUCTS_INDEX,

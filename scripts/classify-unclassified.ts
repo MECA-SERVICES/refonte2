@@ -49,6 +49,10 @@ import { projectRoot, requireEnv } from './lib/env.ts';
 import { closeTargetDb, targetDb } from './lib/target-db.ts';
 import { count, log } from './lib/logger.ts';
 import { slugify, uniqueSlug } from './lib/transform.ts';
+import { categoryKind } from '../src/lib/catalog-kinds.ts';
+
+/** Racine « Produits » (machines, outillage, consommables), id stable de la base cible. */
+const ROOT_PRODUITS = 2;
 import {
 	buildKeywordIndex,
 	NOISE_WORDS,
@@ -173,6 +177,27 @@ function reportPath(name: string): string {
 	return resolve(dir, `${day}-${name}.csv`);
 }
 
+/**
+ * Chemins de tout le catalogue actif → id : « Pièces détachées » et
+ * « Produits ». Les homonymes gardent le premier rencontré.
+ */
+async function catalogTree() {
+	const sql = targetDb();
+	const rows = await sql<{ id: number; name: string; parent_id: number | null }[]>`
+		SELECT id, name, parent_id FROM category WHERE is_active`;
+	const byId = new Map(rows.map((c) => [Number(c.id), c]));
+	const pathOf = (c: { name: string; parent_id: number | null }, depth = 0): string => {
+		const parent = c.parent_id != null ? byId.get(Number(c.parent_id)) : undefined;
+		return parent && depth < 12 ? `${pathOf(parent, depth + 1)} > ${c.name}` : c.name;
+	};
+	const tree = new Map<string, number>();
+	for (const c of rows) {
+		const path = pathOf(c);
+		if (!tree.has(path)) tree.set(path, Number(c.id));
+	}
+	return tree;
+}
+
 /** Chemins de l'arbre des pièces (`source = 'rule'`) → id. */
 async function pieceTree() {
 	const sql = targetDb();
@@ -241,6 +266,53 @@ const taxonomyTask: Task = {
 };
 
 type Assignment = { id: number; categoryId: number };
+
+/**
+ * Nature des produits rangés côté « Produits » : machine ou consommable,
+ * selon la règle de la boutique (`categoryKind`). Typés « pièce » à la
+ * migration, ils seraient sinon masqués des pages catégorie, qui écartent
+ * les pièces des rayons machines.
+ *
+ * Volontairement limité aux produits qu'on vient de ranger : la tâche
+ * `types` de `fix-catalog-classification` reclasserait aussi des produits
+ * sans rapport avec ce rangement.
+ */
+async function retypeProducts(assignments: Assignment[]) {
+	const sql = targetDb();
+	const cats = await sql<{ id: number; name: string; slug: string; parent_id: number | null }[]>`
+		SELECT id, name, slug, parent_id FROM category`;
+	const byId = new Map(cats.map((c) => [Number(c.id), c]));
+	const chainOf = (id: number) => {
+		const chain: { name: string; slug: string; id: number }[] = [];
+		let cur = byId.get(id);
+		while (cur && chain.length < 12) {
+			chain.unshift({ id: Number(cur.id), name: cur.name, slug: cur.slug });
+			cur = cur.parent_id != null ? byId.get(Number(cur.parent_id)) : undefined;
+		}
+		return chain;
+	};
+
+	const machine: number[] = [];
+	const consumable: number[] = [];
+	for (const { id, categoryId } of assignments) {
+		const chain = chainOf(categoryId);
+		if (chain[0]?.id !== ROOT_PRODUITS) continue;
+		(categoryKind(chain) === 'machine' ? machine : consumable).push(id);
+	}
+	for (const [type, ids] of [
+		['machine', machine],
+		['consumable', consumable]
+	] as const) {
+		for (let i = 0; i < ids.length; i += BATCH) {
+			await sql`
+				UPDATE product SET type = ${type}, updated_at = now()
+				 WHERE id IN ${sql(ids.slice(i, i + BATCH))} AND type <> ${type}`;
+		}
+	}
+	log.success(
+		`Nature mise à jour : ${count(machine.length)} machines, ${count(consumable.length)} consommables`
+	);
+}
 
 /**
  * Écrit des rangements, précédés d'un fichier de retour arrière.
@@ -410,7 +482,18 @@ const NO_CATEGORY = 'AUCUN';
  * des rayons voisins — « Papillon », « Pastille », « Porte-lame » finissaient
  * tous dans « Rouleaux » ; un libellé imposé ne peut être ni inventé ni décalé.
  */
+/**
+ * Au-delà, l'API refuse la liste fermée (« Schema is too complex for
+ * compilation ») : la réponse devient un texte libre, vérifié par le script
+ * contre la liste des rayons (`resolveLabel`).
+ */
+const MAX_ENUM_LABELS = 200;
+
 function aiSchema(labels: string[]) {
+	const category =
+		labels.length <= MAX_ENUM_LABELS
+			? { type: 'string', enum: [...labels, NO_CATEGORY] }
+			: { type: 'string' };
 	return {
 		type: 'object',
 		properties: {
@@ -420,7 +503,7 @@ function aiSchema(labels: string[]) {
 					type: 'object',
 					properties: {
 						id: { type: 'integer' },
-						category: { type: 'string', enum: [...labels, NO_CATEGORY] }
+						category
 					},
 					required: ['id', 'category'],
 					additionalProperties: false
@@ -439,8 +522,11 @@ function leafLabel(path: string): string {
 
 function aiInstructions(leaves: { id: number; path: string }[]): string {
 	return [
-		"Tu ranges les pièces détachées d'un distributeur français de matériel de motoculture,",
-		'agricole et électroportatif (tondeuses, tracteurs, tronçonneuses, outillage…).',
+		"Tu ranges les produits d'un distributeur français de matériel de motoculture, agricole",
+		'et électroportatif : surtout des pièces détachées (tondeuses, tracteurs, tronçonneuses…).',
+		'Quand la liste propose aussi la partie « Produits », une machine complète (tondeuse,',
+		'nettoyeur haute pression, laveuse…), un outil, un consommable ou un jouet y va, pas dans',
+		'les pièces détachées.',
 		'',
 		'Pour chaque produit, choisis le rayon le plus précis dans la liste ci-dessous et renvoie',
 		'son chemin exact. Les noms viennent des fournisseurs : souvent tronqués, en anglais, en',
@@ -485,15 +571,33 @@ const aiTask: Task = {
 		const unclassifiedId = idByPath.get(`${PIECES_ROOT} > ${UNCLASSIFIED}`);
 		if (!unclassifiedId) throw new Error(`Rayon « ${UNCLASSIFIED} » introuvable.`);
 
-		// Feuilles de « Pièces détachées », hors « À classer ».
-		const paths = [...idByPath.keys()];
+		// Feuilles proposées, hors « À classer » : celles de « Pièces détachées »,
+		// et avec `--tree=all` celles de « Produits » aussi. Une seconde passe
+		// sur les cas douteux en a besoin : beaucoup sont des machines typées
+		// « pièce » à la migration (« NHP MEC-1 mono eau chaude… | RENSON » est
+		// un nettoyeur haute pression), qu'aucun rayon de pièce ne peut accueillir.
+		const allTrees = options.tree === 'all';
+		const treePaths = allTrees ? await catalogTree() : idByPath;
+		const paths = [...treePaths.keys()];
 		const leaves = paths
-			.filter((path) => path.startsWith(`${PIECES_ROOT} > `))
+			.filter((path) => allTrees || path.startsWith(`${PIECES_ROOT} > `))
+			.filter((path) => path.includes(' > '))
 			.filter((path) => !paths.some((other) => other.startsWith(`${path} > `)))
-			.filter((path) => idByPath.get(path) !== unclassifiedId)
-			.map((path) => ({ id: idByPath.get(path)!, path }))
+			.filter((path) => treePaths.get(path) !== unclassifiedId)
+			.map((path) => ({ id: treePaths.get(path)!, path }))
 			.sort((a, b) => a.path.localeCompare(b.path, 'fr'));
 		const leafByLabel = new Map(leaves.map((l) => [leafLabel(l.path), l]));
+		// Réponse libre (plus de `MAX_ENUM_LABELS` rayons) : comparaison sans
+		// casse ni accents, toute autre réponse est ignorée.
+		const fold = (text: string) =>
+			text
+				.normalize('NFD')
+				.replace(/[\u0300-\u036f]/g, '')
+				.toLowerCase()
+				.replace(/\s+/g, ' ')
+				.trim();
+		const leafByFolded = new Map(leaves.map((l) => [fold(leafLabel(l.path)), l]));
+		const resolveLabel = (label: string) => leafByLabel.get(label) ?? leafByFolded.get(fold(label));
 		log.muted(`${count(leaves.length)} rayons proposés au modèle`);
 
 		let state: BatchState;
@@ -630,7 +734,7 @@ const aiTask: Task = {
 			for (const { id, category } of parsed.results) {
 				if (!expected.has(id)) continue;
 				expected.delete(id);
-				const leaf = leafByLabel.get(category);
+				const leaf = resolveLabel(category);
 				if (category === NO_CATEGORY) {
 					doubts++;
 				} else if (!leaf) {
@@ -665,6 +769,7 @@ const aiTask: Task = {
 
 		if (dryRun) return { processed: 0, note: `simulation : ${count(assignments.length)} à ranger` };
 		const written = await applyAssignments(assignments, unclassifiedId);
+		if (allTrees) await retypeProducts(assignments);
 		return { processed: written };
 	}
 };
