@@ -147,10 +147,10 @@ export async function searchCatalog(
 	//   « frein ». Sans cela, les 63 « Support plaquette » gonflaient le total
 	//   et poussaient leurs marques en tête du filtre.
 	const strictQ = significantQuery(q);
-	const strict = (filter: string[], facets: string[]): SearchParams & { indexUid: string } => ({
+	type Scope = 'strict' | 'loose';
+	const count = (scope: Scope, filter: string[], facets: string[]) => ({
 		indexUid: PRODUCTS_INDEX,
-		q: strictQ,
-		matchingStrategy: 'all',
+		...(scope === 'strict' ? { q: strictQ, matchingStrategy: 'all' as const } : { q, ...MATCHING }),
 		filter,
 		facets,
 		// `hitsPerPage` plutôt que `limit` : le total est alors exact.
@@ -158,8 +158,9 @@ export async function searchCatalog(
 		hitsPerPage: 0
 	});
 
-	const queries: (SearchParams & { indexUid: string })[] = [
-		{
+	// Requêtes nommées, envoyées en un seul aller-retour.
+	const named: Record<string, SearchParams & { indexUid: string }> = {
+		hits: {
 			indexUid: PRODUCTS_INDEX,
 			q,
 			...MATCHING,
@@ -167,47 +168,63 @@ export async function searchCatalog(
 			sort: SORTS[params.sort ?? 'new'],
 			page: params.page,
 			hitsPerPage: params.perPage,
-			attributesToRetrieve: ['id'],
-			// Facettes de repli, si aucun produit ne contient tous les mots.
-			facets: ['brandId', 'inStock', 'specs']
+			attributesToRetrieve: ['id']
 		},
-		strict(filterWithout(), ['brandId', 'inStock', 'specs'])
-	];
-	// Une facette dont la dimension est filtrée se recompte sans ce filtre.
-	if (filters.brand) queries.push(strict(filterWithout('brand'), ['brandId']));
-	if (filters.stock) queries.push(strict(filterWithout('stock'), ['inStock']));
-	if (filters.specs) queries.push(strict(filterWithout('specs'), ['specs']));
+		// Le mode se décide sur la saisie seule, avant tout filtre : cocher une
+		// marque ne doit pas faire basculer le comptage, ni vider la liste des
+		// marques (Kubota, 11 plaquettes, la réduisait à elle-même).
+		base: count('strict', [], [])
+	};
+	// Chaque facette se compte sans sa propre sélection, pour que les autres
+	// options restent visibles et cliquables. Les deux modes sont demandés
+	// d'emblée : le bon est retenu à la réponse.
+	for (const scope of ['strict', 'loose'] as const) {
+		named[`${scope}:all`] = count(scope, filterWithout(), ['brandId', 'inStock', 'specs']);
+		if (filters.brand) named[`${scope}:brand`] = count(scope, filterWithout('brand'), ['brandId']);
+		if (filters.stock) named[`${scope}:stock`] = count(scope, filterWithout('stock'), ['inStock']);
+		if (filters.specs) named[`${scope}:specs`] = count(scope, filterWithout('specs'), ['specs']);
+	}
 
 	try {
-		const { results } = await client.multiSearch<MultiSearchParams>({ queries });
-		const [main, scope, ...extra] = results;
+		const names = Object.keys(named);
+		const { results } = await client.multiSearch<MultiSearchParams>({
+			queries: Object.values(named)
+		});
+		const byName = new Map(names.map((name, i) => [name, results[i]]));
+		const result = (name: string) => byName.get(name)!;
 
-		// Les résultats sont classés par nombre de mots trouvés : les produits
-		// qui contiennent tous les mots importants occupent les premières pages.
-		// En limitant la pagination à leur nombre, les pages suivantes, qui ne
-		// contiennent qu'une partie des mots, ne sont jamais montrées.
-		const strictTotal = scope.totalHits ?? 0;
-		const counted = strictTotal > 0 ? scope : main;
-		const facetsOf = (facet: string) =>
-			(strictTotal > 0
-				? extra.find((r) => r.facetDistribution?.[facet])?.facetDistribution?.[facet]
-				: undefined) ??
-			counted.facetDistribution?.[facet] ??
-			{};
-		const specResult =
-			strictTotal > 0 && filters.specs ? extra.find((r) => r.facetDistribution?.specs) : counted;
+		// Dès qu'un produit contient tous les mots importants, on ne montre que
+		// ceux-là : « bougie de préchauffage » chez B&S, ce sont 2 bougies, pas
+		// 6 « Module de préchauffage » ou « Bloc de réchauffage » en complément.
+		// La recherche large ne sert qu'en dernier recours, quand aucun produit
+		// ne contient tous les mots (saisie mal orthographiée, trop précise).
+		const scope: Scope = (result('base').totalHits ?? 0) > 0 ? 'strict' : 'loose';
+		const scoped = (dimension: keyof typeof filters) =>
+			result(filters[dimension] ? `${scope}:${dimension}` : `${scope}:all`);
+		const facetsOf = (dimension: keyof typeof filters, facet: string) =>
+			scoped(dimension).facetDistribution?.[facet] ?? {};
 
+		const total = result(`${scope}:all`).totalHits ?? 0;
+		// Les résultats sont classés par nombre de mots trouvés : ceux qui
+		// contiennent tous les mots importants viennent en premier. On coupe la
+		// liste à leur nombre, pour que la dernière page ne soit pas complétée
+		// par des correspondances partielles.
+		const remaining = Math.max(0, total - (params.page - 1) * params.perPage);
 		return {
-			ids: main.hits.map((hit) => Number(hit.id)),
-			totalHits: strictTotal > 0 ? strictTotal : (main.totalHits ?? 0),
-			totalPages:
-				strictTotal > 0 ? Math.ceil(strictTotal / params.perPage) : (main.totalPages ?? 0),
+			ids: result('hits')
+				.hits.slice(0, remaining)
+				.map((hit) => Number(hit.id)),
+			totalHits: total,
+			totalPages: Math.ceil(total / params.perPage),
 			brandCounts: new Map(
-				Object.entries(facetsOf('brandId')).map(([id, total]) => [Number(id), total])
+				Object.entries(facetsOf('brand', 'brandId')).map(([id, n]) => [Number(id), n])
 			),
-			inStockTotal: facetsOf('inStock').true ?? 0,
-			specCounts: Object.entries(facetsOf('specs')).map(([token, total]) => ({ token, total })),
-			specScopeTotal: specResult?.totalHits ?? specResult?.estimatedTotalHits ?? 0
+			inStockTotal: facetsOf('stock', 'inStock').true ?? 0,
+			specCounts: Object.entries(facetsOf('specs', 'specs')).map(([token, n]) => ({
+				token,
+				total: n
+			})),
+			specScopeTotal: scoped('specs').totalHits ?? 0
 		};
 	} catch (cause) {
 		console.error('[recherche] Meilisearch en échec, repli SQL', { q: params.q, cause });
@@ -256,10 +273,20 @@ export async function searchPreview(raw: string): Promise<PreviewSearchResult | 
 					matchingStrategy: 'all',
 					limit: 8,
 					attributesToRetrieve: ['text']
+				},
+				// Produits contenant tous les mots importants : même règle que la
+				// page de résultats (`searchCatalog`).
+				{
+					indexUid: PRODUCTS_INDEX,
+					q: significantQuery(q),
+					matchingStrategy: 'all',
+					page: 1,
+					hitsPerPage: 0
 				}
 			]
 		});
-		const [products, categories, brands, suggestions] = results;
+		const [products, categories, brands, suggestions, strict] = results;
+		const strictTotal = strict.totalHits ?? 0;
 
 		const uniqueCategories = [
 			...new Map(
@@ -279,7 +306,9 @@ export async function searchPreview(raw: string): Promise<PreviewSearchResult | 
 
 		return {
 			suggestions: suggestionTexts,
-			productIds: products.hits.map((hit) => Number(hit.id)),
+			productIds: products.hits
+				.slice(0, strictTotal > 0 ? strictTotal : undefined)
+				.map((hit) => Number(hit.id)),
 			categories: uniqueCategories,
 			brands: brands.hits as Pick<BrandDocument, 'name' | 'slug' | 'logoUrl'>[]
 		};

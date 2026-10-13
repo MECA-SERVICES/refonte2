@@ -57,28 +57,30 @@
 	}
 
 	/**
-	 * Sélectionne une marque, ou la retire si elle l'était déjà.
-	 *
-	 * Une seule marque à la fois : cumuler des marques élargit le résultat au
-	 * lieu de le restreindre, ce qui va à l'encontre de ce qu'un client attend
-	 * d'un filtre. Choisir une autre marque remplace donc la précédente.
+	 * Coche une marque, ou la décoche si elle l'était déjà. Les marques
+	 * cochées se cumulent : « Iseki » et « Kubota » montrent les deux.
 	 */
 	function toggleBrand(value: string) {
-		const next = selectedBrands.includes(value) ? [] : [value];
+		const next = selectedBrands.includes(value)
+			? selectedBrands.filter((v) => v !== value)
+			: [...selectedBrands, value];
 		return filterHref({ marque: next });
 	}
 
 	/**
 	 * Sélectionne une caractéristique, ou la retire si elle l'était déjà.
 	 *
-	 * Une seule à la fois, pour la même raison : deux valeurs d'un même libellé
-	 * (« 46 cm » et « 53 cm ») ne peuvent pas être vraies ensemble.
+	 * Une seule à la fois, contrairement aux marques : deux valeurs d'un même
+	 * libellé (« 46 cm » et « 53 cm ») ne peuvent pas être vraies ensemble.
 	 */
 	function toggleSpec(name: string, value: string) {
 		const token = `${name}:${value}`;
 		const next = selectedSpecs.includes(token) ? [] : [token];
 		return filterHref({ spec: next });
 	}
+
+	/** Préfixe d'identifiants ARIA, unique par instance. */
+	const uid = $props.id();
 
 	const blockTitleClass =
 		'mb-2.5 font-display text-[12.5px] font-extrabold tracking-[0.12em] text-shop-muted uppercase';
@@ -136,17 +138,41 @@
 
 	{#if brands.length > 0}
 		<div class="border-b border-shop-border-soft p-5">
-			<p class={blockTitleClass}>Marque</p>
-			<div class="max-h-72 overflow-y-auto">
+			<p class={blockTitleClass} id="{uid}-brands">Marque</p>
+			<!-- Des liens plutôt que des champs de formulaire : chaque case change
+			     l'URL, le filtre reste partageable et fonctionne sans JavaScript. -->
+			<div class="max-h-72 overflow-y-auto" role="group" aria-labelledby="{uid}-brands">
 				{#each brands as item (item.value)}
 					{@const selected = selectedBrands.includes(item.value)}
 					<a
 						href={toggleBrand(item.value)}
+						role="checkbox"
+						aria-checked={selected}
 						class="{optionClass} {selected
 							? 'bg-primary-50 font-bold text-shop-blue'
 							: 'text-shop-ink-soft hover:bg-shop-subtle'}"
 					>
-						<span class="min-w-0 truncate">{item.label}</span>
+						<span class="flex min-w-0 items-center gap-2.5">
+							<span
+								class="flex h-4 w-4 shrink-0 items-center justify-center rounded border-[1.5px] {selected
+									? 'border-shop-blue bg-shop-blue text-white'
+									: 'border-shop-border bg-white'}"
+								aria-hidden="true"
+							>
+								{#if selected}
+									<svg viewBox="0 0 12 12" class="h-2.5 w-2.5" fill="none">
+										<path
+											d="M2.5 6.2 5 8.5l4.5-5"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+								{/if}
+							</span>
+							<span class="min-w-0 truncate">{item.label}</span>
+						</span>
 						<span class="shrink-0 text-shop-faint">{formatNumber(item.total)}</span>
 					</a>
 				{/each}

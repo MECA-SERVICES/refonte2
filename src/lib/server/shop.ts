@@ -562,12 +562,18 @@ export type ParsedShopListParams = {
 	specs: { name: string; value: string }[];
 };
 
+/** Marques cochées au plus : borne la requête, quelle que soit l'URL reçue. */
+const MAX_BRAND_FILTERS = 20;
+
+/** Marques proposées au plus dans le filtre (la liste défile dans la colonne). */
+const BRAND_FACETS = 50;
+
 /**
  * Filtres portés par l'URL : partageables et utilisables sans JavaScript.
  *
- * Une seule marque et une seule caractéristique sont retenues : l'URL peut en
- * porter plusieurs (lien partagé, retour arrière), la page n'en applique
- * qu'une pour rester cohérente avec les filtres proposés.
+ * Plusieurs marques se cumulent (« Iseki ou Kubota ») : c'est l'usage attendu
+ * d'un filtre à cases. Une seule caractéristique est retenue : deux valeurs
+ * d'un même libellé (« 46 cm » et « 53 cm ») ne peuvent pas être vraies ensemble.
  */
 export function parseShopListParams(url: URL): ParsedShopListParams {
 	const triRaw = url.searchParams.get('tri') as ShopSort | null;
@@ -586,7 +592,7 @@ export function parseShopListParams(url: URL): ParsedShopListParams {
 	return {
 		page: Number(url.searchParams.get('page') ?? '1') || 1,
 		sort: triRaw && SHOP_SORTS.includes(triRaw) ? triRaw : 'new',
-		brandSlugs: url.searchParams.getAll('marque').slice(0, 1),
+		brandSlugs: url.searchParams.getAll('marque').slice(0, MAX_BRAND_FILTERS),
 		inStockOnly: url.searchParams.get('stock') === '1',
 		specs
 	};
@@ -641,7 +647,7 @@ export async function loadShopListing(
 		? [searched.products, searched.brandFacets, searched.inStockTotal, searched.specFacets]
 		: await Promise.all([
 				listShopProducts({ ...filters, sort: parsed.sort, page: parsed.page }),
-				shopBrandFacets(filters),
+				shopBrandFacets(filters, BRAND_FACETS),
 				shopStockFacet(filters),
 				shopSpecFacets(filters)
 			]);
@@ -653,9 +659,22 @@ export async function loadShopListing(
 		products,
 		sort: parsed.sort,
 		facets: {
-			brands: brandFacets
-				.map((f) => ({ value: byId.get(f.id)?.slug ?? '', label: f.name, total: f.total }))
-				.filter((f) => f.value),
+			// Les plus représentées sont retenues, puis présentées par ordre
+			// alphabétique : on y cherche une marque par son nom. Une marque cochée
+			// reste affichée même sans produit dans le périmètre (« en stock »
+			// coché ensuite) : on doit pouvoir la décocher là où on l'a cochée.
+			brands: [
+				...brandFacets.map((f) => ({
+					value: byId.get(f.id)?.slug ?? '',
+					label: f.name,
+					total: f.total
+				})),
+				...selected
+					.filter((b) => !brandFacets.some((f) => f.id === b.id))
+					.map((b) => ({ value: b.slug, label: b.name, total: 0 }))
+			]
+				.filter((f) => f.value)
+				.sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' })),
 			inStockTotal,
 			specs: specFacets
 		},
@@ -666,9 +685,6 @@ export async function loadShopListing(
 		}
 	};
 }
-
-/** Marques proposées au plus dans le filtre d'une recherche (la liste défile). */
-const SEARCH_BRAND_FACETS = 50;
 
 /**
  * Listing de recherche servi par Meilisearch, au format de `loadShopListing`.
@@ -698,15 +714,15 @@ async function searchShopListing(
 
 	const rows = await shopProductCardsByIds(result.ids);
 
-	// Toutes les marques présentes (la liste défile dans la colonne), les plus
-	// représentées d'abord : sur « plaquette de frein », 35 marques — les douze
-	// des rayons SQL en masquaient la plupart. Caractéristiques au seuil adapté
-	// à la taille du périmètre (cf. `shopSpecFacets`).
+	// Les marques les plus représentées, jusqu'à `BRAND_FACETS` : sur
+	// « plaquette de frein », 48 marques — une limite à douze en masquait la
+	// plupart. Caractéristiques au seuil adapté à la taille du périmètre
+	// (cf. `shopSpecFacets`).
 	const brandFacets = brands
 		.filter((b) => result.brandCounts.has(b.id))
 		.map((b) => ({ id: b.id, name: b.name, total: result.brandCounts.get(b.id)! }))
 		.sort((a, b) => b.total - a.total)
-		.slice(0, SEARCH_BRAND_FACETS);
+		.slice(0, BRAND_FACETS);
 
 	const threshold = result.specScopeTotal < 300 ? 2 : 5;
 	const specRows = result.specCounts
