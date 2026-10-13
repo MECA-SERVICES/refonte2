@@ -15,6 +15,7 @@ import { SYNONYMS } from './synonyms.ts';
 export const PRODUCTS_INDEX = 'products';
 export const CATEGORIES_INDEX = 'categories';
 export const BRANDS_INDEX = 'brands';
+export const SUGGESTIONS_INDEX = 'suggestions';
 
 /** Index reconstruit à côté du vrai, puis basculé d'un bloc (`swapIndexes`). */
 export const PRODUCTS_REBUILD_INDEX = 'products_rebuild';
@@ -148,4 +149,17 @@ export const CATEGORIES_SETTINGS: Settings = {
 export const BRANDS_SETTINGS: Settings = {
 	searchableAttributes: ['name'],
 	rankingRules: ['words', 'typo', 'proximity', 'exactness', 'products:desc']
+};
+
+/**
+ * Suggestions de saisie (`./suggestions.ts`). À pertinence égale — toutes les
+ * expressions qui commencent par « sav » — la plus populaire d'abord ; une
+ * suggestion identique à la saisie passe devant (`exactness`).
+ */
+export const SUGGESTIONS_SETTINGS: Settings = {
+	searchableAttributes: ['text'],
+	rankingRules: ['words', 'typo', 'proximity', 'wordPosition', 'exactness', 'popularity:desc'],
+	stopWords: [],
+	synonyms: SYNONYMS,
+	localizedAttributes: [{ attributePatterns: ['text'], locales: ['fra'] }]
 };

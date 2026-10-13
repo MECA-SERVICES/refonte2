@@ -12,6 +12,7 @@
  *   bun run search:sync                    # produits modifiés depuis 26 h (planifier chaque nuit)
  *   bun run search:sync -- --since=7d      # fenêtre plus large
  *   bun run search:settings                # réglages seuls (après modification des synonymes)
+ *   bun run search:suggestions             # rayons, marques et suggestions seuls (~1 min)
  *
  * La reconstruction remplit un index à part (`products_rebuild`), puis le
  * bascule d'un bloc sur `products` : la boutique cherche dans l'ancien index
@@ -30,8 +31,11 @@ import {
 	CATEGORIES_SETTINGS,
 	PRODUCTS_INDEX,
 	PRODUCTS_REBUILD_INDEX,
-	PRODUCTS_SETTINGS
+	PRODUCTS_SETTINGS,
+	SUGGESTIONS_INDEX,
+	SUGGESTIONS_SETTINGS
 } from '../src/lib/server/search-index/settings.ts';
+import { buildSuggestions } from '../src/lib/server/search-index/suggestions.ts';
 import {
 	fetchBrandDocuments,
 	fetchCategoryDocuments,
@@ -51,6 +55,9 @@ const LONG_WAIT = { timeout: 2 * 60 * 60 * 1000, interval: 2000 };
 
 /** Nom de la clé créée par `--setup`, pour ne pas la recréer à chaque passage. */
 const APP_KEY_NAME = 'msshop-app';
+
+/** Index que l'application interroge et met à jour. */
+const APP_INDEXES = [PRODUCTS_INDEX, CATEGORIES_INDEX, BRANDS_INDEX, SUGGESTIONS_INDEX];
 
 const args = process.argv.slice(2);
 const command = args.find((a) => !a.startsWith('--')) ?? 'reindex';
@@ -112,17 +119,22 @@ async function ensureIndex(uid: string, settings: Settings) {
 	await run(`réglages ${uid}`, () => client.index(uid).updateSettings(settings));
 }
 
-/** Rayons et marques : quelques centaines de documents, remplacés d'un coup. */
+/**
+ * Rayons, marques et suggestions : quelques dizaines de milliers de documents
+ * au plus, recalculés en entier et remplacés d'un coup.
+ */
 async function rebuildSmallIndexes() {
 	const ctx = await loadIndexContext(sql);
-	const [categories, brands] = await Promise.all([
+	const [categories, brands, suggestions] = await Promise.all([
 		fetchCategoryDocuments(sql, ctx),
-		fetchBrandDocuments(sql)
+		fetchBrandDocuments(sql),
+		retry('calcul des suggestions', () => buildSuggestions(sql, ctx))
 	]);
 
 	for (const [uid, settings, docs] of [
 		[CATEGORIES_INDEX, CATEGORIES_SETTINGS, categories],
-		[BRANDS_INDEX, BRANDS_SETTINGS, brands]
+		[BRANDS_INDEX, BRANDS_SETTINGS, brands],
+		[SUGGESTIONS_INDEX, SUGGESTIONS_SETTINGS, suggestions]
 	] as const) {
 		await ensureIndex(uid, settings);
 		await run(`vidage ${uid}`, () => client.index(uid).deleteAllDocuments());
@@ -243,7 +255,8 @@ async function settings() {
 	for (const [uid, value] of [
 		[PRODUCTS_INDEX, PRODUCTS_SETTINGS],
 		[CATEGORIES_INDEX, CATEGORIES_SETTINGS],
-		[BRANDS_INDEX, BRANDS_SETTINGS]
+		[BRANDS_INDEX, BRANDS_SETTINGS],
+		[SUGGESTIONS_INDEX, SUGGESTIONS_SETTINGS]
 	] as const) {
 		await ensureIndex(uid, value);
 		log.success(`${uid} : réglages appliqués`);
@@ -253,21 +266,31 @@ async function settings() {
 /**
  * Clé de l'application : recherche et mise à jour des documents, sur les
  * seuls index de la boutique. Affichée une fois, à copier dans `.env`.
+ *
+ * Meilisearch ne permet pas d'étendre une clé à un nouvel index : une clé qui
+ * n'en couvre pas un (ajout de `suggestions`) est supprimée et recréée — la
+ * nouvelle valeur doit alors remplacer l'ancienne partout où elle est déclarée.
  */
 async function createAppKey() {
 	const { results } = await client.getKeys({ limit: 100 });
-	if (results.some((k) => k.name === APP_KEY_NAME)) {
-		log.info(`La clé « ${APP_KEY_NAME} » existe déjà (voir GET /keys avec la clé maître).`);
+	const existing = results.find((k) => k.name === APP_KEY_NAME);
+	if (existing && APP_INDEXES.every((uid) => existing.indexes.includes(uid))) {
+		log.info(`La clé « ${APP_KEY_NAME} » existe déjà et couvre tous les index.`);
 		return;
 	}
+	if (existing) {
+		await client.deleteKey(existing.uid);
+		log.warn(`Ancienne clé « ${APP_KEY_NAME} » supprimée : elle ne couvrait pas tous les index.`);
+	}
+
 	const key = await client.createKey({
 		name: APP_KEY_NAME,
 		description: 'Boutique MSShop : recherche et synchronisation des fiches',
 		actions: ['search', 'documents.add', 'documents.delete', 'tasks.get'],
-		indexes: [PRODUCTS_INDEX, CATEGORIES_INDEX, BRANDS_INDEX],
+		indexes: APP_INDEXES,
 		expiresAt: null
 	});
-	log.title('Clé applicative créée — à reporter dans .env :');
+	log.title('Clé applicative créée — à reporter dans .env (et en production) :');
 	console.log(`MEILI_API_KEY="${key.key}"`);
 }
 
@@ -276,7 +299,8 @@ try {
 	if (command === 'reindex') await reindex();
 	else if (command === 'sync') await sync();
 	else if (command === 'settings') await settings();
-	else throw new Error(`Commande inconnue : ${command} (reindex, sync, settings)`);
+	else if (command === 'suggestions') await rebuildSmallIndexes();
+	else throw new Error(`Commande inconnue : ${command} (reindex, sync, settings, suggestions)`);
 
 	if (setup) await createAppKey();
 	log.success(`Terminé en ${duration(Date.now() - started)}`);

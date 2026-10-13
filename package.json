@@ -36,6 +36,7 @@
 		"search:reindex": "node --experimental-strip-types --no-warnings scripts/search-index.ts reindex",
 		"search:sync": "node --experimental-strip-types --no-warnings scripts/search-index.ts sync",
 		"search:settings": "node --experimental-strip-types --no-warnings scripts/search-index.ts settings",
+		"search:suggestions": "node --experimental-strip-types --no-warnings scripts/search-index.ts suggestions",
 		"search:eval": "node --experimental-strip-types --no-warnings scripts/search-eval.ts"
 	},
 	"devDependencies": {

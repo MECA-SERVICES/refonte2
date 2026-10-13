@@ -20,8 +20,10 @@ import {
 	BRANDS_INDEX,
 	CATEGORIES_INDEX,
 	cleanSearchQuery,
-	PRODUCTS_INDEX
+	PRODUCTS_INDEX,
+	SUGGESTIONS_INDEX
 } from './search-index/settings';
+import { sameSuggestion } from './search-index/suggestions';
 import {
 	fetchBrandDocuments,
 	fetchCategoryDocuments,
@@ -185,6 +187,8 @@ export async function searchCatalog(
 }
 
 export type PreviewSearchResult = {
+	/** Saisies proposées (« savon à main ») : un clic lance la recherche. */
+	suggestions: string[];
 	productIds: number[];
 	categories: Pick<CategoryDocument, 'name' | 'slug'>[];
 	brands: Pick<BrandDocument, 'name' | 'slug' | 'logoUrl'>[];
@@ -206,10 +210,15 @@ export async function searchPreview(raw: string): Promise<PreviewSearchResult | 
 				// Davantage que nécessaire : la reprise compte des rayons homonymes
 				// (« Accessoires » ×7), dédoublonnés par nom ci-dessous.
 				{ indexUid: CATEGORIES_INDEX, q, limit: 8, attributesToRetrieve: ['name', 'slug'] },
-				{ indexUid: BRANDS_INDEX, q, limit: 3, attributesToRetrieve: ['name', 'slug', 'logoUrl'] }
+				{ indexUid: BRANDS_INDEX, q, limit: 3, attributesToRetrieve: ['name', 'slug', 'logoUrl'] },
+				// Quelques-unes de plus que les 4 affichées : certaines sont écartées
+				// ci-dessous comme doublons de la saisie ou d'un rayon. Saisie brute,
+				// mots vides compris : « filtre a h » doit compléter « filtre à huile »,
+				// pas « filtre h(ydraulique) ».
+				{ indexUid: SUGGESTIONS_INDEX, q: raw, limit: 8, attributesToRetrieve: ['text'] }
 			]
 		});
-		const [products, categories, brands] = results;
+		const [products, categories, brands, suggestions] = results;
 
 		const uniqueCategories = [
 			...new Map(
@@ -217,7 +226,18 @@ export async function searchPreview(raw: string): Promise<PreviewSearchResult | 
 			).values()
 		].slice(0, 3);
 
+		// Une suggestion qui répète la saisie, ou un rayon déjà proposé juste en
+		// dessous (« robots de tonte »), n'apporte rien.
+		const suggestionTexts = (suggestions.hits as { text: string }[])
+			.map((hit) => hit.text)
+			.filter(
+				(text) =>
+					!sameSuggestion(text, q) && !uniqueCategories.some((c) => sameSuggestion(text, c.name))
+			)
+			.slice(0, 4);
+
 		return {
+			suggestions: suggestionTexts,
 			productIds: products.hits.map((hit) => Number(hit.id)),
 			categories: uniqueCategories,
 			brands: brands.hits as Pick<BrandDocument, 'name' | 'slug' | 'logoUrl'>[]

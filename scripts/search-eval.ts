@@ -14,7 +14,11 @@
 import { Meilisearch } from 'meilisearch';
 import { requireEnv } from './lib/env.ts';
 import { color, log } from './lib/logger.ts';
-import { cleanSearchQuery, PRODUCTS_INDEX } from '../src/lib/server/search-index/settings.ts';
+import {
+	cleanSearchQuery,
+	PRODUCTS_INDEX,
+	SUGGESTIONS_INDEX
+} from '../src/lib/server/search-index/settings.ts';
 
 type Case = {
 	q: string;
@@ -76,6 +80,15 @@ const CASES: Case[] = [
 	{ q: 'prise de force', top: { match: /pdf|pto|prise de force|cardan|transmission/i, count: 6 } }
 ];
 
+/** Suggestions de saisie : une frappe partielle et la complétion attendue. */
+const SUGGESTION_CASES: { q: string; expect: RegExp }[] = [
+	{ q: 'sav', expect: /^savon/ },
+	{ q: 'filtre a h', expect: /^filtre à huile/ },
+	{ q: 'cour', expect: /^courroie/ },
+	{ q: 'tronc', expect: /^tronçonneuse/ },
+	{ q: 'nettoyeur h', expect: /^nettoyeur haute pression/ }
+];
+
 const filter = process.argv.slice(2).find((a) => !a.startsWith('--'));
 const client = new Meilisearch({
 	host: requireEnv('MEILI_URL'),
@@ -115,6 +128,26 @@ for (const testCase of CASES.filter((c) => !filter || c.q.includes(filter))) {
 	names.forEach((name, i) => console.log(color.dim(`   ${String(i + 1).padStart(2)}. `) + name));
 	for (const problem of problems) console.log(color.red(`   → ${problem}`));
 	if (problems.length > 0) failures++;
+}
+
+// Suggestions : la 1re proposée doit compléter la frappe. Saisie brute, comme
+// l'aperçu de la boutique (`searchPreview`).
+const suggestions = client.index<{ text: string }>(SUGGESTIONS_INDEX);
+for (const testCase of SUGGESTION_CASES.filter((c) => !filter || c.q.includes(filter))) {
+	const { hits } = await suggestions.search(testCase.q, {
+		limit: 5,
+		attributesToRetrieve: ['text']
+	});
+	const texts = hits.map((h) => h.text);
+	const ok = testCase.expect.test(texts[0] ?? '');
+	const status = ok ? color.green('OK ') : color.red('KO ');
+	console.log(
+		`\n${status} ${color.bold(`suggestions « ${testCase.q} »`)} ${color.dim(texts.join(' · '))}`
+	);
+	if (!ok) {
+		console.log(color.red(`   → 1re suggestion ≠ ${testCase.expect}`));
+		failures++;
+	}
 }
 
 if (failures > 0) {

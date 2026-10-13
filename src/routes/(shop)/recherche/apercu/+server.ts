@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { brand, category, product, taxRule } from '$lib/server/db/schema';
+import { brand, category, product } from '$lib/server/db/schema';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import {
 	fuzzyCondition,
@@ -11,7 +11,7 @@ import {
 	searchCondition,
 	searchRank
 } from '$lib/server/search';
-import { isBrandLogoSql, priceTtcSql, thumbnailWithBrandFallbackSql } from '$lib/server/pricing';
+import { isBrandLogoSql, thumbnailWithBrandFallbackSql } from '$lib/server/pricing';
 import { searchPreview } from '$lib/server/meili';
 import { shopProductCardsByIds } from '$lib/server/shop';
 
@@ -36,12 +36,17 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
 	// Les réponses sont partageables entre visiteurs : même saisie, même aperçu.
 	setHeaders({ 'cache-control': 'public, max-age=60' });
 
-	if (q.length < 2) return json({ products: [], categories: [], brands: [] });
+	if (q.length < 2) return json({ suggestions: [], products: [], categories: [], brands: [] });
 
 	const preview = await searchPreview(q);
 	if (preview) {
 		const products = await shopProductCardsByIds(preview.productIds);
-		return json({ products, categories: preview.categories, brands: preview.brands });
+		return json({
+			suggestions: preview.suggestions,
+			products,
+			categories: preview.categories,
+			brands: preview.brands
+		});
 	}
 
 	return json(await sqlPreview(q));
@@ -50,7 +55,8 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
 /** Aperçu par la recherche trigramme (`$lib/server/search`) — chemin de repli. */
 async function sqlPreview(q: string) {
 	const condition = searchCondition(q);
-	if (!condition) return { products: [], categories: [], brands: [] };
+	// Pas de suggestions de saisie sans Meilisearch : elles vivent dans son index.
+	if (!condition) return { suggestions: [], products: [], categories: [], brands: [] };
 
 	const [products, categories, brands] = await Promise.all([
 		db
@@ -60,14 +66,12 @@ async function sqlPreview(q: string) {
 				slug: product.slug,
 				reference: product.reference,
 				stock: product.stock,
-				priceTtc: priceTtcSql,
 				brandName: brand.name,
 				imageUrl: thumbnailWithBrandFallbackSql,
 				imageIsBrandLogo: isBrandLogoSql
 			})
 			.from(product)
 			.leftJoin(brand, eq(product.brandId, brand.id))
-			.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
 			.where(and(eq(product.isActive, true), condition))
 			.orderBy(desc(searchRank(q)), desc(product.id))
 			.limit(6),
@@ -97,5 +101,5 @@ async function sqlPreview(q: string) {
 
 	const uniqueCategories = [...new Map(categories.map((c) => [c.name, c])).values()].slice(0, 3);
 
-	return { products, categories: uniqueCategories, brands };
+	return { suggestions: [], products, categories: uniqueCategories, brands };
 }
