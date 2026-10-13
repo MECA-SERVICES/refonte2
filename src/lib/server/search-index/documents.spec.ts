@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { categoryLineage, cleanEan, compactReferences, htmlToText } from './documents';
 import { joinerVariants, SYNONYM_GROUPS, SYNONYMS } from './synonyms';
+import { significantQuery } from './settings';
 
 describe('htmlToText', () => {
 	it('retire les balises et resserre les espaces', () => {
@@ -108,5 +109,21 @@ describe('joinerVariants', () => {
 
 	it('fait déclencher les synonymes par les variantes', () => {
 		expect(SYNONYMS['savon a main']).toContain('nettoyant pour mains');
+	});
+});
+
+describe('significantQuery', () => {
+	it('garde les mots importants', () => {
+		expect(significantQuery('plaquette de frein')).toBe('plaquette frein');
+		expect(significantQuery("filtre d'air")).toBe('filtre air');
+		expect(significantQuery('perceuse sans fil')).toBe('perceuse sans fil');
+	});
+
+	it('laisse intactes les références', () => {
+		expect(significantQuery('587 42 07-01')).toBe('587 42 07-01');
+	});
+
+	it('garde la saisie si elle ne contient que des mots vides', () => {
+		expect(significantQuery('le a')).toBe('le a');
 	});
 });

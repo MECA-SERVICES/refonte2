@@ -667,6 +667,9 @@ export async function loadShopListing(
 	};
 }
 
+/** Marques proposées au plus dans le filtre d'une recherche (la liste défile). */
+const SEARCH_BRAND_FACETS = 50;
+
 /**
  * Listing de recherche servi par Meilisearch, au format de `loadShopListing`.
  *
@@ -695,14 +698,15 @@ async function searchShopListing(
 
 	const rows = await shopProductCardsByIds(result.ids);
 
-	// Mêmes règles que les facettes SQL : douze marques au plus, les plus
-	// représentées d'abord ; caractéristiques au seuil adapté à la taille du
-	// périmètre (cf. `shopSpecFacets`).
+	// Toutes les marques présentes (la liste défile dans la colonne), les plus
+	// représentées d'abord : sur « plaquette de frein », 35 marques — les douze
+	// des rayons SQL en masquaient la plupart. Caractéristiques au seuil adapté
+	// à la taille du périmètre (cf. `shopSpecFacets`).
 	const brandFacets = brands
 		.filter((b) => result.brandCounts.has(b.id))
 		.map((b) => ({ id: b.id, name: b.name, total: result.brandCounts.get(b.id)! }))
 		.sort((a, b) => b.total - a.total)
-		.slice(0, 12);
+		.slice(0, SEARCH_BRAND_FACETS);
 
 	const threshold = result.specScopeTotal < 300 ? 2 : 5;
 	const specRows = result.specCounts

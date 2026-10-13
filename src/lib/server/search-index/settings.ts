@@ -62,6 +62,32 @@ export const FRENCH_STOP_WORDS = [
 	'une'
 ];
 
+/** Article élidé en tête de mot : « d'air », « l’huile ». */
+const ELISION = /\b[dl]['’]/gi;
+
+/**
+ * Mots importants de la saisie : sans mots vides ni articles élidés.
+ * « plaquette de frein » → « plaquette frein ».
+ *
+ * Sert à délimiter les résultats, pas à les classer : un produit compte s'il
+ * contient tous les mots importants (`$lib/server/meili`). Le classement, lui,
+ * se fait sur la saisie complète, pour que « Liquide de refroidissement »
+ * passe devant « Filtre liquide refroidissement ».
+ */
+export function significantQuery(raw: string): string {
+	const words = raw.replace(ELISION, '').split(/\s+/).filter(Boolean);
+	const kept = words.filter(
+		(word) =>
+			!FRENCH_STOP_WORDS.includes(
+				word
+					.normalize('NFD')
+					.replace(/[\u0300-\u036f]/g, '')
+					.toLowerCase()
+			)
+	);
+	return (kept.length > 0 ? kept : words).join(' ');
+}
+
 /**
  * Index produits.
  *
