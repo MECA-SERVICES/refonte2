@@ -162,26 +162,27 @@
 	let productTab = $state<ProductTab>('stock');
 	const shownProducts = $derived(productTab === 'stock' ? data.inStock : data.latest);
 
+	/** Bandeau de réassurance, textes validés en réunion le 15/10/2026 (demande 10.5). */
 	const services = [
 		{
 			mark: 'SAV',
-			title: 'S.A.V dans notre atelier',
-			text: 'Réparation, entretien et garantie assurés à Carantilly, pas renvoyés à l’usine.'
+			title: 'Atelier agréé',
+			text: 'S.A.V assuré en Normandie, dans notre atelier de Carantilly.'
 		},
 		{
 			mark: '100',
-			title: 'Pièces 100 % origine',
-			text: 'Référencées constructeur, jamais d’adaptable non homologué sous garantie.'
+			title: 'Pièces 100 % d’origine ou adaptables',
+			text: 'Références constructeur ou adaptables, selon votre machine et votre besoin.'
 		},
 		{
 			mark: '24h',
-			title: 'Expédition sous 24 h',
-			text: 'France, Europe et Outre-mer. Retrait gratuit à l’atelier.'
+			title: 'Expédition 24 h à 48 h',
+			text: 'Si l’article est en stock. France, Europe et Outre-mer, retrait gratuit à l’atelier.'
 		},
 		{
-			mark: 'Pro',
-			title: 'Pros & collectivités',
-			text: 'Tarifs HT dégressifs, devis sous 24 h, mandat administratif via Chorus Pro.'
+			mark: '€',
+			title: 'Collectivités',
+			text: 'Paiement administratif accepté : mandat administratif via Chorus Pro.'
 		}
 	];
 
