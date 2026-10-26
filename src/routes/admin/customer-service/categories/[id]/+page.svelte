@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Button, Card, Checkbox, Input, Label } from 'flowbite-svelte';
 	import { TrashBinOutline } from 'flowbite-svelte-icons';
 	import { ConfirmDialog, PageHeader } from '$lib/components/admin';
@@ -37,7 +38,14 @@
 			{form.message}
 		</p>
 	{/if}
-	<form method="POST" action="?/update" class="space-y-4">
+	<form
+		method="POST"
+		action="?/update"
+		use:enhance={() =>
+			({ update }) =>
+				update({ reset: false })}
+		class="space-y-4"
+	>
 		<div>
 			<Label for="label" class="mb-1.5">Libellé</Label>
 			<Input id="label" name="label" value={c.label} required />
@@ -59,7 +67,14 @@
 	</form>
 </Card>
 
-<form method="POST" action="?/delete" bind:this={deleteForm} class="hidden"></form>
+<form
+	method="POST"
+	action="?/delete"
+	bind:this={deleteForm}
+	use:enhance
+	data-success="Suppression effectuée."
+	class="hidden"
+></form>
 
 <ConfirmDialog
 	bind:open={confirmOpen}

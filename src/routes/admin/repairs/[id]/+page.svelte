@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import {
 		Alert,
 		Badge,
@@ -282,7 +282,12 @@
 								<TableBodyCell class="text-right">{eur.format(Number(part.totalHt))}</TableBodyCell>
 								<TableBodyCell class="text-right">
 									{#if !frozen}
-										<form method="POST" action="?/removePart" use:enhance>
+										<form
+											method="POST"
+											action="?/removePart"
+											use:enhance
+											data-success="Pièce retirée."
+										>
 											<input type="hidden" name="partId" value={part.id} />
 											<Button type="submit" size="xs" color="alternative">Retirer</Button>
 										</form>
@@ -297,7 +302,13 @@
 			{/if}
 
 			{#if !frozen}
-				<form method="POST" action="?/addPart" use:enhance class="mt-4 grid gap-3 sm:grid-cols-6">
+				<form
+					method="POST"
+					action="?/addPart"
+					use:enhance
+					data-success="Pièce ajoutée."
+					class="mt-4 grid gap-3 sm:grid-cols-6"
+				>
 					<div class="sm:col-span-2">
 						<Label for="productId" class="mb-2">Article du catalogue</Label>
 						<Input id="productId" name="productId" type="number" placeholder="Identifiant" />
@@ -327,7 +338,13 @@
 		<!-- Étiquette : hors du formulaire principal, elle reste modifiable sur un ordre figé. -->
 		<Card class="max-w-none p-4">
 			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Étiquette atelier</h3>
-			<form method="POST" action="?/setLabel" use:enhance class="flex gap-2">
+			<form
+				method="POST"
+				action="?/setLabel"
+				use:enhance
+				data-success="Étiquette enregistrée."
+				class="flex gap-2"
+			>
 				<Input
 					id="workshopLabel"
 					name="workshopLabel"
@@ -341,8 +358,6 @@
 			</form>
 			{#if form && 'labelError' in form && form.labelError}
 				<p class="mt-2 text-xs text-red-600 dark:text-red-400">{form.labelError}</p>
-			{:else if form && 'labelSaved' in form && form.labelSaved}
-				<p class="mt-2 text-xs text-green-600 dark:text-green-400">Étiquette enregistrée.</p>
 			{/if}
 		</Card>
 
@@ -420,7 +435,13 @@
 				<div class="flex flex-col gap-2">
 					{#each data.transitions as target (target)}
 						{#if target === 'on_hold'}
-							<form method="POST" action="?/changeStatus" use:enhance class="space-y-2">
+							<form
+								method="POST"
+								action="?/changeStatus"
+								use:enhance
+								data-success="État mis à jour."
+								class="space-y-2"
+							>
 								<input type="hidden" name="status" value="on_hold" />
 								<Label for="onHoldPartLabel" class="text-xs">Pièce attendue</Label>
 								<Input
@@ -443,7 +464,12 @@
 								</Button>
 							</form>
 						{:else}
-							<form method="POST" action="?/changeStatus" use:enhance>
+							<form
+								method="POST"
+								action="?/changeStatus"
+								use:enhance
+								data-success="État mis à jour."
+							>
 								<input type="hidden" name="status" value={target} />
 								<Button
 									type="submit"
@@ -471,7 +497,13 @@
 			{/if}
 
 			{#if o.status === 'completed' && !o.paidAt && o.orderType === 'paid'}
-				<form method="POST" action="?/markPaid" use:enhance class="mt-3">
+				<form
+					method="POST"
+					action="?/markPaid"
+					use:enhance
+					data-success="Règlement enregistré."
+					class="mt-3"
+				>
 					<Button type="submit" size="sm" color="alternative" class="w-full">
 						Enregistrer le règlement
 					</Button>

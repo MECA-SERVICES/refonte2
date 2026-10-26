@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
 	import { PageHeader } from '$lib/components/admin';
 	import { SUPPORT_PRIORITY_LABELS } from '$lib/support';
@@ -39,7 +40,7 @@
 		</p>
 	{/if}
 
-	<form method="POST" class="space-y-4">
+	<form method="POST" use:enhance class="space-y-4">
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
 				<Label for="email" class="mb-1.5">E-mail du client</Label>

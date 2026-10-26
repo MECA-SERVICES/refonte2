@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { formatPrice } from '$lib/money';
 	import { resolve } from '$app/paths';
 	import {
@@ -555,7 +556,14 @@
 	</div>
 </div>
 
-<form method="POST" action="?/delete" bind:this={deleteForm} class="hidden"></form>
+<form
+	method="POST"
+	action="?/delete"
+	bind:this={deleteForm}
+	use:enhance
+	data-success="Suppression effectuée."
+	class="hidden"
+></form>
 
 <ConfirmDialog
 	bind:open={confirmOpen}

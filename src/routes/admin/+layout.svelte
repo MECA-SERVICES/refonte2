@@ -33,6 +33,7 @@
 		SearchOutline,
 		BarsOutline
 	} from 'flowbite-svelte-icons';
+	import AdminFeedback from '$lib/components/admin/AdminFeedback.svelte';
 	import type { Component } from 'svelte';
 	import type { LayoutProps } from './$types';
 
@@ -220,3 +221,5 @@
 		</main>
 	</div>
 </div>
+
+<AdminFeedback />

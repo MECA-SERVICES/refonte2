@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Alert, Button, Card, Input, Label, Select, Textarea, Toggle } from 'flowbite-svelte';
 	import type { Popup } from '$lib/server/db/popup.schema';
 	import { POPUP_SCOPES, POPUP_SCOPE_LABELS, type PopupScope } from '$lib/popups';

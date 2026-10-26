@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { formatPrice } from '$lib/money';
 	import { Badge, Button, Card, Label, Select, Textarea } from 'flowbite-svelte';
 	import { PaperClipOutline } from 'flowbite-svelte-icons';
@@ -149,6 +149,7 @@
 			<form
 				method="POST"
 				action="?/reply"
+				data-success="Réponse envoyée."
 				use:enhance={() =>
 					async ({ result, update }) => {
 						await update();
@@ -229,20 +230,17 @@
 						/>
 					</div>
 					<Button type="submit" color="primary" class="w-full">Enregistrer</Button>
-					{#if form && 'saved' in form}
-						<p class="text-center text-xs text-green-700 dark:text-green-400">Enregistré.</p>
-					{/if}
 				</form>
 
 				<div class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
 					{#if t.status === 'closed'}
-						<form method="POST" action="?/reopen" use:enhance>
+						<form method="POST" action="?/reopen" use:enhance data-success="Demande rouverte.">
 							<Button type="submit" color="alternative" class="w-full"
 								>Rouvrir la conversation</Button
 							>
 						</form>
 					{:else}
-						<form method="POST" action="?/close" use:enhance>
+						<form method="POST" action="?/close" use:enhance data-success="Demande clôturée.">
 							<Button type="submit" color="alternative" class="w-full"
 								>Clôturer la conversation</Button
 							>

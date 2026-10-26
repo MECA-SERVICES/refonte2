@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Alert, Button } from 'flowbite-svelte';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
+	import { Button } from 'flowbite-svelte';
 	import { TrashBinOutline, EyeOutline } from 'flowbite-svelte-icons';
 	import { PageHeader, CmsPageForm, ConfirmDialog } from '$lib/components/admin';
 	import type { PageProps } from './$types';
@@ -34,13 +35,16 @@
 	{/snippet}
 </PageHeader>
 
-{#if form?.saved}
-	<Alert color="green" class="mb-4">Page enregistrée.</Alert>
-{/if}
-
 <CmsPageForm {page} message={form?.message} />
 
-<form method="POST" action="?/delete" bind:this={deleteForm} class="hidden"></form>
+<form
+	method="POST"
+	action="?/delete"
+	bind:this={deleteForm}
+	use:enhance
+	data-success="Suppression effectuée."
+	class="hidden"
+></form>
 
 <ConfirmDialog
 	bind:open={confirmOpen}

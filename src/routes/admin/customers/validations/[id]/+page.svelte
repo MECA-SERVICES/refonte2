@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Alert, Badge, Button, Card, Label, Textarea } from 'flowbite-svelte';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
 	import {
@@ -231,6 +231,7 @@
 				<form
 					method="POST"
 					action="?/decide"
+					data-success="Décision enregistrée."
 					use:enhance={() =>
 						async ({ result, update }) => {
 							if (result.type === 'success') decision = null;

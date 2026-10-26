@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { computeTtc, formatPrice, toMoneyInput } from '$lib/money';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import {
 		Card,
 		Label,

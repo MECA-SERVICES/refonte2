@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button, Select, Badge } from 'flowbite-svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		PageHeader,
@@ -53,7 +53,13 @@
 
 {#snippet actionsCell(u: StaffUser)}
 	<div class="flex items-center justify-end gap-2">
-		<form method="POST" action="?/setRole" use:enhance class="flex items-center gap-1">
+		<form
+			method="POST"
+			action="?/setRole"
+			use:enhance
+			data-success="Rôle mis à jour."
+			class="flex items-center gap-1"
+		>
 			<input type="hidden" name="userId" value={u.id} />
 			<Select
 				name="role"
@@ -65,7 +71,7 @@
 			/>
 			<Button type="submit" size="xs" color="alternative">Appliquer</Button>
 		</form>
-		<form method="POST" action="?/toggleBan" use:enhance>
+		<form method="POST" action="?/toggleBan" use:enhance data-success="Accès mis à jour.">
 			<input type="hidden" name="userId" value={u.id} />
 			<input type="hidden" name="banned" value={String(u.banned)} />
 			<Button type="submit" size="xs" color={u.banned ? 'green' : 'red'}>

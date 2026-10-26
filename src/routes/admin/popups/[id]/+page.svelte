@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import { Alert, Button } from 'flowbite-svelte';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
+	import { Button } from 'flowbite-svelte';
 	import { TrashBinOutline } from 'flowbite-svelte-icons';
 	import { ConfirmDialog, PageHeader, PopupForm } from '$lib/components/admin';
 	import type { PageProps } from './$types';
@@ -28,13 +28,16 @@
 	{/snippet}
 </PageHeader>
 
-{#if form?.saved}
-	<Alert color="green" class="mb-4">Annonce enregistrée.</Alert>
-{/if}
-
 <PopupForm popup={data.popup} message={form?.message} action="?/save" />
 
-<form method="POST" action="?/delete" bind:this={deleteForm} use:enhance class="hidden"></form>
+<form
+	method="POST"
+	action="?/delete"
+	bind:this={deleteForm}
+	use:enhance
+	data-success="Suppression effectuée."
+	class="hidden"
+></form>
 
 <ConfirmDialog
 	bind:open={confirmOpen}

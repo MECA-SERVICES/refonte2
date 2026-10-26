@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Alert, Button, Card } from 'flowbite-svelte';
 	import { TrashBinOutline, EyeOutline, LinkOutline } from 'flowbite-svelte-icons';
 	import { PageHeader, BlogArticleForm, ConfirmDialog } from '$lib/components/admin';
@@ -54,10 +54,6 @@
 	{/snippet}
 </PageHeader>
 
-{#if form?.saved}
-	<Alert color="green" class="mb-4">Article enregistré.</Alert>
-{/if}
-
 <!-- ================= Aperçu d'un brouillon ================= -->
 {#if article.status !== 'published'}
 	<Card class="mb-6 max-w-none p-5">
@@ -84,13 +80,18 @@
 		{/if}
 
 		<div class="flex flex-wrap gap-2">
-			<form method="POST" action="?/preview" use:enhance>
+			<form method="POST" action="?/preview" use:enhance data-success="Lien d'aperçu créé.">
 				<Button type="submit" color="alternative" size="sm">
 					{previewToken && !revoked ? 'Émettre un nouveau lien' : 'Émettre un lien'}
 				</Button>
 			</form>
 			{#if previewToken && !revoked}
-				<form method="POST" action="?/revokePreview" use:enhance>
+				<form
+					method="POST"
+					action="?/revokePreview"
+					use:enhance
+					data-success="Lien d'aperçu révoqué."
+				>
 					<Button type="submit" color="alternative" size="sm">Révoquer</Button>
 				</form>
 			{/if}
@@ -100,7 +101,14 @@
 
 <BlogArticleForm {article} action="?/save" categories={data.categories} message={form?.message} />
 
-<form method="POST" action="?/delete" bind:this={deleteForm} class="hidden"></form>
+<form
+	method="POST"
+	action="?/delete"
+	bind:this={deleteForm}
+	use:enhance
+	data-success="Suppression effectuée."
+	class="hidden"
+></form>
 
 <ConfirmDialog
 	bind:open={confirmOpen}

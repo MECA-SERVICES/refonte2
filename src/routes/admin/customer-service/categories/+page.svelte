@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Button, Card, Checkbox, Input, Label } from 'flowbite-svelte';
 	import { ActiveBadge, DataTable, PageHeader } from '$lib/components/admin';
 	import type { PageProps } from './$types';

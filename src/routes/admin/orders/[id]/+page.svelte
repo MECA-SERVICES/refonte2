@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { formatPrice } from '$lib/money';
 	import { paymentMethodLabel } from '$lib/payment-methods';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { resolve } from '$app/paths';
 	import {
 		Badge,
@@ -241,7 +241,7 @@
 				>
 					<FileLinesOutline class="me-1.5 h-4 w-4" /> Voir la facture
 				</Button>
-				<form method="POST" action="?/label" use:enhance={downloadLabel}>
+				<form method="POST" action="?/label" use:enhance={downloadLabel} data-feedback="errors">
 					<Button
 						type="submit"
 						color="alternative"
@@ -449,7 +449,12 @@
 									<TableBodyCell class="font-mono">{o.trackingNumber ?? '—'}</TableBodyCell>
 									<TableBodyCell class="text-right">--</TableBodyCell>
 									<TableBodyCell class="text-right print:hidden">
-										<form method="POST" action="?/label" use:enhance={downloadLabel}>
+										<form
+											method="POST"
+											action="?/label"
+											use:enhance={downloadLabel}
+											data-feedback="errors"
+										>
 											<Button type="submit" color="alternative" size="xs">Voir</Button>
 										</form>
 									</TableBodyCell>
@@ -620,7 +625,7 @@
 							Suivre le colis
 						</Button>
 					{/if}
-					<form method="POST" action="?/label" use:enhance>
+					<form method="POST" action="?/label" use:enhance data-success="Étiquette générée.">
 						<Button type="submit" color="alternative" size="sm">Étiquette PDF</Button>
 					</form>
 				</div>
@@ -668,7 +673,13 @@
 					</p>
 				{/if}
 
-				<form method="POST" action="?/ship" use:enhance class="space-y-4">
+				<form
+					method="POST"
+					action="?/ship"
+					use:enhance
+					data-success="Expédition enregistrée."
+					class="space-y-4"
+				>
 					<div class="grid gap-3 sm:grid-cols-4">
 						<div>
 							<Label for="weightKg" class="mb-1.5">Poids (kg)</Label>

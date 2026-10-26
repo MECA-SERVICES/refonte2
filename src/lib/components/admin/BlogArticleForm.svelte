@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
 	import type { BlogArticle } from '$lib/server/db/blog.schema';
 	import type { Editor } from '@tiptap/core';

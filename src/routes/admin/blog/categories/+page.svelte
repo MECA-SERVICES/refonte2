@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import {
 		Alert,
 		Badge,
@@ -198,7 +198,7 @@
 
 					<div class="flex shrink-0 gap-2">
 						<Button size="xs" color="alternative" onclick={() => (editing = row)}>Modifier</Button>
-						<form method="POST" action="?/delete" use:enhance>
+						<form method="POST" action="?/delete" use:enhance data-success="Suppression effectuée.">
 							<input type="hidden" name="id" value={row.id} />
 							<Button size="xs" color="red" type="submit">Supprimer</Button>
 						</form>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Button, Card, Input, Label, Select, Textarea, Toggle } from 'flowbite-svelte';
 	import {
 		TrashBinOutline,
@@ -404,7 +404,14 @@
 	class="hidden"
 ></form>
 
-<form method="POST" action="?/delete" bind:this={deleteForm} class="hidden"></form>
+<form
+	method="POST"
+	action="?/delete"
+	bind:this={deleteForm}
+	use:enhance
+	data-success="Suppression effectuée."
+	class="hidden"
+></form>
 
 <ConfirmDialog
 	bind:open={confirmOpen}
