@@ -36,3 +36,50 @@ export function remainingDue(total: string | number, paid: (string | number)[]):
 export function buildSettlementReference(id: number, receivedOn: string): string {
 	return `PAY${receivedOn.slice(2, 4)}${receivedOn.slice(5, 7)}-${String(id).padStart(4, '0')}`;
 }
+
+/** Bordereaux de remise : les chèques d'un côté, les espèces de l'autre. */
+export const remittanceKinds = ['cheque', 'cash'] as const;
+export type RemittanceKind = (typeof remittanceKinds)[number];
+
+export const REMITTANCE_KIND_LABELS: Record<RemittanceKind, string> = {
+	cheque: 'Chèques',
+	cash: 'Espèces'
+};
+
+export function isRemittanceKind(value: unknown): value is RemittanceKind {
+	return remittanceKinds.includes(value as RemittanceKind);
+}
+
+/** Compte crédité par défaut, nommé comme dans Dolibarr. */
+export const DEFAULT_BANK_ACCOUNT = 'COMPTE-PRO';
+
+/**
+ * Référence d'un bordereau, à la manière de Dolibarr : `CHK2610-0001` pour
+ * les chèques, `ESP2610-0001` pour les espèces. Mois du dépôt (`AAAA-MM-JJ`).
+ */
+export function buildRemittanceReference(
+	kind: RemittanceKind,
+	id: number,
+	depositedOn: string
+): string {
+	const prefix = kind === 'cheque' ? 'CHK' : 'ESP';
+	return `${prefix}${depositedOn.slice(2, 4)}${depositedOn.slice(5, 7)}-${String(id).padStart(4, '0')}`;
+}
+
+/**
+ * Nom affiché du payeur d'un règlement : l'émetteur du chèque, sinon la
+ * société du client, sinon le client.
+ */
+export function payerName(line: {
+	chequeIssuer: string | null;
+	customerCompany: string | null;
+	customerFirstName: string | null;
+	customerLastName: string | null;
+}): string {
+	return (
+		line.chequeIssuer ||
+		line.customerCompany ||
+		[line.customerFirstName, line.customerLastName].filter(Boolean).join(' ') ||
+		'—'
+	);
+}

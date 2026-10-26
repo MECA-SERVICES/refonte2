@@ -1,52 +1,11 @@
-import pdfmake from 'pdfmake';
 import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
-import path from 'node:path';
 import { COMPANY, buildTaxBreakdown, formatInvoiceNumber, splitOrderTax } from './invoicing';
 import type { getInvoiceDocument } from './invoicing';
+import { PDF_COLORS, pdfEuro as euro, pdfShortDate as shortDate, renderPdf } from './pdf';
 
-/**
- * Rendu PDF d'une facture (CDC 24).
- *
- * pdfmake plutôt qu'un rendu HTML headless : générer une facture ne doit pas
- * demander un Chromium sur le serveur de production.
- */
+/** Rendu PDF d'une facture (CDC 24). Polices et tableaux : `./pdf`. */
 
-const FONT_DIR = path.join(process.cwd(), 'static', 'fonts', 'roboto');
-
-let fontsReady = false;
-
-/** Déclare les polices une seule fois par processus. */
-function ensureFonts() {
-	if (fontsReady) return;
-
-	pdfmake.addFonts({
-		Roboto: {
-			normal: path.join(FONT_DIR, 'Roboto-Regular.ttf'),
-			bold: path.join(FONT_DIR, 'Roboto-Medium.ttf'),
-			italics: path.join(FONT_DIR, 'Roboto-Italic.ttf'),
-			bolditalics: path.join(FONT_DIR, 'Roboto-MediumItalic.ttf')
-		}
-	});
-
-	// Un document de facture ne charge rien d'extérieur : on ferme les accès
-	// que pdfmake ouvrirait sinon. Seules les polices embarquées sont lisibles.
-	pdfmake.setUrlAccessPolicy?.(() => false);
-	pdfmake.setLocalAccessPolicy?.((target: string) => path.resolve(target).startsWith(FONT_DIR));
-
-	fontsReady = true;
-}
-
-/** Charte : bleu de la boutique, gris des libellés. */
-const BLUE = '#314192';
-const INK = '#1e2436';
-const MUTED = '#6b7280';
-const RULE = '#d7dbe4';
-
-const euro = (n: number) =>
-	`${new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} €`;
-
-const shortDate = (d: Date | string | null | undefined) =>
-	d ? new Intl.DateTimeFormat('fr-FR').format(new Date(d)) : '—';
+const { blue: BLUE, ink: INK, muted: MUTED } = PDF_COLORS;
 
 type Address = {
 	firstName?: string | null;
@@ -380,38 +339,9 @@ function buildDefinition(doc: InvoiceDocument): TDocumentDefinitions {
 	};
 }
 
-/** Filets discrets, en-têtes sur fond clair. */
-const TABLE_LAYOUTS = {
-	msTable: {
-		hLineWidth: () => 0.7,
-		vLineWidth: () => 0,
-		hLineColor: () => RULE,
-		fillColor: (rowIndex: number) => (rowIndex === 0 ? '#f3f5f9' : null),
-		paddingLeft: () => 6,
-		paddingRight: () => 6,
-		paddingTop: () => 5,
-		paddingBottom: () => 5
-	},
-	msTotals: {
-		hLineWidth: (i: number, node: { table: { body: unknown[] } }) =>
-			i === node.table.body.length - 1 || i === node.table.body.length ? 0.7 : 0,
-		vLineWidth: () => 0,
-		hLineColor: () => RULE,
-		paddingLeft: () => 6,
-		paddingRight: () => 6,
-		paddingTop: () => 4,
-		paddingBottom: () => 4
-	}
-};
-
 /** Rend la facture en PDF. */
-export async function renderInvoicePdf(doc: InvoiceDocument): Promise<Buffer> {
-	ensureFonts();
-	pdfmake.addTableLayouts(TABLE_LAYOUTS);
-
-	const pdf = pdfmake.createPdf(buildDefinition(doc));
-	const buffer = await pdf.getBuffer();
-	return Buffer.from(buffer);
+export function renderInvoicePdf(doc: InvoiceDocument): Promise<Buffer> {
+	return renderPdf(buildDefinition(doc));
 }
 
 /** Nom de fichier proposé au téléchargement. */

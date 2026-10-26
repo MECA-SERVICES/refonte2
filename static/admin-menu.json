@@ -111,6 +111,12 @@
 					]
 				},
 				{
+					"id": "remittances",
+					"label": "Remises en banque",
+					"icon": "credit-card",
+					"href": "/admin/remittances"
+				},
+				{
 					"id": "stats",
 					"label": "Statistiques",
 					"icon": "chart-line",

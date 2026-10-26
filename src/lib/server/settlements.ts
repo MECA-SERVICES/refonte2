@@ -3,16 +3,21 @@
  *
  * Vocabulaire partagé (modes, libellés, reste à régler) : `$lib/settlements`.
  */
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
+import { customer } from '$lib/server/db/customer.schema';
 import { repairOrder } from '$lib/server/db/repair.schema';
-import { settlement } from '$lib/server/db/settlement.schema';
+import { remittance, settlement } from '$lib/server/db/settlement.schema';
 import { formFields, type ParseResult } from '$lib/server/forms';
 import { formatPrice } from '$lib/money';
 import {
+	buildRemittanceReference,
 	buildSettlementReference,
+	isRemittanceKind,
 	isSettlementMethod,
 	remainingDue,
+	remittanceKinds,
+	type RemittanceKind,
 	type SettlementMethod
 } from '$lib/settlements';
 
@@ -154,5 +159,190 @@ export async function recordRepairSettlement(
 		}
 
 		return created;
+	});
+}
+
+// ===========================================================================
+// Bordereaux de remise en banque (demande client 1.2)
+// ===========================================================================
+
+/**
+ * Ligne de bordereau : le règlement, et ce qui permet de le reconnaître —
+ * l'ordre de réparation réglé et son client.
+ */
+const remittanceLine = {
+	id: settlement.id,
+	reference: settlement.reference,
+	method: settlement.method,
+	amount: settlement.amount,
+	receivedOn: settlement.receivedOn,
+	chequeNumber: settlement.chequeNumber,
+	chequeIssuer: settlement.chequeIssuer,
+	chequeBank: settlement.chequeBank,
+	repairOrderId: settlement.repairOrderId,
+	repairReference: repairOrder.reference,
+	customerFirstName: customer.firstName,
+	customerLastName: customer.lastName,
+	customerCompany: customer.companyName
+};
+
+function remittanceLines() {
+	return db
+		.select(remittanceLine)
+		.from(settlement)
+		.leftJoin(repairOrder, eq(repairOrder.id, settlement.repairOrderId))
+		.leftJoin(customer, eq(customer.id, repairOrder.customerId));
+}
+
+export type RemittanceLine = Awaited<ReturnType<typeof listPendingSettlements>>[number];
+
+/** Règlements encore en caisse : pas encore portés sur un bordereau. */
+export function listPendingSettlements(kind: RemittanceKind) {
+	return remittanceLines()
+		.where(and(eq(settlement.method, kind), isNull(settlement.remittanceId)))
+		.orderBy(asc(settlement.receivedOn), asc(settlement.id));
+}
+
+/** Nombre et montant des règlements en caisse, par nature de bordereau. */
+export async function pendingRemittanceTotals() {
+	const rows = await db
+		.select({
+			method: settlement.method,
+			count: sql<number>`count(*)::int`,
+			total: sql<string>`coalesce(sum(${settlement.amount}), 0)::text`
+		})
+		.from(settlement)
+		.where(and(inArray(settlement.method, [...remittanceKinds]), isNull(settlement.remittanceId)))
+		.groupBy(settlement.method);
+
+	return Object.fromEntries(
+		remittanceKinds.map((kind) => {
+			const row = rows.find((r) => r.method === kind);
+			return [kind, { count: row?.count ?? 0, total: row?.total ?? '0' }];
+		})
+	) as Record<RemittanceKind, { count: number; total: string }>;
+}
+
+export type RemittanceInput = {
+	kind: RemittanceKind;
+	settlementIds: number[];
+	depositedOn: string;
+	bankAccount: string;
+};
+
+export function parseRemittanceForm(form: FormData): ParseResult<RemittanceInput> {
+	const { str } = formFields(form);
+
+	const kind = str('kind');
+	if (!isRemittanceKind(kind)) return { ok: false, error: 'Nature du bordereau inconnue.' };
+
+	const settlementIds = [
+		...new Set(
+			form
+				.getAll('settlementId')
+				.map((v) => Number(v))
+				.filter((n) => Number.isInteger(n) && n > 0)
+		)
+	];
+	if (settlementIds.length === 0) {
+		return { ok: false, error: 'Cochez au moins un règlement à remettre en banque.' };
+	}
+
+	const depositedOn = str('depositedOn');
+	if (!depositedOn || !ISO_DATE.test(depositedOn)) {
+		return { ok: false, error: 'Indiquez la date de remise.' };
+	}
+
+	const bankAccount = str('bankAccount');
+	if (!bankAccount) return { ok: false, error: 'Indiquez le compte bancaire crédité.' };
+
+	return { ok: true, values: { kind, settlementIds, depositedOn, bankAccount } };
+}
+
+/**
+ * Crée un bordereau validé et y rattache les règlements cochés.
+ *
+ * Les règlements sont verrouillés le temps de l'opération : un règlement ne
+ * peut figurer que sur un seul bordereau, même si deux saisies se croisent.
+ */
+export async function createRemittance(input: RemittanceInput, actor: string | null) {
+	return db.transaction(async (tx) => {
+		const rows = await tx
+			.select({
+				id: settlement.id,
+				method: settlement.method,
+				amount: settlement.amount,
+				remittanceId: settlement.remittanceId
+			})
+			.from(settlement)
+			.where(inArray(settlement.id, input.settlementIds))
+			.for('update');
+
+		if (rows.length !== input.settlementIds.length) {
+			throw new SettlementError('Un des règlements cochés est introuvable : rechargez la page.');
+		}
+		if (rows.some((r) => r.method !== input.kind)) {
+			throw new SettlementError('Un bordereau ne mélange pas chèques et espèces.');
+		}
+		if (rows.some((r) => r.remittanceId !== null)) {
+			throw new SettlementError(
+				'Un des règlements figure déjà sur un bordereau : rechargez la page.'
+			);
+		}
+
+		const total = rows.reduce((sum, r) => sum + Number(r.amount), 0).toFixed(2);
+
+		const [{ id }] = await tx.execute<{ id: number }>(
+			sql`select nextval(pg_get_serial_sequence('remittance', 'id'))::int as id`
+		);
+
+		const [created] = await tx
+			.insert(remittance)
+			.values({
+				id,
+				reference: buildRemittanceReference(input.kind, id, input.depositedOn),
+				kind: input.kind,
+				bankAccount: input.bankAccount,
+				depositedOn: input.depositedOn,
+				total,
+				settlementCount: rows.length,
+				createdBy: actor
+			})
+			.returning();
+
+		await tx
+			.update(settlement)
+			.set({ remittanceId: created.id })
+			.where(inArray(settlement.id, input.settlementIds));
+
+		return created;
+	});
+}
+
+/** Bordereaux, du plus récent au plus ancien. */
+export function listRemittances() {
+	return db.select().from(remittance).orderBy(desc(remittance.depositedOn), desc(remittance.id));
+}
+
+/** Bordereau et ses lignes, dans l'ordre de réception. */
+export async function getRemittance(id: number) {
+	const [head] = await db.select().from(remittance).where(eq(remittance.id, id)).limit(1);
+	if (!head) return null;
+
+	const lines = await remittanceLines()
+		.where(eq(settlement.remittanceId, id))
+		.orderBy(asc(settlement.receivedOn), asc(settlement.id));
+
+	return { ...head, lines };
+}
+
+/**
+ * Supprime un bordereau saisi par erreur : ses règlements retournent en
+ * caisse, prêts pour un nouveau bordereau. Les règlements eux-mêmes restent.
+ */
+export async function deleteRemittance(id: number) {
+	await db.transaction(async (tx) => {
+		await tx.update(settlement).set({ remittanceId: null }).where(eq(settlement.remittanceId, id));
+		await tx.delete(remittance).where(eq(remittance.id, id));
 	});
 }

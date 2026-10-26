@@ -267,6 +267,13 @@
 			"when": 1793015950042,
 			"tag": "0039_reglements_back_office",
 			"breakpoints": true
+		},
+		{
+			"idx": 40,
+			"version": "7",
+			"when": 1793019887817,
+			"tag": "0040_remises_en_banque",
+			"breakpoints": true
 		}
 	]
 }
