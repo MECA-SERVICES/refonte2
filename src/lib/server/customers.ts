@@ -1,3 +1,5 @@
+import { APIError } from 'better-auth/api';
+import { auth } from '$lib/server/auth';
 import { db } from '$lib/server/db';
 import {
 	customer,
@@ -91,6 +93,49 @@ export async function getCustomerWithAddresses(id: number) {
 export async function createCustomer(values: NewCustomer) {
 	const [row] = await db.insert(customer).values(values).returning();
 	return row;
+}
+
+/**
+ * Crée un client et son compte better-auth (rôle « customer » par défaut).
+ *
+ * Le mot de passe est aléatoire : le client le choisit ensuite par « mot de
+ * passe oublié ». L'adresse e-mail est l'identifiant du compte, d'où le
+ * contrôle préalable des doublons, avec un message que l'équipe comprend.
+ */
+export async function createCustomerWithAccount(
+	values: Omit<NewCustomer, 'userId'>,
+	headers: Headers
+): Promise<{ ok: false; error: string } | { ok: true; customer: typeof customer.$inferSelect }> {
+	const email = values.email.trim().toLowerCase();
+	const [existing] = await db
+		.select({ id: customer.id })
+		.from(customer)
+		.where(sql`lower(${customer.email}) = ${email}`)
+		.limit(1);
+	if (existing) {
+		return { ok: false, error: 'Un client existe déjà avec cette adresse e-mail : recherchez-le.' };
+	}
+
+	let userId: string;
+	try {
+		// role omis volontairement : defaultRole ("customer") s'applique.
+		const created = await auth.api.createUser({
+			body: {
+				email,
+				password: crypto.randomUUID(),
+				name: `${values.firstName} ${values.lastName}`
+			},
+			headers
+		});
+		userId = created.user.id;
+	} catch (error) {
+		if (error instanceof APIError) {
+			return { ok: false, error: error.message || 'Impossible de créer le compte.' };
+		}
+		throw error;
+	}
+
+	return { ok: true, customer: await createCustomer({ ...values, email, userId }) };
 }
 
 export async function updateCustomer(id: number, values: Partial<NewCustomer>) {

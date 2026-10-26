@@ -1,17 +1,33 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { Alert, Button, Card, Input, Label, Radio, Select, Textarea } from 'flowbite-svelte';
+	import { UserAddOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
-	import type { PageProps } from './$types';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { PageData, PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
+
+	type CustomerOption = PageData['customers'][number];
 
 	/** Prise en charge : la garantie exige une référence de dossier (R14). */
 	let orderType = $state<'paid' | 'warranty'>('paid');
 	let customerId = $state('');
 
+	/** Saisie d'un nouveau client, ouverte sur demande. */
+	let creatingCustomer = $state(false);
+	let newCustomerType = $state('particulier');
+	/** Client tout juste créé : gardé dans la liste quoi que donne la recherche. */
+	let createdCustomer = $state<CustomerOption | null>(null);
+
+	const customerOptions = $derived(
+		createdCustomer && !data.customers.some((c) => c.id === createdCustomer?.id)
+			? [createdCustomer, ...data.customers]
+			: data.customers
+	);
+
 	const customerItems = $derived(
-		data.customers.map((c) => ({
+		customerOptions.map((c) => ({
 			value: String(c.id),
 			name:
 				[c.companyName, [c.firstName, c.lastName].filter(Boolean).join(' ')]
@@ -19,12 +35,24 @@
 					.join(' — ') + ` (${c.email})`
 		}))
 	);
+
+	/** Le client créé est aussitôt sélectionné ; la saisie de l'ordre reste intacte. */
+	const onCustomerCreated: SubmitFunction =
+		() =>
+		async ({ result, update }) => {
+			await update();
+			if (result.type === 'success' && result.data?.createdCustomer) {
+				createdCustomer = result.data.createdCustomer as CustomerOption;
+				customerId = String(createdCustomer.id);
+				creatingCustomer = false;
+			}
+		};
 </script>
 
 <PageHeader title="Nouvel ordre de réparation" subtitle="Intervention au comptoir" />
 
-<form method="POST" use:enhance class="space-y-6">
-	{#if form?.message}
+<form method="POST" action="?/create" use:enhance class="space-y-6">
+	{#if form && 'message' in form && form.message}
 		<Alert color="red">{form.message}</Alert>
 	{/if}
 
@@ -32,8 +60,8 @@
 	<Card class="max-w-none p-6">
 		<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Client</h2>
 		<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
-			Un ordre vise toujours un client déjà enregistré. L'accord sur les travaux est recueilli à
-			l'atelier.
+			Recherchez le client, ou créez-le s'il n'existe pas encore. L'accord sur les travaux est
+			recueilli à l'atelier.
 		</p>
 
 		<!--
@@ -66,6 +94,83 @@
 				disabled={customerItems.length === 0}
 			/>
 		</div>
+
+		{#if !creatingCustomer}
+			<Button
+				type="button"
+				size="sm"
+				color="alternative"
+				class="mt-4"
+				onclick={() => (creatingCustomer = true)}
+			>
+				<UserAddOutline class="me-2 h-4 w-4" /> Nouveau client
+			</Button>
+		{:else}
+			<!--
+				Champs rattachés au formulaire « new-customer » (attribut `form`) : ils
+				ne partent pas avec l'ordre, et l'ordre en cours de saisie est conservé.
+			-->
+			<div class="mt-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+				<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Nouveau client</h3>
+				{#if form && 'customerError' in form && form.customerError}
+					<Alert color="red" class="mb-3">{form.customerError}</Alert>
+				{/if}
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div>
+						<Label for="newFirstName" class="mb-2">Prénom</Label>
+						<Input id="newFirstName" name="firstName" form="new-customer" required />
+					</div>
+					<div>
+						<Label for="newLastName" class="mb-2">Nom</Label>
+						<Input id="newLastName" name="lastName" form="new-customer" required />
+					</div>
+					<div>
+						<Label for="newEmail" class="mb-2">Adresse e-mail</Label>
+						<Input id="newEmail" name="email" type="email" form="new-customer" required />
+					</div>
+					<div>
+						<Label for="newPhone" class="mb-2">Téléphone</Label>
+						<Input id="newPhone" name="phone" type="tel" form="new-customer" />
+					</div>
+					<div>
+						<Label for="newType" class="mb-2">Type de client</Label>
+						<Select
+							id="newType"
+							name="type"
+							form="new-customer"
+							placeholder=""
+							bind:value={newCustomerType}
+							items={[
+								{ value: 'particulier', name: 'Particulier' },
+								{ value: 'entreprise', name: 'Entreprise' },
+								{ value: 'collectivite', name: 'Collectivité' }
+							]}
+						/>
+					</div>
+					{#if newCustomerType !== 'particulier'}
+						<div>
+							<Label for="newCompanyName" class="mb-2">Raison sociale</Label>
+							<Input id="newCompanyName" name="companyName" form="new-customer" />
+						</div>
+					{/if}
+				</div>
+				<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+					L'adresse e-mail sert d'identifiant au compte client. Le client choisira son mot de passe
+					avec « Mot de passe oublié ».
+				</p>
+				<div class="mt-4 flex justify-end gap-2">
+					<Button
+						type="button"
+						size="sm"
+						color="alternative"
+						onclick={() => (creatingCustomer = false)}
+					>
+						Annuler
+					</Button>
+					<Button type="submit" size="sm" form="new-customer">Créer et sélectionner</Button>
+				</div>
+			</div>
+		{/if}
 	</Card>
 
 	<!-- ===== Prise en charge ===== -->
@@ -187,3 +292,12 @@
 
 <!-- Recherche client : formulaire GET distinct, hors de la soumission principale. -->
 <form id="customer-search" method="GET"></form>
+
+<!-- Création d'un client au comptoir : champs rattachés depuis le bloc « Client ». -->
+<form
+	id="new-customer"
+	method="POST"
+	action="?/createCustomer"
+	use:enhance={onCustomerCreated}
+	data-success="Client créé et sélectionné."
+></form>

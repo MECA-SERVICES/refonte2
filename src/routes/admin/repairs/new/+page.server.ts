@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { createRepairOrder, RepairError } from '$lib/server/repairs';
+import { createCustomerWithAccount, parseCustomerForm } from '$lib/server/customers';
 import { EQUIPMENT_TYPES } from '$lib/server/machines';
 import { db } from '$lib/server/db';
 import { customer } from '$lib/server/db/customer.schema';
@@ -43,7 +44,32 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	/**
+	 * Client créé au comptoir, sans quitter l'ordre en cours de saisie : la
+	 * page le sélectionne aussitôt. Compte validé d'office, le client est là.
+	 */
+	createCustomer: async ({ request }) => {
+		const form = await request.formData();
+		form.set('status', 'validated');
+		const parsed = parseCustomerForm(form);
+		if (!parsed.ok) return fail(400, { customerError: parsed.error });
+
+		const created = await createCustomerWithAccount(parsed.values, request.headers);
+		if (!created.ok) return fail(400, { customerError: created.error });
+
+		const c = created.customer;
+		return {
+			createdCustomer: {
+				id: c.id,
+				firstName: c.firstName,
+				lastName: c.lastName,
+				email: c.email,
+				companyName: c.companyName
+			}
+		};
+	},
+
+	create: async ({ request }) => {
 		const form = await request.formData();
 		const customerId = Number(form.get('customerId'));
 
