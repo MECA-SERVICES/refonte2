@@ -1,11 +1,11 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireCustomer } from '../guard';
+import { activeEquipmentTypeNames } from '$lib/server/equipment-types';
 import {
 	confirmMachine,
 	createMachine,
 	deleteMachine,
-	EQUIPMENT_TYPES,
 	listMachines,
 	MachineError,
 	parseMachineForm,
@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return {
 		machines: await listMachines(profile.id, search),
-		equipmentTypes: EQUIPMENT_TYPES,
+		equipmentTypes: await activeEquipmentTypeNames(),
 		search: search ?? ''
 	};
 };

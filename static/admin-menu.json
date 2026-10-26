@@ -89,6 +89,11 @@
 							"href": "/admin/repairs"
 						},
 						{
+							"id": "equipment-types",
+							"label": "Types de matériel",
+							"href": "/admin/equipment-types"
+						},
+						{
 							"id": "customer-service-list",
 							"label": "Service client",
 							"href": "/admin/customer-service"

@@ -10,7 +10,16 @@
  */
 
 import { sql } from 'drizzle-orm';
-import { index, integer, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+	boolean,
+	index,
+	integer,
+	pgTable,
+	serial,
+	text,
+	timestamp,
+	uniqueIndex
+} from 'drizzle-orm/pg-core';
 import { customer } from './customer.schema';
 import { order, orderLine } from './order.schema';
 import { product } from './catalog.schema';
@@ -20,6 +29,29 @@ export type MachineStatus = 'pending_confirmation' | 'confirmed';
 
 /** Origine de l'enregistrement. */
 export type MachineSource = 'manual' | 'order' | 'repair_order';
+
+/**
+ * Types de matériel proposés à la saisie : parc client et ordres de réparation
+ * (demande client 4.3). Gérés en back-office.
+ *
+ * Les fiches portent le libellé en texte, sans clé étrangère : un type
+ * désactivé n'est plus proposé, mais reste affiché là où il figure déjà ; un
+ * renommage est reporté sur les fiches qui le portent.
+ */
+export const equipmentType = pgTable(
+	'equipment_type',
+	{
+		id: serial('id').primaryKey(),
+		name: text('name').notNull(),
+		/** Ordre d'affichage dans les listes de choix. */
+		position: integer('position').notNull().default(0),
+		isActive: boolean('is_active').notNull().default(true),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [uniqueIndex('equipment_type_name_idx').on(sql`lower(${t.name})`)]
+);
+
+export type EquipmentType = typeof equipmentType.$inferSelect;
 
 export const clientMachine = pgTable(
 	'client_machine',

@@ -15,22 +15,6 @@ import { formFields, type ParseResult } from './forms';
 /** Délai au terme duquel une proposition non confirmée est retirée (R14). */
 const PENDING_EXPIRY_MONTHS = 6;
 
-/** Types d'équipement proposés à la saisie. */
-export const EQUIPMENT_TYPES = [
-	'Tondeuse',
-	'Tracteur tondeuse',
-	'Robot de tonte',
-	'Débroussailleuse',
-	'Tronçonneuse',
-	'Taille-haie',
-	'Souffleur',
-	'Motoculteur',
-	'Nettoyeur haute pression',
-	'Broyeur',
-	'Groupe électrogène',
-	'Autre'
-] as const;
-
 // ===========================================================================
 // Lecture
 // ===========================================================================

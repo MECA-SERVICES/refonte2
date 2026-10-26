@@ -11,7 +11,7 @@ import {
 	updateRepairOrder
 } from '$lib/server/repairs';
 import { repairStatuses, type RepairStatus } from '$lib/server/db/repair.schema';
-import { EQUIPMENT_TYPES } from '$lib/server/machines';
+import { activeEquipmentTypeNames } from '$lib/server/equipment-types';
 import {
 	listRepairSettlements,
 	parseSettlementForm,
@@ -27,14 +27,18 @@ function idParam(params: { id: string }) {
 
 export const load: PageServerLoad = async ({ params }) => {
 	const id = idParam(params);
-	const [order, settlements] = await Promise.all([getRepairOrder(id), listRepairSettlements(id)]);
+	const [order, settlements, equipmentTypes] = await Promise.all([
+		getRepairOrder(id),
+		listRepairSettlements(id),
+		activeEquipmentTypeNames()
+	]);
 	if (!order) error(404, 'Ordre introuvable');
 
 	return {
 		order,
 		settlements,
 		transitions: nextStatuses(order.status),
-		equipmentTypes: EQUIPMENT_TYPES
+		equipmentTypes
 	};
 };
 

@@ -27,7 +27,15 @@
 	const isNew = $derived(editing !== null && !('id' in editing));
 	const current = $derived(editing as Machine | null);
 
-	const typeOptions = $derived(data.equipmentTypes.map((t) => ({ value: t, name: t })));
+	/** Un type désactivé reste proposé à la machine qui le porte déjà. */
+	const typeOptions = $derived(
+		[
+			...data.equipmentTypes,
+			...(current?.equipmentType && !data.equipmentTypes.includes(current.equipmentType)
+				? [current.equipmentType]
+				: [])
+		].map((t) => ({ value: t, name: t }))
+	);
 
 	const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' });
 

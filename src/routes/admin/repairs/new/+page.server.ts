@@ -2,7 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { createRepairOrder, RepairError } from '$lib/server/repairs';
 import { createCustomerWithAccount, parseCustomerForm } from '$lib/server/customers';
-import { EQUIPMENT_TYPES } from '$lib/server/machines';
+import { activeEquipmentTypeNames } from '$lib/server/equipment-types';
 import { db } from '$lib/server/db';
 import { customer } from '$lib/server/db/customer.schema';
 import { ilike, or, sql } from 'drizzle-orm';
@@ -39,7 +39,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	return {
 		customers: await searchCustomers(term),
 		customerSearch: term,
-		equipmentTypes: EQUIPMENT_TYPES
+		equipmentTypes: await activeEquipmentTypeNames()
 	};
 };
 

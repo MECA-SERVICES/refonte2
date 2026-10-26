@@ -62,6 +62,14 @@
 			[o.customer.customerFirstName, o.customer.customerLastName].filter(Boolean).join(' ')
 	);
 
+	/** Un type de matériel désactivé reste proposé à l'ordre qui le porte déjà. */
+	const machineTypeOptions = $derived(
+		[
+			...data.equipmentTypes,
+			...(o.machineType && !data.equipmentTypes.includes(o.machineType) ? [o.machineType] : [])
+		].map((t) => ({ value: t, name: t }))
+	);
+
 	/** Saisie d'une suspension : la pièce attendue est exigée (R13). */
 	let onHoldPart = $state('');
 	let onHoldDate = $state('');
@@ -123,7 +131,7 @@
 							placeholder="Non précisé"
 							value={o.machineType ?? ''}
 							disabled={frozen}
-							items={data.equipmentTypes.map((t) => ({ value: t, name: t }))}
+							items={machineTypeOptions}
 						/>
 					</div>
 					<div>
