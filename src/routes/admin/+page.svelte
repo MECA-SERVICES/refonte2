@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { UsersSolid, ClockSolid, ArchiveSolid, TagSolid, CartSolid } from 'flowbite-svelte-icons';
 	import { PageHeader, StatCard } from '$lib/components/admin';
+	import StatsPanel from '$lib/components/admin/StatsPanel.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -10,7 +11,7 @@
 
 <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de votre boutique" />
 
-<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
 	<StatCard label="Commandes" value={data.stats.orders} icon={CartSolid} href="/admin/orders" />
 	<StatCard
 		label="Clients"
@@ -32,3 +33,7 @@
 	/>
 	<StatCard label="Marques" value={data.stats.brands} icon={TagSolid} href="/admin/brands" />
 </div>
+
+<!-- Statistiques, rapatriées de l'ancienne page « Statistiques » (demande 13.1). -->
+<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Statistiques</h2>
+<StatsPanel {data} />

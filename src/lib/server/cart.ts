@@ -44,6 +44,10 @@ export type CartLine = {
 	taxRate: string | null;
 	/** Prix HT au moment de l'ajout, s'il a été enregistré. */
 	priceHtAtAdd: string | null;
+	/** Messages de délai du produit (onglet « Livraison »), voir `$lib/delivery-time`. */
+	deliveryTimeMode: string | null;
+	deliveryTimeInStock: string | null;
+	deliveryTimeOutOfStock: string | null;
 };
 
 export type CartView = {
@@ -132,7 +136,10 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 			priceTtc: priceTtcSql,
 			/** Éco-participation, à présenter séparément du prix (CDC 10, R6). */
 			ecotax: product.ecotax,
-			taxRate: taxRule.rate
+			taxRate: taxRule.rate,
+			deliveryTimeMode: product.deliveryTimeMode,
+			deliveryTimeInStock: product.deliveryTimeInStock,
+			deliveryTimeOutOfStock: product.deliveryTimeOutOfStock
 		})
 		.from(cartItem)
 		.innerJoin(product, eq(cartItem.productId, product.id))

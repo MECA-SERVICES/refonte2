@@ -18,6 +18,7 @@
 	const links = [
 		{ href: '/compte', label: 'Tableau de bord' },
 		{ href: '/compte/commandes', label: 'Mes commandes' },
+		{ href: '/compte/factures', label: 'Mes factures' },
 		{ href: '/compte/messages', label: 'Mes messages' },
 		{ href: '/compte/machines', label: 'Mon parc machines' },
 		{ href: '/compte/reparations', label: 'Mes réparations' },

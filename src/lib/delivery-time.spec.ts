@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_DELIVERY_TIME, normalizeDeliveryMode, resolveDeliveryTime } from './delivery-time';
+import {
+	DEFAULT_DELIVERY_TIME,
+	cartShippingEstimate,
+	estimateShippingWindow,
+	normalizeDeliveryMode,
+	resolveDeliveryTime
+} from './delivery-time';
 
 describe('normalizeDeliveryMode', () => {
 	it('laisse passer les trois régimes', () => {
@@ -68,5 +74,54 @@ describe('resolveDeliveryTime', () => {
 	it('traite un produit sans réglage comme le régime par défaut', () => {
 		// Cas de toutes les fiches existantes avant la migration.
 		expect(resolveDeliveryTime({}, true)).toBe(DEFAULT_DELIVERY_TIME.inStock);
+	});
+});
+
+describe('estimateShippingWindow', () => {
+	// Lundi 26 octobre 2026.
+	const monday = new Date(2026, 9, 26, 10);
+	const day = (d: Date) => d.toISOString().slice(0, 10);
+
+	it('compte les heures en jours ouvrés', () => {
+		const w = estimateShippingWindow('Expédition sous 24 à 48 h ouvrées', monday);
+		expect(w && [day(w.earliest), day(w.latest)]).toEqual(['2026-10-27', '2026-10-28']);
+	});
+
+	it('saute le week-end', () => {
+		const w = estimateShippingWindow('Expédition sous 5 à 10 jours ouvrés', monday);
+		expect(w && [day(w.earliest), day(w.latest)]).toEqual(['2026-11-02', '2026-11-09']);
+	});
+
+	it('accepte une durée unique', () => {
+		const w = estimateShippingWindow('Expédition sous 3 jours', monday);
+		expect(w && day(w.earliest)).toBe(day(w!.latest));
+	});
+
+	it('ne promet rien sans durée lisible', () => {
+		expect(estimateShippingWindow('Nous consulter', monday)).toBeNull();
+		expect(estimateShippingWindow(null, monday)).toBeNull();
+	});
+});
+
+describe('cartShippingEstimate', () => {
+	const monday = new Date(2026, 9, 26, 10);
+	const day = (d: Date | null) => d?.toISOString().slice(0, 10);
+
+	it('retient le délai le plus long du panier', () => {
+		const e = cartShippingEstimate(
+			[
+				{ stock: 3, deliveryTimeMode: 'default' },
+				{ stock: 1, deliveryTimeMode: 'specific', deliveryTimeInStock: 'Expédition sous 5 jours' }
+			],
+			monday
+		);
+		expect(e.message).toBe('Expédition sous 5 jours');
+		expect(day(e.latest)).toBe('2026-11-02');
+	});
+
+	it('prend le délai de la boutique quand aucun article n’en donne', () => {
+		const e = cartShippingEstimate([{ stock: 2, deliveryTimeMode: 'none' }], monday);
+		expect(e.message).toBe(DEFAULT_DELIVERY_TIME.inStock);
+		expect(day(e.latest)).toBe('2026-10-28');
 	});
 });

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { describeShippingWindow } from '$lib/delivery-time';
 	import Panel from '$lib/components/shop/Panel.svelte';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import Heading from '$lib/components/shop/Heading.svelte';
@@ -69,6 +70,16 @@
 	Passée le {dateFormat.format(order.createdAt)}
 	{#if order.deliveredAt}· Livrée le {dateFormat.format(order.deliveredAt)}{/if}
 </p>
+{#if order.shippingDelay && !order.deliveredAt}
+	<!-- Délai annoncé quand la commande a été passée (12.3). -->
+	<p class="mt-1 text-sm font-semibold text-shop-ink">
+		{order.shippingDelay}{#if order.shippingEstimateFrom && order.shippingEstimateTo}
+			· expédition estimée {describeShippingWindow(
+				order.shippingEstimateFrom,
+				order.shippingEstimateTo
+			)}{/if}
+	</p>
+{/if}
 <p class="mt-2 text-sm">
 	<a
 		href="/compte/messages/nouveau?commande={order.id}"

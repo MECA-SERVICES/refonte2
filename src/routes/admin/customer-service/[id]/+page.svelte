@@ -1,4 +1,5 @@
 <script lang="ts">
+	import MessageAvatar from '$lib/components/MessageAvatar.svelte';
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { formatPrice } from '$lib/money';
 	import { Badge, Button, Card, Label, Select, Textarea } from 'flowbite-svelte';
@@ -73,7 +74,10 @@
 						{:else}
 							{@const staff = m.kind === 'staff'}
 							{@const note = m.kind === 'internal_note'}
-							<div class="flex {staff ? 'justify-end' : 'justify-start'}">
+							<div class="flex items-end gap-2.5 {staff ? 'flex-row-reverse' : 'justify-start'}">
+								{#if !note}
+									<MessageAvatar team={staff} customerId={t.customerId} size={32} />
+								{/if}
 								<div
 									class="max-w-[85%] rounded-lg border px-4 py-3 text-sm {note
 										? 'w-full max-w-none border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950'

@@ -13,6 +13,7 @@
 	import SearchBox from '$lib/components/shop/SearchBox.svelte';
 	import NavigationIndicator from '$lib/components/shop/NavigationIndicator.svelte';
 	import CartToast from '$lib/components/shop/CartToast.svelte';
+	import PaymentIcons from '$lib/components/shop/PaymentIcons.svelte';
 	import AnnouncementPopup from '$lib/components/shop/AnnouncementPopup.svelte';
 	import { cartFeedback } from '$lib/components/shop/cart-feedback.svelte';
 	import type { LayoutProps } from './$types';
@@ -147,15 +148,18 @@
 							</form>
 						</Dropdown>
 					{:else}
+						<!--
+							Bouton de connexion explicite, comme sur PrestaShop (demande 11.3) :
+							« Bonjour / Mon compte » ne se lisait pas comme une invitation à se
+							connecter. Visible aussi sur mobile, réduit à l'icône.
+						-->
 						<a
-							href="/connexion"
-							class="hidden items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-sm font-medium text-shop-ink hover:bg-shop-subtle sm:flex"
+							href="/connexion?redirectTo={encodeURIComponent(page.url.pathname)}"
+							class="flex items-center gap-2 rounded-[10px] border-[1.5px] border-shop-border px-3 py-2 font-display text-sm font-bold text-shop-ink transition-colors hover:border-shop-blue hover:text-shop-blue"
+							aria-label="Connexion"
 						>
-							<UserOutline class="h-5.5 w-5.5" />
-							<span class="text-left leading-[1.1]">
-								<span class="block text-[11px] text-shop-muted">Bonjour</span>
-								Mon compte
-							</span>
+							<UserOutline class="h-5 w-5" />
+							<span class="hidden sm:inline">Connexion</span>
 						</a>
 					{/if}
 
@@ -329,6 +333,26 @@
 				<p class="mt-3 font-display text-base font-bold text-white">
 					<a href="tel:0950922336" class="hover:underline">09 50 92 23 36</a>
 				</p>
+				<!-- Messagerie interne du compte client (demande 11.2). -->
+				<a
+					href="/contact"
+					class="mt-3 inline-flex rounded-[10px] bg-shop-orange px-4 py-2.5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-orange-deep"
+				>
+					Nous contacter
+				</a>
+				<!-- Drapeaux (demande 11.2) : le drapeau normand viendra à côté. -->
+				<div class="mt-4 flex items-center gap-2">
+					<svg
+						viewBox="0 0 3 2"
+						class="h-5 w-[30px] rounded-[2px]"
+						role="img"
+						aria-label="Drapeau français"
+					>
+						<rect width="1" height="2" fill="#002395" />
+						<rect x="1" width="1" height="2" fill="#fff" />
+						<rect x="2" width="1" height="2" fill="#ed2939" />
+					</svg>
+				</div>
 			</div>
 			<div>
 				{@render footerTitle('Infos pratiques')}
@@ -379,15 +403,7 @@
 						OK
 					</button>
 				</form>
-				<div class="mt-4 flex flex-wrap gap-1.5">
-					{#each ['CB', 'Visa', 'Mastercard', 'Virement', 'Mandat admin.'] as mean (mean)}
-						<span
-							class="rounded-md bg-shop-rule-dark px-2 py-1 text-[11.5px] font-bold tracking-[0.04em] text-white"
-						>
-							{mean}
-						</span>
-					{/each}
-				</div>
+				<PaymentIcons class="mt-4" />
 			</div>
 		</div>
 		<div class="border-t border-shop-rule-dark">

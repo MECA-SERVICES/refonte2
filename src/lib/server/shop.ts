@@ -846,6 +846,34 @@ export function latestShopProducts(limit = 8) {
 export type ShopProductCard = Awaited<ReturnType<typeof latestShopProducts>>[number];
 
 /** Fiche produit publique : produit actif + galerie, variantes, produits liés, fil d'Ariane. */
+/**
+ * Page de repli d'un produit qui n'est plus en vente (demande client 9.3) : la
+ * page de sa marque, à défaut celle de sa catégorie. `null` si le produit
+ * n'existe pas, ou s'il est encore actif (sa fiche s'affiche alors).
+ *
+ * Plus tard, quand les vues éclatées existeront : la vue éclatée d'abord.
+ */
+export async function discontinuedProductTarget(id: number): Promise<string | null> {
+	const [row] = await db
+		.select({
+			isActive: product.isActive,
+			brandSlug: brand.slug,
+			brandActive: brand.isActive,
+			categorySlug: category.slug,
+			categoryActive: category.isActive
+		})
+		.from(product)
+		.leftJoin(brand, eq(brand.id, product.brandId))
+		.leftJoin(category, eq(category.id, product.categoryId))
+		.where(eq(product.id, id))
+		.limit(1);
+
+	if (!row || row.isActive) return null;
+	if (row.brandSlug && row.brandActive) return `/marque/${row.brandSlug}`;
+	if (row.categorySlug && row.categoryActive) return `/categorie/${row.categorySlug}`;
+	return null;
+}
+
 /** Nombre maximal de produits associés affichés sur une fiche. */
 const RELATED_LIMIT = 12;
 

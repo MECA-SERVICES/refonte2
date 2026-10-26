@@ -1,21 +1,22 @@
 /**
- * Indicateurs de pilotage — CDC section 42.
+ * Indicateurs de pilotage — CDC section 42, tableau de bord (demande 13.1).
  *
  * Aucune table dédiée : tout est calculé à la demande sur les données déjà
  * présentes. Seules les commandes ayant atteint un état marqué payé entrent
  * dans le chiffre d'affaires (R2).
+ *
+ * Toutes les fonctions prennent une période en jours `AAAA-MM-JJ`, bornes
+ * comprises (`$lib/stats-range`), et la comparent à une autre au choix.
  */
 
-import { sql } from 'drizzle-orm';
+import { sql, type SQL } from 'drizzle-orm';
 import { db } from './db';
-
-/** Période d'observation, exprimée en jours. */
-export type StatsPeriod = 7 | 30 | 90 | 365;
+import type { DayRange } from '$lib/stats-range';
 
 export type Kpi = {
 	/** Valeur sur la période. */
 	value: number;
-	/** Même durée, juste avant : sert la comparaison (R3). */
+	/** Valeur sur la période de comparaison (R3). */
 	previous: number;
 	/** Variation en pourcentage ; `null` quand la base de comparaison est nulle. */
 	change: number | null;
@@ -31,13 +32,19 @@ function toKpi(value: number, previous: number): Kpi {
 	};
 }
 
+/** Condition « commande passée pendant la période », jour de fin compris. */
+function within(column: SQL, range: DayRange): SQL {
+	return sql`${column} >= ${range.from}::date AND ${column} < ${range.to}::date + 1`;
+}
+
 /**
- * Indicateurs principaux, comparés à la période précédente.
- *
- * Une seule requête par indicateur, chacune agrégeant les deux périodes : deux
- * requêtes séparées doubleraient les allers-retours pour le même résultat.
+ * Indicateurs principaux de la période, et leur valeur sur la période de
+ * comparaison. Une seule requête : chaque agrégat filtre l'une ou l'autre.
  */
-export async function headlineStats(days: StatsPeriod) {
+export async function headlineStats(range: DayRange, compare: DayRange) {
+	const cur = within(sql`o.created_at`, range);
+	const prev = within(sql`o.created_at`, compare);
+
 	const [row] = await db.execute<{
 		revenue: string;
 		revenue_prev: string;
@@ -46,28 +53,16 @@ export async function headlineStats(days: StatsPeriod) {
 		customers: number;
 		customers_prev: number;
 	}>(sql`
-		WITH bornes AS (
-			SELECT
-				now() - ${`${days} days`}::interval AS debut,
-				now() - ${`${days * 2} days`}::interval AS debut_prec
-		)
 		SELECT
-			coalesce(sum(o.total_ttc) FILTER (WHERE o.created_at >= b.debut), 0)::text AS revenue,
-			coalesce(sum(o.total_ttc) FILTER (
-				WHERE o.created_at >= b.debut_prec AND o.created_at < b.debut
-			), 0)::text AS revenue_prev,
-			count(*) FILTER (WHERE o.created_at >= b.debut)::int AS orders,
-			count(*) FILTER (
-				WHERE o.created_at >= b.debut_prec AND o.created_at < b.debut
-			)::int AS orders_prev,
-			count(DISTINCT o.customer_id) FILTER (WHERE o.created_at >= b.debut)::int AS customers,
-			count(DISTINCT o.customer_id) FILTER (
-				WHERE o.created_at >= b.debut_prec AND o.created_at < b.debut
-			)::int AS customers_prev
+			coalesce(sum(o.total_ttc) FILTER (WHERE ${cur}), 0)::text AS revenue,
+			coalesce(sum(o.total_ttc) FILTER (WHERE ${prev}), 0)::text AS revenue_prev,
+			count(*) FILTER (WHERE ${cur})::int AS orders,
+			count(*) FILTER (WHERE ${prev})::int AS orders_prev,
+			count(DISTINCT o.customer_id) FILTER (WHERE ${cur})::int AS customers,
+			count(DISTINCT o.customer_id) FILTER (WHERE ${prev})::int AS customers_prev
 		FROM "order" o
 		JOIN order_state s ON s.id = o.state_id
-		CROSS JOIN bornes b
-		WHERE s.is_paid AND o.created_at >= b.debut_prec
+		WHERE s.is_paid AND ((${cur}) OR (${prev}))
 	`);
 
 	const revenue = Number(row?.revenue ?? 0);
@@ -94,19 +89,15 @@ export async function headlineStats(days: StatsPeriod) {
  * `generate_series` produit la série complète : sans elle, les journées sans
  * vente disparaîtraient et la courbe se déformerait.
  */
-export async function revenueByDay(days: StatsPeriod) {
+export async function revenueByDay(range: DayRange) {
 	const rows = await db.execute<{ jour: string; total: string; commandes: number }>(sql`
 		SELECT
 			d.jour::date::text AS jour,
 			coalesce(sum(o.total_ttc), 0)::text AS total,
 			count(o.id)::int AS commandes
-		FROM generate_series(
-			date_trunc('day', now() - ${`${days - 1} days`}::interval),
-			date_trunc('day', now()),
-			'1 day'
-		) AS d(jour)
+		FROM generate_series(${range.from}::date, ${range.to}::date, '1 day') AS d(jour)
 		LEFT JOIN "order" o
-			ON date_trunc('day', o.created_at) = d.jour
+			ON o.created_at >= d.jour AND o.created_at < d.jour + interval '1 day'
 			AND EXISTS (SELECT 1 FROM order_state s WHERE s.id = o.state_id AND s.is_paid)
 		GROUP BY d.jour
 		ORDER BY d.jour
@@ -120,7 +111,7 @@ export async function revenueByDay(days: StatsPeriod) {
 }
 
 /** Meilleures ventes sur la période, en quantité et en valeur. */
-export async function topProducts(days: StatsPeriod, limit = 8) {
+export async function topProducts(range: DayRange, limit = 8) {
 	const rows = await db.execute<{
 		product_id: number | null;
 		nom: string;
@@ -135,7 +126,7 @@ export async function topProducts(days: StatsPeriod, limit = 8) {
 		FROM order_line l
 		JOIN "order" o ON o.id = l.order_id
 		JOIN order_state s ON s.id = o.state_id
-		WHERE s.is_paid AND o.created_at >= now() - ${`${days} days`}::interval
+		WHERE s.is_paid AND ${within(sql`o.created_at`, range)}
 		GROUP BY l.product_id, l.product_name
 		ORDER BY sum(l.total_ttc) DESC
 		LIMIT ${limit}
@@ -150,12 +141,12 @@ export async function topProducts(days: StatsPeriod, limit = 8) {
 }
 
 /** Répartition des commandes par état, sur la période. */
-export async function ordersByState(days: StatsPeriod) {
+export async function ordersByState(range: DayRange) {
 	const rows = await db.execute<{ libelle: string; couleur: string | null; total: number }>(sql`
 		SELECT s.label AS libelle, s.color AS couleur, count(*)::int AS total
 		FROM "order" o
 		JOIN order_state s ON s.id = o.state_id
-		WHERE o.created_at >= now() - ${`${days} days`}::interval
+		WHERE ${within(sql`o.created_at`, range)}
 		GROUP BY s.label, s.color
 		ORDER BY count(*) DESC
 		LIMIT 8
@@ -170,7 +161,7 @@ export async function ordersByState(days: StatsPeriod) {
  * Le prix d'achat vient du catalogue courant : il n'est pas figé sur la ligne
  * de commande, la valeur est donc indicative (voir CDC 20).
  */
-export async function marginStats(days: StatsPeriod) {
+export async function marginStats(range: DayRange) {
 	const [row] = await db.execute<{ ca_ht: string; cout: string; lignes: number }>(sql`
 		SELECT
 			coalesce(sum(l.total_ht), 0)::text AS ca_ht,
@@ -180,7 +171,7 @@ export async function marginStats(days: StatsPeriod) {
 		JOIN "order" o ON o.id = l.order_id
 		JOIN order_state s ON s.id = o.state_id
 		LEFT JOIN product p ON p.id = l.product_id
-		WHERE s.is_paid AND o.created_at >= now() - ${`${days} days`}::interval
+		WHERE s.is_paid AND ${within(sql`o.created_at`, range)}
 	`);
 
 	const revenue = Number(row?.ca_ht ?? 0);

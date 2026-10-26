@@ -1,6 +1,6 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getShopProduct } from '$lib/server/shop';
+import { discontinuedProductTarget, getShopProduct } from '$lib/server/shop';
 import { sanitizeHtml } from '$lib/server/sanitize';
 import { addToCart } from '$lib/server/cart';
 import { resolveCartOwner } from '$lib/server/cart-session';
@@ -12,7 +12,13 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (!Number.isInteger(id) || id <= 0) error(404, 'Produit introuvable');
 
 	const product = await getShopProduct(id);
-	if (!product) error(404, 'Produit introuvable');
+	if (!product) {
+		// Produit retiré de la vente : on mène à sa marque plutôt qu'à une
+		// impasse (9.3). Redirection temporaire : réactivé, il retrouve sa fiche.
+		const target = await discontinuedProductTarget(id);
+		if (target) redirect(302, target);
+		error(404, 'Produit introuvable');
+	}
 
 	// Les descriptions viennent du back-office : nettoyées avant rendu `{@html}`.
 	return {

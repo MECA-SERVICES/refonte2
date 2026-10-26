@@ -298,7 +298,11 @@ export async function getCustomerOverview(customerId: number, userId: string) {
 				name: orderLine.productName,
 				reference: orderLine.productReference,
 				quantity: sql<number>`sum(${orderLine.quantity})::int`,
-				lastBoughtAt: sql<Date>`max(${order.createdAt})`.mapWith(order.createdAt)
+				lastBoughtAt: sql<Date>`max(${order.createdAt})`.mapWith(order.createdAt),
+				/** Numéros de série saisis sur les commandes (13.3, 13.7). */
+				serialNumbers: sql<
+					string | null
+				>`string_agg(distinct ${orderLine.serialNumber}, ', ') filter (where ${orderLine.serialNumber} is not null)`
 			})
 			.from(orderLine)
 			.innerJoin(order, eq(order.id, orderLine.orderId))

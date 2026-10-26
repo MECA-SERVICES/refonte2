@@ -68,10 +68,12 @@ export async function listSupportCategories({ activeOnly = false } = {}) {
 			label: supportCategory.label,
 			position: supportCategory.position,
 			isActive: supportCategory.isActive,
+			assigneeName: user.name,
 			threadCount: sql<number>`coalesce(${usage.n}, 0)::int`
 		})
 		.from(supportCategory)
 		.leftJoin(usage, eq(usage.categoryId, supportCategory.id))
+		.leftJoin(user, eq(user.id, supportCategory.defaultAssigneeUserId))
 		.where(activeOnly ? eq(supportCategory.isActive, true) : undefined)
 		.orderBy(asc(supportCategory.position), asc(supportCategory.label));
 }
@@ -81,7 +83,13 @@ export async function getSupportCategory(id: number) {
 	return row;
 }
 
-type CategoryValues = { code: string; label: string; position: number; isActive: boolean };
+type CategoryValues = {
+	code: string;
+	label: string;
+	position: number;
+	isActive: boolean;
+	defaultAssigneeUserId: string | null;
+};
 
 /** Code dérivé du libellé quand il n'est pas saisi : minuscules, sans accents. */
 function codeFrom(label: string) {
@@ -103,7 +111,13 @@ export function parseSupportCategoryForm(form: FormData): ParseResult<CategoryVa
 		return { ok: false, error: 'Le code doit contenir au moins une lettre ou un chiffre.' };
 	return {
 		ok: true,
-		values: { code, label, position: int('position', 0), isActive: bool('isActive') }
+		values: {
+			code,
+			label,
+			position: int('position', 0),
+			isActive: bool('isActive'),
+			defaultAssigneeUserId: str('defaultAssigneeUserId')
+		}
 	};
 }
 
@@ -778,6 +792,7 @@ export async function getCustomerThread(customerId: number, id: number) {
 
 	return {
 		id: thread.id,
+		customerId,
 		reference: thread.reference,
 		subject: thread.subject,
 		status: thread.status,
@@ -879,13 +894,16 @@ export async function createCustomerThread(customerId: number, form: FormData) {
 	}
 
 	const categoryId = int('categoryId', 0) || null;
+	// Responsable de la catégorie : la demande lui est assignée d'office (13.9).
+	let assignedUserId: string | null = null;
 	if (categoryId) {
 		const [cat] = await db
-			.select({ id: supportCategory.id })
+			.select({ id: supportCategory.id, assignee: supportCategory.defaultAssigneeUserId })
 			.from(supportCategory)
 			.where(and(eq(supportCategory.id, categoryId), eq(supportCategory.isActive, true)))
 			.limit(1);
 		if (!cat) throw new SupportError('Catégorie invalide.');
+		assignedUserId = cat.assignee;
 	}
 
 	const { id, reference } = await nextThreadId();
@@ -897,6 +915,7 @@ export async function createCustomerThread(customerId: number, form: FormData) {
 			subject: subject.slice(0, 255),
 			categoryId,
 			orderId,
+			assignedUserId,
 			status: 'pending_staff'
 		});
 		await appendCustomerMessage(tx, id, content);

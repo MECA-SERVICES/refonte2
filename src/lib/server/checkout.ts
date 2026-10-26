@@ -6,6 +6,8 @@
  * adresses, livraison, stock, états — avant de brancher Monetico et Sofinco.
  */
 
+import { cartShippingEstimate } from '$lib/delivery-time';
+import { isoDay } from '$lib/stats-range';
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from './db';
 import { cartItem, order, orderLine, orderState, orderStateHistory } from './db/order.schema';
@@ -118,7 +120,11 @@ export async function createOrderFromCart(input: CheckoutInput) {
 				reference: product.reference,
 				priceHt: product.priceHt,
 				taxRate: sql<string | null>`(select rate from tax_rule where id = ${product.taxRuleId})`,
-				quantity: cartItem.quantity
+				quantity: cartItem.quantity,
+				stock: product.stock,
+				deliveryTimeMode: product.deliveryTimeMode,
+				deliveryTimeInStock: product.deliveryTimeInStock,
+				deliveryTimeOutOfStock: product.deliveryTimeOutOfStock
 			})
 			.from(cartItem)
 			.innerJoin(product, eq(cartItem.productId, product.id))
@@ -154,6 +160,9 @@ export async function createOrderFromCart(input: CheckoutInput) {
 		const shippingRate = effectiveTaxRate(20, input.regime);
 		const shippingTva = input.shipping.feeHt * (shippingRate / 100);
 
+		// Délai annoncé au client, figé sur la commande (12.3).
+		const estimate = cartShippingEstimate(lines);
+
 		const grandHt = round2(totalHt + input.shipping.feeHt);
 		const grandTva = round2(totalTva + shippingTva);
 
@@ -177,6 +186,9 @@ export async function createOrderFromCart(input: CheckoutInput) {
 				relayPointAddress: input.shipping.relayPointAddress ?? null,
 				usedFallbackShipping: input.shipping.usedFallback,
 				packageWeightKg: input.weightKg.toFixed(3),
+				shippingDelay: estimate.message,
+				shippingEstimateFrom: estimate.earliest ? isoDay(estimate.earliest) : null,
+				shippingEstimateTo: estimate.latest ? isoDay(estimate.latest) : null,
 				paymentProvider: 'bank_transfer'
 			})
 			.returning({ id: order.id, reference: order.reference });

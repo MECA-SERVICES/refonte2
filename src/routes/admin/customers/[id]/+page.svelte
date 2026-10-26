@@ -320,6 +320,37 @@
 			{/if}
 		</Card>
 
+		<!-- Parc machines (CDC 32, R2) : remonté sous les commandes (demande 13.7). -->
+		<Card class="max-w-none p-6">
+			{@render cardTitle('Parc machines', data.machines.length)}
+			{#if data.machines.length === 0}
+				<p class="py-6 text-center text-sm text-gray-500">Aucune machine déclarée.</p>
+			{:else}
+				<ul class="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
+					{#each data.machines as machine (machine.id)}
+						<li class="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+							<div class="min-w-0">
+								<p class="flex flex-wrap items-center gap-2">
+									<span class="font-medium text-gray-900 dark:text-white">{machine.name}</span>
+									{#if machine.status === 'pending_confirmation'}
+										<Badge color="yellow">À compléter</Badge>
+									{/if}
+								</p>
+								<p class="mt-0.5 text-xs text-gray-500">
+									{machine.equipmentType}{#if machine.brand}
+										· {machine.brand}{/if}{#if machine.model}
+										{machine.model}{/if}
+								</p>
+							</div>
+							<span class="shrink-0 font-mono text-xs text-gray-500">
+								{machine.serialNumber ?? 'n° de série manquant'}
+							</span>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</Card>
+
 		<!-- Paniers -->
 		<Card class="max-w-none p-6">
 			{@render cardTitle('Paniers', ov.carts.length)}
@@ -395,6 +426,10 @@
 										{/if}
 										{#if p.reference}<span class="block text-xs text-gray-500">{p.reference}</span
 											>{/if}
+										{#if p.serialNumbers}<span
+												class="block text-xs text-gray-700 dark:text-gray-300"
+												>N° de série : {p.serialNumbers}</span
+											>{/if}
 									</TableBodyCell>
 									<TableBodyCell class="text-right tabular-nums">{p.quantity}</TableBodyCell>
 								</TableBodyRow>
@@ -431,37 +466,6 @@
 						</div>
 					{/each}
 				</div>
-			{/if}
-		</Card>
-
-		<!-- Parc machines (CDC 32, R2) -->
-		<Card class="max-w-none p-6">
-			{@render cardTitle('Parc machines', data.machines.length)}
-			{#if data.machines.length === 0}
-				<p class="py-6 text-center text-sm text-gray-500">Aucune machine déclarée.</p>
-			{:else}
-				<ul class="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
-					{#each data.machines as machine (machine.id)}
-						<li class="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
-							<div class="min-w-0">
-								<p class="flex flex-wrap items-center gap-2">
-									<span class="font-medium text-gray-900 dark:text-white">{machine.name}</span>
-									{#if machine.status === 'pending_confirmation'}
-										<Badge color="yellow">À compléter</Badge>
-									{/if}
-								</p>
-								<p class="mt-0.5 text-xs text-gray-500">
-									{machine.equipmentType}{#if machine.brand}
-										· {machine.brand}{/if}{#if machine.model}
-										{machine.model}{/if}
-								</p>
-							</div>
-							<span class="shrink-0 font-mono text-xs text-gray-500">
-								{machine.serialNumber ?? 'n° de série manquant'}
-							</span>
-						</li>
-					{/each}
-				</ul>
 			{/if}
 		</Card>
 	</div>

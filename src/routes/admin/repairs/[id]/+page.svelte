@@ -16,6 +16,7 @@
 		TableHeadCell,
 		Textarea
 	} from 'flowbite-svelte';
+	import { FilePdfOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
 	import { REPAIR_STATUS_COLORS, REPAIR_STATUS_LABELS, REPAIR_TYPE_LABELS } from '$lib/repairs';
 	import {
@@ -74,19 +75,33 @@
 	let onHoldPart = $state('');
 	let onHoldDate = $state('');
 
+	/**
+	 * Évolution de l'ordre (13.8) : chaque passage d'état, suspensions et
+	 * reprises comprises, puis les règlements, dans l'ordre chronologique.
+	 */
 	const timeline = $derived(
 		[
-			{ label: 'Ordre créé', at: o.createdAt },
-			{ label: 'Travaux démarrés', at: o.startedAt },
-			{ label: 'Travaux achevés', at: o.completedAt },
-			{ label: 'Règlement enregistré', at: o.paidAt },
-			{ label: 'Machine restituée', at: o.deliveredAt }
-		].filter((e) => e.at)
+			...o.history.map((h) => ({
+				key: `h${h.id}`,
+				label: h.status === 'to_do' ? 'Ordre créé' : REPAIR_STATUS_LABELS[h.status],
+				detail: [h.note, h.changedBy].filter(Boolean).join(' · '),
+				at: new Date(h.createdAt)
+			})),
+			...data.settlements.map((s) => ({
+				key: `s${s.id}`,
+				label: `Règlement ${SETTLEMENT_METHOD_LABELS[s.method].toLowerCase()}`,
+				detail: `${eur.format(Number(s.amount))} · ${s.reference}`,
+				at: new Date(s.createdAt)
+			}))
+		].sort((a, b) => a.at.getTime() - b.at.getTime())
 	);
 </script>
 
 <PageHeader title={o.reference} subtitle="Ordre de réparation">
 	{#snippet actions()}
+		<Button size="sm" href="/admin/repairs/{o.id}/pdf" target="_blank" rel="noopener">
+			<FilePdfOutline class="me-2 h-4 w-4" /> Ordre PDF
+		</Button>
 		<Button color="alternative" size="sm" href="/admin/repairs">Retour à la file</Button>
 	{/snippet}
 </PageHeader>
@@ -649,14 +664,19 @@
 		</Card>
 
 		<Card class="max-w-none p-4">
-			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Suivi</h3>
-			<ol class="space-y-2 text-xs">
-				{#each timeline as entry (entry.label)}
-					<li class="flex justify-between gap-2">
-						<span class="text-gray-500 dark:text-gray-400">{entry.label}</span>
-						<span class="text-gray-900 dark:text-white">
-							{dateTime.format(new Date(entry.at!))}
-						</span>
+			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Évolution</h3>
+			<ol class="space-y-2.5 border-s border-gray-200 ps-3 text-xs dark:border-gray-700">
+				{#each timeline as entry (entry.key)}
+					<li>
+						<div class="flex justify-between gap-2">
+							<span class="font-medium text-gray-900 dark:text-white">{entry.label}</span>
+							<span class="shrink-0 text-gray-500 dark:text-gray-400">
+								{dateTime.format(entry.at)}
+							</span>
+						</div>
+						{#if entry.detail}
+							<p class="text-gray-500 dark:text-gray-400">{entry.detail}</p>
+						{/if}
 					</li>
 				{/each}
 			</ol>

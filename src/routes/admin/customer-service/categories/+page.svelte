@@ -27,6 +27,9 @@
 <div class="grid gap-6 lg:grid-cols-3">
 	<div class="lg:col-span-2">
 		{#snippet activeCell(row: Row)}<ActiveBadge active={row.isActive} />{/snippet}
+		{#snippet assigneeCell(row: Row)}
+			{row.assigneeName ?? '—'}
+		{/snippet}
 		{#snippet usageCell(row: Row)}
 			<span class="tabular-nums">{row.threadCount}</span>
 		{/snippet}
@@ -37,6 +40,7 @@
 				{ key: 'label', label: 'Libellé' },
 				{ key: 'code', label: 'Code' },
 				{ key: 'position', label: 'Ordre' },
+				{ key: 'assignee', label: 'Responsable', cell: assigneeCell },
 				{ key: 'usage', label: 'Conversations', cell: usageCell },
 				{ key: 'active', label: 'État', cell: activeCell }
 			]}

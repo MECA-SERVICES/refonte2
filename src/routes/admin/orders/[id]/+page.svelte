@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { formatPrice } from '$lib/money';
 	import { paymentMethodLabel } from '$lib/payment-methods';
+	import { describeShippingWindow } from '$lib/delivery-time';
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { resolve } from '$app/paths';
 	import {
@@ -60,6 +61,9 @@
 	const asAddr = (a: unknown) => (a ?? null) as Addr;
 
 	const shipping = $derived(asAddr(o.shippingAddress));
+
+	/** Lignes appelant un numéro de série : les machines (13.3). */
+	const machineLines = $derived(o.lines.filter((l) => l.productType === 'machine'));
 	const billing = $derived(asAddr(o.billingAddress));
 
 	/**
@@ -108,6 +112,12 @@
 	 * la télécharge aussitôt plutôt que d'afficher un lien de plus. Un
 	 * téléchargement n'est pas bloqué comme une fenêtre surgissante.
 	 */
+	/** Le champ garde la valeur enregistrée, sans revenir à celle du chargement. */
+	const keepValues: SubmitFunction =
+		() =>
+		({ update }) =>
+			update({ reset: false });
+
 	const downloadLabel: SubmitFunction = () => {
 		return async ({ result, update }) => {
 			if (result.type === 'success' && typeof result.data?.labelBase64 === 'string') {
@@ -212,6 +222,52 @@
 <div class="grid gap-6 lg:grid-cols-3">
 	<!-- ================= Colonne principale ================= -->
 	<div class="space-y-6 lg:col-span-2">
+		<!-- Note interne en tête (demande 13.3) : une seule par commande, enregistrée à la saisie. -->
+		<AutosaveNote
+			value={o.privateNote}
+			action="?/saveNote"
+			placeholder="Informations utiles à l'équipe sur cette commande…"
+		/>
+
+		<!-- Numéros de série des machines vendues : saisis à la préparation (13.3). -->
+		{#if machineLines.length > 0}
+			<Card class="max-w-none p-6 print:hidden">
+				<h2 class="mb-1 text-base font-semibold text-gray-900 dark:text-white">Numéros de série</h2>
+				<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+					Reportés sur la fiche client et dans le parc machines du client.
+				</p>
+				<div class="space-y-3">
+					{#each machineLines as l (l.id)}
+						<form
+							method="POST"
+							action="?/setSerial"
+							use:enhance={keepValues}
+							data-success="Numéro de série enregistré."
+							class="flex flex-wrap items-center gap-2"
+						>
+							<input type="hidden" name="lineId" value={l.id} />
+							<label
+								for="serial-{l.id}"
+								class="min-w-0 flex-1 text-sm text-gray-900 dark:text-white"
+							>
+								{l.productName}
+								{#if l.quantity > 1}<span class="text-gray-500"> × {l.quantity}</span>{/if}
+							</label>
+							<Input
+								id="serial-{l.id}"
+								name="serialNumber"
+								value={l.serialNumber ?? ''}
+								placeholder={l.quantity > 1 ? 'N° séparés par des virgules' : 'N° de série'}
+								size="sm"
+								class="w-56"
+							/>
+							<Button type="submit" size="xs" color="alternative">OK</Button>
+						</form>
+					{/each}
+				</div>
+			</Card>
+		{/if}
+
 		<!-- ================= Commande ================= -->
 		<Card class="max-w-none p-0 print:border-0 print:shadow-none">
 			<div
@@ -466,126 +522,24 @@
 			</div>
 		</Card>
 
-		<!-- Articles -->
-		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">
-				Articles <span class="font-normal text-gray-400">({o.lines.length})</span>
-			</h2>
-
-			<ul class="divide-y divide-gray-100 dark:divide-gray-800">
-				{#each o.lines as l (l.id)}
-					{@const margin = lineMargin(l)}
-					<li class="flex items-start gap-4 py-4 first:pt-0 last:pb-0">
-						<Thumbnail src={l.productImageUrl ?? l.catalogImageUrl} alt={l.productName} />
-
-						<div class="min-w-0 flex-1">
-							{#if l.productId}
-								<a
-									href={resolve('/admin/products/[id]', { id: String(l.productId) })}
-									class="font-medium text-primary-700 hover:underline dark:text-primary-400"
-								>
-									{l.productName}
-								</a>
-							{:else}
-								<span class="font-medium text-gray-900 dark:text-white">{l.productName}</span>
-								<!-- Produit supprimé depuis l'achat : la ligne garde sa copie figée. -->
-								<Badge color="gray" class="ms-2">Hors catalogue</Badge>
-							{/if}
-
-							<p class="mt-0.5 text-xs text-gray-500">
-								{#if l.productReference}Réf. {l.productReference}{:else}Sans référence{/if}
-								{#if l.currentStock !== null && l.currentStock !== undefined}
-									· Stock actuel :
-									<span
-										class={l.currentStock <= 0 ? 'font-medium text-red-600 dark:text-red-400' : ''}
-									>
-										{l.currentStock}
-									</span>
-								{/if}
-							</p>
-
-							<p class="mt-1.5 text-sm text-gray-600 dark:text-gray-300">
-								{l.quantity} × {formatPrice(Number(l.unitPriceHt))} HT
-								<span class="text-gray-400">({formatPrice(Number(l.unitPriceTtc))} TTC)</span>
-							</p>
-
-							{#if margin}
-								<p class="mt-1 text-xs text-gray-500">
-									Marge indicative :
-									<span
-										class={margin.amount >= 0
-											? 'font-medium text-green-600 dark:text-green-400'
-											: 'font-medium text-red-600 dark:text-red-400'}
-									>
-										{formatPrice(margin.amount)} ({margin.percent.toFixed(1)} %)
-									</span>
-								</p>
-							{/if}
-						</div>
-
-						<div class="shrink-0 text-right">
-							<p class="font-semibold text-gray-900 tabular-nums dark:text-white">
-								{formatPrice(Number(l.totalTtc))}
-							</p>
-							<p class="mt-0.5 text-xs text-gray-500 tabular-nums">
-								{formatPrice(Number(l.totalHt))} HT
-							</p>
-						</div>
-					</li>
-				{/each}
-			</ul>
-
-			<!-- Totaux : rattachés aux articles, pas isolés dans une carte à part. -->
-			<dl class="mt-4 space-y-1.5 border-t border-gray-200 pt-4 text-sm dark:border-gray-700">
-				<div class="flex justify-between">
-					<dt class="text-gray-500">Sous-total HT</dt>
-					<dd class="text-gray-900 tabular-nums dark:text-white">
-						{formatPrice(Number(o.totalHt) - Number(o.shippingFee))}
-					</dd>
-				</div>
-				<div class="flex justify-between">
-					<dt class="text-gray-500">Livraison HT</dt>
-					<dd class="text-gray-900 tabular-nums dark:text-white">
-						{formatPrice(Number(o.shippingFee))}
-					</dd>
-				</div>
-				{#if Number(o.additionalShippingFee) > 0}
-					<div class="flex justify-between">
-						<dt class="text-gray-500">
-							Supplément transport
-							{#if o.additionalFeeReason}<span class="text-xs">— {o.additionalFeeReason}</span>{/if}
-						</dt>
-						<dd class="text-gray-900 tabular-nums dark:text-white">
-							{formatPrice(Number(o.additionalShippingFee))}
-						</dd>
-					</div>
-				{/if}
-				{#if Number(o.discountAmount) > 0}
-					<div class="flex justify-between text-green-600 dark:text-green-400">
-						<dt>Remise</dt>
-						<dd class="tabular-nums">−{formatPrice(Number(o.discountAmount))}</dd>
-					</div>
-				{/if}
-				<div class="flex justify-between">
-					<dt class="text-gray-500">TVA</dt>
-					<dd class="text-gray-900 tabular-nums dark:text-white">
-						{formatPrice(Number(o.totalTva))}
-					</dd>
-				</div>
-				<div
-					class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold dark:border-gray-700"
-				>
-					<dt class="text-gray-900 dark:text-white">Total TTC</dt>
-					<dd class="text-gray-900 tabular-nums dark:text-white">
-						{formatPrice(Number(o.totalTtc))}
-					</dd>
-				</div>
-			</dl>
-		</Card>
-
 		<!-- Expédition -->
 		<Card class="max-w-none p-6">
 			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Expédition</h2>
+
+			{#if o.shippingDelay}
+				<!-- Délai promis au client au moment de la commande (12.3). -->
+				<p
+					class="mb-4 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+				>
+					Délai annoncé au client : <strong>{o.shippingDelay}</strong>
+					{#if o.shippingEstimateFrom && o.shippingEstimateTo}
+						· expédition estimée {describeShippingWindow(
+							o.shippingEstimateFrom,
+							o.shippingEstimateTo
+						)}
+					{/if}
+				</p>
+			{/if}
 
 			{#if form?.message}
 				<p
@@ -734,6 +688,124 @@
 				</form>
 			{/if}
 		</Card>
+
+		<!-- Articles -->
+		<Card class="max-w-none p-6">
+			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">
+				Articles <span class="font-normal text-gray-400">({o.lines.length})</span>
+			</h2>
+
+			<ul class="divide-y divide-gray-100 dark:divide-gray-800">
+				{#each o.lines as l (l.id)}
+					{@const margin = lineMargin(l)}
+					<li class="flex items-start gap-4 py-4 first:pt-0 last:pb-0">
+						<Thumbnail src={l.productImageUrl ?? l.catalogImageUrl} alt={l.productName} />
+
+						<div class="min-w-0 flex-1">
+							{#if l.productId}
+								<a
+									href={resolve('/admin/products/[id]', { id: String(l.productId) })}
+									class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+								>
+									{l.productName}
+								</a>
+							{:else}
+								<span class="font-medium text-gray-900 dark:text-white">{l.productName}</span>
+								<!-- Produit supprimé depuis l'achat : la ligne garde sa copie figée. -->
+								<Badge color="gray" class="ms-2">Hors catalogue</Badge>
+							{/if}
+
+							<p class="mt-0.5 text-xs text-gray-500">
+								{#if l.productReference}Réf. {l.productReference}{:else}Sans référence{/if}
+								{#if l.serialNumber}· N° de série : {l.serialNumber}{/if}
+								{#if l.currentStock !== null && l.currentStock !== undefined}
+									· Stock actuel :
+									<span
+										class={l.currentStock <= 0 ? 'font-medium text-red-600 dark:text-red-400' : ''}
+									>
+										{l.currentStock}
+									</span>
+								{/if}
+							</p>
+
+							<p class="mt-1.5 text-sm text-gray-600 dark:text-gray-300">
+								{l.quantity} × {formatPrice(Number(l.unitPriceHt))} HT
+								<span class="text-gray-400">({formatPrice(Number(l.unitPriceTtc))} TTC)</span>
+							</p>
+
+							{#if margin}
+								<p class="mt-1 text-xs text-gray-500">
+									Marge indicative :
+									<span
+										class={margin.amount >= 0
+											? 'font-medium text-green-600 dark:text-green-400'
+											: 'font-medium text-red-600 dark:text-red-400'}
+									>
+										{formatPrice(margin.amount)} ({margin.percent.toFixed(1)} %)
+									</span>
+								</p>
+							{/if}
+						</div>
+
+						<div class="shrink-0 text-right">
+							<p class="font-semibold text-gray-900 tabular-nums dark:text-white">
+								{formatPrice(Number(l.totalTtc))}
+							</p>
+							<p class="mt-0.5 text-xs text-gray-500 tabular-nums">
+								{formatPrice(Number(l.totalHt))} HT
+							</p>
+						</div>
+					</li>
+				{/each}
+			</ul>
+
+			<!-- Totaux : rattachés aux articles, pas isolés dans une carte à part. -->
+			<dl class="mt-4 space-y-1.5 border-t border-gray-200 pt-4 text-sm dark:border-gray-700">
+				<div class="flex justify-between">
+					<dt class="text-gray-500">Sous-total HT</dt>
+					<dd class="text-gray-900 tabular-nums dark:text-white">
+						{formatPrice(Number(o.totalHt) - Number(o.shippingFee))}
+					</dd>
+				</div>
+				<div class="flex justify-between">
+					<dt class="text-gray-500">Livraison HT</dt>
+					<dd class="text-gray-900 tabular-nums dark:text-white">
+						{formatPrice(Number(o.shippingFee))}
+					</dd>
+				</div>
+				{#if Number(o.additionalShippingFee) > 0}
+					<div class="flex justify-between">
+						<dt class="text-gray-500">
+							Supplément transport
+							{#if o.additionalFeeReason}<span class="text-xs">— {o.additionalFeeReason}</span>{/if}
+						</dt>
+						<dd class="text-gray-900 tabular-nums dark:text-white">
+							{formatPrice(Number(o.additionalShippingFee))}
+						</dd>
+					</div>
+				{/if}
+				{#if Number(o.discountAmount) > 0}
+					<div class="flex justify-between text-green-600 dark:text-green-400">
+						<dt>Remise</dt>
+						<dd class="tabular-nums">−{formatPrice(Number(o.discountAmount))}</dd>
+					</div>
+				{/if}
+				<div class="flex justify-between">
+					<dt class="text-gray-500">TVA</dt>
+					<dd class="text-gray-900 tabular-nums dark:text-white">
+						{formatPrice(Number(o.totalTva))}
+					</dd>
+				</div>
+				<div
+					class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold dark:border-gray-700"
+				>
+					<dt class="text-gray-900 dark:text-white">Total TTC</dt>
+					<dd class="text-gray-900 tabular-nums dark:text-white">
+						{formatPrice(Number(o.totalTtc))}
+					</dd>
+				</div>
+			</dl>
+		</Card>
 	</div>
 
 	<!-- ================= Colonne latérale ================= -->
@@ -760,6 +832,14 @@
 				>
 					{o.customer.email}
 				</a>
+				{#if o.customer.phone || shipping?.phone}
+					<a
+						href="tel:{(o.customer.phone || shipping?.phone || '').replace(/\s/g, '')}"
+						class="block text-sm text-primary-700 hover:underline dark:text-primary-400"
+					>
+						{o.customer.phone || shipping?.phone}
+					</a>
+				{/if}
 				<dl class="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm dark:border-gray-800">
 					<div class="flex justify-between gap-4">
 						<dt class="text-gray-500">Compte créé le</dt>
@@ -788,13 +868,6 @@
 			total={data.messages.total}
 			listHref="/admin/customer-service?queue=all&order={o.id}"
 			newHref="/admin/customer-service/new?order={o.id}"
-		/>
-
-		<!-- Note interne : une seule par commande, enregistrée à la saisie. -->
-		<AutosaveNote
-			value={o.privateNote}
-			action="?/saveNote"
-			placeholder="Informations utiles à l'équipe sur cette commande…"
 		/>
 
 		<!-- Adresses -->

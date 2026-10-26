@@ -7,6 +7,7 @@ import {
 	boolean,
 	numeric,
 	timestamp,
+	date,
 	jsonb,
 	index,
 	uniqueIndex
@@ -185,6 +186,15 @@ export const order = pgTable(
 		/** Commande passée avec la grille de repli : transporteur à arbitrer (R20). */
 		usedFallbackShipping: boolean('used_fallback_shipping').notNull().default(false),
 
+		/**
+		 * Délai d'expédition annoncé au client quand il a passé commande (12.3) :
+		 * le message retenu, celui de l'article le plus long à préparer, et la
+		 * fenêtre de dates estimée. Figé : un réglage changé ensuite n'y touche pas.
+		 */
+		shippingDelay: text('shipping_delay'),
+		shippingEstimateFrom: date('shipping_estimate_from', { mode: 'string' }),
+		shippingEstimateTo: date('shipping_estimate_to', { mode: 'string' }),
+
 		// Paiement
 		paymentProvider: text('payment_provider'),
 		paymentReference: text('payment_reference'),
@@ -233,6 +243,9 @@ export const orderLine = pgTable(
 		quantity: integer('quantity').notNull().default(1),
 		totalHt: numeric('total_ht', { precision: 12, scale: 2 }).notNull(),
 		totalTtc: numeric('total_ttc', { precision: 12, scale: 2 }).notNull(),
+
+		/** Numéro(s) de série de la machine livrée, saisi(s) à la préparation. */
+		serialNumber: text('serial_number'),
 
 		legacyPsId: integer('legacy_ps_id'),
 

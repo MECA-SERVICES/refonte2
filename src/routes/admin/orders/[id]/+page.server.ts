@@ -5,6 +5,7 @@ import {
 	getOrderState,
 	listOrderStates,
 	changeOrderState,
+	setOrderLineSerial,
 	updateOrderPrivateNote
 } from '$lib/server/orders';
 import { shipOrder, FulfillmentError } from '$lib/server/fulfillment';
@@ -91,6 +92,24 @@ export const actions: Actions = {
 
 		await updateOrderPrivateNote(id, note.trim() || null);
 		return { noteSaved: true };
+	},
+
+	/** Numéro de série d'une machine vendue (13.3). */
+	setSerial: async ({ request, params }) => {
+		const id = Number(params.id);
+		if (!Number.isInteger(id)) throw error(404, 'Commande introuvable');
+
+		const form = await request.formData();
+		const lineId = Number(form.get('lineId'));
+		if (!Number.isInteger(lineId)) return fail(400, { message: 'Ligne introuvable.' });
+
+		const saved = await setOrderLineSerial(
+			id,
+			lineId,
+			form.get('serialNumber')?.toString() ?? null
+		);
+		if (!saved) return fail(400, { message: 'Ligne introuvable.' });
+		return { serialSaved: true };
 	},
 
 	/** Crée le colis chez Sendcloud et enregistre le suivi (R12, R13). */

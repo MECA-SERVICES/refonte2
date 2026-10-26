@@ -63,6 +63,10 @@ export const supportCategory = pgTable(
 		 * les conversations qui la portent.
 		 */
 		isActive: boolean('is_active').notNull().default(true),
+		/** Membre de l'équipe à qui s'assignent les nouvelles demandes (13.9). */
+		defaultAssigneeUserId: text('default_assignee_user_id').references(() => user.id, {
+			onDelete: 'set null'
+		}),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},

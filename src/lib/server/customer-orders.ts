@@ -128,7 +128,10 @@ export async function listCustomerOrders(
 			isShipped: orderState.isShipped,
 			isFinal: orderState.isFinal,
 			trackingNumber: order.trackingNumber,
-			trackingUrl: order.trackingUrl
+			trackingUrl: order.trackingUrl,
+			shippingDelay: order.shippingDelay,
+			shippingEstimateFrom: order.shippingEstimateFrom,
+			shippingEstimateTo: order.shippingEstimateTo
 		})
 		.from(order)
 		.innerJoin(orderState, eq(order.stateId, orderState.id))
@@ -256,6 +259,9 @@ export async function getCustomerOrder(customerId: number, orderId: number) {
 			paidAt: order.paidAt,
 			deliveredAt: order.deliveredAt,
 			invoiceNote: order.invoiceNote,
+			shippingDelay: order.shippingDelay,
+			shippingEstimateFrom: order.shippingEstimateFrom,
+			shippingEstimateTo: order.shippingEstimateTo,
 			stateLabel: orderState.label,
 			stateColor: orderState.color,
 			isShipped: orderState.isShipped,
@@ -297,3 +303,25 @@ export async function getCustomerOrder(customerId: number, orderId: number) {
 }
 
 export { PER_PAGE as ORDERS_PER_PAGE };
+
+/**
+ * Factures du client, de la plus récente à la plus ancienne (demande client
+ * 12.8). Seules les factures émises : une commande sans facture n'y figure pas.
+ */
+export function listCustomerInvoices(customerId: number) {
+	return db
+		.select({
+			id: orderInvoice.id,
+			number: orderInvoice.number,
+			issuedAt: sql<Date>`coalesce(${orderInvoice.issuedAt}, ${orderInvoice.createdAt})`.mapWith(
+				orderInvoice.createdAt
+			),
+			totalTtc: orderInvoice.totalTtc,
+			orderId: order.id,
+			orderReference: order.reference
+		})
+		.from(orderInvoice)
+		.innerJoin(order, eq(order.id, orderInvoice.orderId))
+		.where(eq(order.customerId, customerId))
+		.orderBy(desc(sql`coalesce(${orderInvoice.issuedAt}, ${orderInvoice.createdAt})`));
+}

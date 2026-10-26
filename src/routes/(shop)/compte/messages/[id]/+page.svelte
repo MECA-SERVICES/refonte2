@@ -1,4 +1,5 @@
 <script lang="ts">
+	import MessageAvatar from '$lib/components/MessageAvatar.svelte';
 	import { enhance } from '$app/forms';
 	import { Textarea } from 'flowbite-svelte';
 	import { PaperClipOutline } from 'flowbite-svelte-icons';
@@ -73,7 +74,8 @@
 <!-- ================= Fil ================= -->
 <ol class="mt-6 space-y-4">
 	{#each t.messages as m (m.id)}
-		<li class="flex {m.fromTeam ? 'justify-start' : 'justify-end'}">
+		<li class="flex items-end gap-2.5 {m.fromTeam ? 'justify-start' : 'flex-row-reverse'}">
+			<MessageAvatar team={m.fromTeam} customerId={t.customerId} />
 			<div
 				class="max-w-[85%] rounded-[14px] border-[1.5px] px-4 py-3 text-[14.5px] {m.fromTeam
 					? 'border-primary-200 bg-primary-50'

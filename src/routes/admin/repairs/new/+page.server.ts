@@ -69,7 +69,7 @@ export const actions: Actions = {
 		};
 	},
 
-	create: async ({ request }) => {
+	create: async ({ request, locals }) => {
 		const form = await request.formData();
 		const customerId = Number(form.get('customerId'));
 
@@ -86,24 +86,27 @@ export const actions: Actions = {
 		const str = (key: string) => form.get(key)?.toString() ?? null;
 
 		try {
-			const created = await createRepairOrder({
-				customerId,
-				orderType: form.get('orderType') === 'warranty' ? 'warranty' : 'paid',
-				warrantyReference: str('warrantyReference'),
-				machineType: str('machineType'),
-				machineBrand: str('machineBrand'),
-				machineModel: str('machineModel'),
-				serialNumber: str('serialNumber'),
-				machineCondition: str('machineCondition'),
-				engineModel: str('engineModel'),
-				engineSerialNumber: str('engineSerialNumber'),
-				workshopLabel: str('workshopLabel'),
-				workDescription: str('workDescription'),
-				diagnosticFee: num('diagnosticFee'),
-				laborAmount: num('laborAmount'),
-				notes: str('notes'),
-				privateNote: str('privateNote')
-			});
+			const created = await createRepairOrder(
+				{
+					customerId,
+					orderType: form.get('orderType') === 'warranty' ? 'warranty' : 'paid',
+					warrantyReference: str('warrantyReference'),
+					machineType: str('machineType'),
+					machineBrand: str('machineBrand'),
+					machineModel: str('machineModel'),
+					serialNumber: str('serialNumber'),
+					machineCondition: str('machineCondition'),
+					engineModel: str('engineModel'),
+					engineSerialNumber: str('engineSerialNumber'),
+					workshopLabel: str('workshopLabel'),
+					workDescription: str('workDescription'),
+					diagnosticFee: num('diagnosticFee'),
+					laborAmount: num('laborAmount'),
+					notes: str('notes'),
+					privateNote: str('privateNote')
+				},
+				locals.user?.email ?? null
+			);
 
 			redirect(303, `/admin/repairs/${created.id}`);
 		} catch (err) {

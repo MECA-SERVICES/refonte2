@@ -7,7 +7,7 @@
 			"items": [
 				{
 					"id": "dashboard",
-					"label": "Tableau de bord",
+					"label": "Tableau de bord & statistiques",
 					"icon": "chart",
 					"href": "/admin"
 				}
@@ -43,6 +43,11 @@
 							"id": "products",
 							"label": "Produits",
 							"href": "/admin/products"
+						},
+						{
+							"id": "purchase-prices",
+							"label": "Prix d'achat manquants",
+							"href": "/admin/purchase-prices"
 						},
 						{
 							"id": "categories",
@@ -120,12 +125,6 @@
 					"label": "Remises en banque",
 					"icon": "credit-card",
 					"href": "/admin/remittances"
-				},
-				{
-					"id": "stats",
-					"label": "Statistiques",
-					"icon": "chart-line",
-					"href": "/admin/stats"
 				}
 			]
 		},
@@ -160,6 +159,11 @@
 					"label": "Apparence",
 					"icon": "palette",
 					"items": [
+						{
+							"id": "homepage",
+							"label": "Page d'accueil",
+							"href": "/admin/homepage"
+						},
 						{
 							"id": "theme",
 							"label": "Thème & Logo",

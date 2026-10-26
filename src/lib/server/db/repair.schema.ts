@@ -186,6 +186,28 @@ export const repairOrderImage = pgTable(
 	(t) => [index('repair_order_image_order_idx').on(t.repairOrderId)]
 );
 
+/**
+ * Historique des états d'un ordre (demande client 13.8) : un passage par
+ * ligne, avec son auteur. Les horodatages de l'ordre (`startedAt`…) ne gardent
+ * que le dernier passage ; l'historique garde aussi les suspensions et reprises.
+ */
+export const repairOrderHistory = pgTable(
+	'repair_order_history',
+	{
+		id: serial('id').primaryKey(),
+		repairOrderId: integer('repair_order_id')
+			.notNull()
+			.references(() => repairOrder.id, { onDelete: 'cascade' }),
+		status: text('status').$type<RepairStatus>().notNull(),
+		/** Précision du passage : la pièce attendue d'une suspension. */
+		note: text('note'),
+		/** Adresse de l'utilisateur back-office à l'origine du passage. */
+		changedBy: text('changed_by'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [index('repair_order_history_order_idx').on(t.repairOrderId)]
+);
+
 export const repairOrderRelations = relations(repairOrder, ({ one, many }) => ({
 	customer: one(customer, {
 		fields: [repairOrder.customerId],

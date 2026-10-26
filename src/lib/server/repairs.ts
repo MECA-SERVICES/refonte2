@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
 import {
 	repairOrder,
+	repairOrderHistory,
 	repairOrderImage,
 	repairOrderPart,
 	type RepairOrderType,
@@ -255,7 +256,13 @@ export async function getRepairOrder(id: number) {
 			.orderBy(repairOrderImage.position, repairOrderImage.id)
 	]);
 
-	return { ...head.order, customer: head, parts, images };
+	const history = await db
+		.select()
+		.from(repairOrderHistory)
+		.where(eq(repairOrderHistory.repairOrderId, id))
+		.orderBy(repairOrderHistory.createdAt, repairOrderHistory.id);
+
+	return { ...head.order, customer: head, parts, images, history };
 }
 
 // ===========================================================================
@@ -287,7 +294,7 @@ export type RepairOrderInput = {
  * L'accord du client est recueilli hors ligne : l'ordre naît directement à
  * l'état « à démarrer ».
  */
-export async function createRepairOrder(input: RepairOrderInput) {
+export async function createRepairOrder(input: RepairOrderInput, actor: string | null = null) {
 	// R14 : la garantie exige une référence de dossier.
 	if (input.orderType === 'warranty' && !input.warrantyReference?.trim()) {
 		throw new RepairError(
@@ -319,6 +326,9 @@ export async function createRepairOrder(input: RepairOrderInput) {
 		})
 		.returning();
 
+	await db
+		.insert(repairOrderHistory)
+		.values({ repairOrderId: created.id, status: 'to_do', changedBy: actor });
 	await recalculateTotals(created.id);
 	return created;
 }
@@ -545,7 +555,8 @@ export async function removeRepairPart(
 export async function changeRepairStatus(
 	id: number,
 	to: RepairStatus,
-	options: { onHoldPartLabel?: string | null; onHoldExpectedAt?: Date | null } = {}
+	options: { onHoldPartLabel?: string | null; onHoldExpectedAt?: Date | null } = {},
+	actor: string | null = null
 ) {
 	const [current] = await db.select().from(repairOrder).where(eq(repairOrder.id, id)).limit(1);
 	if (!current) throw new RepairError('Ordre introuvable.');
@@ -587,6 +598,13 @@ export async function changeRepairStatus(
 			...(to === 'in_progress' ? { onHoldPartLabel: null, onHoldExpectedAt: null } : {})
 		})
 		.where(eq(repairOrder.id, id));
+
+	await db.insert(repairOrderHistory).values({
+		repairOrderId: id,
+		status: to,
+		note: to === 'on_hold' ? `Pièce attendue : ${options.onHoldPartLabel?.trim()}` : null,
+		changedBy: actor
+	});
 
 	// R21 : la machine rejoint le parc du client à la restitution.
 	if (to === 'delivered') await addMachineToFleet(id);

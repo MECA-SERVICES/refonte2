@@ -1,4 +1,9 @@
 <script lang="ts">
+	import {
+		cartShippingEstimate,
+		describeShippingWindow,
+		resolveDeliveryTime
+	} from '$lib/delivery-time';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -17,6 +22,9 @@
 
 	const cart = $derived(data.cart);
 	const lines = $derived(cart.lines);
+
+	/** Délai du panier : celui de l'article le plus long à préparer (12.2). */
+	const estimate = $derived(cartShippingEstimate(lines));
 
 	type Line = (typeof lines)[number];
 
@@ -205,6 +213,11 @@
 						<p class="mt-0.5 text-[12.5px] text-shop-faint">
 							Réf. {line.reference} · {line.stock > 0 ? `En stock (${line.stock})` : 'Sur commande'}
 						</p>
+						{#if resolveDeliveryTime(line, line.stock > 0)}
+							<p class="mt-0.5 text-[13px] font-semibold text-shop-ink-soft">
+								{resolveDeliveryTime(line, line.stock > 0)}
+							</p>
+						{/if}
 
 						{#if isBlocking(line)}
 							<p
@@ -277,7 +290,6 @@
 				<a href="/recherche" class="font-semibold text-shop-blue hover:underline">
 					← Continuer mes achats
 				</a>
-				<span class="text-shop-muted">Préparation atelier : 24 h ouvrées</span>
 			</div>
 		</Panel>
 
@@ -301,8 +313,20 @@
 					<SummaryRow label="Dont éco-participation">{formatPrice(shownEcotax)}</SummaryRow>
 				{/if}
 				<SummaryRow label="Livraison" muted>Calculée à l'étape suivante</SummaryRow>
-				<SummaryRow label="Préparation">24 h ouvrées</SummaryRow>
 			</dl>
+
+			<!--
+				Délai d'expédition en gros (demande 12.2) : le colis part quand tout
+				est prêt, c'est donc le délai le plus long des articles qui compte.
+			-->
+			<div class="mt-3 rounded-[14px] border-2 border-shop-green/40 bg-shop-green/5 px-4 py-3">
+				<p class="font-display text-[16px] font-extrabold text-shop-ink">{estimate.message}</p>
+				{#if estimate.earliest && estimate.latest}
+					<p class="mt-0.5 text-sm text-shop-ink">
+						Expédition estimée {describeShippingWindow(estimate.earliest, estimate.latest)}
+					</p>
+				{/if}
+			</div>
 
 			<div
 				class="mt-3 flex items-baseline justify-between gap-3 border-t-[1.5px] border-shop-border-soft pt-3.5"

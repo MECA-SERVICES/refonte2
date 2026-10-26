@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
-	import { Button, Card, Checkbox, Input, Label } from 'flowbite-svelte';
+	import { Button, Card, Checkbox, Input, Label, Select } from 'flowbite-svelte';
 	import { TrashBinOutline } from 'flowbite-svelte-icons';
 	import { ConfirmDialog, PageHeader } from '$lib/components/admin';
 	import type { PageProps } from './$types';
@@ -57,6 +57,22 @@
 		<div>
 			<Label for="position" class="mb-1.5">Ordre</Label>
 			<Input id="position" name="position" type="number" value={c.position} />
+		</div>
+		<div>
+			<Label for="defaultAssigneeUserId" class="mb-1.5">Responsable</Label>
+			<Select
+				id="defaultAssigneeUserId"
+				name="defaultAssigneeUserId"
+				value={c.defaultAssigneeUserId ?? ''}
+				items={[
+					{ value: '', name: 'Personne (à assigner à la main)' },
+					...data.staff.map((u) => ({ value: u.id, name: u.name }))
+				]}
+				placeholder=""
+			/>
+			<p class="mt-1 text-xs text-gray-500">
+				Les nouvelles demandes des clients dans cette catégorie lui sont assignées d'office.
+			</p>
 		</div>
 		<Checkbox name="isActive" checked={c.isActive}>Active</Checkbox>
 		<p class="text-xs text-gray-500">

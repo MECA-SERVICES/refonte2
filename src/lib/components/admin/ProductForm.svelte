@@ -14,6 +14,7 @@
 		Tabs,
 		TabItem
 	} from 'flowbite-svelte';
+	import RichTextField from './RichTextField.svelte';
 	import {
 		FileLinesOutline,
 		DollarOutline,
@@ -86,8 +87,13 @@
 	let purchasePrice = $state(untrack(() => toMoneyInput(product?.purchasePrice)));
 	let isActive = $state(untrack(() => product?.isActive ?? true));
 	let availableForOrder = $state(untrack(() => product?.availableForOrder ?? true));
-	// Lié pour alimenter le compteur de caractères du résumé.
-	let shortDescription = $state(untrack(() => product?.shortDescription ?? ''));
+	/**
+	 * Longueur du résumé, en texte sans balises : alimente le compteur. Mise à
+	 * jour par l'éditeur à chaque frappe.
+	 */
+	let summaryLength = $state(
+		untrack(() => (product?.shortDescription ?? '').replace(/<[^>]*>/g, '').length)
+	);
 	/** Sous-onglet du bloc de description : « summary » ou « full ». */
 	let descTab = $state('summary');
 	/** Régime de délai de livraison retenu (onglet « Livraison »). */
@@ -170,10 +176,18 @@
 	<div
 		class="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800"
 	>
+		<!-- Deux références à ne pas confondre (13.4) : la nôtre, et celle du
+		     fournisseur chez qui la pièce se commande. -->
 		<span class="text-gray-500 dark:text-gray-400">
-			Référence :
+			Réf. boutique :
 			<span class="font-medium text-gray-900 dark:text-white">
 				{product?.reference || '—'}
+			</span>
+		</span>
+		<span class="text-gray-500 dark:text-gray-400">
+			Réf. fournisseur :
+			<span class="font-medium text-gray-900 dark:text-white">
+				{product?.supplierReference || '—'}
 			</span>
 		</span>
 		<span class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
@@ -316,13 +330,11 @@
 
 					<div class="p-6">
 						<div class={descTab === 'summary' ? '' : 'hidden'}>
-							<Textarea
-								class="w-full"
-								id="shortDescription"
+							<RichTextField
 								name="shortDescription"
-								rows={6}
-								bind:value={shortDescription}
+								value={product?.shortDescription}
 								placeholder="Quelques lignes reprises en haut de la fiche produit."
+								onlength={(n) => (summaryLength = n)}
 							/>
 							<div class="mt-1 flex flex-wrap items-baseline justify-between gap-2">
 								<p class="text-xs text-gray-500 dark:text-gray-400">
@@ -332,18 +344,15 @@
 								<!-- Compteur façon PrestaShop : le résumé alimente les listes
 								     et les balises meta, sa longueur se surveille. -->
 								<p class="text-xs text-gray-400 dark:text-gray-500">
-									{shortDescription.length} caractère{shortDescription.length > 1 ? 's' : ''}
+									{summaryLength} caractère{summaryLength > 1 ? 's' : ''}
 								</p>
 							</div>
 						</div>
 
 						<div class={descTab === 'full' ? '' : 'hidden'}>
-							<Textarea
-								class="w-full"
-								id="description"
+							<RichTextField
 								name="description"
-								rows={12}
-								value={product?.description ?? ''}
+								value={product?.description}
 								placeholder="Description complète, affichée dans l'onglet « Description » de la fiche."
 							/>
 						</div>
@@ -360,12 +369,6 @@
 						items={[{ value: '', name: 'Aucune' }, ...brandOptions]}
 					/>
 				</Card>
-
-				<!-- Produits associés : sous la marque chez PrestaShop, pas dans
-				     « Options ». -->
-				{#if relationsPanel}
-					{@render relationsPanel()}
-				{/if}
 			</TabPanel>
 
 			<!-- ===== Quantités ===== -->
@@ -474,6 +477,12 @@
 
 				{#if variantsPanel}
 					{@render variantsPanel()}
+				{/if}
+
+				<!-- Produits associés : à côté des déclinaisons, dans un bloc à part
+				     (demande client 13.4). -->
+				{#if relationsPanel}
+					{@render relationsPanel()}
 				{/if}
 			</TabPanel>
 
@@ -800,7 +809,10 @@
 							<Input id="ean13" name="ean13" value={product?.ean13 ?? ''} maxlength={13} />
 						</div>
 						<div>
-							<Label for="supplierReference" class="mb-2">Référence fournisseur</Label>
+							<Label for="supplierReference" class="mb-2">
+								Référence fournisseur
+								<span class="font-normal text-gray-500">(celle du catalogue du fournisseur)</span>
+							</Label>
 							<Input
 								id="supplierReference"
 								name="supplierReference"
@@ -837,8 +849,20 @@
 			-->
 			<div class={selected === 'general' ? 'space-y-4' : 'hidden'} inert={selected !== 'general'}>
 				<Card class="max-w-none p-4">
-					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Référence</h3>
+					<h3 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
+						Référence boutique
+					</h3>
+					<p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+						Celle du site, vue par les clients.
+					</p>
 					<Input id="reference" name="reference" required value={product?.reference ?? ''} />
+					<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+						Réf. fournisseur :
+						<span class="font-medium text-gray-900 dark:text-white">
+							{product?.supplierReference || '—'}
+						</span>
+						<span class="block">Modifiable dans l'onglet « Options ».</span>
+					</p>
 				</Card>
 
 				<Card class="max-w-none p-4">

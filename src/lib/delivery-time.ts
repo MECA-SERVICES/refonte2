@@ -72,3 +72,93 @@ export function resolveDeliveryTime(product: DeliveryTimeFields, inStock: boolea
 
 	return inStock ? DEFAULT_DELIVERY_TIME.inStock : DEFAULT_DELIVERY_TIME.outOfStock;
 }
+
+/** Ajoute `days` jours ouvrés (hors samedi et dimanche) à une date. */
+function addBusinessDays(from: Date, days: number): Date {
+	const d = new Date(from);
+	let left = days;
+	while (left > 0) {
+		d.setDate(d.getDate() + 1);
+		const day = d.getDay();
+		if (day !== 0 && day !== 6) left -= 1;
+	}
+	return d;
+}
+
+/**
+ * Fenêtre d'expédition estimée à partir d'un message de délai (demande client
+ * 9.4) : « sous 24 à 48 h », « 5 à 10 jours ouvrés », « sous 3 jours »…
+ *
+ * Les heures sont arrondies au jour ouvré supérieur (48 h = 2 jours). Les
+ * jours fériés ne sont pas décomptés : c'est une estimation, affichée comme
+ * telle. Un message sans durée lisible (« Nous consulter ») ne donne rien.
+ */
+export function estimateShippingWindow(
+	message: string | null | undefined,
+	from: Date = new Date()
+): { earliest: Date; latest: Date } | null {
+	if (!message) return null;
+	const text = message.toLowerCase();
+	const match = text.match(/(\d+)\s*(?:(?:à|a|-)\s*(\d+)\s*)?(h\b|heures?|jours?|j\b)/);
+	if (!match) return null;
+
+	const min = Number(match[1]);
+	const max = Number(match[2] ?? match[1]);
+	const toDays = (n: number) => (match[3].startsWith('h') ? Math.max(1, Math.ceil(n / 24)) : n);
+
+	return {
+		earliest: addBusinessDays(from, toDays(min)),
+		latest: addBusinessDays(from, toDays(max))
+	};
+}
+
+export type ShippingEstimate = {
+	/** Message de délai retenu, tel qu'affiché sur la fiche produit. */
+	message: string;
+	earliest: Date | null;
+	latest: Date | null;
+};
+
+/**
+ * Délai d'expédition d'un panier ou d'une commande (demande client 12.2) :
+ * le colis part quand tout est prêt, c'est donc le délai le plus long qui
+ * compte. Sans délai lisible sur aucun article, celui de la boutique.
+ */
+export function cartShippingEstimate(
+	lines: (DeliveryTimeFields & { stock: number })[],
+	from: Date = new Date()
+): ShippingEstimate {
+	let best: ShippingEstimate | null = null;
+	for (const line of lines) {
+		const message = resolveDeliveryTime(line, line.stock > 0);
+		const window = estimateShippingWindow(message, from);
+		if (!message || !window) continue;
+		if (!best?.latest || window.latest > best.latest) best = { message, ...window };
+	}
+	if (best) return best;
+	const fallback = estimateShippingWindow(DEFAULT_DELIVERY_TIME.inStock, from);
+	return {
+		message: DEFAULT_DELIVERY_TIME.inStock,
+		earliest: fallback?.earliest ?? null,
+		latest: fallback?.latest ?? null
+	};
+}
+
+const longDay = new Intl.DateTimeFormat('fr-FR', {
+	weekday: 'long',
+	day: 'numeric',
+	month: 'long'
+});
+
+/** Date `AAAA-MM-JJ` lue à midi, à l'abri des fuseaux horaires. */
+const asDate = (d: Date | string) => (typeof d === 'string' ? new Date(`${d}T12:00:00`) : d);
+
+/**
+ * Fenêtre d'expédition en toutes lettres : « le lundi 2 novembre », ou
+ * « entre le lundi 2 novembre et le lundi 9 novembre ».
+ */
+export function describeShippingWindow(earliest: Date | string, latest: Date | string): string {
+	const from = longDay.format(asDate(earliest));
+	const to = longDay.format(asDate(latest));
+	return from === to ? `le ${to}` : `entre le ${from} et le ${to}`;
+}

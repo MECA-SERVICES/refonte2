@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	deleteSupportCategory,
 	getSupportCategory,
+	listStaffUsers,
 	parseSupportCategoryForm,
 	updateSupportCategory
 } from '$lib/server/support';
@@ -14,9 +15,12 @@ function categoryId(raw: string) {
 }
 
 export const load: PageServerLoad = async ({ params }) => {
-	const category = await getSupportCategory(categoryId(params.id));
+	const [category, staff] = await Promise.all([
+		getSupportCategory(categoryId(params.id)),
+		listStaffUsers()
+	]);
 	if (!category) error(404, 'Catégorie introuvable');
-	return { category };
+	return { category, staff };
 };
 
 export const actions: Actions = {

@@ -7,6 +7,7 @@ import {
 	orderStateHistory,
 	cart,
 	cartItem,
+	clientMachine,
 	customer,
 	product,
 	user
@@ -221,6 +222,9 @@ export async function getOrderFull(id: number) {
 				quantity: orderLine.quantity,
 				totalHt: orderLine.totalHt,
 				totalTtc: orderLine.totalTtc,
+				serialNumber: orderLine.serialNumber,
+				/** Une machine appelle un numéro de série (13.3). */
+				productType: product.type,
 				productSlug: product.slug,
 				/** Prix d'achat courant : alimente la marge (CDC 20). */
 				purchasePrice: product.purchasePrice,
@@ -261,6 +265,32 @@ export async function getOrderFull(id: number) {
 /** Note interne de la commande (back-office uniquement). */
 export async function updateOrderPrivateNote(id: number, note: string | null) {
 	await db.update(order).set({ privateNote: note, updatedAt: new Date() }).where(eq(order.id, id));
+}
+
+/**
+ * Numéro de série d'une machine vendue (demande client 13.3).
+ *
+ * Reporté sur la machine que la livraison a proposée au parc du client, si
+ * elle attend encore le sien : le client n'a plus à le chercher sous le carter.
+ */
+export async function setOrderLineSerial(orderId: number, lineId: number, serial: string | null) {
+	const value = serial?.trim() || null;
+	const [line] = await db
+		.update(orderLine)
+		.set({ serialNumber: value })
+		.where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)))
+		.returning({ id: orderLine.id });
+	if (!line || !value) return Boolean(line);
+
+	// Un numéro déjà présent dans le parc du client n'est pas dupliqué (R17).
+	await db.execute(sql`
+		update ${clientMachine} m set serial_number = ${value}, updated_at = now()
+		where m.order_line_id = ${lineId} and m.serial_number is null
+			and not exists (
+				select 1 from ${clientMachine} o
+				where o.customer_id = m.customer_id and o.serial_number = ${value}
+			)`);
+	return true;
 }
 
 /** Change l'état d'une commande et journalise le changement. */

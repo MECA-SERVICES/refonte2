@@ -88,6 +88,8 @@
 		"vitest-browser-svelte": "^2.1.1"
 	},
 	"dependencies": {
+		"@dicebear/collection": "9.4.2",
+		"@dicebear/core": "9.4.2",
 		"@types/pdfmake": "^0.3.3",
 		"pdfmake": "^0.3.11",
 		"unicode-properties": "^1.4.1"

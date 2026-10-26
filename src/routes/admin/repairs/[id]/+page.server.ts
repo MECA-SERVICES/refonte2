@@ -136,7 +136,7 @@ export const actions: Actions = {
 	},
 
 	/** Fait avancer l'ordre dans son cycle de vie. */
-	changeStatus: async ({ request, params }) => {
+	changeStatus: async ({ request, params, locals }) => {
 		const id = idParam(params);
 		const form = await request.formData();
 		const to = form.get('status')?.toString() as RepairStatus;
@@ -148,10 +148,15 @@ export const actions: Actions = {
 		const expectedRaw = form.get('onHoldExpectedAt')?.toString().trim();
 
 		try {
-			await changeRepairStatus(id, to, {
-				onHoldPartLabel: form.get('onHoldPartLabel')?.toString() ?? null,
-				onHoldExpectedAt: expectedRaw ? new Date(expectedRaw) : null
-			});
+			await changeRepairStatus(
+				id,
+				to,
+				{
+					onHoldPartLabel: form.get('onHoldPartLabel')?.toString() ?? null,
+					onHoldExpectedAt: expectedRaw ? new Date(expectedRaw) : null
+				},
+				locals.user?.email ?? null
+			);
 			return { success: true };
 		} catch (err) {
 			if (err instanceof RepairError) return fail(400, { statusError: err.message });

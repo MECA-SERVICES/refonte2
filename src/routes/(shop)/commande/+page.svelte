@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { cartShippingEstimate, describeShippingWindow } from '$lib/delivery-time';
 	import { enhance } from '$app/forms';
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import Panel from '$lib/components/shop/Panel.svelte';
@@ -74,6 +75,8 @@
 	// Les frais de port suivent le régime des articles, au taux normal (R13).
 	const shippingTva = $derived(data.tax.regime === 'standard' ? round2(shippingFee * 0.2) : 0);
 
+	/** Délai d'expédition du panier, tel qu'il sera enregistré sur la commande. */
+	const estimate = $derived(cartShippingEstimate(data.cart.lines));
 	const totalHt = $derived(data.cart.totals.subtotalHt + shippingFee);
 	const totalTva = $derived(data.cart.totals.tax + shippingTva);
 
@@ -147,7 +150,7 @@
 								onchange={() => (picked = { ...picked, shipping: item.id })}
 								class="mt-1 accent-shop-blue"
 							/>
-							<span class="text-[14.5px] leading-relaxed text-shop-ink">
+							<span class="text-[16px] leading-relaxed text-shop-ink">
 								{#if item.label}<span class="font-bold">{item.label}</span><br />{/if}
 								{item.firstName}
 								{item.lastName}<br />
@@ -158,7 +161,7 @@
 					{/each}
 				</div>
 
-				<label class="mt-4 flex items-center gap-2.5 text-sm text-shop-ink">
+				<label class="mt-4 flex items-center gap-2.5 text-[15px] text-shop-ink">
 					<input type="checkbox" bind:checked={billingSameAsShipping} class="accent-shop-blue" />
 					Facturer à cette même adresse
 				</label>
@@ -166,12 +169,12 @@
 				{#if !billingSameAsShipping}
 					<div class="mt-3 space-y-2.5 border-t-[1.5px] border-shop-border-soft pt-4">
 						<p
-							class="font-display text-[13px] font-extrabold tracking-wide text-shop-muted uppercase"
+							class="font-display text-[14.5px] font-extrabold tracking-wide text-shop-muted uppercase"
 						>
 							Adresse de facturation
 						</p>
 						{#each data.addresses as item (item.id)}
-							<label class="flex cursor-pointer gap-3 text-[14px] text-shop-ink">
+							<label class="flex cursor-pointer gap-3 text-[15.5px] text-shop-ink">
 								<input
 									type="radio"
 									name="billingChoice"
@@ -190,7 +193,7 @@
 
 				<a
 					href="/compte/adresses"
-					class="mt-4 inline-block text-[13.5px] font-semibold text-shop-blue hover:underline"
+					class="mt-4 inline-block text-[15px] font-semibold text-shop-blue hover:underline"
 				>
 					Gérer mes adresses →
 				</a>
@@ -202,7 +205,7 @@
 
 				{#if data.quote.restriction}
 					<p
-						class="mt-3 rounded-[10px] border-[1.5px] border-shop-blue bg-primary-50 px-3.5 py-2.5 text-[13.5px] text-shop-ink"
+						class="mt-3 rounded-[10px] border-[1.5px] border-shop-blue bg-primary-50 px-3.5 py-2.5 text-[15px] text-shop-ink"
 					>
 						{data.quote.restriction}
 					</p>
@@ -210,13 +213,13 @@
 
 				{#if data.quote.usedFallback}
 					<p
-						class="mt-3 rounded-[10px] bg-shop-promo px-3.5 py-2.5 text-[13.5px] text-shop-orange-deep"
+						class="mt-3 rounded-[10px] bg-shop-promo px-3.5 py-2.5 text-[15px] text-shop-orange-deep"
 					>
 						Le transporteur sera confirmé par notre équipe à la préparation de votre colis.
 					</p>
 				{/if}
 
-				<p class="mt-3 text-[13px] text-shop-muted">
+				<p class="mt-3 text-[14.5px] text-shop-muted">
 					Poids estimé du colis : {data.quote.weightKg} kg
 				</p>
 
@@ -226,7 +229,7 @@
 						{#if group.length > 0}
 							<div>
 								<p
-									class="mb-2 font-display text-[12px] font-extrabold tracking-[0.1em] text-shop-muted uppercase"
+									class="mb-2 font-display text-[13.5px] font-extrabold tracking-[0.1em] text-shop-muted uppercase"
 								>
 									{MODE_LABELS[mode]}
 								</p>
@@ -262,21 +265,21 @@
 											{/if}
 
 											<span class="min-w-0 flex-1">
-												<span class="block text-[14.5px] font-bold text-shop-ink">
+												<span class="block text-[16px] font-bold text-shop-ink">
 													{item.carrierName}
 												</span>
-												<span class="block text-[13px] text-shop-muted">
+												<span class="block text-[14.5px] text-shop-muted">
 													{MODE_HINTS[item.mode]}
 												</span>
 											</span>
 
 											<span class="shrink-0 font-display font-bold text-shop-ink">
 												{#if item.priceHt === null}
-													<span class="text-[13px] font-normal text-shop-muted">
+													<span class="text-[14.5px] font-normal text-shop-muted">
 														Tarif à confirmer
 													</span>
 												{:else}
-													{formatPrice(item.priceHt)} <span class="text-[12px]">HT</span>
+													{formatPrice(item.priceHt)} <span class="text-[13.5px]">HT</span>
 												{/if}
 											</span>
 										</label>
@@ -291,19 +294,19 @@
 				{#if option?.requiresServicePoint}
 					<div class="mt-4 border-t-[1.5px] border-shop-border-soft pt-4">
 						<p
-							class="font-display text-[13px] font-extrabold tracking-wide text-shop-muted uppercase"
+							class="font-display text-[14.5px] font-extrabold tracking-wide text-shop-muted uppercase"
 						>
 							Point relais
 						</p>
 
 						{#if relay}
 							<div class="mt-3 rounded-[14px] border-[1.5px] border-shop-blue bg-primary-50 p-3.5">
-								<p class="text-[14.5px] font-bold text-shop-ink">{relay.name}</p>
-								<p class="text-[13px] text-shop-muted">{relay.address}</p>
+								<p class="text-[16px] font-bold text-shop-ink">{relay.name}</p>
+								<p class="text-[14.5px] text-shop-muted">{relay.address}</p>
 								<button
 									type="button"
 									onclick={() => (relay = null)}
-									class="mt-2 text-[13px] font-semibold text-shop-blue hover:underline"
+									class="mt-2 text-[14.5px] font-semibold text-shop-blue hover:underline"
 								>
 									Choisir un autre point
 								</button>
@@ -351,32 +354,32 @@
 											{/if}
 											<span class="min-w-0 flex-1">
 												<span class="flex flex-wrap items-center gap-2">
-													<span class="truncate text-[14px] font-bold text-shop-ink">
+													<span class="truncate text-[15.5px] font-bold text-shop-ink">
 														{point.name}
 													</span>
 													{#if point.shopType === 'locker'}
 														<span
-															class="rounded-full bg-shop-border-soft px-2 py-0.5 text-[10.5px] font-bold tracking-wide text-shop-ink uppercase"
+															class="rounded-full bg-shop-border-soft px-2 py-0.5 text-[12px] font-bold tracking-wide text-shop-ink uppercase"
 														>
 															Consigne
 														</span>
 													{/if}
 												</span>
-												<span class="block text-[12.5px] text-shop-muted">
+												<span class="block text-[14px] text-shop-muted">
 													{point.street}
 													{point.houseNumber}, {point.postalCode}
 													{point.city}
 												</span>
 												{#if point.todaySlots.length > 0}
-													<span class="block text-[12px] text-shop-muted">
+													<span class="block text-[13.5px] text-shop-muted">
 														Aujourd'hui : {point.todaySlots.join(' · ')}
 													</span>
 												{:else}
-													<span class="block text-[12px] text-shop-red">Fermé aujourd'hui</span>
+													<span class="block text-[13.5px] text-shop-red">Fermé aujourd'hui</span>
 												{/if}
 											</span>
 											{#if point.distance}
-												<span class="shrink-0 text-[12.5px] text-shop-muted tabular-nums">
+												<span class="shrink-0 text-[14px] text-shop-muted tabular-nums">
 													{Math.round(point.distance)} m
 												</span>
 											{/if}
@@ -412,8 +415,8 @@
 								class="mt-1 shrink-0"
 							/>
 							<span>
-								<span class="block text-[14.5px] font-bold text-shop-ink">Carte bancaire</span>
-								<span class="mt-1 block text-[13.5px] leading-relaxed text-shop-ink-soft">
+								<span class="block text-[16px] font-bold text-shop-ink">Carte bancaire</span>
+								<span class="mt-1 block text-[15px] leading-relaxed text-shop-ink-soft">
 									Paiement sécurisé par notre banque. Votre commande part en préparation dès
 									l'acceptation.
 								</span>
@@ -435,8 +438,8 @@
 								class="mt-1 shrink-0"
 							/>
 							<span>
-								<span class="block text-[14.5px] font-bold text-shop-ink">Virement bancaire</span>
-								<span class="mt-1 block text-[13.5px] leading-relaxed text-shop-ink-soft">
+								<span class="block text-[16px] font-bold text-shop-ink">Virement bancaire</span>
+								<span class="mt-1 block text-[15px] leading-relaxed text-shop-ink-soft">
 									Nos coordonnées bancaires vous seront communiquées après validation. Votre
 									commande est préparée dès réception du règlement.
 								</span>
@@ -445,8 +448,8 @@
 					</div>
 				{:else}
 					<div class="mt-3 rounded-[14px] border-[1.5px] border-shop-border bg-shop-subtle p-4">
-						<p class="text-[14.5px] font-bold text-shop-ink">Virement bancaire</p>
-						<p class="mt-1 text-[13.5px] leading-relaxed text-shop-ink-soft">
+						<p class="text-[16px] font-bold text-shop-ink">Virement bancaire</p>
+						<p class="mt-1 text-[15px] leading-relaxed text-shop-ink-soft">
 							Nos coordonnées bancaires vous seront communiquées après validation. Votre commande
 							est préparée dès réception du règlement.
 						</p>
@@ -461,8 +464,15 @@
 
 			<ul class="mt-4 space-y-2 border-b-[1.5px] border-shop-border-soft pb-4">
 				{#each data.cart.lines as line (line.id)}
-					<li class="flex justify-between gap-3 text-[13.5px]">
-						<span class="min-w-0 text-shop-ink-soft">
+					<li class="flex items-center justify-between gap-3 text-[15px]">
+						<span
+							class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-shop-subtle"
+						>
+							{#if line.imageUrl}
+								<img src={line.imageUrl} alt="" class="max-h-full max-w-full object-contain" />
+							{/if}
+						</span>
+						<span class="min-w-0 flex-1 text-shop-ink-soft">
 							{line.quantity} × {line.name}
 						</span>
 						<span class="shrink-0 font-semibold text-shop-ink">
@@ -493,9 +503,19 @@
 				</span>
 			</div>
 
-			<p class="mt-2 text-[12.5px] text-shop-muted">
+			<p class="mt-2 text-[14px] text-shop-muted">
 				Montants affichés en {suffix} sur le catalogue.
 			</p>
+
+			<!-- Délai du panier : l'article le plus long à préparer (12.2, 12.5). -->
+			<div class="mt-4 rounded-[14px] border-2 border-shop-green/40 bg-shop-green/5 px-4 py-3">
+				<p class="font-display text-[16px] font-extrabold text-shop-ink">{estimate.message}</p>
+				{#if estimate.earliest && estimate.latest}
+					<p class="mt-0.5 text-[15px] text-shop-ink">
+						Expédition estimée {describeShippingWindow(estimate.earliest, estimate.latest)}
+					</p>
+				{/if}
+			</div>
 
 			<div class="mt-5">
 				<ShopButton
@@ -511,7 +531,7 @@
 
 			<a
 				href="/panier"
-				class="mt-3 block text-center text-[13.5px] font-semibold text-shop-blue hover:underline"
+				class="mt-3 block text-center text-[15px] font-semibold text-shop-blue hover:underline"
 			>
 				Retour au panier
 			</a>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { describeShippingWindow } from '$lib/delivery-time';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -304,6 +305,21 @@
 									<span class="text-shop-muted">{suffix}</span>
 								</dd>
 							</div>
+							{#if item.shippingDelay && !item.isShipped && !item.deliveredAt}
+								<!-- Délai annoncé quand la commande a été passée (12.3). -->
+								<div>
+									<dt class="text-[11px] font-semibold tracking-[0.04em] text-shop-muted uppercase">
+										Expédition
+									</dt>
+									<dd class="mt-0.5 text-shop-ink">
+										{#if item.shippingEstimateFrom && item.shippingEstimateTo}
+											{describeShippingWindow(item.shippingEstimateFrom, item.shippingEstimateTo)}
+										{:else}
+											{item.shippingDelay}
+										{/if}
+									</dd>
+								</div>
+							{/if}
 							{#if recipient || item.relayPointName}
 								<div>
 									<dt class="text-[11px] font-semibold tracking-[0.04em] text-shop-muted uppercase">

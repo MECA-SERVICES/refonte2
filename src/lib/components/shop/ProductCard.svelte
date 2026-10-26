@@ -27,7 +27,7 @@
 >
 	<a
 		href={shopProductPath(product)}
-		class="relative flex h-[190px] items-center justify-center overflow-hidden border-b border-shop-border-soft"
+		class="relative flex aspect-square items-center justify-center overflow-hidden border-b border-shop-border-soft"
 	>
 		{#if product.imageUrl}
 			<!--
@@ -36,9 +36,9 @@
 				alternatif reste celui de la marque, pour qu'un lecteur d'écran
 				n'annonce pas une photo du produit.
 
-				La photo occupe le cadre sans marge ni rognage (`contain`) ; le
-				logo garde en plus une respiration, collé aux bords il serait
-				illisible.
+				Le cadre est carré, comme les photos du catalogue (800 × 800) : elles
+				le remplissent sans bande sur les côtés. Le logo garde en plus une
+				respiration, collé aux bords il serait illisible.
 			-->
 			<img
 				src={product.imageUrl}

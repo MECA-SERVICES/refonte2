@@ -281,6 +281,41 @@
 			"when": 1793021102057,
 			"tag": "0041_types_de_materiel",
 			"breakpoints": true
+		},
+		{
+			"idx": 42,
+			"version": "7",
+			"when": 1793024746138,
+			"tag": "0042_historique_ordres_reparation",
+			"breakpoints": true
+		},
+		{
+			"idx": 43,
+			"version": "7",
+			"when": 1793024915648,
+			"tag": "0043_numero_serie_ligne_commande",
+			"breakpoints": true
+		},
+		{
+			"idx": 44,
+			"version": "7",
+			"when": 1793025619026,
+			"tag": "0044_categorie_message_responsable",
+			"breakpoints": true
+		},
+		{
+			"idx": 45,
+			"version": "7",
+			"when": 1793026428619,
+			"tag": "0045_delai_expedition_commande",
+			"breakpoints": true
+		},
+		{
+			"idx": 46,
+			"version": "7",
+			"when": 1793026839779,
+			"tag": "0046_page_accueil",
+			"breakpoints": true
 		}
 	]
 }

@@ -4,6 +4,7 @@
 	import PromoSlider, { type PromoSlide } from '$lib/components/shop/PromoSlider.svelte';
 	import SectionHeading from '$lib/components/shop/SectionHeading.svelte';
 	import UniverseCard from '$lib/components/shop/UniverseCard.svelte';
+	import PromoTile from '$lib/components/shop/PromoTile.svelte';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import ArticleCard from '$lib/components/shop/ArticleCard.svelte';
 	import type { PageProps } from './$types';
@@ -143,8 +144,8 @@
 		'/promo/promo-autoportee-pro.jpg'
 	];
 
-	/** Trois grandes portes d'entrée du catalogue. */
-	const universes = $derived(
+	/** Les trois premiers rayons du menu, visuels d'attente compris. */
+	const menuUniverses = $derived(
 		data.menu.slice(0, 3).map((entry, i) => ({
 			title: entry.name,
 			subtitle: entry.children
@@ -157,10 +158,30 @@
 		}))
 	);
 
+	/**
+	 * Portes d'entrée du catalogue : les catégories choisies en back-office
+	 * (10.3), à défaut les trois premiers rayons du menu.
+	 */
+	const universes = $derived(
+		data.home.categories.length > 0
+			? data.home.categories.map((c) => ({
+					title: c.name,
+					subtitle: c.parentName ?? 'Voir le rayon',
+					href: `/categorie/${c.slug}`,
+					image: c.imageUrl,
+					imageLabel: `Visuel du rayon ${c.name}`
+				}))
+			: menuUniverses
+	);
+
 	/** Onglets des produits phares — branchés sur les deux listes réelles. */
 	type ProductTab = 'stock' | 'new';
 	let productTab = $state<ProductTab>('stock');
-	const shownProducts = $derived(productTab === 'stock' ? data.inStock : data.latest);
+	/** Sélection du back-office (10.4) ; à défaut, stock atelier et arrivages. */
+	const curated = $derived(data.home.products.length > 0);
+	const shownProducts = $derived(
+		curated ? data.home.products : productTab === 'stock' ? data.inStock : data.latest
+	);
 
 	/** Bandeau de réassurance, textes validés en réunion le 15/10/2026 (demande 10.5). */
 	const services = [
@@ -234,31 +255,14 @@
 	</div>
 </section>
 
-<!-- ================= Marques ================= -->
-{#if data.brands.length > 0}
-	<section class="mt-12">
-		<SectionHeading
-			title="Nos marques"
-			href="/marques"
-			linkLabel="Toutes nos marques partenaires"
-		/>
-		<div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-			{#each data.brands as brandItem (brandItem.id)}
-				<a
-					href="/marque/{brandItem.slug}"
-					class="flex h-[104px] items-center justify-center rounded-xl border-[1.5px] border-shop-border-soft bg-white px-4 text-center font-display text-base font-extrabold tracking-[0.02em] text-shop-ink-soft uppercase transition-colors hover:border-shop-blue hover:text-shop-blue"
-				>
-					{#if brandItem.logoUrl}
-						<img
-							src={brandItem.logoUrl}
-							alt={brandItem.name}
-							loading="lazy"
-							class="max-h-[64px] max-w-[85%] object-contain"
-						/>
-					{:else}
-						{brandItem.name}
-					{/if}
-				</a>
+<!-- ================= Tuiles promotionnelles (10.1) =================
+     À la manière de Kramp, à la place de « Nos marques ». Réglées dans
+     « Apparence › Page d'accueil » ; sans tuile, le bloc n'apparaît pas. -->
+{#if data.home.tiles.length > 0}
+	<section class="mt-12" aria-label="Promotions et sélections">
+		<div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+			{#each data.home.tiles as tile (tile.id)}
+				<PromoTile {...tile} />
 			{/each}
 		</div>
 	</section>
@@ -311,48 +315,67 @@
 		>
 			Nos produits phares
 		</h2>
-		<div class="flex gap-1 rounded-[10px] bg-shop-subtle p-1" role="tablist">
-			<button
-				type="button"
-				role="tab"
-				aria-selected={productTab === 'stock'}
-				onclick={() => (productTab = 'stock')}
-				class="rounded-lg px-4 py-2 font-display text-[13.5px] font-bold transition-colors {productTab ===
-				'stock'
-					? 'bg-white text-shop-blue shadow-[0_1px_4px_rgba(30,36,54,0.12)]'
-					: 'text-shop-muted hover:text-shop-ink'}"
-			>
-				Disponible immédiatement
-			</button>
-			<button
-				type="button"
-				role="tab"
-				aria-selected={productTab === 'new'}
-				onclick={() => (productTab = 'new')}
-				class="rounded-lg px-4 py-2 font-display text-[13.5px] font-bold transition-colors {productTab ===
-				'new'
-					? 'bg-white text-shop-blue shadow-[0_1px_4px_rgba(30,36,54,0.12)]'
-					: 'text-shop-muted hover:text-shop-ink'}"
-			>
-				Derniers arrivages
-			</button>
-		</div>
+		{#if !curated}
+			<div class="flex gap-1 rounded-[10px] bg-shop-subtle p-1" role="tablist">
+				<button
+					type="button"
+					role="tab"
+					aria-selected={productTab === 'stock'}
+					onclick={() => (productTab = 'stock')}
+					class="rounded-lg px-4 py-2 font-display text-[13.5px] font-bold transition-colors {productTab ===
+					'stock'
+						? 'bg-white text-shop-blue shadow-[0_1px_4px_rgba(30,36,54,0.12)]'
+						: 'text-shop-muted hover:text-shop-ink'}"
+				>
+					Disponible immédiatement
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={productTab === 'new'}
+					onclick={() => (productTab = 'new')}
+					class="rounded-lg px-4 py-2 font-display text-[13.5px] font-bold transition-colors {productTab ===
+					'new'
+						? 'bg-white text-shop-blue shadow-[0_1px_4px_rgba(30,36,54,0.12)]'
+						: 'text-shop-muted hover:text-shop-ink'}"
+				>
+					Derniers arrivages
+				</button>
+			</div>
+		{/if}
 	</div>
 
 	<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+		<!-- Visuel de la sélection (10.4), en tête de grille. -->
+		{#if curated && data.home.featuredImageUrl}
+			<svelte:element
+				this={data.home.featuredImageLink ? 'a' : 'div'}
+				href={data.home.featuredImageLink ?? undefined}
+				class="col-span-2 overflow-hidden rounded-[14px] sm:row-span-2"
+			>
+				<img
+					src={data.home.featuredImageUrl}
+					alt=""
+					loading="lazy"
+					class="h-full min-h-[260px] w-full object-cover"
+				/>
+			</svelte:element>
+		{/if}
 		{#each shownProducts as product (product.id)}
 			<ProductCard {product} />
 		{/each}
 	</div>
 
-	<div class="mt-5 text-center">
-		<a
-			href={productTab === 'new' ? '/recherche?tri=new' : '/recherche?stock=1'}
-			class="inline-block rounded-[10px] border-[1.5px] border-shop-border px-5 py-3 font-display text-sm font-bold text-shop-ink transition-colors hover:border-shop-blue hover:text-shop-blue"
-		>
-			{productTab === 'new' ? 'Toutes les nouveautés' : 'Tout le stock atelier'} →
-		</a>
-	</div>
+	{#if !curated}
+		<div class="mt-5 text-center">
+			<a
+				href={productTab === 'new' ? '/recherche?tri=new' : '/recherche?stock=1'}
+				class="inline-block rounded-[10px] border-[1.5px] border-shop-border px-5 py-3 font-display text-sm font-bold text-shop-ink transition-colors hover:border-shop-blue hover:text-shop-blue"
+			>
+				{productTab === 'new' ? 'Toutes les nouveautés' : 'Tout le stock atelier'} →
+			</a>
+		</div>
+	{/if}
 </section>
 
 <!-- ================= Tout pour ma machine ================= -->

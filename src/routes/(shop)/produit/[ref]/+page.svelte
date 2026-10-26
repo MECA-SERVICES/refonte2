@@ -7,7 +7,11 @@
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
 	import { formatPrice } from '$lib/shop';
-	import { resolveDeliveryTime } from '$lib/delivery-time';
+	import {
+		describeShippingWindow,
+		estimateShippingWindow,
+		resolveDeliveryTime
+	} from '$lib/delivery-time';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -59,6 +63,48 @@
 
 	/** Message de délai paramétré en back-office, ou celui de la boutique. */
 	const deliveryTime = $derived(resolveDeliveryTime(product, available));
+
+	/**
+	 * Zoom de la photo (9.4) : un clic agrandit sur place à l'endroit visé, un
+	 * second clic revient à la normale. Agrandie, la photo suit la souris.
+	 * `null` au repos ; sinon, le point visé en pourcentage du cadre.
+	 */
+	let zoom = $state<{ x: number; y: number } | null>(null);
+
+	function pointIn(event: MouseEvent) {
+		const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+		return {
+			x: ((event.clientX - box.left) / box.width) * 100,
+			y: ((event.clientY - box.top) / box.height) * 100
+		};
+	}
+
+	/**
+	 * Curseur loupe dessiné en SVG : le curseur `zoom-in` du système s'affiche
+	 * différemment, voire pas du tout, selon le navigateur. Le point actif est
+	 * au centre du verre (11, 11) ; le curseur système reste en secours.
+	 */
+	function loupeCursor(sign: '+' | '-') {
+		const bar = sign === '+' ? '<path d="M11 7v8"/>' : '';
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g fill="none" stroke-linecap="round"><circle cx="11" cy="11" r="8" fill="white" stroke="#1e2436" stroke-width="2.5"/><path d="M17 17l8 8" stroke="#1e2436" stroke-width="3.5"/><g stroke="#314192" stroke-width="2.2"><path d="M7 11h8"/>${bar}</g></g></svg>`;
+		return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 11 11, ${sign === '+' ? 'zoom-in' : 'zoom-out'}`;
+	}
+	const zoomInCursor = loupeCursor('+');
+	const zoomOutCursor = loupeCursor('-');
+
+	function toggleZoom(event: MouseEvent) {
+		zoom = zoom ? null : pointIn(event);
+	}
+
+	function panZoom(event: PointerEvent) {
+		if (zoom) zoom = pointIn(event);
+	}
+
+	/**
+	 * Date d'expédition estimée, déduite du message de délai (9.4). Calculée
+	 * côté navigateur aussi : la date du jour est celle du visiteur.
+	 */
+	const shippingWindow = $derived(estimateShippingWindow(deliveryTime));
 
 	/**
 	 * `use:enhance` sans argument recharge déjà les données après l'action — donc
@@ -125,7 +171,12 @@
 
 <Breadcrumb items={crumbs} />
 
-<div class="grid items-start gap-9 lg:grid-cols-2">
+<!--
+	Colonne photo plafonnée, comme une fiche produit classique : la photo garde
+	une taille de lecture (≈ 475 px avec les vignettes) et la colonne d'achat
+	prend le reste de la largeur.
+-->
+<div class="grid items-start gap-9 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
 	<!-- ================= Galerie ================= -->
 	<!-- Vignettes en colonne à gauche de la grande image, comme sur la maquette ;
 	     la colonne disparaît quand la fiche n'a qu'un visuel. -->
@@ -155,15 +206,31 @@
 		{/if}
 
 		<div
-			class="relative flex h-[380px] items-center justify-center overflow-hidden rounded-2xl border-[1.5px] border-shop-border-soft bg-shop-subtle sm:h-[520px]"
+			class="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border-[1.5px] border-shop-border-soft bg-shop-subtle"
 		>
 			{#if images.length > 0}
-				<!-- La photo occupe tout le cadre, sans marge ni rognage. -->
-				<img
-					src={images[activeIndex]?.url}
-					alt={images[activeIndex]?.alt ?? product.name}
-					class="h-full w-full object-contain"
-				/>
+				<!--
+					Cadre carré, comme les photos du catalogue (800 × 800) : elles le
+					remplissent sans bande sur les côtés. Zoom (9.4) au clic.
+				-->
+				<button
+					type="button"
+					class="h-full w-full overflow-hidden"
+					style:cursor={zoom ? zoomOutCursor : zoomInCursor}
+					aria-label={zoom ? "Revenir à l'image entière" : "Agrandir l'image"}
+					aria-pressed={zoom !== null}
+					onclick={toggleZoom}
+					onpointermove={panZoom}
+				>
+					<img
+						src={images[activeIndex]?.url}
+						alt={images[activeIndex]?.alt ?? product.name}
+						class="h-full w-full object-contain transition-transform duration-150 {zoom
+							? 'scale-[2.2]'
+							: ''}"
+						style:transform-origin={zoom ? `${zoom.x}% ${zoom.y}%` : undefined}
+					/>
+				</button>
 			{:else if product.brandLogoUrl}
 				<!-- Aucune photo : le logo de la marque vaut mieux qu'un cadre vide
 				     sur une fiche de pièce détachée. -->
@@ -266,32 +333,49 @@
 				</p>
 			{/if}
 
-			<p class="mt-3.5 flex items-center gap-2 text-sm font-bold text-shop-ink">
-				<span
-					class="h-2.5 w-2.5 shrink-0 rounded-full {available
-						? 'bg-shop-green'
-						: 'bg-shop-orange-light'}"
-					aria-hidden="true"
-				></span>
-				<!--
-					Le message de délai vient du back-office (onglet « Livraison ») ;
-					à défaut de réglage propre, celui de la boutique s'applique. Un
-					produit configuré sans message n'affiche que l'état du stock.
-				-->
-				{#if available}
-					En stock atelier · {product.stock} unité{product.stock > 1 ? 's' : ''}
-				{:else if product.availableForOrder === false}
-					<!-- Article non commandable en ligne : pas de délai fabricant à promettre. -->
-					Sur commande — nous consulter pour le délai
-				{:else}
-					{deliveryTime ?? 'Sur commande — nous consulter pour le délai'}
-				{/if}
-			</p>
-			{#if available}
-				<p class="mt-1 text-[13.5px] text-shop-muted">
-					{deliveryTime ? `${deliveryTime} · ` : ''}retrait gratuit à l'atelier de Carantilly
+			<!--
+				Disponibilité et délai dans un encadré bien visible (demande 9.4). Le
+				message de délai vient du back-office (onglet « Livraison ») ; à défaut
+				de réglage propre, celui de la boutique s'applique. Un produit
+				configuré sans message n'affiche que l'état du stock.
+			-->
+			<div
+				class="mt-4 rounded-[14px] border-2 px-4 py-3.5 {available
+					? 'border-shop-green/40 bg-shop-green/5'
+					: 'border-shop-orange-light/60 bg-shop-orange-light/10'}"
+			>
+				<p class="flex items-center gap-2.5 font-display text-[17px] font-extrabold text-shop-ink">
+					<span
+						class="h-3 w-3 shrink-0 rounded-full {available
+							? 'bg-shop-green'
+							: 'bg-shop-orange-light'}"
+						aria-hidden="true"
+					></span>
+					{#if available}
+						En stock atelier · {product.stock} unité{product.stock > 1 ? 's' : ''}
+					{:else if product.availableForOrder === false}
+						<!-- Article non commandable en ligne : pas de délai fabricant à promettre. -->
+						Sur commande — nous consulter pour le délai
+					{:else}
+						{deliveryTime ?? 'Sur commande — nous consulter pour le délai'}
+					{/if}
 				</p>
-			{/if}
+				{#if available && deliveryTime}
+					<p class="mt-1 text-[15px] font-semibold text-shop-ink">{deliveryTime}</p>
+				{/if}
+				{#if shippingWindow && product.availableForOrder !== false}
+					<p class="mt-1 text-[15px] text-shop-ink">
+						Expédition estimée
+						<strong>{describeShippingWindow(shippingWindow.earliest, shippingWindow.latest)}</strong
+						>
+					</p>
+				{/if}
+				{#if available}
+					<p class="mt-1 text-[13.5px] text-shop-muted">
+						Retrait gratuit à l'atelier de Carantilly
+					</p>
+				{/if}
+			</div>
 			{#if minQuantity > 1}
 				<p class="mt-2 text-[13px] text-shop-muted">
 					Vendu par {minQuantity} — quantité minimale de commande.

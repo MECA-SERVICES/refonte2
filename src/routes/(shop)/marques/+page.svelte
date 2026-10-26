@@ -105,7 +105,7 @@
 		<button
 			type="button"
 			onclick={() => (letter = null)}
-			class="rounded-full border-[1.5px] px-3 py-1.5 font-display text-[13px] font-bold transition-colors {letter ===
+			class="rounded-full border-[1.5px] px-3.5 py-2 font-display text-[15px] font-bold transition-colors {letter ===
 			null
 				? 'border-shop-ink bg-shop-ink text-white'
 				: 'border-shop-border bg-white text-shop-ink hover:border-shop-ink'}"
@@ -116,7 +116,7 @@
 			<button
 				type="button"
 				onclick={() => (letter = letter === l ? null : l)}
-				class="min-w-9 rounded-full border-[1.5px] px-2 py-1.5 font-display text-[13px] font-bold transition-colors {letter ===
+				class="min-w-10 rounded-full border-[1.5px] px-2.5 py-2 font-display text-[15px] font-bold transition-colors {letter ===
 				l
 					? 'border-shop-ink bg-shop-ink text-white'
 					: 'border-shop-border bg-white text-shop-ink hover:border-shop-ink'}"
@@ -145,7 +145,7 @@
 		</button>
 	</div>
 {:else}
-	<p class="mt-5 text-sm text-shop-muted" aria-live="polite">
+	<p class="mt-5 text-[15px] text-shop-muted" aria-live="polite">
 		{formatNumber(filtered.length)}
 		{filtered.length > 1 ? 'marques' : 'marque'}
 	</p>
@@ -153,32 +153,33 @@
 	{#each groups as group (group.key)}
 		<section class="mt-6">
 			<h2
-				class="mb-3 border-b-[1.5px] border-shop-border-soft pb-1.5 font-display text-lg font-extrabold text-shop-ink"
+				class="mb-3.5 border-b-[1.5px] border-shop-border-soft pb-2 font-display text-2xl font-extrabold text-shop-ink"
 			>
 				{group.key}
 			</h2>
-			<ul class="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+			<!-- Demande client 9.5 : cartes plus grandes et texte plus lisible. -->
+			<ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{#each group.items as item (item.id)}
 					<li>
 						<a
 							href="/marque/{item.slug}"
-							class="flex h-full items-center gap-3 rounded-xl border-[1.5px] border-shop-border-soft bg-white p-3 transition-colors hover:border-shop-blue"
+							class="flex h-full items-center gap-4 rounded-xl border-[1.5px] border-shop-border-soft bg-white p-4 transition-colors hover:border-shop-blue"
 						>
 							{#if item.logoUrl}
 								<img
 									src={item.logoUrl}
 									alt=""
 									loading="lazy"
-									class="h-9 w-14 shrink-0 object-contain"
+									class="h-14 w-24 shrink-0 object-contain"
 								/>
 							{/if}
 							<span class="min-w-0">
-								<span class="block truncate font-display text-sm font-bold text-shop-ink">
+								<span class="block truncate font-display text-[17px] font-bold text-shop-ink">
 									{item.name}
 								</span>
-								<span class="flex items-center gap-1.5 text-xs text-shop-muted">
+								<span class="mt-0.5 flex items-center gap-1.5 text-sm text-shop-muted">
 									{formatNumber(item.total)} réf.{#if item.inStock > 0}
-										<span class="h-1.5 w-1.5 rounded-full bg-shop-green" aria-hidden="true"></span>
+										<span class="h-2 w-2 rounded-full bg-shop-green" aria-hidden="true"></span>
 										{formatNumber(item.inStock)} en stock{/if}
 								</span>
 							</span>

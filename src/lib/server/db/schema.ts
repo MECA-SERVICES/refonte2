@@ -12,3 +12,4 @@ export * from './machine.schema';
 export * from './repair.schema';
 export * from './support.schema';
 export * from './settlement.schema';
+export * from './home.schema';
