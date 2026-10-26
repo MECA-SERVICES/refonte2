@@ -155,8 +155,8 @@
 					{/if}
 				</div>
 				<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-					L'adresse e-mail sert d'identifiant au compte client. Le client choisira son mot de passe
-					avec « Mot de passe oublié ».
+					L'adresse e-mail sert d'identifiant au compte client. Le client recevra ses identifiants
+					par e-mail dès que l'envoi sera en place.
 				</p>
 				<div class="mt-4 flex justify-end gap-2">
 					<Button

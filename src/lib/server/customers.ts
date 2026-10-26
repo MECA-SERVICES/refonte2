@@ -98,9 +98,10 @@ export async function createCustomer(values: NewCustomer) {
 /**
  * Crée un client et son compte better-auth (rôle « customer » par défaut).
  *
- * Le mot de passe est aléatoire : le client le choisit ensuite par « mot de
- * passe oublié ». L'adresse e-mail est l'identifiant du compte, d'où le
- * contrôle préalable des doublons, avec un message que l'équipe comprend.
+ * Le mot de passe est aléatoire et n'est communiqué à personne : son envoi
+ * par e-mail viendra avec le service d'e-mails. L'adresse e-mail est
+ * l'identifiant du compte, d'où le contrôle préalable des doublons, avec un
+ * message que l'équipe comprend.
  */
 export async function createCustomerWithAccount(
 	values: Omit<NewCustomer, 'userId'>,

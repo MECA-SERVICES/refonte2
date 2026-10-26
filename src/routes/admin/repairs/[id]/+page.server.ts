@@ -4,7 +4,6 @@ import {
 	addRepairPart,
 	changeRepairStatus,
 	getRepairOrder,
-	markRepairPaid,
 	nextStatuses,
 	RepairError,
 	removeRepairPart,
@@ -13,6 +12,12 @@ import {
 } from '$lib/server/repairs';
 import { repairStatuses, type RepairStatus } from '$lib/server/db/repair.schema';
 import { EQUIPMENT_TYPES } from '$lib/server/machines';
+import {
+	listRepairSettlements,
+	parseSettlementForm,
+	recordRepairSettlement,
+	SettlementError
+} from '$lib/server/settlements';
 
 function idParam(params: { id: string }) {
 	const id = Number(params.id);
@@ -21,11 +26,13 @@ function idParam(params: { id: string }) {
 }
 
 export const load: PageServerLoad = async ({ params }) => {
-	const order = await getRepairOrder(idParam(params));
+	const id = idParam(params);
+	const [order, settlements] = await Promise.all([getRepairOrder(id), listRepairSettlements(id)]);
 	if (!order) error(404, 'Ordre introuvable');
 
 	return {
 		order,
+		settlements,
 		transitions: nextStatuses(order.status),
 		equipmentTypes: EQUIPMENT_TYPES
 	};
@@ -148,9 +155,18 @@ export const actions: Actions = {
 		}
 	},
 
-	/** Enregistre le règlement : postérieur à l'achèvement, pas une modification. */
-	markPaid: async ({ params }) => {
-		await markRepairPaid(idParam(params));
-		return { success: true };
+	/** Enregistre un règlement : postérieur à l'achèvement, pas une modification. */
+	recordPayment: async ({ request, params, locals }) => {
+		const id = idParam(params);
+		const parsed = parseSettlementForm(await request.formData());
+		if (!parsed.ok) return fail(400, { paymentError: parsed.error });
+
+		try {
+			await recordRepairSettlement(id, parsed.values, locals.user?.email ?? null);
+			return { success: true };
+		} catch (err) {
+			if (err instanceof SettlementError) return fail(400, { paymentError: err.message });
+			throw err;
+		}
 	}
 };

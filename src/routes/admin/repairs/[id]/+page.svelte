@@ -18,6 +18,12 @@
 	} from 'flowbite-svelte';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
 	import { REPAIR_STATUS_COLORS, REPAIR_STATUS_LABELS, REPAIR_TYPE_LABELS } from '$lib/repairs';
+	import {
+		remainingDue,
+		SETTLEMENT_METHOD_LABELS,
+		settlementMethods,
+		type SettlementMethod
+	} from '$lib/settlements';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -30,6 +36,30 @@
 	/** Un ordre achevé est figé : montants et pièces ne bougent plus (R17). */
 	const frozen = $derived(
 		o.status === 'completed' || o.status === 'delivered' || o.status === 'cancelled'
+	);
+
+	/**
+	 * Reste à régler. Un ordre marqué réglé sans règlement détaillé (saisi
+	 * avant le suivi des règlements) ne doit plus rien.
+	 */
+	const due = $derived(
+		o.paidAt
+			? 0
+			: remainingDue(
+					o.totalTtc,
+					data.settlements.map((s) => s.amount)
+				)
+	);
+	/** R19 : le règlement suit l'achèvement, pour une prise en charge payante. */
+	const canSettle = $derived(
+		o.orderType === 'paid' && (o.status === 'completed' || o.status === 'delivered') && due > 0
+	);
+	let settlementMethod = $state<SettlementMethod>('cheque');
+	/** Date du jour au format des champs `date` (AAAA-MM-JJ). */
+	const today = new Date().toLocaleDateString('sv-SE');
+	const customerName = $derived(
+		o.customer.customerCompany ||
+			[o.customer.customerFirstName, o.customer.customerLastName].filter(Boolean).join(' ')
 	);
 
 	/** Saisie d'une suspension : la pièce attendue est exigée (R13). */
@@ -423,6 +453,119 @@
 			{/if}
 		</Card>
 
+		{#if o.orderType === 'paid'}
+			<Card class="max-w-none p-4">
+				<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Règlements</h3>
+
+				{#if data.settlements.length > 0}
+					<ul class="mb-3 space-y-2 text-sm">
+						{#each data.settlements as s (s.id)}
+							<li class="flex justify-between gap-2">
+								<div>
+									<p class="font-medium text-gray-900 dark:text-white">
+										{SETTLEMENT_METHOD_LABELS[s.method]}
+										{#if s.chequeNumber}n° {s.chequeNumber}{/if}
+									</p>
+									<p class="text-xs text-gray-500 dark:text-gray-400">
+										{s.reference} · {dateOnly.format(new Date(s.receivedOn))}
+										{#if s.chequeIssuer}· {s.chequeIssuer}{/if}
+									</p>
+								</div>
+								<span class="text-gray-900 dark:text-white">{eur.format(Number(s.amount))}</span>
+							</li>
+						{/each}
+					</ul>
+				{:else if !o.paidAt}
+					<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Aucun règlement enregistré.</p>
+				{/if}
+
+				<div
+					class="flex justify-between border-t border-gray-100 pt-2 text-sm font-semibold dark:border-gray-800"
+				>
+					<span class="text-gray-900 dark:text-white">
+						{due > 0 ? 'Reste à régler' : 'Réglé'}
+					</span>
+					<span class={due > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600'}>
+						{eur.format(due)}
+					</span>
+				</div>
+
+				{#if canSettle}
+					<form
+						method="POST"
+						action="?/recordPayment"
+						use:enhance
+						data-success="Règlement enregistré."
+						class="mt-4 space-y-3"
+					>
+						<div>
+							<Label for="settlementMethod" class="mb-1 text-xs">Mode de règlement</Label>
+							<Select
+								id="settlementMethod"
+								name="method"
+								size="sm"
+								placeholder=""
+								bind:value={settlementMethod}
+								items={settlementMethods.map((m) => ({
+									value: m,
+									name: SETTLEMENT_METHOD_LABELS[m]
+								}))}
+							/>
+						</div>
+						<div class="grid grid-cols-2 gap-2">
+							<div>
+								<Label for="settlementAmount" class="mb-1 text-xs">Montant (€)</Label>
+								<Input
+									id="settlementAmount"
+									name="amount"
+									type="number"
+									step="0.01"
+									min="0.01"
+									max={due.toFixed(2)}
+									value={due.toFixed(2)}
+									size="sm"
+									required
+								/>
+							</div>
+							<div>
+								<Label for="settlementDate" class="mb-1 text-xs">Reçu le</Label>
+								<Input
+									id="settlementDate"
+									name="receivedOn"
+									type="date"
+									value={today}
+									size="sm"
+									required
+								/>
+							</div>
+						</div>
+						{#if settlementMethod === 'cheque'}
+							<div>
+								<Label for="chequeNumber" class="mb-1 text-xs">Numéro du chèque</Label>
+								<Input id="chequeNumber" name="chequeNumber" size="sm" required />
+							</div>
+							<div>
+								<Label for="chequeIssuer" class="mb-1 text-xs">Émetteur</Label>
+								<Input id="chequeIssuer" name="chequeIssuer" value={customerName} size="sm" />
+							</div>
+							<div>
+								<Label for="chequeBank" class="mb-1 text-xs">Banque</Label>
+								<Input id="chequeBank" name="chequeBank" size="sm" />
+							</div>
+						{/if}
+						{#if form && 'paymentError' in form && form.paymentError}
+							<p class="text-xs text-red-600 dark:text-red-400">{form.paymentError}</p>
+						{/if}
+						<Button type="submit" size="sm" class="w-full">Enregistrer le règlement</Button>
+					</form>
+				{:else if due > 0 && o.status !== 'cancelled'}
+					<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+						Le règlement s'enregistre une fois les travaux achevés.
+					</p>
+				{/if}
+			</Card>
+		{/if}
+
 		<!-- Avancement : seules les transitions prévues sont proposées. -->
 		<Card class="max-w-none p-4">
 			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Avancement</h3>
@@ -494,20 +637,6 @@
 						</p>
 					{/if}
 				</div>
-			{/if}
-
-			{#if o.status === 'completed' && !o.paidAt && o.orderType === 'paid'}
-				<form
-					method="POST"
-					action="?/markPaid"
-					use:enhance
-					data-success="Règlement enregistré."
-					class="mt-3"
-				>
-					<Button type="submit" size="sm" color="alternative" class="w-full">
-						Enregistrer le règlement
-					</Button>
-				</form>
 			{/if}
 		</Card>
 

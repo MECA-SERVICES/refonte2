@@ -592,14 +592,6 @@ export async function changeRepairStatus(
 	if (to === 'delivered') await addMachineToFleet(id);
 }
 
-/** Enregistre le règlement (R19) — hors transition d'état. */
-export async function markRepairPaid(id: number) {
-	await db
-		.update(repairOrder)
-		.set({ paidAt: new Date(), updatedAt: new Date() })
-		.where(eq(repairOrder.id, id));
-}
-
 /**
  * Verse la machine au parc du client, si elle n'y figure pas déjà (R21).
  *
