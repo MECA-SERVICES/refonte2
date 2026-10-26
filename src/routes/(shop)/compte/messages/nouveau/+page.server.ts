@@ -10,7 +10,8 @@ import { createCustomerThread, listSupportCategories, SupportError } from '$lib/
  * Nouveau message au service client (CDC 27 §8.1).
  *
  * Préremplissage selon l'origine : une fiche produit (`?produit=`) propose un
- * objet citant la pièce, une commande (`?commande=`) la présélectionne.
+ * objet citant la pièce, une commande (`?commande=`) la présélectionne, une
+ * demande de devis (`?devis=1`) prend la catégorie « Demande commerciale ».
  */
 export const load: PageServerLoad = async ({ locals, url }) => {
 	// Le contexte est conservé à travers la connexion.
@@ -18,6 +19,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const productId = Number(url.searchParams.get('produit')) || null;
 	const orderId = Number(url.searchParams.get('commande')) || null;
+	const quote = url.searchParams.get('devis') === '1';
 
 	const [orders, categories, [prod]] = await Promise.all([
 		db
@@ -42,13 +44,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		orders,
 		categories: categories.map((c) => ({ id: c.id, code: c.code, label: c.label })),
 		defaults: {
-			subject: prod
-				? `Question sur ${prod.name} (réf. ${prod.reference})`
-				: preselectedOrder
-					? `Commande ${preselectedOrder.reference}`
-					: '',
+			subject: quote
+				? prod
+					? `Demande de devis : ${prod.name} (réf. ${prod.reference})`
+					: 'Demande de devis'
+				: prod
+					? `Question sur ${prod.name} (réf. ${prod.reference})`
+					: preselectedOrder
+						? `Commande ${preselectedOrder.reference}`
+						: '',
 			orderId: preselectedOrder ? String(preselectedOrder.id) : '',
-			categoryCode: preselectedOrder ? 'order_tracking' : ''
+			categoryCode: quote ? 'commercial' : preselectedOrder ? 'order_tracking' : ''
 		}
 	};
 };

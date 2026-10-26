@@ -366,8 +366,13 @@
 			{/if}
 
 			<div class="mt-2.5 flex flex-wrap gap-2">
-				<ShopButton href="/inscription" variant="outline" size="sm" class="flex-1 basis-40">
-					Demander un devis pro
+				<ShopButton
+					href="/contact?produit={product.id}&devis=1"
+					variant="outline"
+					size="sm"
+					class="flex-1 basis-40"
+				>
+					Besoin de quantité ? Demander un devis
 				</ShopButton>
 				<ShopButton
 					href="/contact?produit={product.id}"

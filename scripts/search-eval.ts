@@ -56,6 +56,15 @@ const CASES: Case[] = [
 
 	// Vocabulaire courant
 	{ q: 'robot tondeuse', top: { match: /robot/i, count: 5 } },
+	// Pièces moteur (demande 8.2) : le terme français et ceux des fournisseurs.
+	{ q: 'bielle', top: { match: /bielle|connecting rod|biella|pleuel/i, count: 10 } },
+	{
+		q: 'arbre a cames',
+		top: { match: /arbre [àa] cames|camshaft/i, count: 8 },
+		never: /v[ée]rin/i
+	},
+	{ q: 'volant moteur', top: { match: /volant|flywheel|schwungrad/i, count: 8 } },
+	{ q: 'joint spi', top: { match: /spi|oil seal|simmerring|[ée]tanch/i, count: 8 } },
 	// Un mot entier, pas un début de mot : pas de cloueurs « pneumatiques ».
 	{ q: 'pneu', top: { match: /pneu\b|pneus|tyre/i, count: 10 }, never: /pneumatique/i },
 	// Marque devenue nom commun : ses machines avant ses 29 000 pièces.

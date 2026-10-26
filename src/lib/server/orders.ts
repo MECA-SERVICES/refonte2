@@ -185,7 +185,10 @@ export async function listOrders(params: OrderListParams = {}) {
 			customerLastName: customer.lastName,
 			stateLabel: orderState.label,
 			stateColor: orderState.color,
-			paymentProvider: order.paymentProvider
+			paymentProvider: order.paymentProvider,
+			// Adresse de livraison figée sur la commande (demande client 13.2).
+			shippingPostalCode: sql<string | null>`${order.shippingAddress}->>'postalCode'`,
+			shippingCountry: sql<string | null>`${order.shippingAddress}->>'country'`
 		})
 		.from(order)
 		.leftJoin(customer, eq(order.customerId, customer.id))

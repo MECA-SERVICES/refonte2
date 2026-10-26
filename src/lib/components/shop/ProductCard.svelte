@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import { notifyAddedToCart } from './cart-feedback.svelte';
 	import ShopButton from './ShopButton.svelte';
 	import ImagePlaceholder from './ImagePlaceholder.svelte';
 	import { formatPrice, shopProductPath, type ProductCard as ProductCardData } from '$lib/shop';
@@ -13,24 +11,6 @@
 	);
 
 	const available = $derived(product.stock > 0);
-
-	/**
-	 * `use:enhance` sans argument fait déjà le nécessaire : il poste l'action,
-	 * recharge les données (donc le compteur d'en-tête) et met à jour la page.
-	 * On se contente d'annoncer la confirmation.
-	 */
-	const addToCart = () => {
-		return async ({
-			result,
-			update
-		}: {
-			result: { type: string };
-			update: () => Promise<void>;
-		}) => {
-			await update();
-			if (result.type === 'success') notifyAddedToCart(`« ${product.name} » ajouté au panier.`);
-		};
-	};
 </script>
 
 <!--
@@ -95,10 +75,7 @@
 		<h3 class="font-display text-[15px] leading-[1.3] font-bold text-shop-ink">
 			<!--
 				`after:absolute after:inset-0` étend la zone cliquable à toute la
-				carte : marque, référence et prix ne captaient rien, et le bouton
-				désactivé avalait les clics sans conduire nulle part. Les éléments
-				interactifs placés au-dessus (le formulaire d'achat) restent
-				accessibles grâce à leur `relative z-10`.
+				carte : marque, référence et prix ne captaient rien sans lui.
 			-->
 			<a
 				href={shopProductPath(product)}
@@ -129,22 +106,33 @@
 				<span class="text-xs text-shop-muted">TTC</span>
 			</div>
 
-			<p class="flex items-center gap-2 text-[13px] text-shop-ink-soft">
-				<span
-					class="h-2 w-2 shrink-0 rounded-full {available
-						? 'bg-shop-green'
-						: 'bg-shop-orange-light'}"
-				></span>
-				{available ? `En stock (${product.stock})` : 'Sur commande'}
+			<!--
+				Demande client 9.1 : seul le stock disponible est signalé, plus de
+				« Sur commande ». La ligne garde sa hauteur pour l'alignement.
+			-->
+			<p class="flex min-h-5 items-center gap-2 text-[13px] text-shop-ink-soft">
+				{#if available}
+					<span class="h-2 w-2 shrink-0 rounded-full bg-shop-green"></span>
+					En stock ({product.stock})
+				{/if}
 			</p>
 
-			<form method="POST" action="/panier?/add" use:enhance={addToCart} class="relative z-10">
-				<input type="hidden" name="productId" value={product.id} />
-				<input type="hidden" name="quantity" value="1" />
-				<ShopButton type="submit" variant="buy" size="sm" block disabled={!available}>
-					{available ? 'Ajouter au panier' : 'Nous consulter'}
-				</ShopButton>
-			</form>
+			<!--
+				Pas d'ajout au panier depuis le catalogue (demande client 9.1) : on
+				commande depuis la fiche, où se choisissent quantité et options. Le
+				bouton mène à la fiche, comme le reste de la carte.
+			-->
+			<ShopButton
+				href={shopProductPath(product)}
+				variant="primary"
+				size="sm"
+				block
+				tabindex={-1}
+				aria-hidden="true"
+				class="relative z-10"
+			>
+				En savoir plus
+			</ShopButton>
 		</div>
 	</div>
 </article>

@@ -16,6 +16,15 @@
 	type OrderRow = (typeof data.rows)[number];
 
 	/**
+	 * Pays de livraison : le nouveau tunnel enregistre le code (« FR »), les
+	 * commandes reprises de PrestaShop le libellé (« France Métropolitaine »).
+	 */
+	function countryLabel(country: string | null) {
+		if (!country) return '—';
+		return country === 'FR' || country === 'France Métropolitaine' ? 'France' : country;
+	}
+
+	/**
 	 * Critères de recherche à préserver lors du tri et de la pagination.
 	 *
 	 * Source unique : sans elle, trier une colonne repartait sur la liste
@@ -239,6 +248,14 @@
 	{/if}
 {/snippet}
 
+{#snippet postalCodeCell(row: OrderRow)}
+	{row.shippingPostalCode ?? '—'}
+{/snippet}
+
+{#snippet countryCell(row: OrderRow)}
+	<span class="whitespace-nowrap">{countryLabel(row.shippingCountry)}</span>
+{/snippet}
+
 {#snippet stateCell(row: OrderRow)}
 	{#if row.stateLabel}<StateBadge label={row.stateLabel} color={row.stateColor ?? '#6b7280'} />{/if}
 {/snippet}
@@ -269,6 +286,8 @@
 			sortKey: 'reference'
 		},
 		{ key: 'customer', label: 'Client', cell: customerCell, filterKey: 'customer' },
+		{ key: 'postalCode', label: 'Code postal', cell: postalCodeCell },
+		{ key: 'country', label: 'Pays', cell: countryCell },
 		{ key: 'state', label: 'État', cell: stateCell },
 		{ key: 'payment', label: 'Paiement', cell: paymentCell },
 		{ key: 'total', label: 'Total TTC', cell: totalCell, sortKey: 'totalTtc' },

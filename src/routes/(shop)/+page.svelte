@@ -60,7 +60,7 @@
 			brand: 'Iseki',
 			name: 'Iseki SRA 950F — débroussailleuse autoportée 4 roues motrices',
 			note: 'Talus, fossés, terrains difficiles. Devis sous 24 h, mandat administratif accepté.',
-			href: '/inscription',
+			href: '/contact?devis=1',
 			image: '/promo/promo-autoportee-pro.jpg',
 			imageLabel: 'Débroussailleuse autoportée au travail',
 			cta: 'Demander un devis'
@@ -464,10 +464,16 @@
 			</div>
 			<div class="mt-1.5 flex flex-wrap gap-2.5">
 				<a
-					href="/inscription"
+					href="/contact?devis=1"
 					class="rounded-[10px] bg-shop-blue px-5 py-3 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
 				>
-					Demander un devis pro
+					Demander un devis
+				</a>
+				<a
+					href="/contact"
+					class="rounded-[10px] border-[1.5px] border-shop-border bg-white px-5 py-3 font-display text-sm font-bold text-shop-ink transition-colors hover:border-shop-blue"
+				>
+					Nous écrire
 				</a>
 				<a
 					href="/vue-eclatee"
