@@ -160,6 +160,7 @@ export async function listRepairOrders(options: {
 		filters.push(
 			or(
 				ilike(repairOrder.reference, like),
+				ilike(repairOrder.workshopLabel, like),
 				ilike(repairOrder.machineBrand, like),
 				ilike(repairOrder.machineModel, like),
 				ilike(repairOrder.serialNumber, like),
@@ -180,6 +181,7 @@ export async function listRepairOrders(options: {
 				orderType: repairOrder.orderType,
 				machineBrand: repairOrder.machineBrand,
 				machineModel: repairOrder.machineModel,
+				workshopLabel: repairOrder.workshopLabel,
 				totalTtc: repairOrder.totalTtc,
 				createdAt: repairOrder.createdAt,
 				customerId: customer.id,
@@ -271,6 +273,7 @@ export type RepairOrderInput = {
 	machineCondition?: string | null;
 	engineModel?: string | null;
 	engineSerialNumber?: string | null;
+	workshopLabel?: string | null;
 	workDescription?: string | null;
 	diagnosticFee?: number;
 	laborAmount?: number;
@@ -307,6 +310,7 @@ export async function createRepairOrder(input: RepairOrderInput) {
 			machineCondition: input.machineCondition?.trim() || null,
 			engineModel: input.engineModel?.trim() || null,
 			engineSerialNumber: input.engineSerialNumber?.trim() || null,
+			workshopLabel: input.workshopLabel?.trim() || null,
 			workDescription: input.workDescription?.trim() || null,
 			diagnosticFee: (input.diagnosticFee ?? 0).toFixed(2),
 			laborAmount: (input.laborAmount ?? 0).toFixed(2),
@@ -377,6 +381,20 @@ export async function updateRepairOrder(id: number, input: Partial<RepairOrderIn
 
 	// R11 : les totaux suivent toute modification de montant.
 	await recalculateTotals(id);
+}
+
+/**
+ * Change l'étiquette d'atelier. Hors du contrôle de `requireEditable` :
+ * l'étiquette ne touche ni aux travaux ni aux montants, elle reste
+ * corrigeable sur un ordre achevé ou restitué.
+ */
+export async function setRepairWorkshopLabel(id: number, label: string | null) {
+	const [updated] = await db
+		.update(repairOrder)
+		.set({ workshopLabel: label?.trim() || null, updatedAt: new Date() })
+		.where(eq(repairOrder.id, id))
+		.returning({ id: repairOrder.id });
+	if (!updated) throw new RepairError('Ordre introuvable.');
 }
 
 /** Vérifie qu'un ordre est encore modifiable, et le retourne. */

@@ -71,6 +71,7 @@ export const actions: Actions = {
 				machineCondition: str('machineCondition'),
 				engineModel: str('engineModel'),
 				engineSerialNumber: str('engineSerialNumber'),
+				workshopLabel: str('workshopLabel'),
 				workDescription: str('workDescription'),
 				diagnosticFee: num('diagnosticFee'),
 				laborAmount: num('laborAmount'),

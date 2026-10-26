@@ -72,6 +72,14 @@
 	<Card class="max-w-none p-6">
 		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prise en charge</h2>
 
+		<div class="mb-4 max-w-xs">
+			<Label for="workshopLabel" class="mb-2">Étiquette</Label>
+			<Input id="workshopLabel" name="workshopLabel" placeholder="N° de l'étiquette atelier" />
+			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+				Numéro de l'étiquette posée sur la machine. Modifiable ensuite.
+			</p>
+		</div>
+
 		<div class="mb-4 flex gap-6">
 			<Radio name="orderType" value="paid" bind:group={orderType}>Payante</Radio>
 			<Radio name="orderType" value="warranty" bind:group={orderType}>Sous garantie</Radio>

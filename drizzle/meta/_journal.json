@@ -253,6 +253,13 @@
 			"when": 1791467413009,
 			"tag": "0037_etats_commande_actifs",
 			"breakpoints": true
+		},
+		{
+			"idx": 38,
+			"version": "7",
+			"when": 1793011026805,
+			"tag": "0038_etiquette_ordre_reparation",
+			"breakpoints": true
 		}
 	]
 }

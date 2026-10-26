@@ -92,7 +92,7 @@
 		<Input
 			name="q"
 			value={data.search}
-			placeholder="Référence, client, marque, modèle ou numéro de série"
+			placeholder="Référence, étiquette, client, marque, modèle ou numéro de série"
 			class="flex-1"
 		/>
 		<Button type="submit" size="sm" color="alternative">
@@ -112,6 +112,7 @@
 				<TableHeadCell>Machine</TableHeadCell>
 				<TableHeadCell>Prise en charge</TableHeadCell>
 				<TableHeadCell>État</TableHeadCell>
+				<TableHeadCell>Étiquette</TableHeadCell>
 				<TableHeadCell class="text-right">Total TTC</TableHeadCell>
 				<TableHeadCell>Reçu le</TableHeadCell>
 			</TableHead>
@@ -138,6 +139,7 @@
 								{REPAIR_STATUS_LABELS[row.status]}
 							</Badge>
 						</TableBodyCell>
+						<TableBodyCell>{row.workshopLabel ?? '—'}</TableBodyCell>
 						<TableBodyCell class="text-right">{eur.format(Number(row.totalTtc))}</TableBodyCell>
 						<TableBodyCell>{date.format(new Date(row.createdAt))}</TableBodyCell>
 					</TableBodyRow>

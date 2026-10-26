@@ -78,6 +78,10 @@ export const repairOrder = pgTable(
 		engineModel: text('engine_model'),
 		engineSerialNumber: text('engine_serial_number'),
 
+		/** Numéro de l'étiquette posée sur la machine à l'atelier. Champ libre,
+		 *  modifiable à tout moment, y compris sur un ordre figé. */
+		workshopLabel: text('workshop_label'),
+
 		/** Travaux réalisés — obligatoire avant l'achèvement (R12). */
 		workDescription: text('work_description'),
 

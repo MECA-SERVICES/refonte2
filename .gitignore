@@ -14,6 +14,8 @@ Thumbs.db
 
 # Rapports des scripts (CSV de classement, retours arrière) : données de travail
 /reports
+# Liste de travail interne des demandes client : jamais poussée
+/DEMANDES.md
 
 # Env
 .env

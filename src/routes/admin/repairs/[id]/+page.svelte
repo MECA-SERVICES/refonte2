@@ -58,6 +58,9 @@
 	<Badge color={o.orderType === 'warranty' ? 'purple' : 'gray'}>
 		{REPAIR_TYPE_LABELS[o.orderType]}
 	</Badge>
+	{#if o.workshopLabel}
+		<Badge color="indigo">Étiquette {o.workshopLabel}</Badge>
+	{/if}
 	{#if o.warrantyReference}
 		<span class="text-sm text-gray-500 dark:text-gray-400">
 			Dossier {o.warrantyReference}
@@ -321,6 +324,28 @@
 
 	<!-- ===== Colonne latérale ===== -->
 	<aside class="space-y-4 lg:sticky lg:top-4">
+		<!-- Étiquette : hors du formulaire principal, elle reste modifiable sur un ordre figé. -->
+		<Card class="max-w-none p-4">
+			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Étiquette atelier</h3>
+			<form method="POST" action="?/setLabel" use:enhance class="flex gap-2">
+				<Input
+					id="workshopLabel"
+					name="workshopLabel"
+					aria-label="Numéro de l'étiquette"
+					placeholder="N° d'étiquette"
+					value={o.workshopLabel ?? ''}
+					size="sm"
+					class="flex-1"
+				/>
+				<Button type="submit" size="sm" color="alternative">OK</Button>
+			</form>
+			{#if form && 'labelError' in form && form.labelError}
+				<p class="mt-2 text-xs text-red-600 dark:text-red-400">{form.labelError}</p>
+			{:else if form && 'labelSaved' in form && form.labelSaved}
+				<p class="mt-2 text-xs text-green-600 dark:text-green-400">Étiquette enregistrée.</p>
+			{/if}
+		</Card>
+
 		<Card class="max-w-none p-4">
 			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Client</h3>
 			<p class="text-sm font-medium text-gray-900 dark:text-white">

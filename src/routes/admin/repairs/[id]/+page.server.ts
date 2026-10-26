@@ -8,6 +8,7 @@ import {
 	nextStatuses,
 	RepairError,
 	removeRepairPart,
+	setRepairWorkshopLabel,
 	updateRepairOrder
 } from '$lib/server/repairs';
 import { repairStatuses, type RepairStatus } from '$lib/server/db/repair.schema';
@@ -63,6 +64,20 @@ export const actions: Actions = {
 			return { success: true };
 		} catch (err) {
 			if (err instanceof RepairError) return fail(400, { message: err.message });
+			throw err;
+		}
+	},
+
+	/** Étiquette d'atelier : modifiable quel que soit l'état de l'ordre. */
+	setLabel: async ({ request, params }) => {
+		const id = idParam(params);
+		const form = await request.formData();
+
+		try {
+			await setRepairWorkshopLabel(id, form.get('workshopLabel')?.toString() ?? null);
+			return { labelSaved: true };
+		} catch (err) {
+			if (err instanceof RepairError) return fail(400, { labelError: err.message });
 			throw err;
 		}
 	},
