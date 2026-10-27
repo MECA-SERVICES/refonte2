@@ -2,11 +2,16 @@
 	import { formatNumber } from '$lib/money';
 	import PartFinder from '$lib/components/shop/PartFinder.svelte';
 	import PromoSlider, { type PromoSlide } from '$lib/components/shop/PromoSlider.svelte';
-	import SectionHeading from '$lib/components/shop/SectionHeading.svelte';
 	import UniverseCard from '$lib/components/shop/UniverseCard.svelte';
 	import PromoTile from '$lib/components/shop/PromoTile.svelte';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import ArticleCard from '$lib/components/shop/ArticleCard.svelte';
+	import {
+		LandmarkOutline,
+		ShieldCheckOutline,
+		ToolsOutline,
+		TruckOutline
+	} from 'flowbite-svelte-icons';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -91,92 +96,27 @@
 	];
 
 	/**
-	 * Types de machine du bloc « réparer » — chacun mène à la recherche dédiée.
-	 * Photos de test Unsplash (licence libre), à remplacer par des visuels du
-	 * parc Meca Services.
-	 */
-	const machines = [
-		{
-			label: 'Tondeuse',
-			image:
-				'https://images.unsplash.com/photo-1458245201577-fc8a130b8829?w=400&h=400&fit=crop&q=80'
-		},
-		{
-			label: 'Tracteur tondeuse',
-			image:
-				'https://images.unsplash.com/photo-1630709437016-ee675b9b29b8?w=400&h=400&fit=crop&q=80'
-		},
-		{
-			label: 'Robot de tonte',
-			image:
-				'https://images.unsplash.com/photo-1741326757602-186060c5d5b5?w=400&h=400&fit=crop&q=80'
-		},
-		{
-			label: 'Tronçonneuse',
-			image:
-				'https://images.unsplash.com/photo-1696883186987-299ff16b0cac?w=400&h=400&fit=crop&q=80'
-		},
-		{
-			label: 'Débroussailleuse',
-			image:
-				'https://images.unsplash.com/photo-1689728318937-17d24bc0a65c?w=400&h=400&fit=crop&q=80'
-		},
-		{
-			label: 'Motoculteur',
-			image:
-				'https://images.unsplash.com/photo-1781999374771-5e2bbcff2e15?w=400&h=400&fit=crop&q=80'
-		},
-		{
-			label: 'Souffleur',
-			image:
-				'https://images.unsplash.com/photo-1593174260957-b4eba7b3820c?w=400&h=400&fit=crop&q=80'
-		},
-		{
-			label: 'Taille-haie',
-			image: 'https://images.unsplash.com/photo-1543309959-4d45288d1629?w=400&h=400&fit=crop&q=80'
-		}
-	];
-
-	/** Visuels d'attente des cartes catégorie, en attendant les photos par rayon. */
-	const universeImages = [
-		'/promo/promo-tracteur-tondeuse.jpg',
-		'/promo/promo-robot-tonte.jpg',
-		'/promo/promo-autoportee-pro.jpg'
-	];
-
-	/** Les trois premiers rayons du menu, visuels d'attente compris. */
-	const menuUniverses = $derived(
-		data.menu.slice(0, 3).map((entry, i) => ({
-			title: entry.name,
-			subtitle: entry.children
-				.slice(0, 4)
-				.map((child) => child.name)
-				.join(', '),
-			href: `/categorie/${entry.slug}`,
-			image: universeImages[i] ?? null,
-			imageLabel: `Visuel du rayon ${entry.name}`
-		}))
-	);
-
-	/**
-	 * Portes d'entrée du catalogue : les catégories choisies en back-office
-	 * (10.3), à défaut les trois premiers rayons du menu.
+	 * Portes d'entrée du catalogue réglées en back-office (10.3). Sans
+	 * sélection, le bloc n'apparaît pas : les machines par type jouent déjà ce
+	 * rôle juste au-dessus.
 	 */
 	const universes = $derived(
-		data.home.categories.length > 0
-			? data.home.categories.map((c) => ({
-					title: c.name,
-					subtitle: c.parentName ?? 'Voir le rayon',
-					href: `/categorie/${c.slug}`,
-					image: c.imageUrl,
-					imageLabel: `Visuel du rayon ${c.name}`
-				}))
-			: menuUniverses
+		data.home.categories.map((c) => ({
+			title: c.name,
+			subtitle: c.parentName ?? 'Voir le rayon',
+			href: `/categorie/${c.slug}`,
+			image: c.imageUrl,
+			imageLabel: `Visuel du rayon ${c.name}`
+		}))
 	);
 
 	/** Onglets des produits phares — branchés sur les deux listes réelles. */
 	type ProductTab = 'stock' | 'new';
 	let productTab = $state<ProductTab>('stock');
+	const productTabs: { value: ProductTab; label: string }[] = [
+		{ value: 'stock', label: 'En stock à l’atelier' },
+		{ value: 'new', label: 'Derniers arrivages' }
+	];
 	/** Sélection du back-office (10.4) ; à défaut, stock atelier et arrivages. */
 	const curated = $derived(data.home.products.length > 0);
 	const shownProducts = $derived(
@@ -186,46 +126,52 @@
 	/** Bandeau de réassurance, textes validés en réunion le 15/10/2026 (demande 10.5). */
 	const services = [
 		{
-			mark: 'SAV',
+			icon: ToolsOutline,
 			title: 'Atelier agréé',
 			text: 'S.A.V assuré en Normandie, dans notre atelier de Carantilly.'
 		},
 		{
-			mark: '100',
+			icon: ShieldCheckOutline,
 			title: 'Pièces 100 % d’origine ou adaptables',
-			text: 'Références constructeur ou adaptables, selon votre machine et votre besoin.'
+			text: 'Selon votre machine et votre besoin.'
 		},
 		{
-			mark: '24h',
+			icon: TruckOutline,
 			title: 'Expédition 24 h à 48 h',
-			text: 'Si l’article est en stock. France, Europe et Outre-mer, retrait gratuit à l’atelier.'
+			text: 'Si l’article est en stock. Retrait gratuit à l’atelier.'
 		},
 		{
-			mark: '€',
+			icon: LandmarkOutline,
 			title: 'Collectivités',
-			text: 'Paiement administratif accepté : mandat administratif via Chorus Pro.'
+			text: 'Mandat administratif accepté, via Chorus Pro.'
 		}
 	];
 
-	const reviews = [
-		{
-			stars: '★★★★★',
-			text: 'Pièce trouvée en 5 minutes grâce à la vue éclatée, reçue le surlendemain. Exactement la bonne référence.',
-			who: 'Jean-Marc',
-			where: 'Saint-Lô'
-		},
-		{
-			stars: '★★★★★',
-			text: 'On gère 40 machines, ils connaissent notre parc par cœur. Le devis part le jour même.',
-			who: 'Entreprise d’espaces verts',
-			where: 'Coutances'
-		},
-		{
-			stars: '★★★★☆',
-			text: 'Mandat administratif accepté sans discuter, ce qui est rare. Facturation Chorus nickel.',
-			who: 'Services techniques',
-			where: 'Commune de la Manche'
-		}
+	/**
+	 * Marques du carrousel : logos propres repris de l'ancien site
+	 * (img/cms/Logos Marques), rangés dans static/marques sous le slug de la
+	 * marque. Les logos de la base, trop disparates, ne s'y prêtent pas.
+	 */
+	const logoBrands = [
+		{ slug: 'husqvarna', name: 'Husqvarna', file: 'husqvarna.jpg' },
+		{ slug: 'iseki', name: 'Iseki', file: 'iseki.jpg' },
+		{ slug: 'stiga', name: 'Stiga', file: 'stiga.png' },
+		{ slug: 'b-s', name: 'Briggs & Stratton', file: 'b-s.png' },
+		{ slug: 'kawasaki', name: 'Kawasaki', file: 'kawasaki.jpg' },
+		{ slug: 'ego-power', name: 'EGO Power+', file: 'ego-power.png' },
+		{ slug: 'etesia', name: 'Etesia', file: 'etesia.jpg' },
+		{ slug: 'kohler', name: 'Kohler', file: 'kohler.png' },
+		{ slug: 'mtd', name: 'MTD', file: 'mtd.png' },
+		{ slug: 'orec', name: 'Orec', file: 'orec.png' },
+		{ slug: 'agria', name: 'Agria', file: 'agria.png' },
+		{ slug: 'alpina', name: 'Alpina', file: 'alpina.png' },
+		{ slug: 'bahco', name: 'Bahco', file: 'bahco.png' },
+		{ slug: 'eliet', name: 'Eliet', file: 'eliet.png' },
+		{ slug: 'maruyama', name: 'Maruyama', file: 'maruyama.png' },
+		{ slug: 'snapper-simplicity', name: 'Snapper', file: 'snapper-simplicity.jpg' },
+		{ slug: 'castelgarden', name: 'Castelgarden', file: 'castelgarden.jpg' },
+		{ slug: 'weibang', name: 'Weibang', file: 'weibang.png' },
+		{ slug: 'outils-wolf', name: 'Outils Wolf', file: 'outils-wolf.jpg' }
 	];
 </script>
 
@@ -255,6 +201,41 @@
 	</div>
 </section>
 
+<!--
+	Titre de section à la manière des thèmes PrestaShop : filet gris sur toute
+	la largeur, trait orange sous l'intitulé, lien d'action à droite.
+-->
+{#snippet sectionTitle(title: string, href?: string, linkLabel?: string)}
+	<div class="mb-5 flex flex-wrap items-end justify-between gap-x-4 border-b border-shop-border">
+		<h2
+			class="-mb-px border-b-[3px] border-shop-orange pb-2.5 font-display text-[22px] leading-tight font-extrabold text-shop-ink"
+		>
+			{title}
+		</h2>
+		{#if href}
+			<a {href} class="pb-2.5 text-sm font-bold text-shop-blue hover:underline">{linkLabel}</a>
+		{/if}
+	</div>
+{/snippet}
+
+<!-- ================= Engagements (10.5) ================= -->
+<section class="mt-10" aria-label="Nos engagements">
+	<ul
+		class="grid gap-px overflow-hidden border border-shop-border-soft bg-shop-border-soft sm:grid-cols-2 lg:grid-cols-4"
+	>
+		{#each services as service (service.title)}
+			<li class="flex items-center gap-3.5 bg-white p-5">
+				<service.icon class="h-9 w-9 shrink-0 text-shop-orange" />
+				<span>
+					<span class="block font-display text-[15px] font-bold text-shop-ink">{service.title}</span
+					>
+					<span class="text-[13px] text-shop-muted">{service.text}</span>
+				</span>
+			</li>
+		{/each}
+	</ul>
+</section>
+
 <!-- ================= Tuiles promotionnelles (10.1) =================
      À la manière de Kramp, à la place de « Nos marques ». Réglées dans
      « Apparence › Page d'accueil » ; sans tuile, le bloc n'apparaît pas. -->
@@ -268,37 +249,66 @@
 	</section>
 {/if}
 
-<!-- ================= Machines par type ================= -->
-<section class="mt-14">
-	<SectionHeading
-		title="Nos machines"
-		accent="par type"
-		lead="Tondeuses, robots, tronçonneuses… choisissez le type de machine pour voir les produits correspondants."
-	/>
-	<div class="grid grid-cols-2 gap-3.5 sm:grid-cols-4 lg:grid-cols-8">
-		{#each machines as machine (machine.label)}
-			<a
-				href="/recherche?q={encodeURIComponent(machine.label)}"
-				class="flex flex-col items-center gap-3 rounded-[14px] bg-shop-subtle px-2.5 pt-4 pb-4 text-center transition-colors hover:bg-primary-100"
+<!-- ================= Machines par type =================
+     Blocs catégorie à la PrestaShop. Chaque type est illustré par une vraie
+     machine du catalogue et mène à la recherche, côté machines ou côté pièces. -->
+<section class="mt-12">
+	{@render sectionTitle('Nos machines', '/recherche?type=produits', 'Toutes les machines')}
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		{#each data.machineTypes as machine (machine.label)}
+			{@const machinesHref = `/recherche?q=${encodeURIComponent(machine.term)}&type=produits`}
+			<div
+				class="group flex gap-4 rounded-[10px] border border-shop-border-soft bg-white p-4 transition-shadow hover:shadow-[0_6px_22px_rgba(30,36,54,0.1)]"
 			>
-				<img
-					src={machine.image}
-					alt=""
-					loading="lazy"
-					class="h-[124px] w-[124px] rounded-full object-cover"
-				/>
-				<span class="font-display text-sm leading-tight font-bold text-shop-ink">
-					{machine.label}
-				</span>
-			</a>
+				<a
+					href={machinesHref}
+					class="block h-[104px] w-[104px] shrink-0"
+					tabindex="-1"
+					aria-hidden="true"
+				>
+					{#if machine.image}
+						<img
+							src={machine.image}
+							alt=""
+							loading="lazy"
+							class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+						/>
+					{/if}
+				</a>
+				<div class="min-w-0">
+					<a
+						href={machinesHref}
+						class="font-display text-base font-extrabold text-shop-ink hover:text-shop-blue"
+					>
+						{machine.label}
+					</a>
+					<ul class="mt-1.5 space-y-0.5 text-[13.5px] text-shop-muted">
+						<li><a href={machinesHref} class="hover:text-shop-orange">Machines neuves</a></li>
+						<li>
+							<a
+								href="/recherche?q={encodeURIComponent(machine.term)}&type=pieces"
+								class="hover:text-shop-orange"
+							>
+								Pièces détachées
+							</a>
+						</li>
+					</ul>
+					<a
+						href={machinesHref}
+						class="mt-2.5 inline-block rounded-md bg-shop-blue px-3 py-1.5 text-[12.5px] font-bold text-white transition-colors hover:bg-shop-orange"
+					>
+						Voir plus
+					</a>
+				</div>
+			</div>
 		{/each}
 	</div>
 </section>
 
-<!-- ================= Catégories ================= -->
+<!-- ================= Catégories mises en avant (10.3) ================= -->
 {#if universes.length > 0}
-	<section class="mt-14">
-		<SectionHeading title="Par" accent="catégories" href="/recherche" />
+	<section class="mt-12">
+		{@render sectionTitle('Nos rayons', '/recherche', 'Tout le catalogue')}
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{#each universes as universe (universe.title)}
 				<UniverseCard {...universe} />
@@ -307,41 +317,38 @@
 	</section>
 {/if}
 
-<!-- ================= Produits phares ================= -->
-<section class="mt-14">
-	<div class="mb-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-		<h2
-			class="font-display text-2xl leading-tight font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[28px] lg:text-[32px]"
-		>
-			Nos produits phares
-		</h2>
-		{#if !curated}
-			<div class="flex gap-1 rounded-[10px] bg-shop-subtle p-1" role="tablist">
-				<button
-					type="button"
-					role="tab"
-					aria-selected={productTab === 'stock'}
-					onclick={() => (productTab = 'stock')}
-					class="rounded-lg px-4 py-2 font-display text-[13.5px] font-bold transition-colors {productTab ===
-					'stock'
-						? 'bg-white text-shop-blue shadow-[0_1px_4px_rgba(30,36,54,0.12)]'
-						: 'text-shop-muted hover:text-shop-ink'}"
-				>
-					Disponible immédiatement
-				</button>
-				<button
-					type="button"
-					role="tab"
-					aria-selected={productTab === 'new'}
-					onclick={() => (productTab = 'new')}
-					class="rounded-lg px-4 py-2 font-display text-[13.5px] font-bold transition-colors {productTab ===
-					'new'
-						? 'bg-white text-shop-blue shadow-[0_1px_4px_rgba(30,36,54,0.12)]'
-						: 'text-shop-muted hover:text-shop-ink'}"
-				>
-					Derniers arrivages
-				</button>
+<!-- ================= Produits phares (10.4), en onglets ================= -->
+<section class="mt-12">
+	<div class="mb-5 flex flex-wrap items-end justify-between gap-x-6 border-b border-shop-border">
+		{#if curated}
+			<h2
+				class="-mb-px border-b-[3px] border-shop-orange pb-2.5 font-display text-[22px] leading-tight font-extrabold text-shop-ink"
+			>
+				Nos produits phares
+			</h2>
+		{:else}
+			<div class="flex gap-6 sm:gap-8" role="tablist">
+				{#each productTabs as tab (tab.value)}
+					<button
+						type="button"
+						role="tab"
+						aria-selected={productTab === tab.value}
+						onclick={() => (productTab = tab.value)}
+						class="-mb-px border-b-[3px] pb-2.5 font-display text-[18px] leading-tight font-extrabold transition-colors sm:text-[22px] {productTab ===
+						tab.value
+							? 'border-shop-orange text-shop-ink'
+							: 'border-transparent text-shop-muted hover:text-shop-ink'}"
+					>
+						{tab.label}
+					</button>
+				{/each}
 			</div>
+			<a
+				href={productTab === 'new' ? '/recherche?tri=new' : '/recherche?stock=1'}
+				class="pb-2.5 text-sm font-bold text-shop-blue hover:underline"
+			>
+				{productTab === 'new' ? 'Toutes les nouveautés' : 'Tout le stock atelier'}
+			</a>
 		{/if}
 	</div>
 
@@ -365,181 +372,90 @@
 			<ProductCard {product} />
 		{/each}
 	</div>
-
-	{#if !curated}
-		<div class="mt-5 text-center">
-			<a
-				href={productTab === 'new' ? '/recherche?tri=new' : '/recherche?stock=1'}
-				class="inline-block rounded-[10px] border-[1.5px] border-shop-border px-5 py-3 font-display text-sm font-bold text-shop-ink transition-colors hover:border-shop-blue hover:text-shop-blue"
-			>
-				{productTab === 'new' ? 'Toutes les nouveautés' : 'Tout le stock atelier'} →
-			</a>
-		</div>
-	{/if}
 </section>
 
-<!-- ================= Tout pour ma machine ================= -->
-<section class="mt-14">
-	<SectionHeading title="Tout pour ma machine" />
-	<div class="grid gap-4 lg:grid-cols-2">
-		<div
-			class="grid min-h-[340px] grid-cols-1 overflow-hidden rounded-2xl bg-shop-blue text-white sm:grid-cols-2"
-		>
-			<div class="flex flex-col justify-center gap-3 p-8 lg:p-9">
-				<p class="font-display text-[26px] font-extrabold tracking-[-0.02em] lg:text-[28px]">
-					Entretenir ma machine
-				</p>
-				<p class="text-[15.5px] leading-relaxed text-pretty text-[#e2e7f6]">
-					Huiles, bougies, courroies, fils nylon, lames, chaînes et guides — les consommables
-					d'origine pour prolonger la vie de votre matériel.
-				</p>
-				<a
-					href="/recherche?q=consommables"
-					class="mt-1.5 self-start rounded-[10px] bg-white px-4 py-2.5 font-display text-sm font-bold text-shop-blue transition-colors hover:bg-primary-100"
-				>
-					Voir les consommables
-				</a>
-			</div>
-			<!-- Visuels d'ambiance Unsplash (licence libre) — à remplacer par des
-			     photos de l'atelier quand elles seront disponibles. -->
-			<img
-				src="https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=1000&q=80"
-				alt="Consommables en rayon — huile, bougies, chaînes"
-				loading="lazy"
-				class="h-full min-h-[220px] w-full object-cover"
-			/>
-		</div>
-
-		<div
-			class="grid min-h-[340px] grid-cols-1 overflow-hidden rounded-2xl bg-shop-ink text-white sm:grid-cols-2"
-		>
-			<div class="flex flex-col justify-center gap-3 p-8 lg:p-9">
-				<p class="font-display text-[26px] font-extrabold tracking-[-0.02em] lg:text-[28px]">
-					Réparer ma machine
-				</p>
-				<p class="text-[15.5px] leading-relaxed text-pretty text-[#e2e7f6]">
-					Vues éclatées de plus de 40 marques, pièces 100 % origine et un atelier qui répond au
-					téléphone quand vous hésitez entre deux références.
-				</p>
-				<a
-					href="/vue-eclatee"
-					class="mt-1.5 self-start rounded-[10px] bg-shop-orange px-4 py-2.5 font-display text-sm font-bold text-white transition-colors hover:bg-shop-orange-deep"
-				>
-					Trouver ma pièce
-				</a>
-			</div>
-			<img
-				src="https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=1000&q=80"
-				alt="Mécanicien démontant un moteur en atelier"
-				loading="lazy"
-				class="h-full min-h-[220px] w-full object-cover"
-			/>
-		</div>
-	</div>
-</section>
-
-<!-- ================= Services ================= -->
-<section class="mt-14" aria-label="Nos engagements">
-	<div class="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-		{#each services as service (service.title)}
-			<div class="flex gap-3.5 rounded-[14px] border-[1.5px] border-shop-border-soft bg-white p-5">
-				<span
-					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 font-display text-[15px] font-extrabold text-shop-blue"
-				>
-					{service.mark}
-				</span>
-				<div class="min-w-0">
-					<p class="mb-1 font-display text-[15.5px] font-extrabold text-shop-ink">
-						{service.title}
-					</p>
-					<p class="text-[13.5px] leading-normal text-pretty text-shop-muted">{service.text}</p>
-				</div>
-			</div>
-		{/each}
-	</div>
-</section>
-
-<!-- ================= Aide ================= -->
-<section class="mt-14">
-	<div class="grid overflow-hidden rounded-2xl bg-shop-subtle lg:grid-cols-2">
+<!-- ================= Bannières de l'atelier =================
+     Les visuels du client, tels qu'il les a créés : mascotte, tampon
+     « Revendeur agréé » et message. -->
+<section class="mt-12 grid gap-5 md:grid-cols-2" aria-label="À la une">
+	<a href="/recherche?q=robot" class="block overflow-hidden rounded-[10px]">
 		<img
-			src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1000&q=80"
-			alt="Conseiller Meca Services au téléphone dans l'atelier"
+			src="/slider/robots-tondeuses-bientot-disponible.jpg"
+			alt="Robots tondeuses bientôt disponibles : LIDAR, 4x4, NRTK, jusqu'à 24 000 m² de tonte"
 			loading="lazy"
-			class="h-full min-h-[240px] w-full object-cover"
+			class="aspect-[3/1] w-full object-cover object-left transition-transform duration-500 hover:scale-[1.02]"
 		/>
-		<div class="flex flex-col justify-center gap-3 p-7 sm:p-10">
-			<h2
-				class="font-display text-2xl leading-[1.1] font-extrabold tracking-[-0.02em] text-shop-ink sm:text-[28px]"
-			>
-				Une question ? Besoin d'aide pour identifier une pièce ?
-			</h2>
-			<p class="text-[15.5px] leading-relaxed text-pretty text-shop-ink-soft">
-				L'équipe de l'atelier de Carantilly répond du lundi au vendredi, 9 h – 12 h et 14 h – 18 h.
-				Envoyez-nous une photo de la plaque constructeur, on identifie la référence pour vous.
+	</a>
+	<a href="/vue-eclatee" class="block overflow-hidden rounded-[10px]">
+		<img
+			src="/static-slider/slide.jpg"
+			alt="MS Shop assure le S.A.V de tous les produits vendus sur le site"
+			loading="lazy"
+			class="aspect-[3/1] w-full object-cover transition-transform duration-500 hover:scale-[1.02]"
+		/>
+	</a>
+</section>
+
+<!-- ================= Pièces détachées ================= -->
+<section class="mt-12">
+	{@render sectionTitle('Pièces détachées', '/recherche?type=pieces', 'Toutes les pièces')}
+	<div class="grid gap-5 lg:grid-cols-[270px_minmax(0,1fr)]">
+		<div class="flex flex-col rounded-[10px] bg-shop-blue p-6 text-white">
+			<p class="font-display text-[21px] leading-tight font-extrabold">
+				Trouvez la pièce de votre machine
 			</p>
-			<div class="mt-1">
-				<a
-					href="tel:0950922336"
-					class="font-display text-[26px] font-extrabold tracking-[-0.01em] text-shop-blue"
-				>
+			<p class="mt-2 text-[14.5px] leading-relaxed text-[#e2e7f6]">
+				Vues éclatées des constructeurs, référence d'origine et stock de l'atelier.
+			</p>
+			<a
+				href="/vue-eclatee"
+				class="mt-4 rounded-md bg-shop-orange py-2.5 text-center font-display text-[15px] font-bold transition-colors hover:bg-shop-orange-deep"
+			>
+				Parcourir les vues éclatées
+			</a>
+			<div class="mt-6 border-t border-white/20 pt-4 text-[13.5px] text-[#e2e7f6] lg:mt-auto">
+				Une référence introuvable ? L'atelier répond du lundi au vendredi, 9 h – 12 h et 14 h – 18
+				h.
+				<a href="tel:0950922336" class="mt-1 block font-display text-xl font-extrabold text-white">
 					09 50 92 23 36
 				</a>
 			</div>
-			<div class="mt-1.5 flex flex-wrap gap-2.5">
-				<a
-					href="/contact?devis=1"
-					class="rounded-[10px] bg-shop-blue px-5 py-3 font-display text-sm font-bold text-white transition-colors hover:bg-shop-blue-dark"
-				>
-					Demander un devis
-				</a>
-				<a
-					href="/contact"
-					class="rounded-[10px] border-[1.5px] border-shop-border bg-white px-5 py-3 font-display text-sm font-bold text-shop-ink transition-colors hover:border-shop-blue"
-				>
-					Nous écrire
-				</a>
-				<a
-					href="/vue-eclatee"
-					class="rounded-[10px] border-[1.5px] border-shop-border bg-white px-5 py-3 font-display text-sm font-bold text-shop-ink transition-colors hover:border-shop-blue"
-				>
-					Identifier ma pièce
-				</a>
-			</div>
+		</div>
+		<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+			{#each data.parts as product (product.id)}
+				<ProductCard {product} />
+			{/each}
 		</div>
 	</div>
 </section>
 
-<!-- ================= Avis ================= -->
-<section class="mt-14" aria-label="Avis clients">
-	<SectionHeading title="Les avis de nos clients">
-		<span class="text-sm text-shop-muted">
-			<strong class="font-display text-base text-shop-ink">4,5 / 5</strong> · 42 avis vérifiés
-		</span>
-	</SectionHeading>
-	<div class="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-		{#each reviews as review (review.who)}
-			<figure
-				class="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-shop-border-soft bg-white p-5"
+<!-- ================= Marques ================= -->
+<section class="mt-12">
+	{@render sectionTitle('Nos marques', '/marques', 'Toutes les marques')}
+	<div
+		class="flex snap-x [scrollbar-width:none] gap-px overflow-x-auto border border-shop-border-soft bg-shop-border-soft"
+	>
+		{#each logoBrands as brand (brand.slug)}
+			<a
+				href="/marque/{brand.slug}"
+				title={brand.name}
+				class="flex h-20 w-44 shrink-0 snap-start items-center justify-center bg-white px-5 grayscale transition hover:grayscale-0"
 			>
-				<p class="text-[15px] tracking-[0.12em] text-shop-orange" aria-label="Note">
-					{review.stars}
-				</p>
-				<blockquote class="text-[15px] leading-relaxed text-pretty text-shop-ink">
-					{review.text}
-				</blockquote>
-				<figcaption class="mt-auto text-[13px] text-shop-muted">
-					<strong class="text-shop-ink">{review.who}</strong> · {review.where}
-				</figcaption>
-			</figure>
+				<img
+					src="/marques/{brand.file}"
+					alt={brand.name}
+					loading="lazy"
+					class="max-h-9 max-w-full object-contain"
+				/>
+			</a>
 		{/each}
 	</div>
 </section>
 
 <!-- ================= Blog ================= -->
 {#if data.articles.length > 0}
-	<section class="mt-14 mb-4">
-		<SectionHeading title="Conseils" accent="& actualités" href="/blog" linkLabel="Tout le blog" />
+	<section class="mt-12 mb-4">
+		{@render sectionTitle('Conseils et actualités', '/blog', 'Tout le blog')}
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.articles as article (article.slug)}
 				<ArticleCard {article} />

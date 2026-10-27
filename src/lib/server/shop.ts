@@ -29,6 +29,7 @@ import { categoryKind, type CategoryKind } from '$lib/catalog-kinds';
 import { searchCondition, searchRank } from './search';
 import { searchCatalog } from './meili';
 import {
+	firstImageSql,
 	isBrandLogoSql,
 	priceTtcSql,
 	priceTtcStrikeSql,
@@ -812,9 +813,19 @@ export function featuredBrands(limit = 12) {
 		.limit(limit);
 }
 
+/** Le produit a au moins une vraie photo (pas seulement le logo de sa marque). */
+const hasPhotoSql = exists(
+	db
+		.select({ one: sql`1` })
+		.from(productMedia)
+		.where(and(eq(productMedia.productId, product.id), eq(productMedia.type, 'image')))
+);
+
 /**
- * Produits disponibles immédiatement — l'immense majorité du catalogue est en
- * commande fournisseur, ce qui rend cette sélection utile sur l'accueil.
+ * Machines et consommables disponibles immédiatement, photographiés, pour
+ * l'onglet « En stock à l'atelier » de l'accueil. Les pièces ont leur propre
+ * bloc : beaucoup n'ont pour photo que le visuel « pièce d'origine » de leur
+ * marque, qui ne montre rien du produit.
  */
 export function inStockShopProducts(limit = 12) {
 	return db
@@ -822,9 +833,78 @@ export function inStockShopProducts(limit = 12) {
 		.from(product)
 		.leftJoin(brand, eq(product.brandId, brand.id))
 		.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
-		.where(and(eq(product.isActive, true), gt(product.stock, 0)))
+		.where(
+			and(
+				eq(product.isActive, true),
+				gt(product.stock, 0),
+				notInArray(product.type, ['part']),
+				hasPhotoSql
+			)
+		)
 		.orderBy(desc(product.updatedAt), desc(product.id))
 		.limit(limit);
+}
+
+/**
+ * Pièces détachées en stock et photographiées, pour le bloc « Pièces
+ * détachées » de l'accueil. Les photos les plus récentes passent d'abord : les
+ * anciennes, reprises de PrestaShop, sont souvent le visuel de la marque.
+ */
+export function inStockShopParts(limit = 4) {
+	return db
+		.select(productCardFields)
+		.from(product)
+		.leftJoin(brand, eq(product.brandId, brand.id))
+		.leftJoin(taxRule, eq(product.taxRuleId, taxRule.id))
+		.where(
+			and(eq(product.isActive, true), eq(product.type, 'part'), gt(product.stock, 0), hasPhotoSql)
+		)
+		.orderBy(
+			desc(
+				sql`(SELECT max(m.id) FROM ${productMedia} m WHERE m.product_id = ${product.id} AND m.type = 'image')`
+			)
+		)
+		.limit(limit);
+}
+
+/**
+ * Type de machine de l'accueil : mot cherché dans le nom des machines, et mots
+ * qui l'excluent (« tondeuse » ne doit pas retenir un robot tondeuse).
+ */
+export type MachineType = { label: string; term: string; exclude?: string[] };
+
+/**
+ * Photo réelle d'une machine du catalogue pour chaque type de machine de
+ * l'accueil : une machine illustrée dont le nom contient le mot cherché, de
+ * préférence en stock. Un type sans résultat n'a pas de photo.
+ */
+export function machineTypePhotos(types: MachineType[]): Promise<Record<string, string | null>> {
+	return cached(
+		`machine-type-photos:${JSON.stringify(types)}`,
+		async () => {
+			const entries = await Promise.all(
+				types.map(async ({ label, term, exclude = [] }) => {
+					const [row] = await db
+						.select({ url: firstImageSql(product.id) })
+						.from(product)
+						.where(
+							and(
+								eq(product.isActive, true),
+								eq(product.type, 'machine'),
+								sql`${product.name} ilike ${'%' + term + '%'}`,
+								...exclude.map((word) => sql`${product.name} not ilike ${'%' + word + '%'}`),
+								hasPhotoSql
+							)
+						)
+						.orderBy(desc(sql`${product.stock} > 0`), desc(product.id))
+						.limit(1);
+					return [label, row?.url ?? null] as const;
+				})
+			);
+			return Object.fromEntries(entries);
+		},
+		3600
+	);
 }
 
 /** Derniers produits actifs (section « Nouveaux produits » de l'accueil). */

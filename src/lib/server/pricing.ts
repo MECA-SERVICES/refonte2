@@ -6,7 +6,7 @@
  * Module de fondations : aucun domaine métier n'est importé.
  */
 
-import { sql, type SQL } from 'drizzle-orm';
+import { Column, getTableName, is, sql, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { brand, product, productMedia, taxRule } from '$lib/server/db/schema';
 
@@ -24,11 +24,18 @@ export const priceTtcStrikeSql = sql<
  *
  * La colonne portant l'identifiant produit varie selon la table interrogée
  * (`product.id`, `order_line.product_id`…) — d'où le paramètre.
+ *
+ * La colonne est toujours qualifiée par sa table : dans une requête sans
+ * jointure, drizzle écrit `"id"` tout court, que la sous-requête lit comme
+ * `product_media.id` — et aucune image n'est jamais trouvée.
  */
 export function firstImageSql(productId: PgColumn | SQL): SQL<string | null> {
+	const ref = is(productId, Column)
+		? sql`${sql.identifier(getTableName(productId.table))}.${sql.identifier(productId.name)}`
+		: productId;
 	return sql<string | null>`(
 		SELECT m.url FROM ${productMedia} m
-		WHERE m.product_id = ${productId} AND m.type = 'image'
+		WHERE m.product_id = ${ref} AND m.type = 'image'
 		ORDER BY m.position, m.id
 		LIMIT 1
 	)`;
