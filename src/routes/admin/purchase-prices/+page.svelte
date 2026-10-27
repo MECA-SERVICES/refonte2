@@ -55,7 +55,7 @@
 				: 'border-gray-200 text-gray-600 hover:border-gray-300'}"
 		>
 			{label}
-			<span class="ms-1 text-xs text-gray-400">{formatNumber(data.counts[value])}</span>
+			<span class="ms-1 text-xs text-gray-500">{formatNumber(data.counts[value])}</span>
 		</a>
 	{/each}
 </div>

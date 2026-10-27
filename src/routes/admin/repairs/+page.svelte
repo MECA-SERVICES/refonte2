@@ -81,7 +81,7 @@
 				: 'border-gray-200 text-gray-600 hover:border-gray-300'}"
 		>
 			{tab.label}
-			<span class="ms-1 text-xs text-gray-400">{tab.count}</span>
+			<span class="ms-1 text-xs text-gray-500">{tab.count}</span>
 		</a>
 	{/each}
 </div>
@@ -98,7 +98,7 @@
 			placeholder="Référence, étiquette, client, marque, modèle ou numéro de série"
 			class="flex-1"
 		/>
-		<Button type="submit" size="sm" color="alternative">
+		<Button type="submit" size="sm" color="alternative" aria-label="Rechercher">
 			<SearchOutline class="h-4 w-4" />
 		</Button>
 	</form>

@@ -112,8 +112,8 @@
 	--color-primary-600: #0e7489;
 	--color-primary-700: #0e7489;
 	--color-primary-800: #0c6577;
-	--color-primary-900: #13859c;
-	--color-primary-950: #0d5f70;
+	--color-primary-900: #0a5361;
+	--color-primary-950: #073b45;
 
 	/* Accents « cyan » du back-office : même couleur que primary. */
 	--color-cyan-50: var(--color-primary-50);
@@ -139,41 +139,44 @@
 	--color-gray-900: #282b30;
 	--color-gray-950: #202226;
 
-	/* $danger #c05c67, $danger-hover #fde1e1 ; 700 (boutons) assombri pour le contraste */
+	/* Rouge, vert et orange : la couleur PrestaShop en 400 (décor) ; 500 et
+	   au-delà assombris, car Flowbite y écrit du texte (alertes : texte 500 sur
+	   fond 100) et pose du blanc dessus (boutons). Tous à 4,9:1 au moins.
+	   $danger #c05c67, $danger-hover #fde1e1 */
 	--color-red-50: #fdf3f3;
 	--color-red-100: #fde1e1;
 	--color-red-200: #f5c4c9;
 	--color-red-300: #e49aa2;
-	--color-red-400: #d27a84;
-	--color-red-500: #c05c67;
-	--color-red-600: #c05c67;
-	--color-red-700: #a84c56;
-	--color-red-800: #8a3d46;
-	--color-red-900: #6f3139;
+	--color-red-400: #c05c67;
+	--color-red-500: #9e4651;
+	--color-red-600: #9e4651;
+	--color-red-700: #8a3d46;
+	--color-red-800: #6f3139;
+	--color-red-900: #57262d;
 
 	/* $success #70b580 */
 	--color-green-50: #f1f8f2;
 	--color-green-100: #e2f1e5;
 	--color-green-200: #c3e2ca;
 	--color-green-300: #9dcea8;
-	--color-green-400: #86c293;
-	--color-green-500: #70b580;
-	--color-green-600: #70b580;
-	--color-green-700: #5a9c6a;
-	--color-green-800: #4a8158;
-	--color-green-900: #3b6646;
+	--color-green-400: #70b580;
+	--color-green-500: #3f6f4c;
+	--color-green-600: #3f6f4c;
+	--color-green-700: #3b6646;
+	--color-green-800: #2f5238;
+	--color-green-900: #243f2b;
 
 	/* $warning #cd9321, $warning-hover #fde7bb, fond des alertes #fffbd3 */
 	--color-yellow-50: #fffbd3;
 	--color-yellow-100: #fde7bb;
 	--color-yellow-200: #f8d48a;
 	--color-yellow-300: #eebd5a;
-	--color-yellow-400: #dea63a;
-	--color-yellow-500: #cd9321;
-	--color-yellow-600: #cd9321;
-	--color-yellow-700: #b07c17;
-	--color-yellow-800: #8f6413;
-	--color-yellow-900: #6f4e0f;
+	--color-yellow-400: #cd9321;
+	--color-yellow-500: #75510f;
+	--color-yellow-600: #75510f;
+	--color-yellow-700: #6a490d;
+	--color-yellow-800: #5c400c;
+	--color-yellow-900: #45300a;
 }
 
 /* Focus clavier visible partout dans le back-office : l'anneau clair de Flowbite
