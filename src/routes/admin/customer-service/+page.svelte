@@ -1,6 +1,5 @@
 <script lang="ts">
 	import {
-		Badge,
 		Button,
 		Input,
 		Select,
@@ -218,9 +217,10 @@
 						/>
 					</TableBodyCell>
 					<TableBodyCell>
-						<Badge color={priorityColor[row.priority]}
-							>{SUPPORT_PRIORITY_LABELS[row.priority]}</Badge
-						>
+						<StateBadge
+							color={priorityColor[row.priority]}
+							label={SUPPORT_PRIORITY_LABELS[row.priority]}
+						/>
 					</TableBodyCell>
 					<TableBodyCell class="whitespace-nowrap">{row.assignedName ?? '—'}</TableBodyCell>
 					<TableBodyCell class="whitespace-nowrap tabular-nums">

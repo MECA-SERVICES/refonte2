@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { Badge } from 'flowbite-svelte';
+	import StateBadge from './StateBadge.svelte';
 
 	let { active }: { active: boolean } = $props();
 </script>
 
-<Badge color={active ? 'green' : 'gray'} rounded>
-	{active ? 'Actif' : 'Inactif'}
-</Badge>
+<StateBadge label={active ? 'Actif' : 'Inactif'} color={active ? 'green' : 'gray'} />

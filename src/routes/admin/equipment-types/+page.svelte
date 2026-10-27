@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import {
-		Badge,
 		Button,
 		Card,
 		Input,
@@ -14,6 +13,7 @@
 	} from 'flowbite-svelte';
 	import { ArrowDownOutline, ArrowUpOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
+	import StateBadge from '$lib/components/admin/StateBadge.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { PageProps } from './$types';
 
@@ -123,9 +123,10 @@
 							<input type="hidden" name="id" value={t.id} />
 							<input type="hidden" name="active" value={String(!t.isActive)} />
 							<button type="submit" title={t.isActive ? 'Désactiver' : 'Réactiver'}>
-								<Badge color={t.isActive ? 'green' : 'gray'}>
-									{t.isActive ? 'Proposé' : 'Désactivé'}
-								</Badge>
+								<StateBadge
+									color={t.isActive ? 'green' : 'gray'}
+									label={t.isActive ? 'Proposé' : 'Désactivé'}
+								/>
 							</button>
 						</form>
 					</TableBodyCell>

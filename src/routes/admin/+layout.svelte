@@ -29,7 +29,6 @@
 		GlobeSolid,
 		CogSolid,
 		ToolsOutline,
-		BellSolid,
 		SearchOutline,
 		BarsOutline
 	} from 'flowbite-svelte-icons';
@@ -73,7 +72,8 @@
 	const itemIconClass = 'h-5 w-5 shrink-0 text-gray-400 group-hover:text-white';
 </script>
 
-<div class="min-h-screen bg-gray-100 dark:bg-gray-900 print:bg-white">
+<!-- `admin-theme` active les couleurs du back-office PrestaShop (layout.css). -->
+<div class="admin-theme min-h-screen bg-gray-100 dark:bg-gray-900 print:bg-white">
 	<!-- Sidebar (style PrestaShop : sombre, fixe) -->
 	<Sidebar
 		{activeUrl}
@@ -82,17 +82,17 @@
 		breakpoint="lg"
 		position="fixed"
 		params={{ x: 0, duration: 0 }}
-		class="h-screen w-64 border-e border-gray-700 bg-gray-800 print:hidden"
+		class="h-screen w-64 bg-gray-700 print:hidden"
 		classes={{
-			div: 'flex h-full flex-col overflow-y-auto bg-gray-800 px-3 py-4',
+			div: 'flex h-full flex-col overflow-y-auto bg-gray-700 py-4',
 			nonactive:
-				'group flex items-center rounded-md p-2 text-sm font-normal text-gray-300 hover:bg-gray-700 hover:text-white group-has-[ul]:ms-6',
+				'group flex items-center border-s-4 border-transparent p-2 text-sm font-normal text-gray-300 hover:bg-gray-950 hover:text-white group-has-[ul]:ms-6',
 			active:
-				'group flex items-center rounded-md bg-cyan-600 p-2 text-sm font-medium text-white group-has-[ul]:ms-6'
+				'group flex items-center border-s-4 border-primary-500 bg-gray-950 p-2 text-sm font-medium text-white group-has-[ul]:ms-6'
 		}}
 	>
 		<!-- Logo -->
-		<a href={resolve('/admin')} class="mb-4 flex items-center border-b border-gray-700 px-2 pb-4">
+		<a href={resolve('/admin')} class="mb-4 flex items-center border-b border-gray-950 px-4 pb-4">
 			<span class="text-xl font-semibold whitespace-nowrap text-white">
 				{data.menu.brand}
 			</span>
@@ -100,7 +100,7 @@
 
 		{#each data.menu.sections as section (section.id)}
 			{#if section.label}
-				<div class="mt-4 mb-1 px-2 text-xs font-semibold tracking-wider text-gray-500 uppercase">
+				<div class="mt-4 mb-1 px-4 text-xs font-semibold tracking-wider text-gray-400 uppercase">
 					{section.label}
 				</div>
 			{/if}
@@ -110,7 +110,7 @@
 						<SidebarDropdownWrapper
 							label={item.label}
 							classes={{
-								btn: 'group flex w-full items-center rounded-md p-2 text-sm font-normal text-gray-300 hover:bg-gray-700 hover:text-white',
+								btn: 'group flex w-full items-center border-s-4 border-transparent p-2 text-sm font-normal text-gray-300 hover:bg-gray-950 hover:text-white',
 								span: 'ms-3 flex-1 text-left whitespace-nowrap',
 								svg: 'h-3 w-3 text-gray-400',
 								ul: 'space-y-1 py-1'
@@ -191,15 +191,6 @@
 				</div>
 
 				<div class="flex items-center gap-3">
-					<!-- Notifications -->
-					<button
-						type="button"
-						aria-label="Notifications"
-						class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-					>
-						<BellSolid class="h-5 w-5" />
-					</button>
-
 					<!-- Menu utilisateur -->
 					<Avatar id="avatar-menu" class="cursor-pointer" />
 					<Dropdown simple triggeredBy="#avatar-menu" placement="bottom-end">

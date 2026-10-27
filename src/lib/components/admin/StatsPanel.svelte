@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatNumber, formatPrice, formatPriceRounded } from '$lib/money';
+	import { PS_COLORS } from '$lib/admin-colors';
 	import type { ApexOptions } from 'apexcharts';
 	import { Chart } from '@flowbite-svelte-plugins/chart';
 	import { untrack } from 'svelte';
@@ -49,8 +50,10 @@
 				: 'vs période précédente'
 	);
 
-	/** Couleur de la charte, reprise sur les graphiques. */
-	const BLUE = '#314192';
+	/** Couleurs des graphiques : celles du back-office (PrestaShop). */
+	const LINE = PS_COLORS.primary;
+	const MUTED = '#bbcdd2';
+	const GRID = '#dbe6e9';
 
 	/** Courbe du chiffre d'affaires. */
 	const revenueChart = $derived<ApexOptions>({
@@ -92,7 +95,7 @@
 				style: { fontSize: '11px' }
 			}
 		},
-		colors: [BLUE, '#9ca3af'],
+		colors: [LINE, MUTED],
 		fill: {
 			type: 'gradient',
 			gradient: { opacityFrom: 0.4, opacityTo: 0 }
@@ -100,7 +103,7 @@
 		stroke: { curve: 'smooth', width: [2, 2], dashArray: [0, 5] },
 		legend: { show: true, position: 'top', horizontalAlign: 'left' },
 		dataLabels: { enabled: false },
-		grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
+		grid: { borderColor: GRID, strokeDashArray: 4 },
 		tooltip: { y: { formatter: (value: number) => formatPrice(value) } }
 	});
 
@@ -111,7 +114,7 @@
 		labels: data.states.map((state) => state.label),
 		// Les couleurs viennent des états eux-mêmes : l'opérateur retrouve celles
 		// qu'il voit dans la liste des commandes.
-		colors: data.states.map((state) => state.color ?? '#9ca3af'),
+		colors: data.states.map((state) => state.color ?? MUTED),
 		legend: { position: 'bottom', fontSize: '12px' },
 		dataLabels: { enabled: false },
 		stroke: { width: 0 },
@@ -134,10 +137,10 @@
 			labels: { formatter: (value: string) => formatPriceRounded(Number(value)) }
 		},
 		yaxis: { labels: { style: { fontSize: '11px' } } },
-		colors: [BLUE],
+		colors: [LINE],
 		plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '70%' } },
 		dataLabels: { enabled: false },
-		grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
+		grid: { borderColor: GRID, strokeDashArray: 4 },
 		tooltip: { y: { formatter: (value: number) => formatPrice(value) } }
 	});
 </script>

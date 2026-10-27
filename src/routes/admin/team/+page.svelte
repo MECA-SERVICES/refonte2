@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Select, Badge } from 'flowbite-svelte';
+	import { Button, Select } from 'flowbite-svelte';
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { goto } from '$app/navigation';
 	import {
@@ -7,7 +7,8 @@
 		DataTable,
 		StatusBadge,
 		ROLE_BADGES,
-		listFilterHref
+		listFilterHref,
+		StateBadge
 	} from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
@@ -46,7 +47,7 @@
 	<div class="flex items-center gap-2">
 		<StatusBadge value={u.role} map={ROLE_BADGES} />
 		{#if u.banned}
-			<Badge color="red" rounded>Banni</Badge>
+			<StateBadge color="red" label="Banni" />
 		{/if}
 	</div>
 {/snippet}

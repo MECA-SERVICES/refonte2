@@ -1,6 +1,5 @@
 <script lang="ts">
 	import {
-		Badge,
 		Button,
 		Card,
 		Input,
@@ -13,6 +12,7 @@
 	} from 'flowbite-svelte';
 	import { SearchOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
+	import StateBadge from '$lib/components/admin/StateBadge.svelte';
 	import Pagination from '$lib/components/admin/Pagination.svelte';
 	import {
 		CUSTOMER_STATUSES,
@@ -91,9 +91,11 @@
 		<a href={tabHref(tab.value)}>
 			<Button size="sm" color={active ? 'primary' : 'alternative'}>
 				{tab.label}
-				<Badge class="ms-2" color={active ? 'gray' : CUSTOMER_STATUS_COLORS[tab.value]}>
-					{tab.count}
-				</Badge>
+				<StateBadge
+					class="ms-2"
+					color={active ? 'gray' : CUSTOMER_STATUS_COLORS[tab.value]}
+					label={String(tab.count)}
+				/>
 			</Button>
 		</a>
 	{/each}
@@ -151,19 +153,19 @@
 							{#if row.siret}
 								<span class="font-mono text-xs">{row.siret}</span>
 							{:else}
-								<Badge color="red">Manquant</Badge>
+								<StateBadge color="red" label="Manquant" />
 							{/if}
 						</TableBodyCell>
 						<TableBodyCell>
 							{date.format(new Date(row.createdAt))}
 							{#if row.infoRequestedAt}
 								<!-- Dossier relancé : il reste en attente des pièces réclamées. -->
-								<Badge class="ms-1" color="purple">Complément demandé</Badge>
+								<StateBadge class="ms-1" color="purple" label="Complément demandé" />
 							{/if}
 						</TableBodyCell>
 						<TableBodyCell class="text-end">
 							{#if incomplete(row)}
-								<Badge class="me-2" color="yellow">Dossier incomplet</Badge>
+								<StateBadge class="me-2" color="yellow" label="Dossier incomplet" />
 							{/if}
 							<a href="/admin/customers/validations/{row.id}">
 								<Button size="xs" color="alternative">Examiner</Button>

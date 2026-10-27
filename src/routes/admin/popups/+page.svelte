@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Badge, Button, Card } from 'flowbite-svelte';
+	import { Button, Card } from 'flowbite-svelte';
 	import { PlusOutline, BellActiveOutline } from 'flowbite-svelte-icons';
-	import { PageHeader } from '$lib/components/admin';
+	import { PageHeader, StateBadge } from '$lib/components/admin';
 	import { isLive, POPUP_SCOPE_LABELS, type PopupScope } from '$lib/popups';
 	import type { PageProps } from './$types';
 
@@ -71,9 +71,9 @@
 					<div class="min-w-0">
 						<div class="flex flex-wrap items-center gap-2">
 							<p class="font-medium text-gray-900 dark:text-white">{row.name}</p>
-							<Badge color={state.color}>{state.label}</Badge>
+							<StateBadge color={state.color} label={state.label} />
 							{#if row.priority !== 0}
-								<Badge color="blue">Priorité {row.priority}</Badge>
+								<StateBadge color="blue" label={`Priorité ${row.priority}`} />
 							{/if}
 						</div>
 

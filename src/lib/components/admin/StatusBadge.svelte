@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { Badge } from 'flowbite-svelte';
-
-	type BadgeColor =
-		'primary' | 'secondary' | 'gray' | 'red' | 'green' | 'yellow' | 'indigo' | 'purple' | 'blue';
+	import type { BadgeColor } from '$lib/admin-colors';
+	import StateBadge from './StateBadge.svelte';
 
 	let {
 		value,
@@ -15,8 +13,6 @@
 	} = $props();
 
 	const entry = $derived(value ? map[value] : undefined);
-	const label = $derived(entry?.label ?? value ?? '—');
-	const color = $derived(entry?.color ?? fallbackColor);
 </script>
 
-<Badge {color} rounded>{label}</Badge>
+<StateBadge label={entry?.label ?? value ?? '—'} color={entry?.color ?? fallbackColor} />

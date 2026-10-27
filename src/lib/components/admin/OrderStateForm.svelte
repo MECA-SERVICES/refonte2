@@ -19,7 +19,7 @@
 	} = $props();
 
 	/** Couleur courante : alimente la pastille d'aperçu pendant le choix. */
-	let color = $state(untrack(() => current?.color ?? '#6b7280'));
+	let color = $state(untrack(() => current?.color ?? '#6c868e'));
 
 	type Flag =
 		'isActive' | 'isPaid' | 'isShipped' | 'isFinal' | 'sendEmailOnChange' | 'hideFromClient';

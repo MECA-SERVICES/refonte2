@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { formatPrice } from '$lib/money';
+	import { textColorOn } from '$lib/admin-colors';
 	import { paymentMethodLabel } from '$lib/payment-methods';
 	import { describeShippingWindow } from '$lib/delivery-time';
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { resolve } from '$app/paths';
 	import {
-		Badge,
 		Button,
 		Card,
 		Select,
@@ -277,8 +277,8 @@
 				<h2 class="text-sm font-semibold tracking-wide text-gray-700 uppercase dark:text-gray-200">
 					Commande
 				</h2>
-				<Badge color="gray" rounded>{o.reference}</Badge>
-				<Badge color="gray" rounded>N°{o.id}</Badge>
+				<StateBadge color="gray" label={o.reference} />
+				<StateBadge color="gray" label={`N°${o.id}`} />
 			</div>
 
 			<!-- Actions : masquées à l'impression, comme sur PrestaShop. -->
@@ -396,19 +396,21 @@
 							<table class="w-full text-sm">
 								<tbody>
 									{#each o.history as h, i (h.id)}
-										<!-- L'état courant (le plus récent) est surligné de sa couleur. -->
+										{@const stateColor = h.stateColor ?? '#6c868e'}
+										<!-- L'état courant (le plus récent) est surligné de sa couleur,
+										     texte blanc ou foncé selon la règle de PrestaShop. -->
 										<tr
 											class={i === 0
-												? 'font-medium text-gray-900'
+												? 'font-medium'
 												: 'border-b border-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300'}
-											style={i === 0 ? `background-color: ${h.stateColor ?? '#6b7280'}` : undefined}
+											style={i === 0
+												? `background-color: ${stateColor}; color: ${textColorOn(stateColor)}`
+												: undefined}
 										>
 											<td class="w-6 py-2.5 ps-3">
 												<span
-													class="block h-2.5 w-2.5 rounded-full {i === 0 ? 'bg-gray-900' : ''}"
-													style={i === 0
-														? undefined
-														: `background-color: ${h.stateColor ?? '#6b7280'}`}
+													class="block h-2.5 w-2.5 rounded-full {i === 0 ? 'bg-current' : ''}"
+													style={i === 0 ? undefined : `background-color: ${stateColor}`}
 												></span>
 											</td>
 											<td class="px-3 py-2.5">
@@ -617,7 +619,7 @@
 
 				{#if !data.realLabelsAllowed}
 					<p
-						class="mb-4 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200"
+						class="mb-4 rounded border border-primary-300 bg-primary-100 px-3 py-2 text-sm text-gray-700"
 					>
 						<span class="font-semibold">Mode test.</span>
 						Les colis sont créés avec l'offre
@@ -712,7 +714,7 @@
 							{:else}
 								<span class="font-medium text-gray-900 dark:text-white">{l.productName}</span>
 								<!-- Produit supprimé depuis l'achat : la ligne garde sa copie figée. -->
-								<Badge color="gray" class="ms-2">Hors catalogue</Badge>
+								<StateBadge color="gray" class="ms-2" label="Hors catalogue" />
 							{/if}
 
 							<p class="mt-0.5 text-xs text-gray-500">

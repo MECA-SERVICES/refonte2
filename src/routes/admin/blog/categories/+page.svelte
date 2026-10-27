@@ -1,18 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
-	import {
-		Alert,
-		Badge,
-		Button,
-		Card,
-		Input,
-		Label,
-		Select,
-		Textarea,
-		Toggle
-	} from 'flowbite-svelte';
+	import { Alert, Button, Card, Input, Label, Select, Textarea, Toggle } from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
-	import { PageHeader } from '$lib/components/admin';
+	import { PageHeader, StateBadge } from '$lib/components/admin';
 	import { BLOG_CATEGORY_MAX_DEPTH } from '$lib/blog';
 	import type { PageProps } from './$types';
 
@@ -193,7 +183,7 @@
 							<p class="font-medium text-gray-900 dark:text-white">{row.name}</p>
 							<p class="text-xs text-gray-500">/blog/categorie/{row.slug}</p>
 						</div>
-						{#if !row.isActive}<Badge color="gray">Masquée</Badge>{/if}
+						{#if !row.isActive}<StateBadge color="gray" label="Masquée" />{/if}
 					</div>
 
 					<div class="flex shrink-0 gap-2">

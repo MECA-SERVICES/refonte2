@@ -88,6 +88,89 @@
 	--font-quote: Newsreader, Georgia, serif;
 }
 
+/* ------------------------------------------------------------------
+   Back-office : couleurs du back-office PrestaShop 1.7.6.1 (prestakit 1.1
+   et thème « new-theme »), pour que l'équipe garde ses repères. Un seul
+   thème, pas de mode sombre.
+   Les utilitaires Tailwind lisent les couleurs dans ces variables : les
+   redéfinir suffit pour que les composants Flowbite suivent, sans toucher
+   la boutique. `:root:has()` plutôt que `.admin-theme` seul, pour que les
+   menus et fenêtres rendus hors du conteneur suivent aussi.
+   Les teintes absentes de PrestaShop (400, 800 des gris…) sont interpolées.
+   ------------------------------------------------------------------ */
+:root:has(.admin-theme) {
+	/* $primary #25b9d7, $primary-hover #3ed2f0, $primary-active #19a9c6, $notice #dff5f9 */
+	--color-primary-50: #f4f9fb;
+	--color-primary-100: #dff5f9;
+	--color-primary-200: #b7e9f3;
+	--color-primary-300: #7cd5e7;
+	--color-primary-400: #3ed2f0;
+	--color-primary-500: #25b9d7;
+	--color-primary-600: #25b9d7;
+	--color-primary-700: #25b9d7;
+	--color-primary-800: #19a9c6;
+	--color-primary-900: #13859c;
+	--color-primary-950: #0d5f70;
+
+	/* Accents « cyan » du back-office : même couleur que primary. */
+	--color-cyan-50: var(--color-primary-50);
+	--color-cyan-100: var(--color-primary-100);
+	--color-cyan-200: var(--color-primary-200);
+	--color-cyan-600: var(--color-primary-600);
+	--color-cyan-700: var(--color-primary-800);
+	--color-cyan-900: var(--color-primary-900);
+
+	/* $gray-soft, $background-color, bordure des cartes, $gray-light, $medium-gray,
+	   texte de l'en-tête, $gray-dark (menu), $extra-dark-gray, survol du menu */
+	--color-gray-50: #fafbfc;
+	--color-gray-100: #eff1f2;
+	--color-gray-200: #dbe6e9;
+	--color-gray-300: #bbcdd2;
+	--color-gray-400: #94a7ad;
+	--color-gray-500: #6c868e;
+	--color-gray-600: #4e6167;
+	--color-gray-700: #363a41;
+	--color-gray-800: #2f3238;
+	--color-gray-900: #282b30;
+	--color-gray-950: #202226;
+
+	/* $danger #c05c67, $danger-hover #fde1e1 */
+	--color-red-50: #fdf3f3;
+	--color-red-100: #fde1e1;
+	--color-red-200: #f5c4c9;
+	--color-red-300: #e49aa2;
+	--color-red-400: #d27a84;
+	--color-red-500: #c05c67;
+	--color-red-600: #c05c67;
+	--color-red-700: #c05c67;
+	--color-red-800: #a84c56;
+	--color-red-900: #8a3d46;
+
+	/* $success #70b580 */
+	--color-green-50: #f1f8f2;
+	--color-green-100: #e2f1e5;
+	--color-green-200: #c3e2ca;
+	--color-green-300: #9dcea8;
+	--color-green-400: #86c293;
+	--color-green-500: #70b580;
+	--color-green-600: #70b580;
+	--color-green-700: #5a9c6a;
+	--color-green-800: #4a8158;
+	--color-green-900: #3b6646;
+
+	/* $warning #cd9321, $warning-hover #fde7bb, fond des alertes #fffbd3 */
+	--color-yellow-50: #fffbd3;
+	--color-yellow-100: #fde7bb;
+	--color-yellow-200: #f8d48a;
+	--color-yellow-300: #eebd5a;
+	--color-yellow-400: #dea63a;
+	--color-yellow-500: #cd9321;
+	--color-yellow-600: #cd9321;
+	--color-yellow-700: #b07c17;
+	--color-yellow-800: #8f6413;
+	--color-yellow-900: #6f4e0f;
+}
+
 @source '../../node_modules/flowbite-svelte/dist';
 @source '../../node_modules/flowbite-svelte-icons/dist';
 @source '../../node_modules/flowbite-svelte-illustrations/dist';

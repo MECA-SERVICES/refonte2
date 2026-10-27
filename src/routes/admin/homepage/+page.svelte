@@ -1,17 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
-	import {
-		Alert,
-		Badge,
-		Button,
-		Card,
-		Checkbox,
-		Input,
-		Label,
-		Select,
-		Textarea
-	} from 'flowbite-svelte';
+	import { Alert, Button, Card, Checkbox, Input, Label, Select, Textarea } from 'flowbite-svelte';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
+	import StateBadge from '$lib/components/admin/StateBadge.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { PageProps } from './$types';
 
@@ -150,7 +141,7 @@
 				<div class="mb-3 flex items-center justify-between gap-2">
 					<p class="font-medium text-gray-900 dark:text-white">
 						{tile.title}
-						{#if !tile.isActive}<Badge color="gray" class="ms-2">Masquée</Badge>{/if}
+						{#if !tile.isActive}<StateBadge color="gray" class="ms-2" label="Masquée" />{/if}
 					</p>
 					<form method="POST" action="?/deleteTile" use:enhance data-success="Tuile supprimée.">
 						<input type="hidden" name="id" value={tile.id} />
@@ -277,7 +268,7 @@
 						{p.name}
 					</a>
 					<span class="text-xs text-gray-500">{p.reference}</span>
-					{#if !p.isActive}<Badge color="gray">Inactif, non affiché</Badge>{/if}
+					{#if !p.isActive}<StateBadge color="gray" label="Inactif, non affiché" />{/if}
 					<form
 						method="POST"
 						action="?/productPosition"

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import {
-		Badge,
 		Button,
 		Card,
 		Table,
@@ -12,6 +11,7 @@
 	} from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
+	import StateBadge from '$lib/components/admin/StateBadge.svelte';
 	import { formatPrice } from '$lib/money';
 	import { REMITTANCE_KIND_LABELS, remittanceKinds } from '$lib/settlements';
 	import type { PageProps } from './$types';
@@ -87,7 +87,7 @@
 						<TableBodyCell>{r.bankAccount}</TableBodyCell>
 						<TableBodyCell class="text-right">{r.settlementCount}</TableBodyCell>
 						<TableBodyCell class="text-right">{formatPrice(r.total)}</TableBodyCell>
-						<TableBodyCell><Badge color="green">Validé</Badge></TableBodyCell>
+						<TableBodyCell><StateBadge color="green" label="Validé" /></TableBodyCell>
 					</TableBodyRow>
 				{/each}
 			</TableBody>

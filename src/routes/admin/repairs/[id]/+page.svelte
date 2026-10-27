@@ -2,7 +2,6 @@
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import {
 		Alert,
-		Badge,
 		Button,
 		Card,
 		Input,
@@ -18,6 +17,7 @@
 	} from 'flowbite-svelte';
 	import { FilePdfOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
+	import StateBadge from '$lib/components/admin/StateBadge.svelte';
 	import { REPAIR_STATUS_COLORS, REPAIR_STATUS_LABELS, REPAIR_TYPE_LABELS } from '$lib/repairs';
 	import {
 		remainingDue,
@@ -107,12 +107,13 @@
 </PageHeader>
 
 <div class="mb-4 flex flex-wrap items-center gap-2">
-	<Badge color={REPAIR_STATUS_COLORS[o.status]} large>{REPAIR_STATUS_LABELS[o.status]}</Badge>
-	<Badge color={o.orderType === 'warranty' ? 'purple' : 'gray'}>
-		{REPAIR_TYPE_LABELS[o.orderType]}
-	</Badge>
+	<StateBadge color={REPAIR_STATUS_COLORS[o.status]} label={REPAIR_STATUS_LABELS[o.status]} />
+	<StateBadge
+		color={o.orderType === 'warranty' ? 'purple' : 'gray'}
+		label={REPAIR_TYPE_LABELS[o.orderType]}
+	/>
 	{#if o.workshopLabel}
-		<Badge color="indigo">Étiquette {o.workshopLabel}</Badge>
+		<StateBadge color="indigo" label={`Étiquette ${o.workshopLabel}`} />
 	{/if}
 	{#if o.warrantyReference}
 		<span class="text-sm text-gray-500 dark:text-gray-400">
@@ -120,7 +121,7 @@
 		</span>
 	{/if}
 	{#if o.paidAt}
-		<Badge color="green">Réglé</Badge>
+		<StateBadge color="green" label="Réglé" />
 	{/if}
 </div>
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import {
-		Badge,
 		Button,
 		Card,
 		Table,
@@ -12,7 +11,7 @@
 		TableHeadCell
 	} from 'flowbite-svelte';
 	import { FilePdfOutline, TrashBinOutline } from 'flowbite-svelte-icons';
-	import { ConfirmDialog, PageHeader } from '$lib/components/admin';
+	import { ConfirmDialog, PageHeader, StateBadge } from '$lib/components/admin';
 	import { formatPrice } from '$lib/money';
 	import { REMITTANCE_KIND_LABELS, payerName } from '$lib/settlements';
 	import type { PageProps } from './$types';
@@ -72,7 +71,7 @@
 		</div>
 		<div>
 			<dt class="text-gray-500 dark:text-gray-400">Statut</dt>
-			<dd><Badge color="green">Validé</Badge></dd>
+			<dd><StateBadge color="green" label="Validé" /></dd>
 		</div>
 	</dl>
 </Card>

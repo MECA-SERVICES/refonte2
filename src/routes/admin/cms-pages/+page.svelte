@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Badge, Button, Card } from 'flowbite-svelte';
+	import { Button, Card } from 'flowbite-svelte';
 	import { PlusOutline, FileLinesOutline } from 'flowbite-svelte-icons';
-	import { PageHeader } from '$lib/components/admin';
+	import { PageHeader, StateBadge } from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -45,9 +45,10 @@
 					>
 						{row.title}
 					</a>
-					<Badge color={row.isPublished ? 'green' : 'gray'}>
-						{row.isPublished ? 'Publiée' : 'Brouillon'}
-					</Badge>
+					<StateBadge
+						color={row.isPublished ? 'green' : 'gray'}
+						label={row.isPublished ? 'Publiée' : 'Brouillon'}
+					/>
 				</div>
 
 				<p class="mt-1 truncate text-xs text-gray-500">/p/{row.slug}</p>

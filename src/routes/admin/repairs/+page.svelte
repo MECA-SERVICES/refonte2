@@ -1,6 +1,5 @@
 <script lang="ts">
 	import {
-		Badge,
 		Button,
 		Card,
 		Input,
@@ -13,6 +12,7 @@
 	} from 'flowbite-svelte';
 	import { PlusOutline, SearchOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
+	import StateBadge from '$lib/components/admin/StateBadge.svelte';
 	import Pagination from '$lib/components/admin/Pagination.svelte';
 	import {
 		repairStatuses,
@@ -135,9 +135,10 @@
 						</TableBodyCell>
 						<TableBodyCell>{REPAIR_TYPE_LABELS[row.orderType]}</TableBodyCell>
 						<TableBodyCell>
-							<Badge color={REPAIR_STATUS_COLORS[row.status]}>
-								{REPAIR_STATUS_LABELS[row.status]}
-							</Badge>
+							<StateBadge
+								color={REPAIR_STATUS_COLORS[row.status]}
+								label={REPAIR_STATUS_LABELS[row.status]}
+							/>
 						</TableBodyCell>
 						<TableBodyCell>{row.workshopLabel ?? '—'}</TableBodyCell>
 						<TableBodyCell class="text-right">{eur.format(Number(row.totalTtc))}</TableBodyCell>

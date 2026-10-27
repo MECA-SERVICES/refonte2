@@ -1,4 +1,5 @@
 import type { Pathname } from '$app/types';
+import type { BadgeColor } from '$lib/admin-colors';
 
 export { default as PageHeader } from './PageHeader.svelte';
 export { default as DataTable } from './DataTable.svelte';
@@ -82,8 +83,6 @@ export function listFilterHref(
 ): Pathname {
 	return withQuery(basePath, toQueryString(pairs));
 }
-
-type BadgeColor = 'gray' | 'green' | 'yellow' | 'red' | 'blue' | 'indigo' | 'purple';
 
 /** Libellés + couleurs partagés pour les badges (type/statut/rôle). */
 /**

@@ -3,7 +3,6 @@
 	import { formatPrice } from '$lib/money';
 	import { resolve } from '$app/paths';
 	import {
-		Badge,
 		Button,
 		Card,
 		Table,
@@ -20,7 +19,8 @@
 		ConfirmDialog,
 		CUSTOMER_TYPE_BADGES,
 		CUSTOMER_STATUS_BADGES,
-		SupportThreadsCard
+		SupportThreadsCard,
+		StateBadge
 	} from '$lib/components/admin';
 	import { paymentMethodLabel } from '$lib/payment-methods';
 	import type { PageProps } from './$types';
@@ -150,7 +150,7 @@
 
 			<dl class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 px-6 py-5 text-sm">
 				<dt class="text-right text-gray-500">Type de compte</dt>
-				<dd><Badge color={typeBadge.color}>{typeBadge.label}</Badge></dd>
+				<dd><StateBadge color={typeBadge.color} label={typeBadge.label} /></dd>
 
 				{#if c.companyName}
 					<dt class="text-right text-gray-500">Société</dt>
@@ -183,9 +183,10 @@
 
 				<dt class="text-right text-gray-500">Inscriptions</dt>
 				<dd>
-					<Badge color={c.newsletterSubscribed ? 'green' : 'red'}>
-						{c.newsletterSubscribed ? '✓' : '✕'} Lettre d'informations
-					</Badge>
+					<StateBadge
+						color={c.newsletterSubscribed ? 'green' : 'red'}
+						label="{c.newsletterSubscribed ? '✓' : '✕'} Lettre d'informations"
+					/>
 				</dd>
 
 				<dt class="text-right text-gray-500">Dernière mise à jour</dt>
@@ -194,7 +195,7 @@
 				</dd>
 
 				<dt class="text-right text-gray-500">État</dt>
-				<dd><Badge color={statusBadge.color}>{statusBadge.label}</Badge></dd>
+				<dd><StateBadge color={statusBadge.color} label={statusBadge.label} /></dd>
 
 				{#if c.legacyPsId}
 					<dt class="text-right text-gray-500">Réf. PrestaShop</dt>
@@ -287,7 +288,7 @@
 										<span class="flex min-w-0 items-center gap-1.5">
 											<span
 												class="h-2 w-2 shrink-0 rounded-full"
-												style="background-color: {o.stateColor ?? '#6b7280'}"
+												style="background-color: {o.stateColor ?? '#6c868e'}"
 											></span>
 											<span class="truncate text-gray-900 dark:text-white"
 												>{o.stateLabel ?? '—'}</span
@@ -333,7 +334,7 @@
 								<p class="flex flex-wrap items-center gap-2">
 									<span class="font-medium text-gray-900 dark:text-white">{machine.name}</span>
 									{#if machine.status === 'pending_confirmation'}
-										<Badge color="yellow">À compléter</Badge>
+										<StateBadge color="yellow" label="À compléter" />
 									{/if}
 								</p>
 								<p class="mt-0.5 text-xs text-gray-500">
@@ -453,8 +454,8 @@
 								<span class="text-sm font-medium text-gray-900 dark:text-white">
 									{addr.label ?? 'Adresse'}
 								</span>
-								{#if addr.isDefaultShipping}<Badge color="blue">Livraison</Badge>{/if}
-								{#if addr.isDefaultBilling}<Badge color="gray">Facturation</Badge>{/if}
+								{#if addr.isDefaultShipping}<StateBadge color="blue" label="Livraison" />{/if}
+								{#if addr.isDefaultBilling}<StateBadge color="gray" label="Facturation" />{/if}
 							</div>
 							<address class="text-sm leading-relaxed text-gray-600 not-italic dark:text-gray-300">
 								{addr.firstName}

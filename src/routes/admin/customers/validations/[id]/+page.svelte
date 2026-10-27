@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
-	import { Alert, Badge, Button, Card, Label, Textarea } from 'flowbite-svelte';
+	import { Alert, Button, Card, Label, Textarea } from 'flowbite-svelte';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
+	import StateBadge from '$lib/components/admin/StateBadge.svelte';
 	import {
 		CUSTOMER_STATUS_COLORS,
 		CUSTOMER_STATUS_LABELS,
@@ -105,7 +106,7 @@
 		<Card class="max-w-none p-6">
 			<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
 				<h2 class="text-base font-semibold text-gray-900 dark:text-white">Dossier déclaré</h2>
-				<Badge color={CUSTOMER_STATUS_COLORS[status]}>{CUSTOMER_STATUS_LABELS[status]}</Badge>
+				<StateBadge color={CUSTOMER_STATUS_COLORS[status]} label={CUSTOMER_STATUS_LABELS[status]} />
 			</div>
 
 			<dl class="grid gap-3 sm:grid-cols-2">
@@ -199,9 +200,10 @@
 							<span class="text-gray-500">
 								{dateTime.format(new Date(item.createdAt))}
 							</span>
-							<Badge color={CUSTOMER_STATUS_COLORS[itemStatus]}>
-								{CUSTOMER_STATUS_LABELS[itemStatus]}
-							</Badge>
+							<StateBadge
+								color={CUSTOMER_STATUS_COLORS[itemStatus]}
+								label={CUSTOMER_STATUS_LABELS[itemStatus]}
+							/>
 							{#if item.id === req.id}
 								<span class="text-xs text-gray-500">dossier courant</span>
 							{:else}

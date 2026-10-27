@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Badge } from 'flowbite-svelte';
+	import { Button } from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
 	import { PageHeader, DataTable, StateBadge, ActiveBadge } from '$lib/components/admin';
 	import type { PageProps } from './$types';
@@ -33,10 +33,10 @@
 
 {#snippet flagsCell(row: StateRow)}
 	<div class="flex flex-wrap gap-1">
-		{#if row.isPaid}<Badge color="green">Payé</Badge>{/if}
-		{#if row.isShipped}<Badge color="purple">Expédié</Badge>{/if}
-		{#if row.isFinal}<Badge color="gray">Final</Badge>{/if}
-		{#if row.sendEmailOnChange}<Badge color="blue">Email</Badge>{/if}
+		{#if row.isPaid}<StateBadge color="green" label="Payé" />{/if}
+		{#if row.isShipped}<StateBadge color="purple" label="Expédié" />{/if}
+		{#if row.isFinal}<StateBadge color="gray" label="Final" />{/if}
+		{#if row.sendEmailOnChange}<StateBadge color="blue" label="Email" />{/if}
 	</div>
 {/snippet}
 

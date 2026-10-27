@@ -2,7 +2,7 @@
 	import MessageAvatar from '$lib/components/MessageAvatar.svelte';
 	import { enhance } from '$lib/components/admin/feedback.svelte';
 	import { formatPrice } from '$lib/money';
-	import { Badge, Button, Card, Label, Select, Textarea } from 'flowbite-svelte';
+	import { Button, Card, Label, Select, Textarea } from 'flowbite-svelte';
 	import { PaperClipOutline } from 'flowbite-svelte-icons';
 	import { PageHeader, StateBadge } from '$lib/components/admin';
 	import {
@@ -87,7 +87,7 @@
 								>
 									<p class="mb-1.5 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
 										<span class="font-semibold text-gray-800 dark:text-gray-200">{m.author}</span>
-										{#if note}<Badge color="yellow">Note interne</Badge>{/if}
+										{#if note}<StateBadge color="yellow" label="Note interne" />{/if}
 										<time>{dateFmt.format(new Date(m.createdAt))}</time>
 									</p>
 									<div
@@ -299,7 +299,7 @@
 				</p>
 				{#if t.order.stateLabel}
 					<div class="mt-2">
-						<StateBadge label={t.order.stateLabel} color={t.order.stateColor ?? '#6b7280'} />
+						<StateBadge label={t.order.stateLabel} color={t.order.stateColor ?? '#6c868e'} />
 					</div>
 				{/if}
 			</Card>

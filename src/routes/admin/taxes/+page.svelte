@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Button, Badge } from 'flowbite-svelte';
+	import { Button } from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
-	import { PageHeader, DataTable, ActiveBadge } from '$lib/components/admin';
+	import { PageHeader, DataTable, ActiveBadge, StateBadge } from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -26,7 +26,7 @@
 {#snippet nameCell(row: TaxRow)}
 	<span class="font-medium text-gray-900 dark:text-white">{row.name}</span>
 	{#if row.isDefault}
-		<Badge color="blue" rounded class="ms-2">Par défaut</Badge>
+		<StateBadge color="blue" class="ms-2" label="Par défaut" />
 	{/if}
 {/snippet}
 

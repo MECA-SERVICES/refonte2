@@ -4,6 +4,7 @@
  */
 
 import type { SupportPriority, SupportStatus } from '$lib/server/db/support.schema';
+import { PS_COLORS } from '$lib/admin-colors';
 
 export const SUPPORT_STATUS_LABELS: Record<SupportStatus, string> = {
 	open: 'Ouverte',
@@ -14,10 +15,10 @@ export const SUPPORT_STATUS_LABELS: Record<SupportStatus, string> = {
 
 /** Couleurs des pastilles d'état, au format attendu par `StateBadge`. */
 export const SUPPORT_STATUS_COLORS: Record<SupportStatus, string> = {
-	open: '#2563eb',
-	pending_staff: '#e31d27',
-	pending_customer: '#d97706',
-	closed: '#6b7280'
+	open: PS_COLORS.primary,
+	pending_staff: PS_COLORS.danger,
+	pending_customer: PS_COLORS.warning,
+	closed: PS_COLORS.secondary
 };
 
 export const SUPPORT_PRIORITY_LABELS: Record<SupportPriority, string> = {

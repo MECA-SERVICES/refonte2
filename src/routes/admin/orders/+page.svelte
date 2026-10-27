@@ -211,7 +211,7 @@
 							/>
 							<span
 								class="h-2.5 w-2.5 shrink-0 rounded-full"
-								style="background-color: {st.color ?? '#6b7280'}"
+								style="background-color: {st.color ?? '#6c868e'}"
 								aria-hidden="true"
 							></span>
 							<span class="truncate">{st.label}</span>
@@ -257,7 +257,7 @@
 {/snippet}
 
 {#snippet stateCell(row: OrderRow)}
-	{#if row.stateLabel}<StateBadge label={row.stateLabel} color={row.stateColor ?? '#6b7280'} />{/if}
+	{#if row.stateLabel}<StateBadge label={row.stateLabel} color={row.stateColor ?? '#6c868e'} />{/if}
 {/snippet}
 
 {#snippet paymentCell(row: OrderRow)}
