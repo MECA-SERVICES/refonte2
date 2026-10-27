@@ -33,7 +33,7 @@
 	}
 </script>
 
-<svelte:head><title>Types de matériel</title></svelte:head>
+<svelte:head><title>Types de matériel · Administration</title></svelte:head>
 
 <PageHeader
 	title="Types de matériel"
@@ -42,7 +42,13 @@
 
 <Card class="mb-6 max-w-none p-4">
 	<form method="POST" action="?/create" use:enhance data-success="Type ajouté." class="flex gap-2">
-		<Input name="name" placeholder="Nouveau type, ex. Scarificateur" required class="flex-1" />
+		<Input
+			name="name"
+			aria-label="Nouveau type de matériel"
+			placeholder="Nouveau type, ex. Scarificateur"
+			required
+			class="flex-1"
+		/>
 		<Button type="submit" size="sm">Ajouter</Button>
 	</form>
 </Card>
@@ -112,7 +118,7 @@
 							<Button type="submit" size="xs" color="alternative">Renommer</Button>
 						</form>
 					</TableBodyCell>
-					<TableBodyCell class="text-sm text-gray-500 dark:text-gray-400">{usage(t)}</TableBodyCell>
+					<TableBodyCell class="text-sm text-gray-500">{usage(t)}</TableBodyCell>
 					<TableBodyCell>
 						<form
 							method="POST"
@@ -151,7 +157,7 @@
 			{/each}
 		</TableBody>
 	</Table>
-	<p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+	<p class="mt-4 text-xs text-gray-500">
 		Renommer un type met à jour les machines et les ordres qui le portent. Un type désactivé n'est
 		plus proposé, mais reste affiché là où il figure déjà. Seul un type inutilisé peut être
 		supprimé.

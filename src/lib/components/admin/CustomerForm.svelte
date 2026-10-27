@@ -35,7 +35,7 @@
 	{/if}
 
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Identité</h2>
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Identité</h2>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
 				<Label for="firstName" class="mb-2">Prénom</Label>
@@ -46,7 +46,7 @@
 				<Input id="lastName" name="lastName" required value={customer?.lastName ?? ''} />
 			</div>
 			<div>
-				<Label for="email" class="mb-2">Email</Label>
+				<Label for="email" class="mb-2">E-mail</Label>
 				<Input id="email" name="email" type="email" required value={customer?.email ?? ''} />
 			</div>
 			<div>
@@ -57,7 +57,7 @@
 	</Card>
 
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Compte</h2>
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Compte</h2>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
 				<Label for="type" class="mb-2">Type de compte</Label>
@@ -94,7 +94,7 @@
 	</Card>
 
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Divers</h2>
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Divers</h2>
 		<div class="space-y-4">
 			<div>
 				<Label for="privateNote" class="mb-2">Note privée</Label>

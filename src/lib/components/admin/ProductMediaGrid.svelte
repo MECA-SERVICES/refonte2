@@ -45,7 +45,7 @@
 	<div class="flex flex-wrap gap-3">
 		{#each sorted as m, i (m.id)}
 			<div
-				class="group relative h-28 w-28 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+				class="group relative h-28 w-28 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
 			>
 				{#if m.type === 'image'}
 					<img
@@ -90,7 +90,7 @@
 					name="mediaId"
 					value={m.id}
 					title="Supprimer l'image"
-					class="absolute top-1.5 right-1.5 rounded bg-white/90 p-1 text-red-600 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-600 hover:text-white focus:opacity-100 dark:bg-gray-900/90"
+					class="absolute top-1.5 right-1.5 rounded bg-white/90 p-1 text-red-600 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-600 hover:text-white focus:opacity-100"
 				>
 					<TrashBinOutline class="h-3.5 w-3.5" />
 				</button>
@@ -102,10 +102,10 @@
 	     qu'auront les images. -->
 	<div class="flex items-center gap-3">
 		<div
-			class="flex h-28 w-28 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-center dark:border-gray-700"
+			class="flex h-28 w-28 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-center"
 		>
-			<ImageOutline class="h-7 w-7 text-gray-300 dark:text-gray-600" />
+			<ImageOutline class="h-7 w-7 text-gray-300" />
 		</div>
-		<p class="text-sm text-gray-500 dark:text-gray-400">Aucune image pour ce produit.</p>
+		<p class="text-sm text-gray-500">Aucune image pour ce produit.</p>
 	</div>
 {/if}

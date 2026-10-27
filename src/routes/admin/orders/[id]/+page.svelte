@@ -19,12 +19,10 @@
 		TableHeadCell
 	} from 'flowbite-svelte';
 	import {
-		ArrowsRepeatOutline,
 		ClockOutline,
 		CreditCardOutline,
 		FileLinesOutline,
 		PrinterOutline,
-		ReplyOutline,
 		TruckOutline
 	} from 'flowbite-svelte-icons';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -132,8 +130,6 @@
 			await update();
 		};
 	};
-
-	const soon = 'Bientôt disponible';
 </script>
 
 <!-- Titre de panneau, visible seulement à l'impression (les onglets y sont masqués). -->
@@ -165,38 +161,32 @@
 -->
 <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 	<Card class="max-w-none p-4">
-		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			Passée le
-		</p>
-		<p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Passée le</p>
+		<p class="mt-1 text-lg font-semibold text-gray-900">
 			{dayFmt.format(new Date(o.createdAt))}
 		</p>
 	</Card>
 
 	<Card class="max-w-none p-4">
-		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			Total TTC
-		</p>
-		<p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Total TTC</p>
+		<p class="mt-1 text-lg font-semibold text-gray-900">
 			{formatPrice(Number(o.totalTtc))}
 		</p>
 	</Card>
 
 	<Card class="max-w-none p-4">
-		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			Client
-		</p>
+		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Client</p>
 		{#if o.customer}
 			<a
 				href={resolve('/admin/customers/[id]', { id: String(o.customer.id) })}
-				class="mt-1 block truncate text-lg font-semibold text-primary-700 hover:underline dark:text-primary-400"
+				class="mt-1 block truncate text-lg font-semibold text-primary-700 hover:underline"
 			>
 				{o.customer.firstName}
 				{o.customer.lastName}
 			</a>
 			<a
 				href={resolve('/admin/customers/[id]', { id: String(o.customer.id) })}
-				class="mt-0.5 inline-block text-xs font-medium text-primary-700 hover:underline dark:text-primary-400 print:hidden"
+				class="mt-0.5 inline-block text-xs font-medium text-primary-700 hover:underline print:hidden"
 			>
 				En savoir plus →
 			</a>
@@ -206,9 +196,7 @@
 	</Card>
 
 	<Card class="max-w-none p-4">
-		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			État de commande
-		</p>
+		<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">État de commande</p>
 		<div class="mt-1.5">
 			{#if o.state}
 				<StateBadge label={o.state.label} color={o.state.color} />
@@ -232,8 +220,8 @@
 		<!-- Numéros de série des machines vendues : saisis à la préparation (13.3). -->
 		{#if machineLines.length > 0}
 			<Card class="max-w-none p-6 print:hidden">
-				<h2 class="mb-1 text-base font-semibold text-gray-900 dark:text-white">Numéros de série</h2>
-				<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+				<h2 class="mb-1 text-base font-semibold text-gray-900">Numéros de série</h2>
+				<p class="mb-4 text-xs text-gray-500">
 					Reportés sur la fiche client et dans le parc machines du client.
 				</p>
 				<div class="space-y-3">
@@ -246,10 +234,7 @@
 							class="flex flex-wrap items-center gap-2"
 						>
 							<input type="hidden" name="lineId" value={l.id} />
-							<label
-								for="serial-{l.id}"
-								class="min-w-0 flex-1 text-sm text-gray-900 dark:text-white"
-							>
+							<label for="serial-{l.id}" class="min-w-0 flex-1 text-sm text-gray-900">
 								{l.productName}
 								{#if l.quantity > 1}<span class="text-gray-500"> × {l.quantity}</span>{/if}
 							</label>
@@ -270,21 +255,15 @@
 
 		<!-- ================= Commande ================= -->
 		<Card class="max-w-none p-0 print:border-0 print:shadow-none">
-			<div
-				class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-6 py-4 dark:border-gray-700"
-			>
+			<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-6 py-4">
 				<CreditCardOutline class="h-4 w-4 text-gray-500" />
-				<h2 class="text-sm font-semibold tracking-wide text-gray-700 uppercase dark:text-gray-200">
-					Commande
-				</h2>
+				<h2 class="text-sm font-semibold tracking-wide text-gray-700 uppercase">Commande</h2>
 				<StateBadge color="gray" label={o.reference} />
 				<StateBadge color="gray" label={`N°${o.id}`} />
 			</div>
 
 			<!-- Actions : masquées à l'impression, comme sur PrestaShop. -->
-			<div
-				class="flex flex-wrap gap-2 border-b border-gray-200 px-6 py-4 dark:border-gray-700 print:hidden"
-			>
+			<div class="flex flex-wrap gap-2 border-b border-gray-200 px-6 py-4 print:hidden">
 				<Button color="alternative" size="sm" onclick={() => window.print()}>
 					<PrinterOutline class="me-1.5 h-4 w-4" /> Imprimer la commande
 				</Button>
@@ -308,17 +287,11 @@
 						<TruckOutline class="me-1.5 h-4 w-4" /> Voir le bon de livraison
 					</Button>
 				</form>
-				<Button color="alternative" size="sm" disabled title={soon}>
-					<ArrowsRepeatOutline class="me-1.5 h-4 w-4" /> Retourner les produits
-				</Button>
-				<Button color="alternative" size="sm" disabled title={soon}>
-					<ArrowsRepeatOutline class="me-1.5 h-4 w-4" /> Remboursement partiel
-				</Button>
 			</div>
 
 			<!-- Onglets : à l'impression, tous les panneaux s'affichent à la suite. -->
 			<div
-				class="flex gap-1 overflow-x-auto border-b border-gray-200 px-6 dark:border-gray-700 print:hidden"
+				class="flex gap-1 overflow-x-auto border-b border-gray-200 px-6 print:hidden"
 				role="tablist"
 			>
 				{#each tabs as t (t.key)}
@@ -332,14 +305,12 @@
 						onclick={() => (tab = t.key)}
 						class="-mb-px flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-medium whitespace-nowrap {tab ===
 						t.key
-							? 'border-primary-600 text-primary-700 dark:text-primary-400'
-							: 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}"
+							? 'border-primary-600 text-primary-700'
+							: 'border-transparent text-gray-500 hover:text-gray-800'}"
 					>
 						<Icon class="h-4 w-4" />
 						{t.label}
-						<span
-							class="rounded-full border border-gray-300 px-1.5 text-xs text-gray-500 dark:border-gray-600"
-						>
+						<span class="rounded-full border border-gray-300 px-1.5 text-xs text-gray-500">
 							{t.count}
 						</span>
 					</button>
@@ -398,11 +369,9 @@
 									{#each o.history as h, i (h.id)}
 										{@const stateColor = h.stateColor ?? '#6c868e'}
 										<!-- L'état courant (le plus récent) est surligné de sa couleur,
-										     texte blanc ou foncé selon la règle de PrestaShop. -->
+										     texte blanc ou noir selon le meilleur contraste. -->
 										<tr
-											class={i === 0
-												? 'font-medium'
-												: 'border-b border-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300'}
+											class={i === 0 ? 'font-medium' : 'border-b border-gray-100 text-gray-700'}
 											style={i === 0
 												? `background-color: ${stateColor}; color: ${textColorOn(stateColor)}`
 												: undefined}
@@ -423,19 +392,6 @@
 											<td class="px-3 py-2.5 whitespace-nowrap tabular-nums">
 												{secondsFmt.format(new Date(h.createdAt))}
 											</td>
-											<td class="py-1.5 pe-2 text-right print:hidden">
-												{#if h.sendsEmail}
-													<Button
-														color="alternative"
-														size="xs"
-														disabled
-														title={soon}
-														class="whitespace-nowrap"
-													>
-														<ReplyOutline class="me-1 h-3.5 w-3.5" /> Renvoyer l'e-mail
-													</Button>
-												{/if}
-											</td>
 										</tr>
 									{/each}
 								</tbody>
@@ -449,10 +405,11 @@
 						method="POST"
 						action="?/changeState"
 						use:enhance
-						class="mt-4 flex flex-wrap items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800 print:hidden"
+						class="mt-4 flex flex-wrap items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 print:hidden"
 					>
 						<Select
 							name="stateId"
+							aria-label="Nouvel état de la commande"
 							items={stateOptions}
 							value={String(o.stateId)}
 							class="min-w-0 flex-1 basis-60"
@@ -526,13 +483,11 @@
 
 		<!-- Expédition -->
 		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Expédition</h2>
+			<h2 class="mb-4 text-base font-semibold text-gray-900">Expédition</h2>
 
 			{#if o.shippingDelay}
 				<!-- Délai promis au client au moment de la commande (12.3). -->
-				<p
-					class="mb-4 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-				>
+				<p class="mb-4 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
 					Délai annoncé au client : <strong>{o.shippingDelay}</strong>
 					{#if o.shippingEstimateFrom && o.shippingEstimateTo}
 						· expédition estimée {describeShippingWindow(
@@ -544,9 +499,7 @@
 			{/if}
 
 			{#if form?.message}
-				<p
-					class="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
-				>
+				<p class="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
 					{form.message}
 				</p>
 			{/if}
@@ -555,16 +508,16 @@
 				<dl class="space-y-2 text-sm">
 					<div class="flex justify-between gap-4">
 						<dt class="text-gray-500">Transporteur</dt>
-						<dd class="font-medium text-gray-900 dark:text-white">{o.carrierName ?? '—'}</dd>
+						<dd class="font-medium text-gray-900">{o.carrierName ?? '—'}</dd>
 					</div>
 					<div class="flex justify-between gap-4">
 						<dt class="text-gray-500">Numéro de suivi</dt>
-						<dd class="font-mono font-medium text-gray-900 dark:text-white">{o.trackingNumber}</dd>
+						<dd class="font-mono font-medium text-gray-900">{o.trackingNumber}</dd>
 					</div>
 					{#if o.packageWeightKg}
 						<div class="flex justify-between gap-4">
 							<dt class="text-gray-500">Poids du colis</dt>
-							<dd class="text-gray-900 dark:text-white">{Number(o.packageWeightKg)} kg</dd>
+							<dd class="text-gray-900">{Number(o.packageWeightKg)} kg</dd>
 						</div>
 					{/if}
 				</dl>
@@ -590,7 +543,7 @@
 					<a
 						href={`data:application/pdf;base64,${form.labelBase64}`}
 						download={`etiquette-${o.reference}.pdf`}
-						class="mt-3 inline-block text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
+						class="mt-3 inline-block text-sm font-medium text-primary-700 hover:underline"
 					>
 						Télécharger etiquette-{o.reference}.pdf
 					</a>
@@ -602,15 +555,15 @@
 			{:else}
 				{#if o.usedFallbackShipping}
 					<p
-						class="mb-4 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+						class="mb-4 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
 					>
 						Commande passée avec la grille de repli : choisissez le transporteur réel ci-dessous.
 					</p>
 				{/if}
 
 				{#if o.relayPointName}
-					<p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-						Point relais choisi : <span class="font-medium text-gray-900 dark:text-white">
+					<p class="mb-4 text-sm text-gray-600">
+						Point relais choisi : <span class="font-medium text-gray-900">
 							{o.relayPointName}
 						</span>
 						{#if o.relayPointAddress}<br />{o.relayPointAddress}{/if}
@@ -623,9 +576,8 @@
 					>
 						<span class="font-semibold">Mode test.</span>
 						Les colis sont créés avec l'offre
-						<code class="rounded bg-white/60 px-1 dark:bg-black/30">{data.testOptionCode}</code> : aucun
-						transporteur n'est sollicité et rien n'est facturé. Aucun envoi réel n'est possible tant que
-						ce mode est actif.
+						<code class="rounded bg-white/60 px-1">{data.testOptionCode}</code> : aucun transporteur n'est
+						sollicité et rien n'est facturé. Aucun envoi réel n'est possible tant que ce mode est actif.
 					</p>
 				{/if}
 
@@ -693,11 +645,11 @@
 
 		<!-- Articles -->
 		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">
+			<h2 class="mb-4 text-base font-semibold text-gray-900">
 				Articles <span class="font-normal text-gray-400">({o.lines.length})</span>
 			</h2>
 
-			<ul class="divide-y divide-gray-100 dark:divide-gray-800">
+			<ul class="divide-y divide-gray-100">
 				{#each o.lines as l (l.id)}
 					{@const margin = lineMargin(l)}
 					<li class="flex items-start gap-4 py-4 first:pt-0 last:pb-0">
@@ -707,12 +659,12 @@
 							{#if l.productId}
 								<a
 									href={resolve('/admin/products/[id]', { id: String(l.productId) })}
-									class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+									class="font-medium text-primary-700 hover:underline"
 								>
 									{l.productName}
 								</a>
 							{:else}
-								<span class="font-medium text-gray-900 dark:text-white">{l.productName}</span>
+								<span class="font-medium text-gray-900">{l.productName}</span>
 								<!-- Produit supprimé depuis l'achat : la ligne garde sa copie figée. -->
 								<StateBadge color="gray" class="ms-2" label="Hors catalogue" />
 							{/if}
@@ -722,15 +674,13 @@
 								{#if l.serialNumber}· N° de série : {l.serialNumber}{/if}
 								{#if l.currentStock !== null && l.currentStock !== undefined}
 									· Stock actuel :
-									<span
-										class={l.currentStock <= 0 ? 'font-medium text-red-600 dark:text-red-400' : ''}
-									>
+									<span class={l.currentStock <= 0 ? 'font-medium text-red-600' : ''}>
 										{l.currentStock}
 									</span>
 								{/if}
 							</p>
 
-							<p class="mt-1.5 text-sm text-gray-600 dark:text-gray-300">
+							<p class="mt-1.5 text-sm text-gray-600">
 								{l.quantity} × {formatPrice(Number(l.unitPriceHt))} HT
 								<span class="text-gray-400">({formatPrice(Number(l.unitPriceTtc))} TTC)</span>
 							</p>
@@ -740,8 +690,8 @@
 									Marge indicative :
 									<span
 										class={margin.amount >= 0
-											? 'font-medium text-green-600 dark:text-green-400'
-											: 'font-medium text-red-600 dark:text-red-400'}
+											? 'font-medium text-green-600'
+											: 'font-medium text-red-600'}
 									>
 										{formatPrice(margin.amount)} ({margin.percent.toFixed(1)} %)
 									</span>
@@ -750,7 +700,7 @@
 						</div>
 
 						<div class="shrink-0 text-right">
-							<p class="font-semibold text-gray-900 tabular-nums dark:text-white">
+							<p class="font-semibold text-gray-900 tabular-nums">
 								{formatPrice(Number(l.totalTtc))}
 							</p>
 							<p class="mt-0.5 text-xs text-gray-500 tabular-nums">
@@ -762,16 +712,16 @@
 			</ul>
 
 			<!-- Totaux : rattachés aux articles, pas isolés dans une carte à part. -->
-			<dl class="mt-4 space-y-1.5 border-t border-gray-200 pt-4 text-sm dark:border-gray-700">
+			<dl class="mt-4 space-y-1.5 border-t border-gray-200 pt-4 text-sm">
 				<div class="flex justify-between">
 					<dt class="text-gray-500">Sous-total HT</dt>
-					<dd class="text-gray-900 tabular-nums dark:text-white">
+					<dd class="text-gray-900 tabular-nums">
 						{formatPrice(Number(o.totalHt) - Number(o.shippingFee))}
 					</dd>
 				</div>
 				<div class="flex justify-between">
 					<dt class="text-gray-500">Livraison HT</dt>
-					<dd class="text-gray-900 tabular-nums dark:text-white">
+					<dd class="text-gray-900 tabular-nums">
 						{formatPrice(Number(o.shippingFee))}
 					</dd>
 				</div>
@@ -781,28 +731,26 @@
 							Supplément transport
 							{#if o.additionalFeeReason}<span class="text-xs">— {o.additionalFeeReason}</span>{/if}
 						</dt>
-						<dd class="text-gray-900 tabular-nums dark:text-white">
+						<dd class="text-gray-900 tabular-nums">
 							{formatPrice(Number(o.additionalShippingFee))}
 						</dd>
 					</div>
 				{/if}
 				{#if Number(o.discountAmount) > 0}
-					<div class="flex justify-between text-green-600 dark:text-green-400">
+					<div class="flex justify-between text-green-600">
 						<dt>Remise</dt>
 						<dd class="tabular-nums">−{formatPrice(Number(o.discountAmount))}</dd>
 					</div>
 				{/if}
 				<div class="flex justify-between">
 					<dt class="text-gray-500">TVA</dt>
-					<dd class="text-gray-900 tabular-nums dark:text-white">
+					<dd class="text-gray-900 tabular-nums">
 						{formatPrice(Number(o.totalTva))}
 					</dd>
 				</div>
-				<div
-					class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold dark:border-gray-700"
-				>
-					<dt class="text-gray-900 dark:text-white">Total TTC</dt>
-					<dd class="text-gray-900 tabular-nums dark:text-white">
+				<div class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold">
+					<dt class="text-gray-900">Total TTC</dt>
+					<dd class="text-gray-900 tabular-nums">
 						{formatPrice(Number(o.totalTtc))}
 					</dd>
 				</div>
@@ -816,48 +764,48 @@
 		{#if o.customer}
 			<Card class="max-w-none p-6">
 				<div class="mb-3 flex items-center justify-between gap-2">
-					<h2 class="text-base font-semibold text-gray-900 dark:text-white">Client</h2>
+					<h2 class="text-base font-semibold text-gray-900">Client</h2>
 					<a
 						href={resolve('/admin/customers/[id]', { id: String(o.customer.id) })}
-						class="text-xs font-medium text-primary-700 hover:underline dark:text-primary-400 print:hidden"
+						class="text-xs font-medium text-primary-700 hover:underline print:hidden"
 					>
 						Voir la fiche →
 					</a>
 				</div>
-				<p class="font-medium text-gray-900 dark:text-white">
+				<p class="font-medium text-gray-900">
 					{o.customer.firstName}
 					{o.customer.lastName}
 				</p>
 				<a
 					href="mailto:{o.customer.email}"
-					class="text-sm break-all text-primary-700 hover:underline dark:text-primary-400"
+					class="text-sm break-all text-primary-700 hover:underline"
 				>
 					{o.customer.email}
 				</a>
 				{#if o.customer.phone || shipping?.phone}
 					<a
 						href="tel:{(o.customer.phone || shipping?.phone || '').replace(/\s/g, '')}"
-						class="block text-sm text-primary-700 hover:underline dark:text-primary-400"
+						class="block text-sm text-primary-700 hover:underline"
 					>
 						{o.customer.phone || shipping?.phone}
 					</a>
 				{/if}
-				<dl class="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm dark:border-gray-800">
+				<dl class="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm">
 					<div class="flex justify-between gap-4">
 						<dt class="text-gray-500">Compte créé le</dt>
-						<dd class="text-gray-900 tabular-nums dark:text-white">
+						<dd class="text-gray-900 tabular-nums">
 							{dayFmt.format(new Date(o.customer.createdAt))}
 						</dd>
 					</div>
 					<div class="flex justify-between gap-4">
 						<dt class="text-gray-500">Commandes validées</dt>
-						<dd class="font-medium text-gray-900 tabular-nums dark:text-white">
+						<dd class="font-medium text-gray-900 tabular-nums">
 							{data.customerStats?.validCount ?? 0}
 						</dd>
 					</div>
 					<div class="flex justify-between gap-4">
 						<dt class="text-gray-500">Total payé</dt>
-						<dd class="font-medium text-gray-900 tabular-nums dark:text-white">
+						<dd class="font-medium text-gray-900 tabular-nums">
 							{formatPrice(data.customerStats?.validTotal ?? 0)}
 						</dd>
 					</div>
@@ -875,9 +823,9 @@
 		<!-- Adresses -->
 		{#snippet addressCard(title: string, a: Addr)}
 			<Card class="max-w-none p-6">
-				<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
+				<h2 class="mb-3 text-base font-semibold text-gray-900">{title}</h2>
 				{#if a}
-					<address class="text-sm leading-relaxed text-gray-700 not-italic dark:text-gray-300">
+					<address class="text-sm leading-relaxed text-gray-700 not-italic">
 						{a.firstName}
 						{a.lastName}{#if a.company}<br />{a.company}{/if}<br />
 						{a.line1}{#if a.line2}<br />{a.line2}{/if}<br />

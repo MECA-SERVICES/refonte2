@@ -35,6 +35,7 @@
 	import AdminFeedback from '$lib/components/admin/AdminFeedback.svelte';
 	import type { Component } from 'svelte';
 	import type { LayoutProps } from './$types';
+	import type { AdminMenuItem } from './+layout';
 
 	let { data, children }: LayoutProps = $props();
 
@@ -57,7 +58,29 @@
 
 	let sidebarOpen = $state(false);
 
-	const activeUrl = $derived(page.url.pathname);
+	const menuGroups = $derived(data.menu.sections.flatMap((section) => section.items));
+
+	/**
+	 * Entrée du menu à surligner : la plus longue qui préfixe l'URL, pour que
+	 * `/admin/orders/123` surligne « Commandes ». Le tableau de bord (`/admin`)
+	 * ne se surligne que sur sa propre page.
+	 */
+	const activeUrl = $derived.by(() => {
+		const path = page.url.pathname;
+		const hrefs = menuGroups.flatMap(
+			(item) => item.items?.map((link) => link.href) ?? item.href ?? []
+		);
+		const matches = hrefs.filter(
+			(href) => path === href || (href !== '/admin' && path.startsWith(`${href}/`))
+		);
+		return matches.sort((a, b) => b.length - a.length)[0] ?? path;
+	});
+
+	// Groupes du menu dépliés ou repliés à la main ; par défaut, seul le groupe
+	// de la page courante est ouvert.
+	let toggledGroups = $state<Record<string, boolean>>({});
+	const isGroupOpen = (item: AdminMenuItem) =>
+		toggledGroups[item.id] ?? !!item.items?.some((link) => link.href === activeUrl);
 
 	// Les liens du menu proviennent du JSON (chemins internes contrôlés par nous).
 	const menuHref = (href: string) => href;
@@ -69,11 +92,11 @@
 		await goto(resolve('/admin/login'));
 	}
 
-	const itemIconClass = 'h-5 w-5 shrink-0 text-gray-400 group-hover:text-white';
+	const itemIconClass = 'h-5 w-5 shrink-0 text-gray-300 group-hover:text-white';
 </script>
 
 <!-- `admin-theme` active les couleurs du back-office PrestaShop (layout.css). -->
-<div class="admin-theme min-h-screen bg-gray-100 dark:bg-gray-900 print:bg-white">
+<div class="admin-theme min-h-screen bg-gray-100 print:bg-white">
 	<!-- Sidebar (style PrestaShop : sombre, fixe) -->
 	<Sidebar
 		{activeUrl}
@@ -100,7 +123,7 @@
 
 		{#each data.menu.sections as section (section.id)}
 			{#if section.label}
-				<div class="mt-4 mb-1 px-4 text-xs font-semibold tracking-wider text-gray-400 uppercase">
+				<div class="mt-4 mb-1 px-4 text-xs font-semibold tracking-wider text-gray-300 uppercase">
 					{section.label}
 				</div>
 			{/if}
@@ -109,10 +132,13 @@
 					{#if item.items}
 						<SidebarDropdownWrapper
 							label={item.label}
+							isOpen={isGroupOpen(item)}
+							aria-expanded={isGroupOpen(item)}
+							onclick={() => (toggledGroups[item.id] = !isGroupOpen(item))}
 							classes={{
 								btn: 'group flex w-full items-center border-s-4 border-transparent p-2 text-sm font-normal text-gray-300 hover:bg-gray-950 hover:text-white',
 								span: 'ms-3 flex-1 text-left whitespace-nowrap',
-								svg: 'h-3 w-3 text-gray-400',
+								svg: 'h-3 w-3 text-gray-300',
 								ul: 'space-y-1 py-1'
 							}}
 						>
@@ -157,7 +183,7 @@
 		<!-- Navbar du haut -->
 		<Navbar
 			fluid
-			class="sticky top-0 z-30 border-b border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800 print:hidden"
+			class="sticky top-0 z-30 border-b border-gray-200 bg-white px-4 py-2.5 print:hidden"
 		>
 			<div class="flex w-full items-center justify-between">
 				<div class="flex items-center gap-3">
@@ -166,7 +192,8 @@
 						type="button"
 						onclick={() => (sidebarOpen = !sidebarOpen)}
 						aria-label="Ouvrir le menu"
-						class="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden dark:text-gray-400 dark:hover:bg-gray-700"
+						aria-expanded={sidebarOpen}
+						class="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
 					>
 						<BarsOutline class="h-6 w-6" />
 					</button>
@@ -176,14 +203,14 @@
 						<label for="topbar-search" class="sr-only">Rechercher un produit</label>
 						<div class="relative lg:w-96">
 							<div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3">
-								<SearchOutline class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+								<SearchOutline class="h-5 w-5 text-gray-500" />
 							</div>
 							<input
 								type="search"
 								id="topbar-search"
 								name="q"
 								value={page.url.searchParams.get('q') ?? ''}
-								class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+								class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
 								placeholder="Rechercher un produit (nom, référence, EAN)…"
 							/>
 						</div>
@@ -192,7 +219,7 @@
 
 				<div class="flex items-center gap-3">
 					<!-- Menu utilisateur -->
-					<Avatar id="avatar-menu" class="cursor-pointer" />
+					<Avatar id="avatar-menu" class="cursor-pointer" aria-label="Mon compte" />
 					<Dropdown simple triggeredBy="#avatar-menu" placement="bottom-end">
 						<DropdownHeader>
 							<span class="block text-sm">{adminUser?.name ?? 'Administrateur'}</span>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatNumber } from '$lib/money';
 	import {
 		Button,
 		Card,
@@ -77,7 +78,7 @@
 
 <PageHeader
 	title="Validations de comptes"
-	subtitle="{data.total} dossier{data.total > 1 ? 's' : ''}"
+	subtitle="{formatNumber(data.total)} dossier{data.total > 1 ? 's' : ''}"
 	crumbs={[
 		{ label: 'Accueil', href: '/admin' },
 		{ label: 'Clients', href: '/admin/customers' },
@@ -110,6 +111,7 @@
 	{/if}
 	<Input
 		name="q"
+		aria-label="Rechercher un dossier"
 		value={data.search}
 		placeholder="Nom, email, raison sociale, SIRET…"
 		class="max-w-sm"
@@ -121,7 +123,7 @@
 
 {#if data.rows.length === 0}
 	<Card class="max-w-none p-10 text-center">
-		<p class="text-gray-600 dark:text-gray-300">
+		<p class="text-gray-600">
 			{data.status === 'pending'
 				? 'Aucun dossier en attente. Tout est traité.'
 				: 'Aucun dossier dans cet état.'}

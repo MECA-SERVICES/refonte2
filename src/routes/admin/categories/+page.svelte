@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatNumber } from '$lib/money';
 	import { resolve } from '$app/paths';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { Button, Card, Input } from 'flowbite-svelte';
@@ -111,7 +112,7 @@
 
 <PageHeader
 	title="Catégories"
-	subtitle="{data.total} catégories"
+	subtitle="{formatNumber(data.total)} catégories"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Catégories' }]}
 >
 	{#snippet actions()}
@@ -159,7 +160,7 @@
 					<button
 						type="button"
 						onclick={() => (selected = step)}
-						class="hover:text-gray-800 hover:underline dark:hover:text-gray-200"
+						class="hover:text-gray-800 hover:underline"
 					>
 						{step.name}
 					</button>
@@ -168,13 +169,13 @@
 
 			<div class="flex flex-wrap items-start justify-between gap-4">
 				<div class="min-w-0">
-					<h2 class="text-xl font-semibold text-gray-900 dark:text-white">{selected.name}</h2>
+					<h2 class="text-xl font-semibold text-gray-900">{selected.name}</h2>
 					<p class="mt-1 text-sm text-gray-500">/{selected.slug}</p>
 				</div>
 				<div class="flex flex-wrap gap-2">
 					<ActiveBadge active={selected.isActive} />
 					<Button size="sm" href={resolve('/admin/categories/[id]', { id: String(selected.id) })}>
-						<EditOutline class="me-2 h-4 w-4" /> Éditer
+						<EditOutline class="me-2 h-4 w-4" /> Modifier
 					</Button>
 				</div>
 			</div>
@@ -182,29 +183,27 @@
 			<dl class="mt-6 grid gap-4 sm:grid-cols-3">
 				<div>
 					<dt class="text-xs tracking-wide text-gray-500 uppercase">Produits</dt>
-					<dd class="mt-1 text-2xl font-bold text-gray-900 tabular-nums dark:text-white">
+					<dd class="mt-1 text-2xl font-bold text-gray-900 tabular-nums">
 						{selected.productCount}
 					</dd>
 				</div>
 				<div>
 					<dt class="text-xs tracking-wide text-gray-500 uppercase">Sous-catégories</dt>
-					<dd class="mt-1 text-2xl font-bold text-gray-900 tabular-nums dark:text-white">
+					<dd class="mt-1 text-2xl font-bold text-gray-900 tabular-nums">
 						{selected.children.length}
 					</dd>
 				</div>
 				<div>
 					<dt class="text-xs tracking-wide text-gray-500 uppercase">Position</dt>
-					<dd class="mt-1 text-2xl font-bold text-gray-900 tabular-nums dark:text-white">
+					<dd class="mt-1 text-2xl font-bold text-gray-900 tabular-nums">
 						{selected.position}
 					</dd>
 				</div>
 			</dl>
 
 			{#if selected.children.length > 0}
-				<div class="mt-6 border-t border-gray-200 pt-5 dark:border-gray-700">
-					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
-						Sous-catégories directes
-					</h3>
+				<div class="mt-6 border-t border-gray-200 pt-5">
+					<h3 class="mb-3 text-sm font-semibold text-gray-900">Sous-catégories directes</h3>
 					<div class="flex flex-wrap gap-2">
 						{#each selected.children as child (child.id)}
 							<button
@@ -213,7 +212,7 @@
 									expand(selected!.id);
 									selected = child;
 								}}
-								class="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-300"
+								class="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-700 hover:border-gray-400"
 							>
 								{child.name}
 								{#if child.productCount > 0}
@@ -225,7 +224,7 @@
 				</div>
 			{/if}
 
-			<div class="mt-6 flex flex-wrap gap-2 border-t border-gray-200 pt-5 dark:border-gray-700">
+			<div class="mt-6 flex flex-wrap gap-2 border-t border-gray-200 pt-5">
 				<Button
 					color="alternative"
 					size="sm"
@@ -240,8 +239,8 @@
 		</Card>
 	{:else}
 		<Card class="max-w-none p-10 text-center">
-			<ImageOutline class="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600" />
-			<p class="mt-3 text-gray-600 dark:text-gray-300">
+			<ImageOutline class="mx-auto h-10 w-10 text-gray-300" />
+			<p class="mt-3 text-gray-600">
 				Sélectionnez une catégorie dans l'arborescence pour en voir le détail.
 			</p>
 		</Card>

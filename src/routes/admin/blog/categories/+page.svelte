@@ -75,7 +75,7 @@
 
 {#if editing !== null}
 	<Card class="mb-6 max-w-none p-6">
-		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">
+		<h2 class="mb-4 text-base font-semibold text-gray-900">
 			{isNew ? 'Nouvelle catégorie' : 'Modifier la catégorie'}
 		</h2>
 
@@ -158,9 +158,7 @@
 
 {#if data.rows.length === 0}
 	<Card class="max-w-none p-10 text-center">
-		<p class="text-gray-600 dark:text-gray-300">
-			Aucune catégorie. Créez-en une pour classer vos articles.
-		</p>
+		<p class="text-gray-600">Aucune catégorie. Créez-en une pour classer vos articles.</p>
 	</Card>
 {:else}
 	<div class="space-y-2">
@@ -180,7 +178,7 @@
 							></span>
 						{/if}
 						<div class="min-w-0">
-							<p class="font-medium text-gray-900 dark:text-white">{row.name}</p>
+							<p class="font-medium text-gray-900">{row.name}</p>
 							<p class="text-xs text-gray-500">/blog/categorie/{row.slug}</p>
 						</div>
 						{#if !row.isActive}<StateBadge color="gray" label="Masquée" />{/if}

@@ -62,7 +62,7 @@
 	<Alert color="red" class="mb-4">{form.message}</Alert>
 {/if}
 
-<p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+<p class="mb-6 text-sm text-gray-500">
 	Les images sont des adresses (ex. <code>/promo/tondeuse.jpg</code> ou une URL complète). Un bloc sans
 	réglage laisse place au bloc automatique d'origine.
 </p>
@@ -79,11 +79,18 @@
 		{#if !isNew}<input type="hidden" name="id" value={tile.id} />{/if}
 		<div>
 			<Label class="mb-1 text-xs">Surtitre</Label>
-			<Input name="eyebrow" size="sm" value={tile.eyebrow ?? ''} placeholder="PROMOTION" />
+			<Input
+				aria-label="Surtitre"
+				name="eyebrow"
+				size="sm"
+				value={tile.eyebrow ?? ''}
+				placeholder="PROMOTION"
+			/>
 		</div>
 		<div>
 			<Label class="mb-1 text-xs">Titre *</Label>
 			<Input
+				aria-label="Titre"
 				name="title"
 				size="sm"
 				value={tile.title}
@@ -93,11 +100,18 @@
 		</div>
 		<div>
 			<Label class="mb-1 text-xs">Image</Label>
-			<Input name="imageUrl" size="sm" value={tile.imageUrl ?? ''} placeholder="/promo/…jpg" />
+			<Input
+				aria-label="Image"
+				name="imageUrl"
+				size="sm"
+				value={tile.imageUrl ?? ''}
+				placeholder="/promo/…jpg"
+			/>
 		</div>
 		<div>
 			<Label class="mb-1 text-xs">Lien *</Label>
 			<Input
+				aria-label="Lien"
 				name="linkUrl"
 				size="sm"
 				value={tile.linkUrl}
@@ -107,19 +121,32 @@
 		</div>
 		<div>
 			<Label class="mb-1 text-xs">Bouton</Label>
-			<Input name="buttonLabel" size="sm" value={tile.buttonLabel} />
+			<Input aria-label="Bouton" name="buttonLabel" size="sm" value={tile.buttonLabel} />
 		</div>
 		<div>
 			<Label class="mb-1 text-xs">Pastille</Label>
-			<Input name="badge" size="sm" value={tile.badge ?? ''} placeholder="PROMO (facultatif)" />
+			<Input
+				aria-label="Pastille"
+				name="badge"
+				size="sm"
+				value={tile.badge ?? ''}
+				placeholder="PROMO (facultatif)"
+			/>
 		</div>
 		<div>
 			<Label class="mb-1 text-xs">Couleur</Label>
-			<Select name="tone" size="sm" items={tones} value={tile.tone} placeholder="" />
+			<Select
+				aria-label="Couleur"
+				name="tone"
+				size="sm"
+				items={tones}
+				value={tile.tone}
+				placeholder=""
+			/>
 		</div>
 		<div>
 			<Label class="mb-1 text-xs">Ordre</Label>
-			<Input name="position" type="number" size="sm" value={tile.position} />
+			<Input aria-label="Ordre" name="position" type="number" size="sm" value={tile.position} />
 		</div>
 		<div class="flex items-center justify-between gap-2 sm:col-span-2">
 			<Checkbox name="isActive" checked={tile.isActive}>Affichée</Checkbox>
@@ -129,17 +156,17 @@
 {/snippet}
 
 <Card class="mb-6 max-w-none p-6">
-	<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Tuiles promotionnelles</h2>
-	<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+	<h2 class="mb-1 text-lg font-semibold text-gray-900">Tuiles promotionnelles</h2>
+	<p class="mb-4 text-xs text-gray-500">
 		À la manière de Kramp, à la place de « Nos marques » : les 4 premières tuiles affichées
 		apparaissent sur l'accueil.
 	</p>
 
 	<div class="space-y-4">
 		{#each data.tiles as tile (tile.id)}
-			<div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+			<div class="rounded-lg border border-gray-200 p-4">
 				<div class="mb-3 flex items-center justify-between gap-2">
-					<p class="font-medium text-gray-900 dark:text-white">
+					<p class="font-medium text-gray-900">
 						{tile.title}
 						{#if !tile.isActive}<StateBadge color="gray" class="ms-2" label="Masquée" />{/if}
 					</p>
@@ -152,8 +179,8 @@
 			</div>
 		{/each}
 
-		<div class="rounded-lg border border-dashed border-gray-300 p-4 dark:border-gray-600">
-			<p class="mb-3 font-medium text-gray-900 dark:text-white">Nouvelle tuile</p>
+		<div class="rounded-lg border border-dashed border-gray-300 p-4">
+			<p class="mb-3 font-medium text-gray-900">Nouvelle tuile</p>
 			{@render tileForm(blankTile, true)}
 		</div>
 	</div>
@@ -161,8 +188,8 @@
 
 <!-- ================= Catégories mises en avant (10.3) ================= -->
 <Card class="mb-6 max-w-none p-6">
-	<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Catégories</h2>
-	<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+	<h2 class="mb-1 text-lg font-semibold text-gray-900">Catégories</h2>
+	<p class="mb-4 text-xs text-gray-500">
 		Bloc « Par catégories » de l'accueil, chacune avec son visuel. Sans sélection, les rayons du
 		menu s'affichent.
 	</p>
@@ -170,9 +197,7 @@
 	{#if data.categories.length > 0}
 		<ul class="mb-4 space-y-2">
 			{#each data.categories as c (c.categoryId)}
-				<li
-					class="flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
-				>
+				<li class="flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 p-3">
 					<form
 						method="POST"
 						action="?/saveCategory"
@@ -181,16 +206,22 @@
 						class="flex flex-1 flex-wrap items-end gap-2"
 					>
 						<input type="hidden" name="categoryId" value={c.categoryId} />
-						<p class="min-w-48 flex-1 text-sm font-medium text-gray-900 dark:text-white">
+						<p class="min-w-48 flex-1 text-sm font-medium text-gray-900">
 							{c.parentName ? `${c.parentName} › ` : ''}{c.name}
 						</p>
 						<div class="w-72">
 							<Label class="mb-1 text-xs">Image</Label>
-							<Input name="imageUrl" size="sm" value={c.imageUrl ?? ''} />
+							<Input aria-label="Image" name="imageUrl" size="sm" value={c.imageUrl ?? ''} />
 						</div>
 						<div class="w-20">
 							<Label class="mb-1 text-xs">Ordre</Label>
-							<Input name="position" type="number" size="sm" value={c.position} />
+							<Input
+								aria-label="Ordre"
+								name="position"
+								type="number"
+								size="sm"
+								value={c.position}
+							/>
 						</div>
 						<Button type="submit" size="xs" color="alternative">Enregistrer</Button>
 					</form>
@@ -217,15 +248,28 @@
 	>
 		<div class="min-w-64 flex-1">
 			<Label class="mb-1 text-xs">Ajouter une catégorie</Label>
-			<Select name="categoryId" size="sm" items={categoryItems} placeholder="Choisir…" required />
+			<Select
+				aria-label="Ajouter une catégorie"
+				name="categoryId"
+				size="sm"
+				items={categoryItems}
+				placeholder="Choisir…"
+				required
+			/>
 		</div>
 		<div class="w-72">
 			<Label class="mb-1 text-xs">Image</Label>
-			<Input name="imageUrl" size="sm" placeholder="/img/categories/…jpg" />
+			<Input aria-label="Image" name="imageUrl" size="sm" placeholder="/img/categories/…jpg" />
 		</div>
 		<div class="w-20">
 			<Label class="mb-1 text-xs">Ordre</Label>
-			<Input name="position" type="number" size="sm" value={(data.categories.length + 1) * 10} />
+			<Input
+				aria-label="Ordre"
+				name="position"
+				type="number"
+				size="sm"
+				value={(data.categories.length + 1) * 10}
+			/>
 		</div>
 		<Button type="submit" size="xs">Ajouter</Button>
 	</form>
@@ -233,8 +277,8 @@
 
 <!-- ================= Produits phares (10.4) ================= -->
 <Card class="max-w-none p-6">
-	<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Produits phares</h2>
-	<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+	<h2 class="mb-1 text-lg font-semibold text-gray-900">Produits phares</h2>
+	<p class="mb-4 text-xs text-gray-500">
 		Sélection affichée dans « Nos produits phares ». Sans sélection, l'accueil montre le stock
 		atelier et les derniers arrivages.
 	</p>
@@ -248,22 +292,34 @@
 	>
 		<div class="min-w-64 flex-1">
 			<Label class="mb-1 text-xs">Image à côté de la sélection</Label>
-			<Input name="imageUrl" size="sm" value={data.featuredImageUrl} placeholder="/promo/…jpg" />
+			<Input
+				aria-label="Image à côté de la sélection"
+				name="imageUrl"
+				size="sm"
+				value={data.featuredImageUrl}
+				placeholder="/promo/…jpg"
+			/>
 		</div>
 		<div class="min-w-64 flex-1">
 			<Label class="mb-1 text-xs">Lien de l'image (facultatif)</Label>
-			<Input name="imageLink" size="sm" value={data.featuredImageLink} placeholder="/marque/…" />
+			<Input
+				aria-label="Lien de l'image (facultatif)"
+				name="imageLink"
+				size="sm"
+				value={data.featuredImageLink}
+				placeholder="/marque/…"
+			/>
 		</div>
 		<Button type="submit" size="xs" color="alternative">Enregistrer</Button>
 	</form>
 
 	{#if data.products.length > 0}
-		<ul class="mb-4 divide-y divide-gray-100 dark:divide-gray-800">
+		<ul class="mb-4 divide-y divide-gray-100">
 			{#each data.products as p (p.productId)}
 				<li class="flex flex-wrap items-center gap-3 py-2">
 					<a
 						href="/admin/products/{p.productId}"
-						class="min-w-0 flex-1 truncate text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
+						class="min-w-0 flex-1 truncate text-sm font-medium text-primary-700 hover:underline"
 					>
 						{p.name}
 					</a>

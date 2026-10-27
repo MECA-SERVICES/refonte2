@@ -66,9 +66,9 @@
 						name="color"
 						type="color"
 						bind:value={color}
-						class="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1 dark:border-gray-600 dark:bg-gray-700"
+						class="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1"
 					/>
-					<span class="font-mono text-sm text-gray-600 dark:text-gray-300">{color}</span>
+					<span class="font-mono text-sm text-gray-600">{color}</span>
 					<StateBadge label={current?.label || 'Aperçu'} {color} />
 				</div>
 			</div>
@@ -93,7 +93,7 @@
 						class="w-fit"
 						aria-label={flag.label}
 					/>
-					<span class="text-sm font-medium text-gray-900 dark:text-gray-300">{flag.label}</span>
+					<span class="text-sm font-medium text-gray-900">{flag.label}</span>
 				</div>
 			{/each}
 		</div>

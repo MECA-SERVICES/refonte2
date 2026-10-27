@@ -39,8 +39,8 @@
 
 {#if data.rows.length === 0}
 	<Card class="max-w-none p-10 text-center">
-		<NewspaperOutline class="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600" />
-		<p class="mt-3 text-gray-600 dark:text-gray-300">
+		<NewspaperOutline class="mx-auto h-10 w-10 text-gray-300" />
+		<p class="mt-3 text-gray-600">
 			Aucun article pour le moment. Publiez vos conseils d'entretien, vos tutoriels ou vos
 			actualités.
 		</p>
@@ -58,7 +58,7 @@
 						<div class="flex flex-wrap items-center gap-2">
 							<a
 								href={resolve('/admin/blog/[id]', { id: String(row.id) })}
-								class="font-semibold text-gray-900 hover:underline dark:text-white"
+								class="font-semibold text-gray-900 hover:underline"
 							>
 								{row.title}
 							</a>

@@ -43,17 +43,31 @@
 		onsearch?.(search);
 	}
 
-	/** Navigue vers la fiche de la ligne cliquée, si `rowHref` est fourni. */
-	function openRow(row: Row) {
-		if (!rowHref) return;
+	/**
+	 * Navigue vers la fiche de la ligne cliquée, si `rowHref` est fourni. Les
+	 * éléments interactifs de la ligne (lien de la première colonne, boutons)
+	 * gardent leur propre action.
+	 */
+	function openRow(row: Row, e: MouseEvent) {
+		if (!rowHref || (e.target as Element).closest('a, button, input, select')) return;
 		goto(rowHref(row));
 	}
 </script>
 
+{#snippet cellContent(col: Column<Row>, row: Row)}
+	{#if col.cell}{@render col.cell(row)}{:else}{(row as Record<string, unknown>)[col.key] ??
+			'—'}{/if}
+{/snippet}
+
 <div class="space-y-4">
 	{#if onsearch}
 		<form onsubmit={submitSearch} class="flex gap-2">
-			<Input bind:value={search} placeholder={searchPlaceholder} class="max-w-sm">
+			<Input
+				bind:value={search}
+				placeholder={searchPlaceholder}
+				aria-label={searchPlaceholder}
+				class="max-w-sm"
+			>
 				{#snippet left()}
 					<SearchOutline class="h-5 w-5 text-gray-400" />
 				{/snippet}
@@ -79,13 +93,16 @@
 				{#each rows as row (row.id)}
 					<TableBodyRow
 						class={rowHref ? 'cursor-pointer' : ''}
-						onclick={rowHref ? () => openRow(row) : undefined}
+						onclick={rowHref ? (e) => openRow(row, e) : undefined}
 					>
-						{#each columns as col (col.key)}
+						{#each columns as col, i (col.key)}
 							<TableBodyCell>
-								{#if col.cell}{@render col.cell(row)}{:else}{(row as Record<string, unknown>)[
-										col.key
-									] ?? '—'}{/if}
+								<!-- Vrai lien sur la première colonne : la fiche s'ouvre aussi au clavier. -->
+								{#if i === 0 && rowHref}
+									<a href={rowHref(row)} class="hover:underline">{@render cellContent(col, row)}</a>
+								{:else}
+									{@render cellContent(col, row)}
+								{/if}
 							</TableBodyCell>
 						{/each}
 					</TableBodyRow>

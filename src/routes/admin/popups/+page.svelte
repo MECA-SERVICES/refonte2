@@ -53,8 +53,8 @@
 
 {#if data.rows.length === 0}
 	<Card class="max-w-none p-10 text-center">
-		<BellActiveOutline class="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600" />
-		<p class="mt-3 text-gray-600 dark:text-gray-300">
+		<BellActiveOutline class="mx-auto h-10 w-10 text-gray-300" />
+		<p class="mt-3 text-gray-600">
 			Aucune annonce. Créez-en une pour informer vos visiteurs d'une fermeture, d'une promotion ou
 			d'une nouveauté.
 		</p>
@@ -70,7 +70,7 @@
 				<div class="flex flex-wrap items-start justify-between gap-3">
 					<div class="min-w-0">
 						<div class="flex flex-wrap items-center gap-2">
-							<p class="font-medium text-gray-900 dark:text-white">{row.name}</p>
+							<p class="font-medium text-gray-900">{row.name}</p>
 							<StateBadge color={state.color} label={state.label} />
 							{#if row.priority !== 0}
 								<StateBadge color="blue" label={`Priorité ${row.priority}`} />
@@ -85,7 +85,7 @@
 						</p>
 
 						{#if row.title}
-							<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">« {row.title} »</p>
+							<p class="mt-1 text-sm text-gray-600">« {row.title} »</p>
 						{/if}
 					</div>
 

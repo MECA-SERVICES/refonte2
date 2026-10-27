@@ -105,19 +105,19 @@
 	<div class="space-y-4 lg:col-span-2">
 		<Card class="max-w-none p-6">
 			<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-				<h2 class="text-base font-semibold text-gray-900 dark:text-white">Dossier déclaré</h2>
+				<h2 class="text-base font-semibold text-gray-900">Dossier déclaré</h2>
 				<StateBadge color={CUSTOMER_STATUS_COLORS[status]} label={CUSTOMER_STATUS_LABELS[status]} />
 			</div>
 
 			<dl class="grid gap-3 sm:grid-cols-2">
 				<div>
-					<dt class="text-xs text-gray-500">Email</dt>
-					<dd class="text-sm text-gray-900 dark:text-white">{client.email}</dd>
+					<dt class="text-xs text-gray-500">E-mail</dt>
+					<dd class="text-sm text-gray-900">{client.email}</dd>
 				</div>
 				{#each facts as [label, value] (label)}
 					<div>
 						<dt class="text-xs text-gray-500">{label}</dt>
-						<dd class="text-sm text-gray-900 dark:text-white">{value}</dd>
+						<dd class="text-sm text-gray-900">{value}</dd>
 					</div>
 				{/each}
 			</dl>
@@ -141,13 +141,11 @@
 
 		{#if req.infoRequestedAt}
 			<Card class="max-w-none p-6">
-				<h2 class="mb-2 text-base font-semibold text-gray-900 dark:text-white">
-					Complément demandé
-				</h2>
+				<h2 class="mb-2 text-base font-semibold text-gray-900">Complément demandé</h2>
 				<p class="text-xs text-gray-500">
 					Le {dateTime.format(new Date(req.infoRequestedAt))}
 				</p>
-				<p class="mt-2 text-sm whitespace-pre-line text-gray-900 dark:text-white">
+				<p class="mt-2 text-sm whitespace-pre-line text-gray-900">
 					{req.infoRequested}
 				</p>
 			</Card>
@@ -155,23 +153,23 @@
 
 		{#if !open}
 			<Card class="max-w-none p-6">
-				<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Décision</h2>
+				<h2 class="mb-3 text-base font-semibold text-gray-900">Décision</h2>
 				<dl class="grid gap-3 sm:grid-cols-2">
 					<div>
 						<dt class="text-xs text-gray-500">Traité le</dt>
-						<dd class="text-sm text-gray-900 dark:text-white">
+						<dd class="text-sm text-gray-900">
 							{req.reviewedAt ? dateTime.format(new Date(req.reviewedAt)) : '—'}
 						</dd>
 					</div>
 					<div>
 						<dt class="text-xs text-gray-500">Par</dt>
-						<dd class="text-sm text-gray-900 dark:text-white">{data.reviewerName ?? '—'}</dd>
+						<dd class="text-sm text-gray-900">{data.reviewerName ?? '—'}</dd>
 					</div>
 				</dl>
 				{#if req.rejectionReason}
 					<div class="mt-3">
 						<dt class="text-xs text-gray-500">Motif communiqué au client</dt>
-						<dd class="text-sm whitespace-pre-line text-gray-900 dark:text-white">
+						<dd class="text-sm whitespace-pre-line text-gray-900">
 							{req.rejectionReason}
 						</dd>
 					</div>
@@ -180,7 +178,7 @@
 					<div class="mt-3">
 						<!-- R13 : note interne, jamais exposée au client. -->
 						<dt class="text-xs text-gray-500">Note interne</dt>
-						<dd class="text-sm whitespace-pre-line text-gray-900 dark:text-white">
+						<dd class="text-sm whitespace-pre-line text-gray-900">
 							{req.reviewNotes}
 						</dd>
 					</div>
@@ -190,9 +188,7 @@
 
 		{#if data.history.length > 1}
 			<Card class="max-w-none p-6">
-				<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">
-					Historique des dossiers
-				</h2>
+				<h2 class="mb-3 text-base font-semibold text-gray-900">Historique des dossiers</h2>
 				<ul class="space-y-2">
 					{#each data.history as item (item.id)}
 						{@const itemStatus = normalizeCustomerStatus(item.status)}
@@ -223,10 +219,10 @@
 
 	<div>
 		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Traiter le dossier</h2>
+			<h2 class="mb-4 text-base font-semibold text-gray-900">Traiter le dossier</h2>
 
 			{#if !open}
-				<p class="text-sm text-gray-600 dark:text-gray-300">
+				<p class="text-sm text-gray-600">
 					Ce dossier est clos. Le client peut déposer une nouvelle demande après correction.
 				</p>
 			{:else}

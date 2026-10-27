@@ -28,7 +28,7 @@
 	const pageHref = (page: number) => `?perimetre=${data.scope}${page > 1 ? `&page=${page}` : ''}`;
 </script>
 
-<svelte:head><title>Prix d'achat manquants</title></svelte:head>
+<svelte:head><title>Prix d'achat manquants · Administration</title></svelte:head>
 
 <PageHeader
 	title="Prix d'achat manquants"
@@ -51,8 +51,8 @@
 			href="?perimetre={value}"
 			class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {data.scope ===
 			value
-				? 'border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-				: 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-300'}"
+				? 'border-primary-600 bg-primary-50 text-primary-700'
+				: 'border-gray-200 text-gray-600 hover:border-gray-300'}"
 		>
 			{label}
 			<span class="ms-1 text-xs text-gray-400">{formatNumber(data.counts[value])}</span>
@@ -62,7 +62,7 @@
 
 <Card class="max-w-none p-4">
 	{#if data.rows.length === 0}
-		<p class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+		<p class="py-8 text-center text-sm text-gray-500">
 			Tous les produits de ce périmètre ont un prix d'achat.
 		</p>
 	{:else}
@@ -87,7 +87,7 @@
 						<TableBodyCell class="max-w-md truncate">
 							<a
 								href="/admin/products/{row.id}"
-								class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+								class="font-medium text-primary-700 hover:underline"
 								title={row.name}
 							>
 								{row.name}

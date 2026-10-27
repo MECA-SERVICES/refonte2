@@ -36,8 +36,8 @@
 		<li>
 			<div
 				class="group flex items-center gap-1 rounded pe-2 {selectedId === node.id
-					? 'bg-primary-50 dark:bg-primary-900/40'
-					: 'hover:bg-gray-100 dark:hover:bg-gray-800'}"
+					? 'bg-primary-50'
+					: 'hover:bg-gray-100'}"
 				style="padding-inline-start: {depth * 0.85 + 0.25}rem"
 			>
 				<!-- Le chevron n'occupe sa place que s'il sert : sinon les feuilles
@@ -48,7 +48,7 @@
 						onclick={() => ontoggle(node.id)}
 						aria-label={isOpen ? 'Replier' : 'Déplier'}
 						aria-expanded={isOpen}
-						class="flex h-6 w-6 shrink-0 items-center justify-center rounded text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+						class="flex h-6 w-6 shrink-0 items-center justify-center rounded text-gray-400 hover:bg-gray-200 hover:text-gray-700"
 					>
 						{#if isOpen}
 							<ChevronDownOutline class="h-3.5 w-3.5" />
@@ -68,10 +68,8 @@
 				>
 					<span
 						class="truncate {selectedId === node.id
-							? 'font-semibold text-primary-800 dark:text-primary-200'
-							: 'text-gray-800 dark:text-gray-200'} {node.isActive
-							? ''
-							: 'line-through opacity-60'}"
+							? 'font-semibold text-primary-800'
+							: 'text-gray-800'} {node.isActive ? '' : 'line-through opacity-60'}"
 					>
 						{node.name}
 					</span>
@@ -80,7 +78,7 @@
 						<span class="shrink-0 text-xs text-gray-400 tabular-nums">{node.productCount}</span>
 					{/if}
 					{#if hasChildren}
-						<span class="shrink-0 text-xs text-gray-300 dark:text-gray-600">
+						<span class="shrink-0 text-xs text-gray-500">
 							({node.children.length})
 						</span>
 					{/if}

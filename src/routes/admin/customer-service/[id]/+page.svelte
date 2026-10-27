@@ -54,7 +54,7 @@
 				Suite de la conversation
 				<a
 					href="/admin/customer-service/{t.previous.id}"
-					class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+					class="font-medium text-primary-700 hover:underline"
 				>
 					{t.previous.reference}
 				</a>
@@ -67,7 +67,7 @@
 					<li>
 						{#if m.kind === 'status_change'}
 							<p class="text-center text-xs text-gray-500">
-								<span class="font-medium text-gray-700 dark:text-gray-300">{m.author}</span>
+								<span class="font-medium text-gray-700">{m.author}</span>
 								· {statusLabel(m.statusFrom)} → {statusLabel(m.statusTo)} ·
 								{dateFmt.format(new Date(m.createdAt))}
 							</p>
@@ -80,19 +80,17 @@
 								{/if}
 								<div
 									class="max-w-[85%] rounded-lg border px-4 py-3 text-sm {note
-										? 'w-full max-w-none border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950'
+										? 'w-full max-w-none border-amber-300 bg-amber-50'
 										: staff
-											? 'border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950'
-											: 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'}"
+											? 'border-primary-200 bg-primary-50'
+											: 'border-gray-200 bg-gray-50'}"
 								>
 									<p class="mb-1.5 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
-										<span class="font-semibold text-gray-800 dark:text-gray-200">{m.author}</span>
+										<span class="font-semibold text-gray-800">{m.author}</span>
 										{#if note}<StateBadge color="yellow" label="Note interne" />{/if}
 										<time>{dateFmt.format(new Date(m.createdAt))}</time>
 									</p>
-									<div
-										class="message-body leading-relaxed break-words text-gray-800 dark:text-gray-200"
-									>
+									<div class="message-body leading-relaxed break-words text-gray-800">
 										<!-- eslint-disable-next-line svelte/no-at-html-tags -- assaini côté serveur -->
 										{@html m.html}
 									</div>
@@ -127,7 +125,7 @@
 					{/if}
 					<a
 						href="/admin/customer-service/{f.id}"
-						class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+						class="font-medium text-primary-700 hover:underline"
 					>
 						{f.reference}
 					</a>
@@ -137,16 +135,14 @@
 
 		<!-- ================= Réponse ================= -->
 		<Card class="max-w-none p-6">
-			<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Répondre</h2>
+			<h2 class="mb-3 text-base font-semibold text-gray-900">Répondre</h2>
 			{#if t.isLegacy}
 				<p class="mb-3 text-sm text-gray-500">
 					Cette conversation est clôturée : votre message ouvrira une nouvelle conversation liée.
 				</p>
 			{/if}
 			{#if form?.message}
-				<p
-					class="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
-				>
+				<p class="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
 					{form.message}
 				</p>
 			{/if}
@@ -163,6 +159,7 @@
 			>
 				<Textarea
 					name="content"
+					aria-label="Message"
 					rows={6}
 					class="w-full"
 					bind:value={content}
@@ -183,16 +180,16 @@
 	<!-- ================= Colonne latérale ================= -->
 	<div class="space-y-6">
 		<Card class="max-w-none p-6">
-			<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Traitement</h2>
+			<h2 class="mb-4 text-base font-semibold text-gray-900">Traitement</h2>
 			{#if t.isLegacy}
 				<dl class="space-y-2 text-sm">
 					<div class="flex justify-between gap-4">
 						<dt class="text-gray-500">Catégorie</dt>
-						<dd class="text-gray-900 dark:text-white">{t.categoryLabel ?? '—'}</dd>
+						<dd class="text-gray-900">{t.categoryLabel ?? '—'}</dd>
 					</div>
 					<div class="flex justify-between gap-4">
 						<dt class="text-gray-500">Traitée par</dt>
-						<dd class="text-gray-900 dark:text-white">{t.lastAgentName ?? '—'}</dd>
+						<dd class="text-gray-900">{t.lastAgentName ?? '—'}</dd>
 					</div>
 				</dl>
 			{:else}
@@ -236,7 +233,7 @@
 					<Button type="submit" color="primary" class="w-full">Enregistrer</Button>
 				</form>
 
-				<div class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+				<div class="mt-4 border-t border-gray-200 pt-4">
 					{#if t.status === 'closed'}
 						<form method="POST" action="?/reopen" use:enhance data-success="Demande rouverte.">
 							<Button type="submit" color="alternative" class="w-full"
@@ -255,30 +252,30 @@
 		</Card>
 
 		<Card class="max-w-none p-6">
-			<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Demandeur</h2>
+			<h2 class="mb-3 text-base font-semibold text-gray-900">Demandeur</h2>
 			{#if t.customer}
 				<a
 					href="/admin/customers/{t.customer.id}"
-					class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+					class="font-medium text-primary-700 hover:underline"
 				>
 					{requester}
 				</a>
 				{#if t.customer.companyName}
-					<p class="text-sm text-gray-600 dark:text-gray-300">{t.customer.companyName}</p>
+					<p class="text-sm text-gray-600">{t.customer.companyName}</p>
 				{/if}
-				<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{t.customer.email}</p>
-				{#if t.customer.phone}<p class="text-sm text-gray-600 dark:text-gray-300">
+				<p class="mt-1 text-sm text-gray-600">{t.customer.email}</p>
+				{#if t.customer.phone}<p class="text-sm text-gray-600">
 						{t.customer.phone}
 					</p>{/if}
 				<a
 					href="/admin/customer-service?queue=all&customer={t.customer.id}"
-					class="mt-3 inline-block text-sm text-primary-700 hover:underline dark:text-primary-400"
+					class="mt-3 inline-block text-sm text-primary-700 hover:underline"
 				>
 					Toutes ses conversations
 				</a>
 			{:else}
-				<p class="font-medium text-gray-900 dark:text-white">{requester}</p>
-				{#if t.guestEmail}<p class="text-sm text-gray-600 dark:text-gray-300">
+				<p class="font-medium text-gray-900">{requester}</p>
+				{#if t.guestEmail}<p class="text-sm text-gray-600">
 						{t.guestEmail}
 					</p>{/if}
 				<p class="mt-1 text-xs text-gray-500">Sans compte client.</p>
@@ -287,14 +284,11 @@
 
 		{#if t.order}
 			<Card class="max-w-none p-6">
-				<h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Commande</h2>
-				<a
-					href="/admin/orders/{t.order.id}"
-					class="font-medium text-primary-700 hover:underline dark:text-primary-400"
-				>
+				<h2 class="mb-3 text-base font-semibold text-gray-900">Commande</h2>
+				<a href="/admin/orders/{t.order.id}" class="font-medium text-primary-700 hover:underline">
 					{t.order.reference}
 				</a>
-				<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+				<p class="mt-1 text-sm text-gray-600">
 					{dayFmt.format(new Date(t.order.createdAt))} · {formatPrice(Number(t.order.totalTtc))}
 				</p>
 				{#if t.order.stateLabel}

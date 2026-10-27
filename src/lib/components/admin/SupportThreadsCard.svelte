@@ -34,7 +34,7 @@
 
 <Card class="max-w-none p-6 print:hidden">
 	<div class="mb-3 flex items-center justify-between gap-2">
-		<h2 class="text-base font-semibold text-gray-900 dark:text-white">
+		<h2 class="text-base font-semibold text-gray-900">
 			Messages <span class="font-normal text-gray-400">({total})</span>
 		</h2>
 		<Button href={newHref} size="xs" color="alternative">Nouveau</Button>
@@ -43,7 +43,7 @@
 	{#if threads.length === 0}
 		<p class="text-sm text-gray-500">Aucune conversation.</p>
 	{:else}
-		<ul class="divide-y divide-gray-100 dark:divide-gray-800">
+		<ul class="divide-y divide-gray-100">
 			{#each threads as t (t.id)}
 				<li class="py-2.5 first:pt-0 last:pb-0">
 					<a href="/admin/customer-service/{t.id}" class="group block">
@@ -55,8 +55,8 @@
 							></span>
 							<span
 								class="truncate group-hover:underline {t.unreadByStaff > 0
-									? 'font-semibold text-gray-900 dark:text-white'
-									: 'text-gray-700 dark:text-gray-300'}"
+									? 'font-semibold text-gray-900'
+									: 'text-gray-700'}"
 							>
 								{t.subject}
 							</span>
@@ -69,10 +69,7 @@
 			{/each}
 		</ul>
 		{#if total > threads.length}
-			<a
-				href={listHref}
-				class="mt-3 inline-block text-sm text-primary-700 hover:underline dark:text-primary-400"
-			>
+			<a href={listHref} class="mt-3 inline-block text-sm text-primary-700 hover:underline">
 				Voir les {total} conversations
 			</a>
 		{/if}

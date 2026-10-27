@@ -24,7 +24,7 @@
 </PageHeader>
 
 {#snippet nameCell(row: TaxRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{row.name}</span>
+	<span class="font-medium text-gray-900">{row.name}</span>
 	{#if row.isDefault}
 		<StateBadge color="blue" class="ms-2" label="Par défaut" />
 	{/if}

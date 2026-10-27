@@ -97,6 +97,8 @@
 	);
 </script>
 
+<svelte:head><title>{o.reference} · Réparations</title></svelte:head>
+
 <PageHeader title={o.reference} subtitle="Ordre de réparation">
 	{#snippet actions()}
 		<Button size="sm" href="/admin/repairs/{o.id}/pdf" target="_blank" rel="noopener">
@@ -116,7 +118,7 @@
 		<StateBadge color="indigo" label={`Étiquette ${o.workshopLabel}`} />
 	{/if}
 	{#if o.warrantyReference}
-		<span class="text-sm text-gray-500 dark:text-gray-400">
+		<span class="text-sm text-gray-500">
 			Dossier {o.warrantyReference}
 		</span>
 	{/if}
@@ -137,7 +139,7 @@
 		<!-- ===== Machine et travaux ===== -->
 		<form method="POST" action="?/update" use:enhance class="space-y-6">
 			<Card class="max-w-none p-6">
-				<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Machine</h2>
+				<h2 class="mb-4 text-lg font-semibold text-gray-900">Machine</h2>
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
 						<Label for="machineType" class="mb-2">Type de matériel</Label>
@@ -210,9 +212,7 @@
 			</Card>
 
 			<Card class="max-w-none p-6">
-				<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-					Travaux et main-d'œuvre
-				</h2>
+				<h2 class="mb-4 text-lg font-semibold text-gray-900">Travaux et main-d'œuvre</h2>
 				<div class="space-y-4">
 					<div>
 						<Label for="workDescription" class="mb-2">Description des travaux réalisés</Label>
@@ -224,7 +224,7 @@
 							value={o.workDescription ?? ''}
 							disabled={frozen}
 						/>
-						<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+						<p class="mt-1 text-xs text-gray-500">
 							Obligatoire avant de marquer l'ordre comme achevé.
 						</p>
 					</div>
@@ -259,7 +259,7 @@
 			</Card>
 
 			<Card class="max-w-none p-6">
-				<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Notes</h2>
+				<h2 class="mb-4 text-lg font-semibold text-gray-900">Notes</h2>
 				<div class="space-y-4">
 					<div>
 						<Label for="notes" class="mb-2">Note visible du client</Label>
@@ -282,7 +282,7 @@
 							value={o.privateNote ?? ''}
 							disabled={frozen}
 						/>
-						<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+						<p class="mt-1 text-xs text-gray-500">
 							Jamais visible du client ni portée sur un document.
 						</p>
 					</div>
@@ -298,10 +298,10 @@
 
 		<!-- ===== Pièces consommées ===== -->
 		<Card class="max-w-none p-6">
-			<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+			<h2 class="mb-1 text-lg font-semibold text-gray-900">
 				Pièces consommées ({o.parts.length})
 			</h2>
-			<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+			<p class="mb-4 text-xs text-gray-500">
 				Une pièce rattachée au catalogue sort immédiatement du stock. Son retrait la réintègre.
 			</p>
 
@@ -352,7 +352,7 @@
 					</TableBody>
 				</Table>
 			{:else}
-				<p class="text-sm text-gray-500 dark:text-gray-400">Aucune pièce consommée.</p>
+				<p class="text-sm text-gray-500">Aucune pièce consommée.</p>
 			{/if}
 
 			{#if !frozen}
@@ -391,7 +391,7 @@
 	<aside class="space-y-4 lg:sticky lg:top-4">
 		<!-- Étiquette : hors du formulaire principal, elle reste modifiable sur un ordre figé. -->
 		<Card class="max-w-none p-4">
-			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Étiquette atelier</h3>
+			<h3 class="mb-3 text-sm font-semibold text-gray-900">Étiquette atelier</h3>
 			<form
 				method="POST"
 				action="?/setLabel"
@@ -411,21 +411,21 @@
 				<Button type="submit" size="sm" color="alternative">OK</Button>
 			</form>
 			{#if form && 'labelError' in form && form.labelError}
-				<p class="mt-2 text-xs text-red-600 dark:text-red-400">{form.labelError}</p>
+				<p class="mt-2 text-xs text-red-600">{form.labelError}</p>
 			{/if}
 		</Card>
 
 		<Card class="max-w-none p-4">
-			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Client</h3>
-			<p class="text-sm font-medium text-gray-900 dark:text-white">
+			<h3 class="mb-3 text-sm font-semibold text-gray-900">Client</h3>
+			<p class="text-sm font-medium text-gray-900">
 				{[o.customer.customerFirstName, o.customer.customerLastName].filter(Boolean).join(' ')}
 			</p>
 			{#if o.customer.customerCompany}
-				<p class="text-sm text-gray-500 dark:text-gray-400">{o.customer.customerCompany}</p>
+				<p class="text-sm text-gray-500">{o.customer.customerCompany}</p>
 			{/if}
-			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{o.customer.customerEmail}</p>
+			<p class="mt-1 text-xs text-gray-500">{o.customer.customerEmail}</p>
 			{#if o.customer.customerPhone}
-				<p class="text-xs text-gray-500 dark:text-gray-400">{o.customer.customerPhone}</p>
+				<p class="text-xs text-gray-500">{o.customer.customerPhone}</p>
 			{/if}
 			<Button
 				size="xs"
@@ -438,39 +438,39 @@
 		</Card>
 
 		<Card class="max-w-none p-4">
-			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Montants</h3>
+			<h3 class="mb-3 text-sm font-semibold text-gray-900">Montants</h3>
 			<dl class="space-y-2 text-sm">
 				<div class="flex justify-between">
-					<dt class="text-gray-500 dark:text-gray-400">Frais de diagnostic</dt>
-					<dd class="text-gray-900 dark:text-white">{eur.format(Number(o.diagnosticFee))}</dd>
+					<dt class="text-gray-500">Frais de diagnostic</dt>
+					<dd class="text-gray-900">{eur.format(Number(o.diagnosticFee))}</dd>
 				</div>
 				<div class="flex justify-between">
-					<dt class="text-gray-500 dark:text-gray-400">Main-d'œuvre</dt>
-					<dd class="text-gray-900 dark:text-white">{eur.format(Number(o.laborAmount))}</dd>
+					<dt class="text-gray-500">Main-d'œuvre</dt>
+					<dd class="text-gray-900">{eur.format(Number(o.laborAmount))}</dd>
 				</div>
 				<div class="flex justify-between">
-					<dt class="text-gray-500 dark:text-gray-400">Pièces</dt>
-					<dd class="text-gray-900 dark:text-white">{eur.format(Number(o.totalPartsHt))}</dd>
+					<dt class="text-gray-500">Pièces</dt>
+					<dd class="text-gray-900">{eur.format(Number(o.totalPartsHt))}</dd>
 				</div>
-				<div class="flex justify-between border-t border-gray-100 pt-2 dark:border-gray-800">
-					<dt class="font-medium text-gray-900 dark:text-white">Total HT</dt>
-					<dd class="font-medium text-gray-900 dark:text-white">{eur.format(Number(o.totalHt))}</dd>
+				<div class="flex justify-between border-t border-gray-100 pt-2">
+					<dt class="font-medium text-gray-900">Total HT</dt>
+					<dd class="font-medium text-gray-900">{eur.format(Number(o.totalHt))}</dd>
 				</div>
 				<div class="flex justify-between">
-					<dt class="text-gray-500 dark:text-gray-400">TVA</dt>
-					<dd class="text-gray-900 dark:text-white">{eur.format(Number(o.totalTva))}</dd>
+					<dt class="text-gray-500">TVA</dt>
+					<dd class="text-gray-900">{eur.format(Number(o.totalTva))}</dd>
 				</div>
-				<div class="flex justify-between border-t border-gray-100 pt-2 dark:border-gray-800">
-					<dt class="font-semibold text-gray-900 dark:text-white">
+				<div class="flex justify-between border-t border-gray-100 pt-2">
+					<dt class="font-semibold text-gray-900">
 						{o.orderType === 'warranty' ? 'À régler' : 'Total TTC'}
 					</dt>
-					<dd class="font-semibold text-gray-900 dark:text-white">
+					<dd class="font-semibold text-gray-900">
 						{eur.format(Number(o.totalTtc))}
 					</dd>
 				</div>
 			</dl>
 			{#if o.orderType === 'warranty'}
-				<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+				<p class="mt-3 text-xs text-gray-500">
 					Prise en charge sous garantie : les montants sont calculés pour le suivi, rien n'est dû
 					par le client.
 				</p>
@@ -479,37 +479,35 @@
 
 		{#if o.orderType === 'paid'}
 			<Card class="max-w-none p-4">
-				<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Règlements</h3>
+				<h3 class="mb-3 text-sm font-semibold text-gray-900">Règlements</h3>
 
 				{#if data.settlements.length > 0}
 					<ul class="mb-3 space-y-2 text-sm">
 						{#each data.settlements as s (s.id)}
 							<li class="flex justify-between gap-2">
 								<div>
-									<p class="font-medium text-gray-900 dark:text-white">
+									<p class="font-medium text-gray-900">
 										{SETTLEMENT_METHOD_LABELS[s.method]}
 										{#if s.chequeNumber}n° {s.chequeNumber}{/if}
 									</p>
-									<p class="text-xs text-gray-500 dark:text-gray-400">
+									<p class="text-xs text-gray-500">
 										{s.reference} · {dateOnly.format(new Date(s.receivedOn))}
 										{#if s.chequeIssuer}· {s.chequeIssuer}{/if}
 									</p>
 								</div>
-								<span class="text-gray-900 dark:text-white">{eur.format(Number(s.amount))}</span>
+								<span class="text-gray-900">{eur.format(Number(s.amount))}</span>
 							</li>
 						{/each}
 					</ul>
 				{:else if !o.paidAt}
-					<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Aucun règlement enregistré.</p>
+					<p class="mb-3 text-xs text-gray-500">Aucun règlement enregistré.</p>
 				{/if}
 
-				<div
-					class="flex justify-between border-t border-gray-100 pt-2 text-sm font-semibold dark:border-gray-800"
-				>
-					<span class="text-gray-900 dark:text-white">
+				<div class="flex justify-between border-t border-gray-100 pt-2 text-sm font-semibold">
+					<span class="text-gray-900">
 						{due > 0 ? 'Reste à régler' : 'Réglé'}
 					</span>
-					<span class={due > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600'}>
+					<span class={due > 0 ? 'text-red-600' : 'text-green-600'}>
 						{eur.format(due)}
 					</span>
 				</div>
@@ -578,12 +576,12 @@
 							</div>
 						{/if}
 						{#if form && 'paymentError' in form && form.paymentError}
-							<p class="text-xs text-red-600 dark:text-red-400">{form.paymentError}</p>
+							<p class="text-xs text-red-600">{form.paymentError}</p>
 						{/if}
 						<Button type="submit" size="sm" class="w-full">Enregistrer le règlement</Button>
 					</form>
 				{:else if due > 0 && o.status !== 'cancelled'}
-					<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+					<p class="mt-3 text-xs text-gray-500">
 						Le règlement s'enregistre une fois les travaux achevés.
 					</p>
 				{/if}
@@ -592,12 +590,10 @@
 
 		<!-- Avancement : seules les transitions prévues sont proposées. -->
 		<Card class="max-w-none p-4">
-			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Avancement</h3>
+			<h3 class="mb-3 text-sm font-semibold text-gray-900">Avancement</h3>
 
 			{#if data.transitions.length === 0}
-				<p class="text-xs text-gray-500 dark:text-gray-400">
-					Cet ordre a atteint un état définitif.
-				</p>
+				<p class="text-xs text-gray-500">Cet ordre a atteint un état définitif.</p>
 			{:else}
 				<div class="flex flex-col gap-2">
 					{#each data.transitions as target (target)}
@@ -653,10 +649,10 @@
 			{/if}
 
 			{#if o.status === 'on_hold' && o.onHoldPartLabel}
-				<div class="mt-3 rounded-lg bg-yellow-50 p-3 text-xs dark:bg-yellow-900/20">
-					<p class="font-medium text-gray-900 dark:text-white">En attente : {o.onHoldPartLabel}</p>
+				<div class="mt-3 rounded-lg bg-yellow-50 p-3 text-xs">
+					<p class="font-medium text-gray-900">En attente : {o.onHoldPartLabel}</p>
 					{#if o.onHoldExpectedAt}
-						<p class="text-gray-500 dark:text-gray-400">
+						<p class="text-gray-500">
 							Attendue le {dateOnly.format(new Date(o.onHoldExpectedAt))}
 						</p>
 					{/if}
@@ -665,18 +661,18 @@
 		</Card>
 
 		<Card class="max-w-none p-4">
-			<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Évolution</h3>
-			<ol class="space-y-2.5 border-s border-gray-200 ps-3 text-xs dark:border-gray-700">
+			<h3 class="mb-3 text-sm font-semibold text-gray-900">Évolution</h3>
+			<ol class="space-y-2.5 border-s border-gray-200 ps-3 text-xs">
 				{#each timeline as entry (entry.key)}
 					<li>
 						<div class="flex justify-between gap-2">
-							<span class="font-medium text-gray-900 dark:text-white">{entry.label}</span>
-							<span class="shrink-0 text-gray-500 dark:text-gray-400">
+							<span class="font-medium text-gray-900">{entry.label}</span>
+							<span class="shrink-0 text-gray-500">
 								{dateTime.format(entry.at)}
 							</span>
 						</div>
 						{#if entry.detail}
-							<p class="text-gray-500 dark:text-gray-400">{entry.detail}</p>
+							<p class="text-gray-500">{entry.detail}</p>
 						{/if}
 					</li>
 				{/each}

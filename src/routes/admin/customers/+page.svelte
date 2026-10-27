@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatPrice } from '$lib/money';
+	import { formatPrice, formatNumber } from '$lib/money';
 	import { Button } from 'flowbite-svelte';
 	import { UserAddOutline } from 'flowbite-svelte-icons';
 	import {
@@ -53,7 +53,7 @@
 
 <PageHeader
 	title="Clients"
-	subtitle="{data.total} client{data.total > 1 ? 's' : ''}"
+	subtitle="{formatNumber(data.total)} client{data.total > 1 ? 's' : ''}"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Clients' }]}
 >
 	{#snippet actions()}
@@ -73,24 +73,24 @@
 	     25 000 lignes, là où une colonne de texte seule se parcourt mal. -->
 	<span class="flex items-center gap-2.5">
 		<span
-			class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[11px] font-bold text-primary-700 dark:bg-primary-900 dark:text-primary-200"
+			class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[11px] font-bold text-primary-700"
 			aria-hidden="true"
 		>
 			{`${row.firstName?.[0] ?? ''}${row.lastName?.[0] ?? ''}`.toUpperCase() || '?'}
 		</span>
-		<span class="font-medium text-gray-900 dark:text-white">{row.firstName} {row.lastName}</span>
+		<span class="font-medium text-gray-900">{row.firstName} {row.lastName}</span>
 	</span>
 {/snippet}
 
 {#snippet emailCell(row: CustomerRow)}
-	<span class="text-gray-600 dark:text-gray-300">{row.email}</span>
+	<span class="text-gray-600">{row.email}</span>
 {/snippet}
 
 {#snippet spentCell(row: CustomerRow)}
 	<!-- PrestaShop affiche les ventes cumulées : c'est la colonne qui hiérarchise
 	     les clients dans la liste. -->
 	{#if Number(row.totalSpent) > 0}
-		<span class="font-medium text-gray-900 dark:text-white">
+		<span class="font-medium text-gray-900">
 			{formatPrice(Number(row.totalSpent))}
 		</span>
 	{:else}
@@ -117,7 +117,7 @@
 	columns={[
 		{ key: 'id', label: 'ID', cell: idCell },
 		{ key: 'lastName', label: 'Nom', cell: nameCell, filterKey: 'lastName', sortKey: 'lastName' },
-		{ key: 'email', label: 'Email', cell: emailCell, filterKey: 'email', sortKey: 'email' },
+		{ key: 'email', label: 'E-mail', cell: emailCell, filterKey: 'email', sortKey: 'email' },
 		{ key: 'phone', label: 'Téléphone', filterKey: 'phone' },
 		{ key: 'company', label: 'Société', cell: companyCell, filterKey: 'companyName' },
 		{

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatPrice } from '$lib/money';
+	import { formatPrice, formatNumber } from '$lib/money';
 	import { Button } from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
 	import {
@@ -29,7 +29,7 @@
 
 <PageHeader
 	title="Produits"
-	subtitle="{data.total} produit{data.total > 1 ? 's' : ''}{data.q
+	subtitle="{formatNumber(data.total)} produit{data.total > 1 ? 's' : ''}{data.q
 		? ` · recherche « ${data.q} »`
 		: ''}"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Produits' }]}
@@ -50,11 +50,11 @@
 {/snippet}
 
 {#snippet nameCell(row: ProductRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{row.name}</span>
+	<span class="font-medium text-gray-900">{row.name}</span>
 {/snippet}
 
 {#snippet priceCell(row: ProductRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{formatPrice(Number(row.priceHt))}</span>
+	<span class="font-medium text-gray-900">{formatPrice(Number(row.priceHt))}</span>
 {/snippet}
 
 {#snippet brandCell(row: ProductRow)}
@@ -63,11 +63,7 @@
 
 {#snippet stockCell(row: ProductRow)}
 	<!-- Le stock est l'info que l'on scanne le plus vite : rouge si épuisé. -->
-	<span
-		class="font-medium {row.stock > 0
-			? 'text-gray-900 dark:text-white'
-			: 'text-red-600 dark:text-red-400'}"
-	>
+	<span class="font-medium {row.stock > 0 ? 'text-gray-900' : 'text-red-600'}">
 		{row.stock}
 	</span>
 {/snippet}

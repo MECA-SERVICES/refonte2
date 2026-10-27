@@ -50,27 +50,27 @@
 <Card class="mb-6 max-w-none p-6">
 	<dl class="grid gap-4 text-sm sm:grid-cols-5">
 		<div>
-			<dt class="text-gray-500 dark:text-gray-400">Compte bancaire</dt>
-			<dd class="font-medium text-gray-900 dark:text-white">{r.bankAccount}</dd>
+			<dt class="text-gray-500">Compte bancaire</dt>
+			<dd class="font-medium text-gray-900">{r.bankAccount}</dd>
 		</div>
 		<div>
-			<dt class="text-gray-500 dark:text-gray-400">Date de remise</dt>
-			<dd class="font-medium text-gray-900 dark:text-white">
+			<dt class="text-gray-500">Date de remise</dt>
+			<dd class="font-medium text-gray-900">
 				{date.format(new Date(r.depositedOn))}
 			</dd>
 		</div>
 		<div>
-			<dt class="text-gray-500 dark:text-gray-400">
+			<dt class="text-gray-500">
 				{isCheque ? 'Nombre de chèques' : 'Nombre de règlements'}
 			</dt>
-			<dd class="font-medium text-gray-900 dark:text-white">{r.settlementCount}</dd>
+			<dd class="font-medium text-gray-900">{r.settlementCount}</dd>
 		</div>
 		<div>
-			<dt class="text-gray-500 dark:text-gray-400">Total</dt>
-			<dd class="font-semibold text-gray-900 dark:text-white">{formatPrice(r.total)}</dd>
+			<dt class="text-gray-500">Total</dt>
+			<dd class="font-semibold text-gray-900">{formatPrice(r.total)}</dd>
 		</div>
 		<div>
-			<dt class="text-gray-500 dark:text-gray-400">Statut</dt>
+			<dt class="text-gray-500">Statut</dt>
 			<dd><StateBadge color="green" label="Validé" /></dd>
 		</div>
 	</dl>
@@ -106,7 +106,7 @@
 						{#if line.repairOrderId}
 							<a
 								href="/admin/repairs/{line.repairOrderId}"
-								class="text-xs text-primary-700 hover:underline dark:text-primary-400"
+								class="text-xs text-primary-700 hover:underline"
 							>
 								{line.repairReference}
 							</a>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatNumber } from '$lib/money';
 	import {
 		Button,
 		Input,
@@ -64,7 +65,7 @@
 
 <PageHeader
 	title="Service client"
-	subtitle="{data.total} conversation{data.total > 1 ? 's' : ''}"
+	subtitle="{formatNumber(data.total)} conversation{data.total > 1 ? 's' : ''}"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Service client' }]}
 >
 	{#snippet actions()}
@@ -129,20 +130,18 @@
 </form>
 
 <!-- ================= Onglets ================= -->
-<nav class="mb-4 flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700">
+<nav class="mb-4 flex gap-1 overflow-x-auto border-b border-gray-200">
 	{#each queues as q (q.key)}
 		{@const current = data.queue === q.key}
 		<a
 			href={href([['queue', q.key]])}
 			aria-current={current ? 'page' : undefined}
 			class="-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap {current
-				? 'border-primary-600 text-primary-700 dark:text-primary-400'
-				: 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}"
+				? 'border-primary-600 text-primary-700'
+				: 'border-transparent text-gray-500 hover:text-gray-800'}"
 		>
 			{q.label}
-			<span
-				class="rounded-full border border-gray-300 px-1.5 text-xs text-gray-500 dark:border-gray-600"
-			>
+			<span class="rounded-full border border-gray-300 px-1.5 text-xs text-gray-500">
 				{data.queueCounts[q.key]}
 			</span>
 		</a>
@@ -151,9 +150,7 @@
 
 <!-- ================= Liste ================= -->
 {#if data.rows.length === 0}
-	<p
-		class="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800"
-	>
+	<p class="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-500">
 		{hasFilter
 			? 'Aucune conversation ne correspond à ces critères.'
 			: 'Aucune conversation dans cet onglet.'}
@@ -177,7 +174,7 @@
 					<TableBodyCell class="whitespace-nowrap">
 						<a
 							href="/admin/customer-service/{row.id}"
-							class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+							class="font-medium text-primary-700 hover:underline"
 						>
 							{row.reference}
 						</a>
@@ -186,8 +183,8 @@
 						<a href="/admin/customer-service/{row.id}" class="block">
 							<span
 								class="flex items-center gap-2 {unread
-									? 'font-semibold text-gray-900 dark:text-white'
-									: 'text-gray-700 dark:text-gray-300'}"
+									? 'font-semibold text-gray-900'
+									: 'text-gray-700'}"
 							>
 								{#if unread}
 									<span class="h-2 w-2 shrink-0 rounded-full bg-red-600" aria-label="Non lu"></span>

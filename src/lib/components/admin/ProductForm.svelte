@@ -138,7 +138,7 @@
 	<button
 		type="button"
 		onclick={() => (selected = tab)}
-		class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:underline dark:text-primary-400"
+		class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:underline"
 	>
 		Paramètres avancés dans
 		<span class="inline-flex items-center gap-1">
@@ -174,38 +174,38 @@
 		de la fiche, visible quel que soit l'onglet ouvert.
 	-->
 	<div
-		class="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800"
+		class="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
 	>
 		<!-- Deux références à ne pas confondre (13.4) : la nôtre, et celle du
 		     fournisseur chez qui la pièce se commande. -->
-		<span class="text-gray-500 dark:text-gray-400">
+		<span class="text-gray-500">
 			Réf. boutique :
-			<span class="font-medium text-gray-900 dark:text-white">
+			<span class="font-medium text-gray-900">
 				{product?.reference || '—'}
 			</span>
 		</span>
-		<span class="text-gray-500 dark:text-gray-400">
+		<span class="text-gray-500">
 			Réf. fournisseur :
-			<span class="font-medium text-gray-900 dark:text-white">
+			<span class="font-medium text-gray-900">
 				{product?.supplierReference || '—'}
 			</span>
 		</span>
-		<span class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+		<span class="flex items-center gap-2 text-gray-500">
 			Stock :
-			<span class="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
+			<span class="flex items-center gap-1.5 font-medium text-gray-900">
 				<span class="h-2 w-2 rounded-full {stockTone}"></span>
 				{product?.stock ?? 0}
 			</span>
 		</span>
-		<span class="text-gray-500 dark:text-gray-400">
+		<span class="text-gray-500">
 			Prix TTC :
-			<span class="font-medium text-gray-900 dark:text-white">
+			<span class="font-medium text-gray-900">
 				{ttcPreview ?? '—'}
 			</span>
 		</span>
-		<span class="text-gray-500 dark:text-gray-400">
+		<span class="text-gray-500">
 			TVA :
-			<span class="font-medium text-gray-900 dark:text-white">{selectedRate} %</span>
+			<span class="font-medium text-gray-900">{selectedRate} %</span>
 		</span>
 	</div>
 
@@ -221,7 +221,7 @@
 	-->
 	<Tabs
 		tabStyle="underline"
-		class="flex-nowrap overflow-x-auto border-b border-gray-200 dark:border-gray-700"
+		class="flex-nowrap overflow-x-auto border-b border-gray-200"
 		contentClass="hidden"
 		divider={false}
 	>
@@ -314,14 +314,14 @@
 					formulaire mono-soumission.
 				-->
 				<Card class="max-w-none p-0">
-					<div class="flex border-b border-gray-200 dark:border-gray-700">
+					<div class="flex border-b border-gray-200">
 						{#each [{ id: 'summary', label: 'Récapitulatif' }, { id: 'full', label: 'Description' }] as t (t.id)}
 							<button
 								type="button"
 								onclick={() => (descTab = t.id)}
 								class="border-b-2 px-5 py-3 text-sm font-medium transition-colors {descTab === t.id
-									? 'border-primary-600 text-primary-700 dark:border-primary-500 dark:text-primary-400'
-									: 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
+									? 'border-primary-600 text-primary-700'
+									: 'border-transparent text-gray-500 hover:text-gray-700'}"
 							>
 								{t.label}
 							</button>
@@ -337,13 +337,13 @@
 								onlength={(n) => (summaryLength = n)}
 							/>
 							<div class="mt-1 flex flex-wrap items-baseline justify-between gap-2">
-								<p class="text-xs text-gray-500 dark:text-gray-400">
+								<p class="text-xs text-gray-500">
 									Contenu principal de la fiche : affiché dans l'onglet « Description » quand le
 									champ Description est vide, et repris par les moteurs de recherche.
 								</p>
 								<!-- Compteur façon PrestaShop : le résumé alimente les listes
 								     et les balises meta, sa longueur se surveille. -->
-								<p class="text-xs text-gray-400 dark:text-gray-500">
+								<p class="text-xs text-gray-400">
 									{summaryLength} caractère{summaryLength > 1 ? 's' : ''}
 								</p>
 							</div>
@@ -360,10 +360,11 @@
 				</Card>
 
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Marque</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Marque</h2>
 					<Select
 						id="brandId"
 						name="brandId"
+						aria-label="Marque"
 						placeholder=""
 						value={val(product?.brandId)}
 						items={[{ value: '', name: 'Aucune' }, ...brandOptions]}
@@ -378,7 +379,7 @@
 					et ce qui se passe en rupture.
 				-->
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Quantités</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Quantités</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="stock" class="mb-2">Quantité</Label>
@@ -389,7 +390,7 @@
 								value={val(product?.stock ?? 0)}
 								disabled={!!stockPanel}
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								{#if stockPanel}
 									Piloté par les mouvements de stock ci-dessous.
 								{:else}
@@ -406,7 +407,7 @@
 								min="1"
 								value={val(product?.minOrderQuantity ?? 1)}
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								Nombre d'exemplaires qu'un client doit prendre d'un coup — visserie par 10, joints
 								par lot. `1` pour une vente à l'unité.
 							</p>
@@ -415,7 +416,7 @@
 				</Card>
 
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Stock</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Stock</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="stockLocation" class="mb-2">Emplacement du stock</Label>
@@ -425,7 +426,7 @@
 								value={product?.stockLocation ?? ''}
 								placeholder="Allée B · étagère 3"
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								Repère interne à l'atelier, jamais affiché au client.
 							</p>
 						</div>
@@ -438,7 +439,7 @@
 								min="0"
 								value={val(product?.lowStockThreshold ?? 0)}
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								Seuil d'alerte de réapprovisionnement. `0` désactive.
 							</p>
 						</div>
@@ -446,9 +447,7 @@
 				</Card>
 
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-						Préférences de disponibilité
-					</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Préférences de disponibilité</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="availableDate" class="mb-2">Date de disponibilité</Label>
@@ -460,12 +459,12 @@
 									? new Date(product.availableDate).toISOString().slice(0, 10)
 									: ''}
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								Réapprovisionnement annoncé, si la date est connue.
 							</p>
 						</div>
 					</div>
-					<p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+					<p class="mt-4 text-xs text-gray-500">
 						Le comportement en rupture est porté par « Disponible à la commande » dans l'onglet «
 						Options » ; les messages affichés au client se règlent dans « Livraison ».
 					</p>
@@ -489,9 +488,7 @@
 			<!-- ===== Livraison ===== -->
 			<TabPanel id="shipping" {selected}>
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-						Dimensions du colis
-					</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Dimensions du colis</h2>
 					<div class="grid gap-4 sm:grid-cols-4">
 						<div>
 							<Label for="widthCm" class="mb-2">Largeur (cm)</Label>
@@ -543,9 +540,7 @@
 					n'apprendrait rien.
 				-->
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-						Délai de livraison
-					</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Délai de livraison</h2>
 
 					<div class="space-y-2">
 						{#each DELIVERY_TIME_MODES as mode (mode)}
@@ -558,10 +553,10 @@
 									onchange={() => (deliveryMode = mode)}
 									class="mt-0.5 shrink-0"
 								/>
-								<span class="text-gray-900 dark:text-white">
+								<span class="text-gray-900">
 									{DELIVERY_TIME_MODE_LABELS[mode]}
 									{#if mode === 'default'}
-										<span class="block text-xs text-gray-500 dark:text-gray-400">
+										<span class="block text-xs text-gray-500">
 											« {DEFAULT_DELIVERY_TIME.inStock} » en stock, « {DEFAULT_DELIVERY_TIME.outOfStock}
 											» sinon.
 										</span>
@@ -588,9 +583,7 @@
 								value={product?.deliveryTimeInStock ?? ''}
 								placeholder="EXPEDITION SOUS 24H A 48H"
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-								Laisser vide pour ne rien afficher.
-							</p>
+							<p class="mt-1 text-xs text-gray-500">Laisser vide pour ne rien afficher.</p>
 						</div>
 						<div>
 							<Label for="deliveryTimeOutOfStock" class="mb-2">
@@ -602,15 +595,13 @@
 								value={product?.deliveryTimeOutOfStock ?? ''}
 								placeholder="Nous consulter"
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-								Laisser vide pour ne rien afficher.
-							</p>
+							<p class="mt-1 text-xs text-gray-500">Laisser vide pour ne rien afficher.</p>
 						</div>
 					</div>
 				</Card>
 
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Frais de port</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Frais de port</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="shippingExtraFee" class="mb-2">Frais de port supplémentaires (€)</Label>
@@ -630,7 +621,7 @@
 			<TabPanel id="price" {selected}>
 				<!-- Ordre PrestaShop : prix d'achat, puis prix de vente, écotaxe, TVA. -->
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prix d'achat</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Prix d'achat</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="purchasePrice" class="mb-2">Prix d'achat HT (€)</Label>
@@ -641,7 +632,7 @@
 								step="0.01"
 								bind:value={purchasePrice}
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								Jamais affiché en boutique. Sert au calcul de la marge.
 							</p>
 						</div>
@@ -649,7 +640,7 @@
 				</Card>
 
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prix de vente</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Prix de vente</h2>
 					<div class="grid gap-4 sm:grid-cols-3">
 						<div>
 							<Label for="priceHt" class="mb-2">Prix HT (€)</Label>
@@ -678,7 +669,7 @@
 						<div>
 							<Label class="mb-2">Prix TTC</Label>
 							<div
-								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900"
 							>
 								{ttcPreview ?? '—'}
 							</div>
@@ -693,7 +684,7 @@
 								min="0"
 								value={toMoneyInput(product?.ecotax)}
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								Incluse dans le prix affiché, détaillée sur la fiche produit.
 							</p>
 						</div>
@@ -706,7 +697,7 @@
 								step="0.01"
 								value={toMoneyInput(product?.priceHtStrike)}
 							/>
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								Ancien prix affiché barré à côté du prix courant. À laisser vide tant qu'aucune
 								promotion n'est en cours.
 							</p>
@@ -716,28 +707,24 @@
 
 				<!-- Récapitulatif de marge, comme le bloc « Résumé des coûts » de PrestaShop. -->
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Marge</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Marge</h2>
 					{#if margin}
 						<div class="grid gap-4 sm:grid-cols-2">
-							<div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-								<span class="block text-xs text-gray-500 uppercase dark:text-gray-400">
-									Marge brute HT
-								</span>
-								<span class="mt-1 block text-xl font-semibold text-gray-900 dark:text-white">
+							<div class="rounded-lg border border-gray-200 p-4">
+								<span class="block text-xs text-gray-500 uppercase"> Marge brute HT </span>
+								<span class="mt-1 block text-xl font-semibold text-gray-900">
 									{formatPrice(Number(margin.amount))}
 								</span>
 							</div>
-							<div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-								<span class="block text-xs text-gray-500 uppercase dark:text-gray-400">
-									Taux de marge
-								</span>
-								<span class="mt-1 block text-xl font-semibold text-gray-900 dark:text-white">
+							<div class="rounded-lg border border-gray-200 p-4">
+								<span class="block text-xs text-gray-500 uppercase"> Taux de marge </span>
+								<span class="mt-1 block text-xl font-semibold text-gray-900">
 									{margin.percent} %
 								</span>
 							</div>
 						</div>
 					{:else}
-						<p class="text-sm text-gray-500 dark:text-gray-400">
+						<p class="text-sm text-gray-500">
 							Renseignez le prix d'achat et le prix de vente pour calculer la marge.
 						</p>
 					{/if}
@@ -747,7 +734,7 @@
 			<!-- ===== SEO ===== -->
 			<TabPanel id="seo" {selected}>
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">
 						Optimisation pour les moteurs de recherche
 					</h2>
 					<div class="space-y-4">
@@ -768,7 +755,7 @@
 						<div>
 							<Label for="slug" class="mb-2">URL simplifiée</Label>
 							<Input id="slug" name="slug" value={product?.slug ?? ''} />
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p class="mt-1 text-xs text-gray-500">
 								Laissez vide pour la générer depuis le nom du produit.
 							</p>
 						</div>
@@ -779,10 +766,10 @@
 			<!-- ===== Options ===== -->
 			<TabPanel id="options" {selected}>
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Visibilité</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Visibilité</h2>
 					<div class="space-y-4">
 						<Toggle bind:checked={isActive}>Produit actif</Toggle>
-						<p class="text-xs text-gray-500 dark:text-gray-400">
+						<p class="text-xs text-gray-500">
 							Un produit inactif reste accessible en administration mais disparaît de la boutique.
 						</p>
 
@@ -793,7 +780,7 @@
 						-->
 						<input type="hidden" name="availableForOrder" value={availableForOrder ? 'on' : ''} />
 						<Toggle bind:checked={availableForOrder}>Disponible à la commande</Toggle>
-						<p class="text-xs text-gray-500 dark:text-gray-400">
+						<p class="text-xs text-gray-500">
 							Décoché, le produit reste visible en boutique mais ne peut pas être ajouté au panier.
 							Utile pour une pièce présentée au catalogue sans être vendue en ligne.
 						</p>
@@ -802,7 +789,7 @@
 
 				<!-- Les références sont dans « Options » chez PrestaShop 1.7. -->
 				<Card class="max-w-none p-6">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Références</h2>
+					<h2 class="mb-4 text-lg font-semibold text-gray-900">Références</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="ean13" class="mb-2">Code-barres (EAN13)</Label>
@@ -822,7 +809,7 @@
 						<div>
 							<Label class="mb-2">Identifiant</Label>
 							<div
-								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900"
 							>
 								{productId ?? '—'}
 							</div>
@@ -849,16 +836,18 @@
 			-->
 			<div class={selected === 'general' ? 'space-y-4' : 'hidden'} inert={selected !== 'general'}>
 				<Card class="max-w-none p-4">
-					<h3 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
-						Référence boutique
-					</h3>
-					<p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-						Celle du site, vue par les clients.
-					</p>
-					<Input id="reference" name="reference" required value={product?.reference ?? ''} />
-					<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+					<h3 class="mb-1 text-sm font-semibold text-gray-900">Référence boutique</h3>
+					<p class="mb-2 text-xs text-gray-500">Celle du site, vue par les clients.</p>
+					<Input
+						id="reference"
+						name="reference"
+						aria-label="Référence boutique"
+						required
+						value={product?.reference ?? ''}
+					/>
+					<p class="mt-3 text-xs text-gray-500">
 						Réf. fournisseur :
-						<span class="font-medium text-gray-900 dark:text-white">
+						<span class="font-medium text-gray-900">
 							{product?.supplierReference || '—'}
 						</span>
 						<span class="block">Modifiable dans l'onglet « Options ».</span>
@@ -866,7 +855,7 @@
 				</Card>
 
 				<Card class="max-w-none p-4">
-					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Quantité</h3>
+					<h3 class="mb-3 text-sm font-semibold text-gray-900">Quantité</h3>
 					<!--
 						Deux notions distinctes, souvent confondues : ce qu'on détient,
 						et ce qu'un client doit prendre d'un coup.
@@ -899,7 +888,7 @@
 				</Card>
 
 				<Card class="max-w-none p-4">
-					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Prix</h3>
+					<h3 class="mb-3 text-sm font-semibold text-gray-900">Prix</h3>
 					<div class="grid grid-cols-2 gap-3">
 						<div>
 							<Label for="priceHtQuick" class="mb-1.5 text-xs">HT</Label>
@@ -908,7 +897,7 @@
 						<div>
 							<Label class="mb-1.5 text-xs">TTC</Label>
 							<div
-								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+								class="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-900"
 							>
 								{ttcPreview ?? '—'}
 							</div>
@@ -932,7 +921,7 @@
 				</Card>
 
 				<Card class="max-w-none p-4">
-					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Catégories</h3>
+					<h3 class="mb-3 text-sm font-semibold text-gray-900">Catégories</h3>
 					<CategoryPicker
 						categories={categoryTree}
 						bind:mainCategoryId
@@ -942,11 +931,11 @@
 			</div>
 
 			<Card class="max-w-none p-4">
-				<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Publication</h3>
+				<h3 class="mb-3 text-sm font-semibold text-gray-900">Publication</h3>
 				<Toggle bind:checked={isActive}>
 					{isActive ? 'En ligne' : 'Hors ligne'}
 				</Toggle>
-				<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+				<p class="mt-2 text-xs text-gray-500">
 					{isActive
 						? 'Le produit est visible dans la boutique.'
 						: 'Le produit est masqué de la boutique.'}
@@ -955,7 +944,7 @@
 
 			{#if productId}
 				<Card class="max-w-none p-4">
-					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Raccourcis</h3>
+					<h3 class="mb-3 text-sm font-semibold text-gray-900">Raccourcis</h3>
 					<div class="flex flex-col gap-2">
 						<Button size="sm" color="alternative" href="/admin/products" class="justify-start">
 							<ListOutline class="me-2 h-4 w-4" /> Liste des produits
@@ -967,38 +956,38 @@
 				</Card>
 
 				<Card class="max-w-none p-4">
-					<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Résumé</h3>
+					<h3 class="mb-3 text-sm font-semibold text-gray-900">Résumé</h3>
 					<dl class="space-y-2 text-sm">
 						<div class="flex items-center justify-between">
-							<dt class="text-gray-500 dark:text-gray-400">Prix HT</dt>
-							<dd class="font-medium text-gray-900 dark:text-white">
+							<dt class="text-gray-500">Prix HT</dt>
+							<dd class="font-medium text-gray-900">
 								{priceHt ? formatPrice(Number(priceHt)) : '—'}
 							</dd>
 						</div>
 						<div class="flex items-center justify-between">
-							<dt class="text-gray-500 dark:text-gray-400">Prix TTC</dt>
-							<dd class="font-medium text-gray-900 dark:text-white">
+							<dt class="text-gray-500">Prix TTC</dt>
+							<dd class="font-medium text-gray-900">
 								{ttcPreview ?? '—'}
 							</dd>
 						</div>
 						<div class="flex items-center justify-between">
-							<dt class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+							<dt class="flex items-center gap-1.5 text-gray-500">
 								<ChartMixedOutline class="h-4 w-4" /> Marge
 							</dt>
-							<dd class="font-medium text-gray-900 dark:text-white">
+							<dd class="font-medium text-gray-900">
 								{margin ? `${margin.percent} %` : '—'}
 							</dd>
 						</div>
 						<div class="flex items-center justify-between">
-							<dt class="text-gray-500 dark:text-gray-400">Stock</dt>
-							<dd class="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
+							<dt class="text-gray-500">Stock</dt>
+							<dd class="flex items-center gap-1.5 font-medium text-gray-900">
 								<span class="h-2 w-2 rounded-full {stockTone}"></span>
 								{product?.stock ?? 0}
 							</dd>
 						</div>
 						<div class="flex items-center justify-between">
-							<dt class="text-gray-500 dark:text-gray-400">Catégories</dt>
-							<dd class="font-medium text-gray-900 dark:text-white">
+							<dt class="text-gray-500">Catégories</dt>
+							<dd class="font-medium text-gray-900">
 								{selectedCategoryIds.length + (mainCategoryId ? 1 : 0)}
 							</dd>
 						</div>
@@ -1021,10 +1010,10 @@
 		soit l'onglet ouvert.
 	-->
 	<div
-		class="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95"
+		class="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur"
 	>
 		<div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
-			<span class="text-sm text-gray-500 dark:text-gray-400">
+			<span class="text-sm text-gray-500">
 				{isActive ? 'Ce produit sera visible en boutique.' : 'Ce produit restera hors ligne.'}
 			</span>
 			<div class="flex items-center gap-3">

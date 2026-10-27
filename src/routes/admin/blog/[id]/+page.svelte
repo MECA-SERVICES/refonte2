@@ -57,8 +57,8 @@
 <!-- ================= Aperçu d'un brouillon ================= -->
 {#if article.status !== 'published'}
 	<Card class="mb-6 max-w-none p-5">
-		<h2 class="mb-2 text-base font-semibold text-gray-900 dark:text-white">Partager un aperçu</h2>
-		<p class="mb-4 text-sm text-gray-600 dark:text-gray-300">
+		<h2 class="mb-2 text-base font-semibold text-gray-900">Partager un aperçu</h2>
+		<p class="mb-4 text-sm text-gray-600">
 			Un lien signé permet de relire ce brouillon sans le publier. Il expire au bout de 7 jours, et
 			en émettre un nouveau annule le précédent.
 		</p>
@@ -66,14 +66,12 @@
 		{#if revoked}
 			<Alert color="yellow" class="mb-4">Le lien d'aperçu a été révoqué.</Alert>
 		{:else if previewToken && previewExpiry}
-			<div
-				class="mb-4 rounded border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800"
-			>
+			<div class="mb-4 rounded border border-gray-200 bg-gray-50 p-3">
 				<p class="flex items-center gap-2 text-xs text-gray-500">
 					<LinkOutline class="h-4 w-4" />
 					Valable jusqu'au {dateFmt.format(new Date(previewExpiry))}
 				</p>
-				<code class="mt-1 block text-xs break-all text-gray-800 dark:text-gray-200">
+				<code class="mt-1 block text-xs break-all text-gray-800">
 					/blog/{article.slug}?apercu={previewToken}
 				</code>
 			</div>

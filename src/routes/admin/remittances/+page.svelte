@@ -21,7 +21,7 @@
 	const date = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' });
 </script>
 
-<svelte:head><title>Remises en banque</title></svelte:head>
+<svelte:head><title>Remises en banque · Administration</title></svelte:head>
 
 <PageHeader
 	title="Remises en banque"
@@ -32,13 +32,13 @@
 	{#each remittanceKinds as kind (kind)}
 		{@const pending = data.pending[kind]}
 		<Card class="max-w-none p-4">
-			<p class="text-sm font-semibold text-gray-900 dark:text-white">
+			<p class="text-sm font-semibold text-gray-900">
 				{REMITTANCE_KIND_LABELS[kind]} en caisse
 			</p>
-			<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+			<p class="mt-1 text-2xl font-semibold text-gray-900">
 				{formatPrice(pending.total)}
 			</p>
-			<p class="text-xs text-gray-500 dark:text-gray-400">
+			<p class="text-xs text-gray-500">
 				{pending.count}
 				{pending.count > 1 ? 'règlements' : 'règlement'} à remettre en banque
 			</p>
@@ -57,9 +57,7 @@
 
 <Card class="max-w-none p-4">
 	{#if data.remittances.length === 0}
-		<p class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-			Aucun bordereau de remise pour l'instant.
-		</p>
+		<p class="py-8 text-center text-sm text-gray-500">Aucun bordereau de remise pour l'instant.</p>
 	{:else}
 		<Table hoverable>
 			<TableHead>
@@ -77,7 +75,7 @@
 						<TableBodyCell>
 							<a
 								href="/admin/remittances/{r.id}"
-								class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+								class="font-medium text-primary-700 hover:underline"
 							>
 								{r.reference}
 							</a>

@@ -55,7 +55,7 @@
 				<Input id="slug" name="slug" value={page?.slug ?? ''} placeholder="mentions-legales" />
 				<p class="mt-1 text-xs text-gray-500">
 					Laissez vide pour la déduire du titre. La page sera publiée sur
-					<code class="rounded bg-gray-100 px-1 dark:bg-gray-800">/p/{page?.slug ?? '…'}</code>
+					<code class="rounded bg-gray-100 px-1">/p/{page?.slug ?? '…'}</code>
 				</p>
 			</div>
 
@@ -69,12 +69,10 @@
 
 	<!-- ================= Contenu ================= -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Contenu</h2>
+		<h2 class="mb-4 text-base font-semibold text-gray-900">Contenu</h2>
 
 		{#await import('@flowbite-svelte-plugins/texteditor')}
-			<div
-				class="h-64 animate-pulse rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-			></div>
+			<div class="h-64 animate-pulse rounded-lg border border-gray-200 bg-gray-50"></div>
 		{:then { TextEditor, ToolbarRowWrapper, FormatButtonGroup, HeadingButtonGroup, ListButtonGroup, AlignmentButtonGroup, UndoRedoButtonGroup, Divider }}
 			<TextEditor
 				bind:editor
@@ -115,7 +113,7 @@
 
 	<!-- ================= Référencement ================= -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Référencement</h2>
+		<h2 class="mb-4 text-base font-semibold text-gray-900">Référencement</h2>
 
 		<div class="space-y-4">
 			<div>

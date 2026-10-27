@@ -36,7 +36,7 @@
 		{#if row.isPaid}<StateBadge color="green" label="Payé" />{/if}
 		{#if row.isShipped}<StateBadge color="purple" label="Expédié" />{/if}
 		{#if row.isFinal}<StateBadge color="gray" label="Final" />{/if}
-		{#if row.sendEmailOnChange}<StateBadge color="blue" label="Email" />{/if}
+		{#if row.sendEmailOnChange}<StateBadge color="blue" label="E-mail" />{/if}
 	</div>
 {/snippet}
 

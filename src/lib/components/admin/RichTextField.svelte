@@ -42,9 +42,7 @@
 </script>
 
 {#await import('@flowbite-svelte-plugins/texteditor')}
-	<div
-		class="h-48 animate-pulse rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-	></div>
+	<div class="h-48 animate-pulse rounded-lg border border-gray-200 bg-gray-50"></div>
 {:then { TextEditor, ToolbarRowWrapper, FormatButtonGroup, HeadingButtonGroup, ListButtonGroup, UndoRedoButtonGroup, SourceButtonGroup, Divider }}
 	<input type="hidden" {name} bind:this={field} value={value ?? ''} />
 	<TextEditor bind:editor content={value ?? ''} {placeholder} emoji={false} math={false}>

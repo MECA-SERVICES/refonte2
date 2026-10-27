@@ -61,6 +61,8 @@
 		});
 </script>
 
+<svelte:head><title>Ordres de réparation · Administration</title></svelte:head>
+
 <PageHeader title="Ordres de réparation" subtitle="File des travaux de l'atelier">
 	{#snippet actions()}
 		<Button href="/admin/repairs/new" size="sm">
@@ -75,8 +77,8 @@
 			href={tabHref(tab.value)}
 			class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {data.status ===
 			tab.value
-				? 'border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-				: 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-300'}"
+				? 'border-primary-600 bg-primary-50 text-primary-700'
+				: 'border-gray-200 text-gray-600 hover:border-gray-300'}"
 		>
 			{tab.label}
 			<span class="ms-1 text-xs text-gray-400">{tab.count}</span>
@@ -91,6 +93,7 @@
 		{/if}
 		<Input
 			name="q"
+			aria-label="Rechercher un ordre de réparation"
 			value={data.search}
 			placeholder="Référence, étiquette, client, marque, modèle ou numéro de série"
 			class="flex-1"
@@ -101,7 +104,7 @@
 	</form>
 
 	{#if data.rows.length === 0}
-		<p class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+		<p class="py-8 text-center text-sm text-gray-500">
 			{data.search ? 'Aucun ordre ne correspond à cette recherche.' : 'Aucun ordre de réparation.'}
 		</p>
 	{:else}
@@ -122,7 +125,7 @@
 						<TableBodyCell>
 							<a
 								href="/admin/repairs/{row.id}"
-								class="font-medium text-primary-700 hover:underline dark:text-primary-400"
+								class="font-medium text-primary-700 hover:underline"
 							>
 								{row.reference}
 							</a>

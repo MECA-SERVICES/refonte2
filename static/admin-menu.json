@@ -1,5 +1,5 @@
 {
-	"brand": "MS Shop Admin",
+	"brand": "Back-office MS Shop",
 	"sections": [
 		{
 			"id": "main",
@@ -151,18 +151,6 @@
 							"id": "popups",
 							"label": "Annonces",
 							"href": "/admin/popups"
-						}
-					]
-				},
-				{
-					"id": "international",
-					"label": "International",
-					"icon": "globe",
-					"items": [
-						{
-							"id": "taxes",
-							"label": "Taxes",
-							"href": "/admin/taxes"
 						}
 					]
 				}

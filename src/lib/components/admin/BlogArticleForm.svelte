@@ -86,7 +86,7 @@
 						<Input id="slug" name="slug" value={article?.slug ?? ''} />
 						<p class="mt-1 text-xs text-gray-500">
 							Vide, elle est déduite du titre. L'article sera lisible sur
-							<code class="rounded bg-gray-100 px-1 dark:bg-gray-800">
+							<code class="rounded bg-gray-100 px-1">
 								/blog/{article?.slug ?? '…'}
 							</code>
 						</p>
@@ -136,9 +136,7 @@
 					</div>
 				{:else}
 					{#await import('@flowbite-svelte-plugins/texteditor')}
-						<div
-							class="h-64 animate-pulse rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-						></div>
+						<div class="h-64 animate-pulse rounded-lg border border-gray-200 bg-gray-50"></div>
 					{:then { TextEditor, ToolbarRowWrapper, FormatButtonGroup, HeadingButtonGroup, ListButtonGroup, AlignmentButtonGroup, UndoRedoButtonGroup, ImageButtonGroup, Divider }}
 						<TextEditor
 							bind:editor
@@ -174,7 +172,7 @@
 
 			<!-- ================= Référencement ================= -->
 			<Card class="max-w-none p-6">
-				<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Référencement</h2>
+				<h2 class="mb-4 text-base font-semibold text-gray-900">Référencement</h2>
 				<div class="space-y-4">
 					<div>
 						<Label for="metaTitle" class="mb-2">Titre affiché par les moteurs</Label>
@@ -199,7 +197,7 @@
 		<!-- ================= Publication ================= -->
 		<div class="space-y-6">
 			<Card class="max-w-none p-6">
-				<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Publication</h2>
+				<h2 class="mb-4 text-base font-semibold text-gray-900">Publication</h2>
 
 				<div class="space-y-4">
 					<div>
@@ -218,7 +216,7 @@
 							<!-- Sans catégorie, la publication est refusée (R8) : le rédacteur
 							     doit pouvoir en créer une sans quitter son brouillon. -->
 							<p
-								class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+								class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
 							>
 								Aucune catégorie n'existe encore. Elle est requise pour publier.
 								<a
@@ -254,7 +252,7 @@
 					</div>
 				</div>
 
-				<div class="mt-5 flex flex-wrap gap-3 border-t border-gray-200 pt-5 dark:border-gray-700">
+				<div class="mt-5 flex flex-wrap gap-3 border-t border-gray-200 pt-5">
 					<Button type="submit" color="primary">{submitLabel}</Button>
 					<Button color="alternative" href="/admin/blog">Annuler</Button>
 				</div>

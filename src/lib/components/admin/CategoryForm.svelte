@@ -33,7 +33,7 @@
 					<Input id="name" name="name" required value={category?.name ?? ''} />
 				</div>
 				<div>
-					<Label for="slug" class="mb-2">Slug (optionnel)</Label>
+					<Label for="slug" class="mb-2">Adresse de la page (optionnel)</Label>
 					<Input id="slug" name="slug" value={category?.slug ?? ''} />
 				</div>
 				<div>

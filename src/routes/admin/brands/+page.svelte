@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatNumber } from '$lib/money';
 	import { Button } from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
 	import {
@@ -22,7 +23,7 @@
 
 <PageHeader
 	title="Marques"
-	subtitle="{data.total} marque{data.total > 1 ? 's' : ''}"
+	subtitle="{formatNumber(data.total)} marque{data.total > 1 ? 's' : ''}"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Marques' }]}
 >
 	{#snippet actions()}
@@ -41,7 +42,7 @@
 {/snippet}
 
 {#snippet nameCell(row: BrandRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{row.name}</span>
+	<span class="font-medium text-gray-900">{row.name}</span>
 {/snippet}
 
 {#snippet slugCell(row: BrandRow)}
@@ -60,7 +61,7 @@
 		{ key: 'id', label: 'ID', cell: idCell },
 		{ key: 'logo', label: 'Logo', cell: logoCell },
 		{ key: 'name', label: 'Nom', cell: nameCell, filterKey: 'name', sortKey: 'name' },
-		{ key: 'slug', label: 'Slug', cell: slugCell, filterKey: 'slug' },
+		{ key: 'slug', label: 'Adresse de la page', cell: slugCell, filterKey: 'slug' },
 		{ key: 'active', label: 'Statut', cell: activeCell }
 	]}
 	emptyMessage="Aucune marque trouvée."

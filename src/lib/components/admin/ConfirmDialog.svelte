@@ -26,8 +26,8 @@
 
 <Modal bind:open size="sm" {title}>
 	<div class="text-center">
-		<ExclamationCircleOutline class="mx-auto mb-4 h-12 w-12 text-gray-400 dark:text-gray-500" />
-		<p class="mb-5 text-base text-gray-600 dark:text-gray-300">{message}</p>
+		<ExclamationCircleOutline class="mx-auto mb-4 h-12 w-12 text-gray-400" />
+		<p class="mb-5 text-base text-gray-600">{message}</p>
 		<div class="flex justify-center gap-3">
 			<Button color="red" onclick={confirm}>{confirmLabel}</Button>
 			<Button color="alternative" onclick={() => (open = false)}>{cancelLabel}</Button>

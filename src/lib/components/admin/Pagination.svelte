@@ -17,7 +17,7 @@
 
 {#if pageCount > 1}
 	<div class="flex items-center justify-between pt-2">
-		<span class="text-sm text-gray-500 dark:text-gray-400">
+		<span class="text-sm text-gray-500">
 			Page {page} sur {pageCount} · {total} résultat{total > 1 ? 's' : ''}
 		</span>
 		<div class="flex gap-2">

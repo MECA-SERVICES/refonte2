@@ -109,9 +109,13 @@
 		goto(buildUrl({}), { keepFocus: true, noScroll: true });
 	}
 
-	/** Navigue vers la fiche de la ligne cliquée, si `rowHref` est fourni. */
-	function openRow(row: Row) {
-		if (!rowHref) return;
+	/**
+	 * Navigue vers la fiche de la ligne cliquée, si `rowHref` est fourni. Les
+	 * éléments interactifs de la ligne (lien de la première colonne, boutons)
+	 * gardent leur propre action.
+	 */
+	function openRow(row: Row, e: MouseEvent) {
+		if (!rowHref || (e.target as Element).closest('a, button, input, select')) return;
 		goto(rowHref(row));
 	}
 
@@ -120,6 +124,11 @@
 		goto(buildUrl({ sort: sortKey, dir }), { keepFocus: true, noScroll: true });
 	}
 </script>
+
+{#snippet cellContent(col: Column<Row>, row: Row)}
+	{#if col.cell}{@render col.cell(row)}{:else}{(row as Record<string, unknown>)[col.key] ??
+			'—'}{/if}
+{/snippet}
 
 <Table hoverable shadow>
 	<TableHead>
@@ -151,13 +160,14 @@
 
 	<TableBody>
 		<!-- Ligne de filtres, un champ par colonne -->
-		<TableBodyRow class="bg-gray-50 dark:bg-gray-800">
+		<TableBodyRow class="bg-gray-50">
 			{#each columns as col (col.key)}
 				<TableBodyCell class="p-2">
 					{#if col.filterKey && col.filterOptions}
 						<Select
 							size="sm"
 							placeholder=""
+							aria-label="Filtrer par {col.label}"
 							value={filterValues[col.filterKey] ?? ''}
 							items={[{ value: '', name: 'Tous' }, ...col.filterOptions]}
 							onchange={(e) => onFilterSelect(col.filterKey!, e)}
@@ -167,6 +177,7 @@
 							size="sm"
 							type="search"
 							placeholder="Filtrer…"
+							aria-label="Filtrer par {col.label}"
 							value={filterValues[col.filterKey] ?? ''}
 							oninput={(e) => onFilterInput(col.filterKey!, e)}
 						/>
@@ -188,13 +199,16 @@
 			{#each rows as row (row.id)}
 				<TableBodyRow
 					class={rowHref ? 'cursor-pointer' : ''}
-					onclick={rowHref ? () => openRow(row) : undefined}
+					onclick={rowHref ? (e) => openRow(row, e) : undefined}
 				>
-					{#each columns as col (col.key)}
+					{#each columns as col, i (col.key)}
 						<TableBodyCell>
-							{#if col.cell}{@render col.cell(row)}{:else}{(row as Record<string, unknown>)[
-									col.key
-								] ?? '—'}{/if}
+							<!-- Vrai lien sur la première colonne : la fiche s'ouvre aussi au clavier. -->
+							{#if i === 0 && rowHref}
+								<a href={rowHref(row)} class="hover:underline">{@render cellContent(col, row)}</a>
+							{:else}
+								{@render cellContent(col, row)}
+							{/if}
 						</TableBodyCell>
 					{/each}
 				</TableBodyRow>

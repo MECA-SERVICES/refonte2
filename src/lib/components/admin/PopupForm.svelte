@@ -68,7 +68,7 @@
 
 	<!-- ================= Identification ================= -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Annonce</h2>
+		<h2 class="mb-4 text-base font-semibold text-gray-900">Annonce</h2>
 
 		<div class="space-y-4">
 			<div>
@@ -113,12 +113,10 @@
 
 	<!-- ================= Contenu ================= -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Message</h2>
+		<h2 class="mb-4 text-base font-semibold text-gray-900">Message</h2>
 
 		{#await import('@flowbite-svelte-plugins/texteditor')}
-			<div
-				class="h-48 animate-pulse rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-			></div>
+			<div class="h-48 animate-pulse rounded-lg border border-gray-200 bg-gray-50"></div>
 		{:then { TextEditor, ToolbarRowWrapper, FormatButtonGroup, ListButtonGroup, UndoRedoButtonGroup, Divider }}
 			<TextEditor
 				bind:editor
@@ -169,7 +167,7 @@
 
 	<!-- ================= Diffusion ================= -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Diffusion</h2>
+		<h2 class="mb-4 text-base font-semibold text-gray-900">Diffusion</h2>
 
 		<div class="space-y-4">
 			<div class="grid gap-4 sm:grid-cols-2">

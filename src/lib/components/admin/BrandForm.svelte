@@ -53,13 +53,11 @@
 				</div>
 
 				<div>
-					<Label for="slug" class="mb-2">Slug (optionnel)</Label>
+					<Label for="slug" class="mb-2">Adresse de la page (optionnel)</Label>
 					<Input id="slug" name="slug" value={brand?.slug ?? ''} placeholder="ex : bosch" />
 					<p class="mt-1 text-xs text-gray-500">
 						La page de marque sera publiée sur
-						<code class="rounded bg-gray-100 px-1 dark:bg-gray-800"
-							>/marque/{brand?.slug ?? '…'}</code
-						>
+						<code class="rounded bg-gray-100 px-1">/marque/{brand?.slug ?? '…'}</code>
 					</p>
 				</div>
 			</div>
@@ -89,7 +87,7 @@
 
 	<!-- ================= Page de marque ================= -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-1 text-base font-semibold text-gray-900 dark:text-white">Page de marque</h2>
+		<h2 class="mb-1 text-base font-semibold text-gray-900">Page de marque</h2>
 		<p class="mb-4 text-xs text-gray-500">
 			Contenu affiché sur la boutique. Les compteurs (références, stock, rayons) sont calculés
 			automatiquement depuis le catalogue.
@@ -113,7 +111,7 @@
 				<img
 					src={brand.heroImageUrl}
 					alt=""
-					class="h-32 w-full rounded-lg border border-gray-200 object-cover dark:border-gray-700"
+					class="h-32 w-full rounded-lg border border-gray-200 object-cover"
 				/>
 			{/if}
 
@@ -130,9 +128,7 @@
 			<div>
 				<Label class="mb-2">Texte de présentation</Label>
 				{#await import('@flowbite-svelte-plugins/texteditor')}
-					<div
-						class="h-64 animate-pulse rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-					></div>
+					<div class="h-64 animate-pulse rounded-lg border border-gray-200 bg-gray-50"></div>
 				{:then { TextEditor, ToolbarRowWrapper, FormatButtonGroup, HeadingButtonGroup, ListButtonGroup, AlignmentButtonGroup, UndoRedoButtonGroup, Divider }}
 					<TextEditor
 						bind:editor
@@ -167,7 +163,7 @@
 
 	<!-- ================= Référencement ================= -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Référencement</h2>
+		<h2 class="mb-4 text-base font-semibold text-gray-900">Référencement</h2>
 
 		<div class="space-y-4">
 			<div>

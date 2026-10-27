@@ -96,9 +96,9 @@
 {#snippet stockPanel()}
 	<Card class="max-w-none p-6">
 		<div class="mb-4 flex items-center justify-between">
-			<h2 class="text-lg font-semibold text-gray-900 dark:text-white">Mouvements de stock</h2>
-			<span class="text-sm text-gray-500 dark:text-gray-400">
-				Stock actuel : <span class="font-semibold text-gray-900 dark:text-white">{p.stock}</span>
+			<h2 class="text-lg font-semibold text-gray-900">Mouvements de stock</h2>
+			<span class="text-sm text-gray-500">
+				Stock actuel : <span class="font-semibold text-gray-900">{p.stock}</span>
 			</span>
 		</div>
 
@@ -141,18 +141,16 @@
 		{#if p.movements.length > 0}
 			<div class="space-y-1">
 				{#each p.movements as mv (mv.id)}
-					<div
-						class="flex items-center justify-between border-b border-gray-100 py-2 text-sm dark:border-gray-800"
-					>
+					<div class="flex items-center justify-between border-b border-gray-100 py-2 text-sm">
 						<div>
-							<span class="font-medium text-gray-900 dark:text-white">
+							<span class="font-medium text-gray-900">
 								{movementLabels[mv.type] ?? mv.type}
 							</span>
 							<span class={mv.quantity >= 0 ? 'ms-2 text-green-600' : 'ms-2 text-red-600'}>
 								{mv.quantity >= 0 ? '+' : ''}{mv.quantity}
 							</span>
 							{#if mv.note}
-								<span class="ms-2 text-gray-500 dark:text-gray-400">— {mv.note}</span>
+								<span class="ms-2 text-gray-500">— {mv.note}</span>
 							{/if}
 						</div>
 						<span class="text-gray-400">{dateFmt.format(new Date(mv.createdAt))}</span>
@@ -160,29 +158,27 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-sm text-gray-500 dark:text-gray-400">Aucun mouvement enregistré.</p>
+			<p class="text-sm text-gray-500">Aucun mouvement enregistré.</p>
 		{/if}
 	</Card>
 {/snippet}
 
 {#snippet variantsPanel()}
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">
 			Déclinaisons ({p.variants.length})
 		</h2>
 
 		{#if p.variants.length > 0}
 			<div class="mb-4 space-y-2">
 				{#each p.variants as v (v.id)}
-					<div
-						class="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-gray-700"
-					>
+					<div class="flex items-center justify-between rounded-lg border border-gray-200 p-3">
 						<div>
-							<span class="font-medium text-gray-900 dark:text-white">{v.name}</span>
+							<span class="font-medium text-gray-900">{v.name}</span>
 							{#if v.isDefault}
 								<span class="ms-2 text-xs text-cyan-600">(par défaut)</span>
 							{/if}
-							<span class="block text-sm text-gray-500 dark:text-gray-400">
+							<span class="block text-sm text-gray-500">
 								{attrText(v.attributes)} · Stock : {v.stock} · Impact prix : {v.priceImpact} €
 							</span>
 						</div>
@@ -200,7 +196,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Aucune déclinaison.</p>
+			<p class="mb-4 text-sm text-gray-500">Aucune déclinaison.</p>
 		{/if}
 
 		{#if form?.variantError}
@@ -254,7 +250,7 @@
 
 {#snippet mediaPanel()}
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">
 			Images ({p.media.length})
 		</h2>
 
@@ -297,27 +293,27 @@
 
 {#snippet relationsPanel()}
 	<Card class="max-w-none p-6">
-		<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+		<h2 class="mb-1 text-lg font-semibold text-gray-900">
 			Produits associés ({p.relations.length})
 		</h2>
-		<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+		<p class="mb-4 text-xs text-gray-500">
 			Affichés en bas de la fiche produit, sous « Vous aimerez aussi ». Repris de PrestaShop.
 		</p>
 
 		{#if p.relations.length === 0}
-			<p class="text-sm text-gray-500 dark:text-gray-400">Aucun produit associé.</p>
+			<p class="text-sm text-gray-500">Aucun produit associé.</p>
 		{:else}
-			<ul class="divide-y divide-gray-100 dark:divide-gray-800">
+			<ul class="divide-y divide-gray-100">
 				{#each p.relations as relation (relation.id)}
 					<li class="flex items-center justify-between gap-3 py-2">
 						<div class="min-w-0">
 							<a
 								href="/admin/products/{relation.productId}"
-								class="block truncate text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
+								class="block truncate text-sm font-medium text-primary-700 hover:underline"
 							>
 								{relation.name}
 							</a>
-							<span class="text-xs text-gray-500 dark:text-gray-400">
+							<span class="text-xs text-gray-500">
 								{relation.reference}
 								{#if relation.type !== 'accessory'}· {relation.type}{/if}
 								{#if !relation.isActive}· inactif{/if}

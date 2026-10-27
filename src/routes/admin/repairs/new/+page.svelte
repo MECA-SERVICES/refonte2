@@ -49,6 +49,8 @@
 		};
 </script>
 
+<svelte:head><title>Nouvel ordre de réparation · Réparations</title></svelte:head>
+
 <PageHeader title="Nouvel ordre de réparation" subtitle="Intervention au comptoir" />
 
 <form method="POST" action="?/create" use:enhance class="space-y-6">
@@ -58,8 +60,8 @@
 
 	<!-- ===== Client ===== -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Client</h2>
-		<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+		<h2 class="mb-1 text-lg font-semibold text-gray-900">Client</h2>
+		<p class="mb-4 text-xs text-gray-500">
 			Recherchez le client, ou créez-le s'il n'existe pas encore. L'accord sur les travaux est
 			recueilli à l'atelier.
 		</p>
@@ -71,6 +73,7 @@
 		<div class="mb-4 flex gap-2">
 			<Input
 				name="client"
+				aria-label="Rechercher un client"
 				form="customer-search"
 				value={data.customerSearch}
 				placeholder="Rechercher par nom, société ou adresse électronique"
@@ -80,7 +83,7 @@
 		</div>
 
 		{#if data.customerSearch && data.customers.length === 0}
-			<p class="mb-3 text-sm text-gray-500 dark:text-gray-400">Aucun client ne correspond.</p>
+			<p class="mb-3 text-sm text-gray-500">Aucun client ne correspond.</p>
 		{/if}
 
 		<div>
@@ -110,8 +113,8 @@
 				Champs rattachés au formulaire « new-customer » (attribut `form`) : ils
 				ne partent pas avec l'ordre, et l'ordre en cours de saisie est conservé.
 			-->
-			<div class="mt-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-				<h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Nouveau client</h3>
+			<div class="mt-4 rounded-lg border border-gray-200 p-4">
+				<h3 class="mb-3 text-sm font-semibold text-gray-900">Nouveau client</h3>
 				{#if form && 'customerError' in form && form.customerError}
 					<Alert color="red" class="mb-3">{form.customerError}</Alert>
 				{/if}
@@ -154,7 +157,7 @@
 						</div>
 					{/if}
 				</div>
-				<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+				<p class="mt-3 text-xs text-gray-500">
 					L'adresse e-mail sert d'identifiant au compte client. Le client recevra ses identifiants
 					par e-mail dès que l'envoi sera en place.
 				</p>
@@ -175,12 +178,12 @@
 
 	<!-- ===== Prise en charge ===== -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Prise en charge</h2>
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Prise en charge</h2>
 
 		<div class="mb-4 max-w-xs">
 			<Label for="workshopLabel" class="mb-2">Étiquette</Label>
 			<Input id="workshopLabel" name="workshopLabel" placeholder="N° de l'étiquette atelier" />
-			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+			<p class="mt-1 text-xs text-gray-500">
 				Numéro de l'étiquette posée sur la machine. Modifiable ensuite.
 			</p>
 		</div>
@@ -194,7 +197,7 @@
 			<div>
 				<Label for="warrantyReference" class="mb-2">Référence du dossier de garantie</Label>
 				<Input id="warrantyReference" name="warrantyReference" required />
-				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+				<p class="mt-1 text-xs text-gray-500">
 					Les montants restent calculés pour le suivi, mais rien n'est facturé au client.
 				</p>
 			</div>
@@ -203,7 +206,7 @@
 
 	<!-- ===== Machine ===== -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Machine</h2>
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Machine</h2>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
 				<Label for="machineType" class="mb-2">Type de matériel</Label>
@@ -243,12 +246,12 @@
 
 	<!-- ===== Travaux et montants ===== -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Travaux et montants</h2>
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Travaux et montants</h2>
 		<div class="space-y-4">
 			<div>
 				<Label for="workDescription" class="mb-2">Description des travaux</Label>
 				<Textarea class="w-full" id="workDescription" name="workDescription" rows={3} />
-				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+				<p class="mt-1 text-xs text-gray-500">
 					Peut être complétée en cours d'intervention. Obligatoire avant l'achèvement.
 				</p>
 			</div>
@@ -268,7 +271,7 @@
 
 	<!-- ===== Notes ===== -->
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Notes</h2>
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Notes</h2>
 		<div class="space-y-4">
 			<div>
 				<Label for="notes" class="mb-2">Note visible du client</Label>
@@ -277,7 +280,7 @@
 			<div>
 				<Label for="privateNote" class="mb-2">Note interne</Label>
 				<Textarea class="w-full" id="privateNote" name="privateNote" rows={2} />
-				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+				<p class="mt-1 text-xs text-gray-500">
 					Jamais visible du client ni portée sur un document.
 				</p>
 			</div>

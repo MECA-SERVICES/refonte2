@@ -50,11 +50,9 @@
 	</div>
 
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Nouvelle catégorie</h2>
+		<h2 class="mb-4 text-base font-semibold text-gray-900">Nouvelle catégorie</h2>
 		{#if form?.message}
-			<p
-				class="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
-			>
+			<p class="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
 				{form.message}
 			</p>
 		{/if}

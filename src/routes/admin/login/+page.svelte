@@ -12,16 +12,14 @@
 
 <svelte:head><title>Connexion · Administration</title></svelte:head>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-100 px-4 dark:bg-gray-900">
+<div class="flex min-h-screen items-center justify-center bg-gray-100 px-4">
 	<Card class="w-full max-w-md p-6">
 		<div class="mb-6 flex flex-col items-center">
 			<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-600">
 				<LockSolid class="h-6 w-6 text-white" />
 			</div>
-			<Heading tag="h1" class="text-xl font-bold text-gray-900 dark:text-white">
-				Administration
-			</Heading>
-			<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Connectez-vous pour continuer</p>
+			<Heading tag="h1" class="text-xl font-bold text-gray-900">Administration</Heading>
+			<p class="mt-1 text-sm text-gray-500">Connectez-vous pour continuer</p>
 		</div>
 
 		{#if form?.message}
@@ -31,7 +29,7 @@
 		<form method="POST" use:enhance class="space-y-4">
 			<input type="hidden" name="redirectTo" value={redirectTo} />
 			<div>
-				<Label for="email" class="mb-2">Email</Label>
+				<Label for="email" class="mb-2">E-mail</Label>
 				<Input
 					id="email"
 					name="email"

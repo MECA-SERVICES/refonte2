@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatPrice } from '$lib/money';
+	import { formatPrice, formatNumber } from '$lib/money';
 	import { paymentMethodLabel } from '$lib/payment-methods';
 	import {
 		PageHeader,
@@ -102,7 +102,7 @@
 
 <PageHeader
 	title="Commandes"
-	subtitle="{data.total} commande{data.total > 1 ? 's' : ''}"
+	subtitle="{formatNumber(data.total)} commande{data.total > 1 ? 's' : ''}"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Commandes' }]}
 />
 
@@ -152,9 +152,7 @@
 	</div>
 
 	{#if advancedOpen}
-		<div
-			class="grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50"
-		>
+		<div class="grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
 			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<div>
 					<Label for="from" class="mb-1.5">Commandée après le</Label>
@@ -189,7 +187,7 @@
 			</div>
 
 			<fieldset>
-				<legend class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+				<legend class="mb-2 text-sm font-medium text-gray-700">
 					États {#if data.stateIds.length}({data.stateIds.length} sélectionné{data.stateIds.length >
 						1
 							? 's'
@@ -198,10 +196,10 @@
 				<!-- Les états sont nombreux : cochés dans une zone défilante, ils
 				     restent accessibles sans occuper l'écran en permanence. -->
 				<div
-					class="grid max-h-52 gap-1.5 overflow-y-auto rounded border border-gray-200 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 dark:border-gray-700 dark:bg-gray-900"
+					class="grid max-h-52 gap-1.5 overflow-y-auto rounded border border-gray-200 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3"
 				>
 					{#each data.states as st (st.id)}
-						<label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+						<label class="flex items-center gap-2 text-sm text-gray-700">
 							<input
 								type="checkbox"
 								name="state"
@@ -236,7 +234,7 @@
 {/snippet}
 
 {#snippet refCell(row: OrderRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{row.reference}</span>
+	<span class="font-medium text-gray-900">{row.reference}</span>
 {/snippet}
 
 {#snippet customerCell(row: OrderRow)}
@@ -265,7 +263,7 @@
 {/snippet}
 
 {#snippet totalCell(row: OrderRow)}
-	<span class="font-medium text-gray-900 dark:text-white">{formatPrice(Number(row.totalTtc))}</span>
+	<span class="font-medium text-gray-900">{formatPrice(Number(row.totalTtc))}</span>
 {/snippet}
 
 {#snippet dateCell(row: OrderRow)}

@@ -38,8 +38,8 @@
 
 {#snippet userCell(u: StaffUser)}
 	<div>
-		<span class="font-medium text-gray-900 dark:text-white">{u.name}</span>
-		<span class="block text-sm text-gray-500 dark:text-gray-400">{u.email}</span>
+		<span class="font-medium text-gray-900">{u.name}</span>
+		<span class="block text-sm text-gray-500">{u.email}</span>
 	</div>
 {/snippet}
 
@@ -64,6 +64,7 @@
 			<input type="hidden" name="userId" value={u.id} />
 			<Select
 				name="role"
+				aria-label="Rôle de {u.name}"
 				placeholder=""
 				value={u.role}
 				items={roleOptions}
@@ -91,6 +92,6 @@
 	]}
 	bind:search
 	onsearch={runSearch}
-	searchPlaceholder="Email…"
+	searchPlaceholder="E-mail…"
 	emptyMessage="Aucun utilisateur."
 />

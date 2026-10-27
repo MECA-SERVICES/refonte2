@@ -11,7 +11,9 @@
 
 <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de votre boutique" />
 
-<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+<!-- 5 colonnes seulement sur grand écran : en dessous, les grands nombres
+     (« 1 053 958 ») passent sous l'icône. -->
+<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
 	<StatCard label="Commandes" value={data.stats.orders} icon={CartSolid} href="/admin/orders" />
 	<StatCard
 		label="Clients"
@@ -35,5 +37,5 @@
 </div>
 
 <!-- Statistiques, rapatriées de l'ancienne page « Statistiques » (demande 13.1). -->
-<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Statistiques</h2>
+<h2 class="mb-4 text-lg font-semibold text-gray-900">Statistiques</h2>
 <StatsPanel {data} />

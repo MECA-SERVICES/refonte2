@@ -29,18 +29,18 @@
 />
 
 <Card class="mb-6 p-6">
-	<h2 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Client</h2>
+	<h2 class="mb-2 text-lg font-semibold text-gray-900">Client</h2>
 	{#if c.customer}
-		<p class="font-medium text-gray-900 dark:text-white">
+		<p class="font-medium text-gray-900">
 			{c.customer.firstName}
 			{c.customer.lastName}
 		</p>
-		<p class="text-sm text-gray-500 dark:text-gray-400">{c.customer.email}</p>
+		<p class="text-sm text-gray-500">{c.customer.email}</p>
 	{/if}
 </Card>
 
 <Card class="max-w-none p-6">
-	<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+	<h2 class="mb-4 text-lg font-semibold text-gray-900">
 		Articles ({c.items.length})
 	</h2>
 	{#if c.items.length > 0}
@@ -63,6 +63,6 @@
 			</TableBody>
 		</Table>
 	{:else}
-		<p class="text-sm text-gray-500 dark:text-gray-400">Panier vide.</p>
+		<p class="text-sm text-gray-500">Panier vide.</p>
 	{/if}
 </Card>

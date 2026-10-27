@@ -120,7 +120,7 @@
 			bind:value={mainCategoryId}
 			items={selectItems}
 		/>
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+		<p class="mt-1 text-xs text-gray-500">
 			Utilisée pour l'URL et le fil d'Ariane de la fiche produit.
 		</p>
 	</div>
@@ -132,7 +132,7 @@
 				<button
 					type="button"
 					onclick={() => (selectedIds = [])}
-					class="text-xs text-gray-500 underline hover:text-red-600 dark:text-gray-400"
+					class="text-xs text-gray-500 underline hover:text-red-600"
 				>
 					Tout retirer
 				</button>
@@ -144,18 +144,16 @@
 			catégories, une case cochée au fond de l'arbre est invisible : ces puces
 			donnent l'état de la sélection en un coup d'œil.
 		-->
-		<div
-			class="mb-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800"
-		>
+		<div class="mb-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
 			{#if selectedCats.length === 0}
-				<p class="text-sm text-gray-500 dark:text-gray-400">
+				<p class="text-sm text-gray-500">
 					Aucune catégorie associée. Cochez-en dans l'arborescence ci-dessous.
 				</p>
 			{:else}
 				<div class="flex flex-wrap gap-2">
 					{#each selectedCats as cat (cat.id)}
 						<span
-							class="inline-flex items-center gap-1.5 rounded-full border border-cyan-200 bg-cyan-50 py-1 ps-3 pe-1 text-sm text-cyan-900 dark:border-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-100"
+							class="inline-flex items-center gap-1.5 rounded-full border border-cyan-200 bg-cyan-50 py-1 ps-3 pe-1 text-sm text-cyan-900"
 						>
 							{cat.path}
 							<button
@@ -163,7 +161,7 @@
 								onclick={() => toggle(cat.id, false)}
 								title="Retirer {cat.path}"
 								aria-label="Retirer {cat.path}"
-								class="rounded-full p-0.5 text-cyan-700 hover:bg-cyan-600 hover:text-white dark:text-cyan-200"
+								class="rounded-full p-0.5 text-cyan-700 hover:bg-cyan-600 hover:text-white"
 							>
 								<CloseOutline class="h-3.5 w-3.5" />
 							</button>
@@ -173,19 +171,22 @@
 			{/if}
 		</div>
 
-		<Input bind:value={search} placeholder="Rechercher une catégorie…" class="mb-2" />
+		<Input
+			bind:value={search}
+			placeholder="Rechercher une catégorie…"
+			aria-label="Rechercher une catégorie"
+			class="mb-2"
+		/>
 
-		<div
-			class="max-h-72 overflow-y-auto rounded-lg border border-gray-200 p-3 dark:border-gray-700"
-		>
+		<div class="max-h-72 overflow-y-auto rounded-lg border border-gray-200 p-3">
 			{#if roots.length === 0}
-				<p class="text-sm text-gray-500 dark:text-gray-400">Aucune catégorie disponible.</p>
+				<p class="text-sm text-gray-500">Aucune catégorie disponible.</p>
 			{:else}
 				{@render tree(roots, 0)}
 			{/if}
 		</div>
 
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+		<p class="mt-1 text-xs text-gray-500">
 			{selectedCats.length} catégorie{selectedCats.length > 1 ? 's' : ''} associée{selectedCats.length >
 			1
 				? 's'

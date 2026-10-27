@@ -74,16 +74,16 @@
 	{/if}
 
 	<Card class="max-w-none p-6">
-		<h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+		<h2 class="mb-1 text-lg font-semibold text-gray-900">
 			{isCheque ? 'Chèques' : 'Espèces'} en caisse
 		</h2>
-		<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+		<p class="mb-4 text-xs text-gray-500">
 			Décochez ce qui ne part pas à la banque cette fois-ci : il restera en caisse pour le prochain
 			bordereau.
 		</p>
 
 		{#if data.settlements.length === 0}
-			<p class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+			<p class="py-6 text-center text-sm text-gray-500">
 				Aucun règlement {isCheque ? 'par chèque' : 'en espèces'} en attente de remise.
 			</p>
 		{:else}
@@ -126,7 +126,7 @@
 								{#if s.repairOrderId}
 									<a
 										href="/admin/repairs/{s.repairOrderId}"
-										class="text-xs text-primary-700 hover:underline dark:text-primary-400"
+										class="text-xs text-primary-700 hover:underline"
 									>
 										{s.repairReference}
 									</a>
@@ -141,7 +141,7 @@
 	</Card>
 
 	<Card class="max-w-none p-6">
-		<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Remise</h2>
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Remise</h2>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
 				<Label for="depositedOn" class="mb-2">Date de remise</Label>
@@ -152,7 +152,7 @@
 				<Input id="bankAccount" name="bankAccount" value={DEFAULT_BANK_ACCOUNT} required />
 			</div>
 		</div>
-		<p class="mt-4 text-sm text-gray-700 dark:text-gray-300">
+		<p class="mt-4 text-sm text-gray-700">
 			<strong>{selected.length}</strong>
 			{selected.length > 1 ? 'règlements' : 'règlement'} pour
 			<strong>{formatPrice(selectedTotal)}</strong>

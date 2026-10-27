@@ -22,7 +22,7 @@
 </script>
 
 <div
-	class="flex {box} items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700"
+	class="flex {box} items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50"
 >
 	{#if src}
 		<img
@@ -33,6 +33,6 @@
 			onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')}
 		/>
 	{:else}
-		<ImageOutline class="h-5 w-5 text-gray-300 dark:text-gray-500" />
+		<ImageOutline class="h-5 w-5 text-gray-300" />
 	{/if}
 </div>

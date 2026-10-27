@@ -7,15 +7,15 @@
 	const c = $derived(data.customer);
 </script>
 
-<svelte:head><title>Éditer {c.firstName} {c.lastName} · Clients</title></svelte:head>
+<svelte:head><title>Modifier {c.firstName} {c.lastName} · Clients</title></svelte:head>
 
 <PageHeader
-	title="Éditer {c.firstName} {c.lastName}"
+	title="Modifier {c.firstName} {c.lastName}"
 	crumbs={[
 		{ label: 'Accueil', href: '/admin' },
 		{ label: 'Clients', href: '/admin/customers' },
 		{ label: `${c.firstName} ${c.lastName}`, href: `/admin/customers/${c.id}` },
-		{ label: 'Éditer' }
+		{ label: 'Modifier' }
 	]}
 />
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { PageHeader, DataTable, Pagination, StatCard } from '$lib/components/admin';
 	import { CartSolid, ChartLineUpOutline, CashOutline } from 'flowbite-svelte-icons';
-	import { formatPrice } from '$lib/money';
+	import { formatPrice, formatNumber } from '$lib/money';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -17,7 +17,7 @@
 
 <PageHeader
 	title="Paniers"
-	subtitle="{data.total} panier{data.total > 1 ? 's' : ''}"
+	subtitle="{formatNumber(data.total)} panier{data.total > 1 ? 's' : ''}"
 	crumbs={[{ label: 'Accueil', href: '/admin' }, { label: 'Paniers' }]}
 />
 
@@ -48,15 +48,15 @@
 {/snippet}
 
 {#snippet customerCell(row: CartRow)}
-	<span class="font-medium text-gray-900 dark:text-white">
+	<span class="font-medium text-gray-900">
 		{row.customerFirstName}
 		{row.customerLastName}
 	</span>
-	<span class="block text-xs text-gray-500 dark:text-gray-400">{row.customerEmail}</span>
+	<span class="block text-xs text-gray-500">{row.customerEmail}</span>
 {/snippet}
 
 {#snippet activityCell(row: CartRow)}
-	<span class="text-gray-600 dark:text-gray-300">
+	<span class="text-gray-600">
 		{dateFmt.format(new Date(row.lastActivityAt))}
 	</span>
 {/snippet}

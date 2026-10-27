@@ -23,7 +23,7 @@ export const actions: Actions = {
 		const redirectTo = safeRedirect(formData.get('redirectTo')?.toString());
 
 		if (!email || !password) {
-			return fail(400, { email, message: 'Email et mot de passe requis.' });
+			return fail(400, { email, message: 'E-mail et mot de passe requis.' });
 		}
 
 		// Le rôle admin est requis pour le back-office. On le vérifie en base :

@@ -26,8 +26,8 @@
 
 {#if data.rows.length === 0}
 	<Card class="max-w-none p-10 text-center">
-		<FileLinesOutline class="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600" />
-		<p class="mt-3 text-gray-600 dark:text-gray-300">
+		<FileLinesOutline class="mx-auto h-10 w-10 text-gray-300" />
+		<p class="mt-3 text-gray-600">
 			Aucune page pour le moment. Créez vos mentions légales, vos CGV ou une page « à propos ».
 		</p>
 		<div class="mt-5 flex justify-center">
@@ -41,7 +41,7 @@
 				<div class="flex items-start justify-between gap-3">
 					<a
 						href={resolve('/admin/cms-pages/[id]', { id: String(row.id) })}
-						class="min-w-0 font-semibold text-gray-900 hover:underline dark:text-white"
+						class="min-w-0 font-semibold text-gray-900 hover:underline"
 					>
 						{row.title}
 					</a>

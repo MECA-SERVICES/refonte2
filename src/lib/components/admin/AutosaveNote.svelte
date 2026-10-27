@@ -70,24 +70,25 @@
 
 <Card class="max-w-none p-6">
 	<div class="mb-3 flex items-center justify-between gap-2">
-		<h2 class="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
+		<h2 class="text-base font-semibold text-gray-900">{title}</h2>
 		<span class="text-xs text-gray-500 print:hidden" aria-live="polite">
 			{#if status === 'saving'}
 				Enregistrement…
 			{:else if status === 'saved'}
 				Enregistrée
 			{:else if status === 'error'}
-				<span class="text-red-600 dark:text-red-400">Échec de l'enregistrement</span>
+				<span class="text-red-600">Échec de l'enregistrement</span>
 			{/if}
 		</span>
 	</div>
 	<p
-		class="mb-3 flex items-start gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-900 dark:border-cyan-800 dark:bg-cyan-950 dark:text-cyan-200 print:hidden"
+		class="mb-3 flex items-start gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-900 print:hidden"
 	>
 		<InfoCircleOutline class="mt-px h-4 w-4 shrink-0" />
 		{hint} Enregistrement automatique.
 	</p>
 	<Textarea
+		aria-label={title}
 		class="w-full text-sm print:hidden"
 		rows={6}
 		bind:value={note}

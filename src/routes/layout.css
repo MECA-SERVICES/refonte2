@@ -99,16 +99,19 @@
    Les teintes absentes de PrestaShop (400, 800 des gris…) sont interpolées.
    ------------------------------------------------------------------ */
 :root:has(.admin-theme) {
-	/* $primary #25b9d7, $primary-hover #3ed2f0, $primary-active #19a9c6, $notice #dff5f9 */
+	/* $primary #25b9d7, $primary-hover #3ed2f0, $notice #dff5f9.
+	   600 à 800 (boutons, liens, onglets actifs) sont plus foncés que le cyan de
+	   PrestaShop : blanc sur #25b9d7 ne fait que 2,3:1, illisible (WCAG 4,5:1).
+	   Le cyan clair reste sur les surfaces : menu actif, bordures, graphiques. */
 	--color-primary-50: #f4f9fb;
 	--color-primary-100: #dff5f9;
 	--color-primary-200: #b7e9f3;
 	--color-primary-300: #7cd5e7;
 	--color-primary-400: #3ed2f0;
 	--color-primary-500: #25b9d7;
-	--color-primary-600: #25b9d7;
-	--color-primary-700: #25b9d7;
-	--color-primary-800: #19a9c6;
+	--color-primary-600: #0e7489;
+	--color-primary-700: #0e7489;
+	--color-primary-800: #0c6577;
 	--color-primary-900: #13859c;
 	--color-primary-950: #0d5f70;
 
@@ -120,21 +123,23 @@
 	--color-cyan-700: var(--color-primary-800);
 	--color-cyan-900: var(--color-primary-900);
 
-	/* $gray-soft, $background-color, bordure des cartes, $gray-light, $medium-gray,
-	   texte de l'en-tête, $gray-dark (menu), $extra-dark-gray, survol du menu */
+	/* $gray-soft, $background-color, bordure des cartes, $gray-light, puis deux
+	   gris de texte secondaire dérivés de $medium-gray et assombris pour rester
+	   lisibles sur blanc (4,5:1 au moins), texte de l'en-tête, $gray-dark (menu),
+	   $extra-dark-gray, survol du menu */
 	--color-gray-50: #fafbfc;
 	--color-gray-100: #eff1f2;
 	--color-gray-200: #dbe6e9;
 	--color-gray-300: #bbcdd2;
-	--color-gray-400: #94a7ad;
-	--color-gray-500: #6c868e;
+	--color-gray-400: #62787e;
+	--color-gray-500: #5a6e74;
 	--color-gray-600: #4e6167;
 	--color-gray-700: #363a41;
 	--color-gray-800: #2f3238;
 	--color-gray-900: #282b30;
 	--color-gray-950: #202226;
 
-	/* $danger #c05c67, $danger-hover #fde1e1 */
+	/* $danger #c05c67, $danger-hover #fde1e1 ; 700 (boutons) assombri pour le contraste */
 	--color-red-50: #fdf3f3;
 	--color-red-100: #fde1e1;
 	--color-red-200: #f5c4c9;
@@ -142,9 +147,9 @@
 	--color-red-400: #d27a84;
 	--color-red-500: #c05c67;
 	--color-red-600: #c05c67;
-	--color-red-700: #c05c67;
-	--color-red-800: #a84c56;
-	--color-red-900: #8a3d46;
+	--color-red-700: #a84c56;
+	--color-red-800: #8a3d46;
+	--color-red-900: #6f3139;
 
 	/* $success #70b580 */
 	--color-green-50: #f1f8f2;
@@ -169,6 +174,23 @@
 	--color-yellow-700: #b07c17;
 	--color-yellow-800: #8f6413;
 	--color-yellow-900: #6f4e0f;
+}
+
+/* Focus clavier visible partout dans le back-office : l'anneau clair de Flowbite
+   ne contraste pas assez. Cyan clair sur le menu sombre, cyan foncé ailleurs. */
+.admin-theme :focus-visible {
+	outline: 2px solid var(--color-primary-700);
+	outline-offset: 2px;
+}
+
+.admin-theme aside :focus-visible {
+	outline-color: var(--color-primary-500);
+}
+
+/* Bordure des champs à 3:1 (WCAG 1.4.11). Seulement sur la bordure grise par
+   défaut : le focus et les champs en erreur gardent la leur. */
+.admin-theme :is(input, select, textarea).border-gray-300:not(:focus) {
+	border-color: #7d9196;
 }
 
 @source '../../node_modules/flowbite-svelte/dist';
