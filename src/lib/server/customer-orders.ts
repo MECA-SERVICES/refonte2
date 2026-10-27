@@ -219,6 +219,7 @@ export async function listRebuyProducts(customerId: number, { limit = 24 } = {})
 			name: product.name,
 			reference: product.reference,
 			stock: product.stock,
+			availableForOrder: product.availableForOrder,
 			imageUrl: thumbnailWithBrandFallbackSql,
 			imageIsBrandLogo: isBrandLogoSql,
 			brandName: brand.name,

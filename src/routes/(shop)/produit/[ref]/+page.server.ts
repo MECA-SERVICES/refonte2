@@ -4,6 +4,7 @@ import { discontinuedProductTarget, getShopProduct } from '$lib/server/shop';
 import { sanitizeHtml } from '$lib/server/sanitize';
 import { addToCart } from '$lib/server/cart';
 import { resolveCartOwner } from '$lib/server/cart-session';
+import { RELAY_POINT_MAX_TTC } from '$lib/server/shipping';
 
 export const load: PageServerLoad = async ({ params }) => {
 	// URL au format « <id>-<slug> » (modèle de l'ancienne boutique) ; seul l'id
@@ -26,7 +27,15 @@ export const load: PageServerLoad = async ({ params }) => {
 			...product,
 			shortDescription: sanitizeHtml(product.shortDescription),
 			description: sanitizeHtml(product.description)
-		}
+		},
+		// Seuil des points relais (R4) : l'encadré livraison l'annonce d'avance.
+		relayMaxTtc: RELAY_POINT_MAX_TTC,
+		/**
+		 * Vue éclatée reliée au produit. Les vues éclatées n'existent pas encore
+		 * sur le site (réponse du 26/10, demande 9.3) : le bouton reste masqué
+		 * jusqu'à ce qu'un produit en ait une. À brancher sur leur source.
+		 */
+		explodedViewUrl: null as string | null
 	};
 };
 
@@ -61,7 +70,7 @@ export const actions: Actions = {
 			added: true,
 			quantity: result.quantity,
 			message: result.capped
-				? `Quantité ajustée : ${result.available} article(s) disponible(s).`
+				? 'Quantité limitée à 999 par article.'
 				: 'Article ajouté à votre panier.'
 		};
 	}

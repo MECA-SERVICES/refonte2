@@ -15,7 +15,7 @@
 	import Heading from '$lib/components/shop/Heading.svelte';
 	import SummaryRow from '$lib/components/shop/SummaryRow.svelte';
 	import { formatPrice, shopProductPath } from '$lib/shop';
-	import { computeCartTotals } from '$lib/cart';
+	import { computeCartTotals, isCartLineBlocking, MAX_LINE_QUANTITY } from '$lib/cart';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -28,8 +28,8 @@
 
 	type Line = (typeof lines)[number];
 
-	/** Un article inactif ou en rupture empêche de commander (règle R7). */
-	const isBlocking = (line: Line) => !line.isActive || line.stock <= 0;
+	/** Un article inactif ou réservé à l'atelier empêche de commander (règle R7). */
+	const isBlocking = (line: Line) => isCartLineBlocking(line);
 
 	/** Écart entre le prix du jour et celui de l'ajout (règle R11). */
 	function priceDrift(line: Line) {
@@ -257,7 +257,7 @@
 								type="submit"
 								name="quantity"
 								value={quantity + 1}
-								disabled={quantity >= line.stock}
+								disabled={quantity >= MAX_LINE_QUANTITY}
 								aria-label="Augmenter la quantité"
 								class="bg-shop-subtle px-3.5 text-[17px] text-shop-ink-soft hover:bg-white disabled:opacity-40"
 							>

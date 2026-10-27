@@ -60,7 +60,7 @@ export const actions: Actions = {
 		if (!result.ok) return fail(404, { message: 'Ligne introuvable.' });
 
 		return {
-			message: result.capped ? 'Quantité ajustée au stock disponible.' : undefined
+			message: result.capped ? 'Quantité limitée à 999 par article.' : undefined
 		};
 	},
 

@@ -7,6 +7,16 @@
 	import Breadcrumb from '$lib/components/shop/Breadcrumb.svelte';
 	import ImagePlaceholder from '$lib/components/shop/ImagePlaceholder.svelte';
 	import { formatPrice } from '$lib/shop';
+	import { MAX_LINE_QUANTITY } from '$lib/cart';
+	import {
+		BuildingOutline,
+		CheckCircleOutline,
+		MapPinAltOutline,
+		MessagesOutline,
+		PhoneOutline,
+		StoreOutline,
+		TruckOutline
+	} from 'flowbite-svelte-icons';
 	import {
 		describeShippingWindow,
 		estimateShippingWindow,
@@ -43,7 +53,8 @@
 		if (quantity < minQuantity) quantity = minQuantity;
 	});
 
-	const maxQuantity = $derived(Math.max(minQuantity, product.stock));
+	// Le stock ne borne plus la quantité : le reste part sur commande.
+	const maxQuantity = MAX_LINE_QUANTITY;
 
 	/** Éco-participation incluse dans le prix, affichée à part (R6). */
 	const ecotax = $derived(Number(product.ecotax ?? 0));
@@ -56,13 +67,27 @@
 		product.priceTtcStrike ? Math.round((saved / Number(product.priceTtcStrike)) * 100) : 0
 	);
 	/*
-	 * Un article réservé à la boutique physique n'est pas commandable, même en
-	 * stock : le serveur refuserait l'ajout, autant ne pas proposer le bouton.
+	 * Un article réservé à la vente à l'atelier ne se commande pas en ligne,
+	 * même en stock. Un article en rupture, si : il part sur commande chez le
+	 * fabricant (décision du 27/10/2026).
 	 */
-	const available = $derived(product.stock > 0 && product.availableForOrder !== false);
+	const orderable = $derived(product.availableForOrder !== false);
+	const inStock = $derived(product.stock > 0);
 
 	/** Message de délai paramétré en back-office, ou celui de la boutique. */
-	const deliveryTime = $derived(resolveDeliveryTime(product, available));
+	const deliveryTime = $derived(resolveDeliveryTime(product, inStock));
+
+	/**
+	 * Délai court de l'encadré livraison : « 24 à 48 h ouvrées » plutôt que
+	 * « Expédition sous 24 à 48 h ouvrées », la ligne disant déjà de quoi il
+	 * s'agit.
+	 */
+	const deliveryDelay = $derived(
+		deliveryTime?.replace(/^exp[ée]dition\s+(?:sous\s+)?/i, '').trim() || null
+	);
+
+	/** Points relais au-delà du seuil de la boutique : non proposés (R4). */
+	const relayAvailable = $derived(Number(product.priceTtc) * minQuantity <= data.relayMaxTtc);
 
 	/**
 	 * Zoom de la photo (9.4) : un clic agrandit sur place à l'endroit visé, un
@@ -154,7 +179,7 @@
 	const reassurance = [
 		'Pièces 100 % origine, référencées constructeur',
 		'S.A.V dans notre atelier de Carantilly',
-		'Expédition sous 24 à 48 h · retrait gratuit',
+		'Expédition sous 24 à 48 h',
 		'Paiement sécurisé, mandat administratif'
 	];
 </script>
@@ -251,29 +276,32 @@
 				</span>
 			{/if}
 
-			<a
-				href="https://doc.mecaservicesshop.fr"
-				target="_blank"
-				rel="noopener"
-				class="absolute right-3.5 bottom-3.5 flex items-center gap-2 rounded-full bg-white px-3.5 py-2 font-display text-[13px] font-bold text-shop-ink shadow-[0_4px_14px_rgba(30,36,54,0.12)] transition-colors hover:text-shop-blue"
-			>
-				<svg
-					width="15"
-					height="15"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					aria-hidden="true"
+			<!-- Uniquement quand une vue éclatée est reliée au produit. -->
+			{#if data.explodedViewUrl}
+				<a
+					href={data.explodedViewUrl}
+					target="_blank"
+					rel="noopener"
+					class="absolute right-3.5 bottom-3.5 flex items-center gap-2 rounded-full bg-white px-3.5 py-2 font-display text-[13px] font-bold text-shop-ink shadow-[0_4px_14px_rgba(30,36,54,0.12)] transition-colors hover:text-shop-blue"
 				>
-					<path
-						d="M14.7 6.3a4 4 0 0 0 5 5L13 18a3 3 0 0 1-4.2 0L4 13.2a3 3 0 0 1 0-4.2L10.7 2.3a4 4 0 0 0 4 4z"
-					/>
-				</svg>
-				Vue éclatée
-			</a>
+					<svg
+						width="15"
+						height="15"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<path
+							d="M14.7 6.3a4 4 0 0 0 5 5L13 18a3 3 0 0 1-4.2 0L4 13.2a3 3 0 0 1 0-4.2L10.7 2.3a4 4 0 0 0 4 4z"
+						/>
+					</svg>
+					Vue éclatée
+				</a>
+			{/if}
 		</div>
 	</div>
 
@@ -298,8 +326,8 @@
 			Référence : <strong class="text-shop-ink">{product.reference}</strong>
 		</p>
 
-		<!-- Bloc d'achat : prix, disponibilité et action dans une même carte -->
-		<div class="mt-4 rounded-2xl border-[1.5px] border-shop-border-soft bg-white p-5 sm:p-6">
+		<!-- ================= Prix ================= -->
+		<div class="mt-5 border-t border-shop-border-soft pt-5">
 			<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
 				<span
 					class="font-display text-[38px] leading-none font-extrabold tracking-[-0.03em] text-shop-red"
@@ -332,145 +360,217 @@
 					</span>
 				</p>
 			{/if}
+		</div>
 
-			<!--
-				Disponibilité et délai dans un encadré bien visible (demande 9.4). Le
-				message de délai vient du back-office (onglet « Livraison ») ; à défaut
-				de réglage propre, celui de la boutique s'applique. Un produit
-				configuré sans message n'affiche que l'état du stock.
-			-->
-			<div
-				class="mt-4 rounded-[14px] border-2 px-4 py-3.5 {available
-					? 'border-shop-green/40 bg-shop-green/5'
-					: 'border-shop-orange-light/60 bg-shop-orange-light/10'}"
-			>
-				<p class="flex items-center gap-2.5 font-display text-[17px] font-extrabold text-shop-ink">
-					<span
-						class="h-3 w-3 shrink-0 rounded-full {available
-							? 'bg-shop-green'
-							: 'bg-shop-orange-light'}"
-						aria-hidden="true"
-					></span>
-					{#if available}
-						En stock atelier · {product.stock} unité{product.stock > 1 ? 's' : ''}
-					{:else if product.availableForOrder === false}
-						<!-- Article non commandable en ligne : pas de délai fabricant à promettre. -->
-						Sur commande — nous consulter pour le délai
-					{:else}
-						{deliveryTime ?? 'Sur commande — nous consulter pour le délai'}
-					{/if}
+		<!--
+			Disponibilité (demande 9.4) : une ligne d'état en couleur, une ligne de
+			date en gras, à la manière des boutiques classiques. Trois cas : en stock
+			à l'atelier, sur commande chez le fabricant (l'immense majorité du
+			catalogue), vente à l'atelier uniquement.
+		-->
+		<div class="mt-5 space-y-2.5">
+			{#if !orderable}
+				<p class="flex items-center gap-2.5 font-display text-lg font-extrabold text-shop-ink">
+					<StoreOutline class="h-6 w-6 shrink-0" />
+					Vente à l'atelier uniquement
 				</p>
-				{#if available && deliveryTime}
-					<p class="mt-1 text-[15px] font-semibold text-shop-ink">{deliveryTime}</p>
+				<p class="pl-[34px] text-[15px] leading-relaxed text-shop-ink-soft">
+					Ce produit ne se commande pas en ligne. L'atelier vous donne la disponibilité et le délai,
+					et prépare un devis si besoin.
+				</p>
+			{:else}
+				{#if inStock}
+					<p class="flex items-center gap-2.5 font-display text-lg font-extrabold text-shop-green">
+						<CheckCircleOutline class="h-6 w-6 shrink-0" />
+						En stock à l'atelier
+						<span class="font-sans text-[15px] font-semibold text-shop-ink-soft">
+							({product.stock} disponible{product.stock > 1 ? 's' : ''})
+						</span>
+					</p>
+				{:else}
+					<p class="flex items-center gap-2.5 font-display text-lg font-extrabold text-shop-blue">
+						<BuildingOutline class="h-6 w-6 shrink-0" />
+						Disponible sur commande
+					</p>
 				{/if}
-				{#if shippingWindow && product.availableForOrder !== false}
-					<p class="mt-1 text-[15px] text-shop-ink">
-						Expédition estimée
-						<strong>{describeShippingWindow(shippingWindow.earliest, shippingWindow.latest)}</strong
+
+				{#if shippingWindow}
+					<p class="flex items-start gap-2.5 text-[15px] text-shop-ink">
+						<TruckOutline class="mt-0.5 h-6 w-6 shrink-0 text-shop-blue" />
+						<span>
+							{inStock ? 'Commandez maintenant' : 'Commandée chez le fabricant pour vous'} : expédition
+							estimée
+							<strong
+								>{describeShippingWindow(shippingWindow.earliest, shippingWindow.latest)}</strong
+							>
+						</span>
+					</p>
+				{:else if deliveryTime}
+					<p class="flex items-start gap-2.5 text-[15px] text-shop-ink">
+						<TruckOutline class="mt-0.5 h-6 w-6 shrink-0 text-shop-blue" />
+						{deliveryTime}
+					</p>
+				{/if}
+
+				{#if !inStock}
+					<p class="flex items-center gap-2 pl-[34px] text-[13.5px] text-shop-muted">
+						<PhoneOutline class="h-4.5 w-4.5 shrink-0" />
+						<span>
+							Pressé ? L'atelier vérifie le délai au
+							<a href="tel:0950922336" class="font-bold text-shop-blue hover:underline">
+								09 50 92 23 36
+							</a>
+						</span>
+					</p>
+				{/if}
+			{/if}
+		</div>
+
+		<!-- ================= Achat ================= -->
+		<div class="mt-5">
+			{#if orderable}
+				{#if minQuantity > 1}
+					<p class="mb-2 text-[13px] text-shop-muted">
+						Vendu par {minQuantity} — quantité minimale de commande.
+					</p>
+				{/if}
+
+				<form
+					method="POST"
+					action="?/add"
+					use:enhance={addToCart}
+					class="flex flex-wrap items-stretch gap-2.5"
+				>
+					<input type="hidden" name="productId" value={product.id} />
+
+					<div class="flex overflow-hidden rounded-[10px] border-[1.5px] border-shop-border">
+						<button
+							type="button"
+							onclick={() => (quantity = Math.max(minQuantity, quantity - 1))}
+							disabled={quantity <= minQuantity}
+							aria-label="Diminuer la quantité"
+							class="bg-shop-subtle px-4 text-lg text-shop-ink-soft transition-colors hover:bg-shop-border-soft disabled:opacity-40"
 						>
+							−
+						</button>
+						<label class="sr-only" for="quantity">Quantité</label>
+						<input
+							id="quantity"
+							name="quantity"
+							type="number"
+							min={minQuantity}
+							max={maxQuantity}
+							bind:value={quantity}
+							class="w-14 [appearance:textfield] border-0 bg-transparent px-0 py-3 text-center font-display font-bold text-shop-ink focus:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+						/>
+						<button
+							type="button"
+							onclick={() => (quantity = Math.min(maxQuantity, quantity + 1))}
+							disabled={quantity >= maxQuantity}
+							aria-label="Augmenter la quantité"
+							class="bg-shop-subtle px-4 text-lg text-shop-ink-soft transition-colors hover:bg-shop-border-soft disabled:opacity-40"
+						>
+							+
+						</button>
+					</div>
+
+					<ShopButton type="submit" variant="buy" size="lg" class="flex-1 basis-52">
+						{inStock ? 'Ajouter au panier' : 'Commander'}
+					</ShopButton>
+				</form>
+
+				{#if form?.message}
+					<p
+						class="mt-3 rounded-[10px] border px-3.5 py-2.5 text-sm font-medium {form.added
+							? 'border-primary-200 bg-primary-50 text-primary-800'
+							: 'border-shop-red text-shop-red'}"
+						role="status"
+					>
+						{form.message}
+						{#if form.added}
+							<a href="/panier" class="ms-1 font-semibold underline underline-offset-2">
+								Voir mon panier
+							</a>
+						{/if}
 					</p>
 				{/if}
-				{#if available}
-					<p class="mt-1 text-[13.5px] text-shop-muted">
-						Retrait gratuit à l'atelier de Carantilly
-					</p>
-				{/if}
-			</div>
-			{#if minQuantity > 1}
-				<p class="mt-2 text-[13px] text-shop-muted">
-					Vendu par {minQuantity} — quantité minimale de commande.
-				</p>
-			{/if}
 
-			<form
-				method="POST"
-				action="?/add"
-				use:enhance={addToCart}
-				class="mt-4.5 flex flex-wrap items-stretch gap-2.5"
-			>
-				<input type="hidden" name="productId" value={product.id} />
-
-				<div class="flex overflow-hidden rounded-[10px] border-[1.5px] border-shop-border">
-					<button
-						type="button"
-						onclick={() => (quantity = Math.max(minQuantity, quantity - 1))}
-						disabled={!available || quantity <= minQuantity}
-						aria-label="Diminuer la quantité"
-						class="bg-shop-subtle px-4 text-lg text-shop-ink-soft transition-colors hover:bg-shop-border-soft disabled:opacity-40"
-					>
-						−
-					</button>
-					<label class="sr-only" for="quantity">Quantité</label>
-					<input
-						id="quantity"
-						name="quantity"
-						type="number"
-						min={minQuantity}
-						max={maxQuantity}
-						bind:value={quantity}
-						disabled={!available}
-						class="w-14 [appearance:textfield] border-0 bg-transparent px-0 py-3 text-center font-display font-bold text-shop-ink focus:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-					/>
-					<button
-						type="button"
-						onclick={() => (quantity = Math.min(maxQuantity, quantity + 1))}
-						disabled={!available || quantity >= maxQuantity}
-						aria-label="Augmenter la quantité"
-						class="bg-shop-subtle px-4 text-lg text-shop-ink-soft transition-colors hover:bg-shop-border-soft disabled:opacity-40"
-					>
-						+
-					</button>
-				</div>
-
-				<ShopButton
-					type="submit"
-					variant="buy"
-					size="lg"
-					disabled={!available}
-					class="flex-1 basis-52"
-				>
-					{available ? 'Ajouter au panier' : 'Nous consulter'}
-				</ShopButton>
-			</form>
-
-			{#if form?.message}
-				<p
-					class="mt-3 rounded-[10px] border px-3.5 py-2.5 text-sm font-medium {form.added
-						? 'border-primary-200 bg-primary-50 text-primary-800'
-						: 'border-shop-red text-shop-red'}"
-					role="status"
-				>
-					{form.message}
-					{#if form.added}
-						<a href="/panier" class="ms-1 font-semibold underline underline-offset-2">
-							Voir mon panier
-						</a>
-					{/if}
-				</p>
-			{/if}
-
-			<div class="mt-2.5 flex flex-wrap gap-2">
 				<ShopButton
 					href="/contact?produit={product.id}&devis=1"
 					variant="outline"
 					size="sm"
-					class="flex-1 basis-40"
+					block
+					class="mt-2.5"
 				>
 					Besoin de quantité ? Demander un devis
 				</ShopButton>
-				<ShopButton
-					href="/contact?produit={product.id}"
-					variant="outline"
-					size="sm"
-					class="flex-1 basis-40"
-				>
-					Poser une question
-				</ShopButton>
-			</div>
+			{:else}
+				<!-- Vente à l'atelier : on appelle ou on demande un devis. -->
+				<div class="grid gap-2.5 sm:grid-cols-2">
+					<ShopButton href="tel:0950922336" variant="primary" size="lg">
+						<PhoneOutline class="h-5 w-5" />
+						09 50 92 23 36
+					</ShopButton>
+					<ShopButton href="/contact?produit={product.id}&devis=1" variant="outline" size="lg">
+						Demander un devis
+					</ShopButton>
+				</div>
+			{/if}
 		</div>
 
-		<!-- Quatre promesses, en grille compacte sous le bloc d'achat -->
-		<ul class="mt-4 grid gap-x-4.5 gap-y-2 text-[13.5px] text-shop-ink-soft sm:grid-cols-2">
+		<!-- ================= Livraison ================= -->
+		{#if orderable}
+			<section
+				class="mt-6 overflow-hidden rounded-[10px] border border-shop-border"
+				aria-labelledby="delivery-title"
+			>
+				<h2
+					id="delivery-title"
+					class="border-b border-shop-border bg-shop-subtle px-4 py-2.5 font-display text-[15px] font-bold text-shop-ink"
+				>
+					Livraison
+				</h2>
+				<ul class="divide-y divide-shop-border-soft text-sm">
+					<li class="flex items-center gap-3.5 px-4 py-3">
+						<TruckOutline class="h-6 w-6 shrink-0 text-shop-blue" />
+						<span class="min-w-0 flex-1">
+							<span class="block font-display text-[14.5px] font-bold text-shop-ink">
+								Livraison à domicile
+							</span>
+							<span class="text-[13px] text-shop-muted">France, Europe et Outre-mer</span>
+						</span>
+						{#if deliveryDelay}
+							<span class="shrink-0 text-right font-display text-sm font-bold text-shop-ink">
+								{deliveryDelay}
+							</span>
+						{/if}
+					</li>
+					<li class="flex items-center gap-3.5 px-4 py-3 {relayAvailable ? '' : 'text-shop-muted'}">
+						<MapPinAltOutline
+							class="h-6 w-6 shrink-0 {relayAvailable ? 'text-shop-blue' : 'text-shop-border'}"
+						/>
+						<span class="min-w-0 flex-1">
+							<span
+								class="block font-display text-[14.5px] {relayAvailable
+									? 'font-bold text-shop-ink'
+									: 'font-semibold'}"
+							>
+								Point relais
+							</span>
+							<span class="text-[13px] text-shop-muted">
+								Pour les commandes de moins de {data.relayMaxTtc} € TTC
+							</span>
+						</span>
+						<span class="shrink-0 text-right font-display text-sm font-bold">
+							{relayAvailable ? (deliveryDelay ?? '') : 'Non disponible'}
+						</span>
+					</li>
+				</ul>
+			</section>
+		{/if}
+
+		<!-- Quatre promesses, en grille compacte -->
+		<ul class="mt-5 grid gap-x-4.5 gap-y-2 text-[13.5px] text-shop-ink-soft sm:grid-cols-2">
 			{#each reassurance as promise (promise)}
 				<li class="flex items-start gap-2">
 					<span class="font-extrabold text-shop-green" aria-hidden="true">✓</span>
@@ -480,20 +580,25 @@
 		</ul>
 
 		<!-- Compatibilité : la question centrale sur une pièce détachée -->
-		<div class="mt-4 flex items-center gap-3.5 rounded-[14px] bg-primary-50 px-4 py-3.5">
+		<div
+			class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[10px] border border-shop-border bg-primary-50 p-4"
+		>
 			<span
-				class="flex h-10.5 w-10.5 shrink-0 items-center justify-center rounded-[10px] bg-shop-blue font-display text-[15px] font-extrabold text-white"
+				class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-shop-blue font-display text-[17px] font-extrabold text-white"
 				aria-hidden="true"
 			>
 				?
 			</span>
-			<p class="text-[13.5px] leading-normal text-shop-ink-soft">
-				<strong class="text-shop-ink">Compatible avec ma machine ?</strong>
-				Donnez-nous la marque et le modèle, on vérifie la référence avant que vous commandiez :
-				<a href="/contact?produit={product.id}" class="font-bold text-shop-blue hover:underline">
-					nous écrire
-				</a>
+			<p class="min-w-[220px] flex-1 text-[13.5px] leading-snug text-shop-ink-soft">
+				<strong class="block font-display text-[15px] text-shop-ink">
+					Compatible avec ma machine ?
+				</strong>
+				Donnez-nous la marque et le modèle, on vérifie la référence avant que vous commandiez.
 			</p>
+			<ShopButton href="/contact?produit={product.id}" variant="outline" size="sm">
+				<MessagesOutline class="h-4.5 w-4.5" />
+				Poser une question
+			</ShopButton>
 		</div>
 	</div>
 </div>

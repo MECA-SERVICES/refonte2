@@ -2,7 +2,12 @@ import { db } from '$lib/server/db';
 import { brand, cart, cartItem, customer, product, taxRule } from '$lib/server/db/schema';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { TaxRegime } from '$lib/tax';
-import { computeCartTotals, type CartTotals } from '$lib/cart';
+import {
+	computeCartTotals,
+	isCartLineBlocking,
+	MAX_LINE_QUANTITY,
+	type CartTotals
+} from '$lib/cart';
 import { firstImageSql, priceTtcSql } from './pricing';
 
 export { computeCartTotals, type CartTotals } from '$lib/cart';
@@ -150,14 +155,6 @@ async function linesOf(cartId: number): Promise<CartLine[]> {
 }
 
 /**
- * Un article désactivé, en rupture, ou réservé à la boutique physique bloque le
- * passage en commande (règle R7).
- */
-function isBlocking(line: CartLine) {
-	return !line.isActive || !line.availableForOrder || line.stock <= 0;
-}
-
-/**
  * Panier complet du porteur, prêt à afficher.
  *
  * Le régime conditionne la TVA des totaux : un client exonéré ne doit pas la
@@ -172,7 +169,7 @@ export async function getCart(owner: CartOwner, regime: TaxRegime = 'standard'):
 		id: found.id,
 		lines,
 		totals: computeCartTotals(lines, regime),
-		hasBlockingLine: lines.some(isBlocking)
+		hasBlockingLine: lines.some(isCartLineBlocking)
 	};
 }
 
@@ -188,14 +185,15 @@ export async function countCartItems(owner: CartOwner): Promise<number> {
 	return row?.total ?? 0;
 }
 
-/** Résultat d'un ajout : la quantité peut avoir été plafonnée (règle R6). */
+/** Résultat d'un ajout : la quantité peut avoir été plafonnée. */
 export type AddResult =
 	| { ok: true; quantity: number; capped: boolean; available: number }
 	| { ok: false; reason: 'unavailable' | 'not_found' };
 
 /**
  * Ajoute un article au panier, ou incrémente la ligne existante (règle R4).
- * La quantité demandée est plafonnée à la quantité disponible (règle R6).
+ * Un article en rupture s'ajoute aussi : il part « sur commande ». La quantité
+ * n'est bornée que par `MAX_LINE_QUANTITY`.
  */
 export async function addToCart(
 	owner: CartOwner,
@@ -223,9 +221,9 @@ export async function addToCart(
 	 * outre. Le panier ne doit jamais contenir moins d'un lot.
 	 */
 	const quantity = Math.max(requested, item.minOrderQuantity ?? 1);
-	// Un article inactif, réservé à la boutique physique, ou sans disponibilité
-	// ne peut pas être ajouté (règle R7).
-	if (!item.isActive || !item.availableForOrder || item.stock <= 0) {
+	// Un article inactif ou réservé à la vente à l'atelier ne peut pas être
+	// ajouté (règle R7) ; un article en rupture, si : il est sur commande.
+	if (isCartLineBlocking(item)) {
 		return { ok: false, reason: 'unavailable' };
 	}
 
@@ -245,7 +243,7 @@ export async function addToCart(
 		.limit(1);
 
 	const wanted = (existing?.quantity ?? 0) + quantity;
-	const capped = Math.min(wanted, item.stock);
+	const capped = Math.min(wanted, MAX_LINE_QUANTITY);
 
 	if (existing) {
 		await db
@@ -268,7 +266,7 @@ export async function addToCart(
 
 /**
  * Change la quantité d'une ligne. Une quantité nulle supprime la ligne
- * (règle R5) ; un dépassement est plafonné au stock disponible (règle R6).
+ * (règle R5) ; la quantité n'est bornée que par `MAX_LINE_QUANTITY`.
  */
 export async function updateLineQuantity(
 	owner: CartOwner,
@@ -279,9 +277,8 @@ export async function updateLineQuantity(
 	if (!found) return { ok: false };
 
 	const [line] = await db
-		.select({ id: cartItem.id, stock: product.stock })
+		.select({ id: cartItem.id })
 		.from(cartItem)
-		.innerJoin(product, eq(cartItem.productId, product.id))
 		.where(and(eq(cartItem.id, lineId), eq(cartItem.cartId, found.id)))
 		.limit(1);
 
@@ -294,7 +291,7 @@ export async function updateLineQuantity(
 		return { ok: true };
 	}
 
-	const capped = Math.min(wanted, Math.max(1, line.stock));
+	const capped = Math.min(wanted, MAX_LINE_QUANTITY);
 	await db
 		.update(cartItem)
 		.set({ quantity: capped, updatedAt: new Date() })
@@ -328,8 +325,8 @@ export async function clearCart(owner: CartOwner): Promise<void> {
 
 /**
  * Fusionne le panier visiteur dans celui du client à la connexion (règle R2).
- * Les quantités d'un même article s'additionnent, dans la limite du stock
- * disponible (règle R3). Le panier visiteur est ensuite supprimé.
+ * Les quantités d'un même article s'additionnent (règle R3), dans la limite de
+ * `MAX_LINE_QUANTITY`. Le panier visiteur est ensuite supprimé.
  */
 export async function mergeGuestCart(sessionToken: string, customerId: number): Promise<void> {
 	const guest = await findCart({ sessionToken });
@@ -349,7 +346,7 @@ export async function mergeGuestCart(sessionToken: string, customerId: number): 
 
 	for (const line of guestLines) {
 		const [item] = await db
-			.select({ stock: product.stock })
+			.select({ id: product.id })
 			.from(product)
 			.where(eq(product.id, line.productId))
 			.limit(1);
@@ -370,7 +367,7 @@ export async function mergeGuestCart(sessionToken: string, customerId: number): 
 			.limit(1);
 
 		const wanted = (existing?.quantity ?? 0) + line.quantity;
-		const capped = Math.min(wanted, Math.max(1, item.stock));
+		const capped = Math.min(wanted, MAX_LINE_QUANTITY);
 
 		if (existing) {
 			await db

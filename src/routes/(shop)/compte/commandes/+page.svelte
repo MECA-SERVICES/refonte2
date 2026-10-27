@@ -182,7 +182,7 @@
 	{:else}
 		<ul class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 			{#each data.rebuy as item (item.id)}
-				{@const available = item.stock > 0}
+				{@const available = item.availableForOrder}
 				<li>
 					<Panel class="flex h-full gap-4 p-4">
 						<a

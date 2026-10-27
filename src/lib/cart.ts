@@ -9,6 +9,24 @@
 import { effectiveTaxRate, type TaxRegime } from '$lib/tax';
 import { round2 } from '$lib/money';
 
+/**
+ * Quantité maximale d'un article dans le panier.
+ *
+ * Le stock ne plafonne plus la quantité : ce qui manque est commandé chez le
+ * fabricant (décision du 27/10/2026). La borne évite seulement une saisie
+ * aberrante.
+ */
+export const MAX_LINE_QUANTITY = 999;
+
+/**
+ * Un article désactivé, ou réservé à la vente à l'atelier, bloque le passage
+ * en commande (règle R7). Un article en rupture reste commandable : il est
+ * « sur commande », comme 99,6 % du catalogue (décision du 27/10/2026).
+ */
+export function isCartLineBlocking(line: { isActive: boolean; availableForOrder: boolean }) {
+	return !line.isActive || !line.availableForOrder;
+}
+
 /** Ce qu'une ligne doit porter pour entrer dans le calcul des totaux. */
 export type TotalableLine = {
 	priceHt: string | number;
