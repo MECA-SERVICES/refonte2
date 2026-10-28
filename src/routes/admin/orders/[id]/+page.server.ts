@@ -6,6 +6,7 @@ import {
 	listOrderStates,
 	changeOrderState,
 	setOrderLineSerial,
+	attachExitSerials,
 	updateOrderPrivateNote
 } from '$lib/server/orders';
 import { shipOrder, FulfillmentError } from '$lib/server/fulfillment';
@@ -77,19 +78,21 @@ export const actions: Actions = {
 	stockExit: async ({ request, params, locals }) => {
 		const order = await getOrderFull(Number(params.id));
 		if (!order) return fail(404, { message: 'Commande introuvable.' });
-		const form = await request.formData();
+		const exit = parseDocumentExit(await request.formData());
 		try {
 			await exitDocumentStock({
 				lines: stockLines(order.lines),
 				type: 'order',
 				reference: order.reference,
-				...parseDocumentExit(form),
+				...exit,
 				createdBy: locals.user?.id ?? null
 			});
 		} catch (err) {
 			if (err instanceof StockLocationError) return fail(400, { message: err.message });
 			throw err;
 		}
+		// Les numéros sortis vont sur la commande et dans le parc du client.
+		await attachExitSerials(order.id, exit.productId, exit.serials);
 		return { success: true };
 	},
 

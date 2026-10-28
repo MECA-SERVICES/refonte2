@@ -9,7 +9,7 @@ import { and, asc, desc, eq, isNotNull, lt, ne, sql } from 'drizzle-orm';
 import { db } from './db';
 import { clientMachine, type MachineSource, type NewClientMachine } from './db/machine.schema';
 import { order, orderLine, orderState } from './db/order.schema';
-import { product } from './db/catalog.schema';
+import { product, stockMovement } from './db/catalog.schema';
 import { formFields, type ParseResult } from './forms';
 
 /** Délai au terme duquel une proposition non confirmée est retirée (R14). */
@@ -208,6 +208,10 @@ export async function deleteMachine(customerId: number, machineId: number) {
  * Seuls les articles reconnus comme machines sont retenus : une commande de
  * bougies n'a pas à peupler le parc. Une ligne de quantité supérieure à un
  * produit autant d'entrées que d'exemplaires (R16).
+ *
+ * Numéro de série : celui de la ligne de commande, puis ceux des pièces sorties
+ * du stock pour la commande. Une machine dont le numéro est connu entre
+ * confirmée : le client n'a rien à chercher sous le carter.
  */
 export async function proposeMachinesFromOrder(orderId: number): Promise<number> {
 	const lines = await db
@@ -216,7 +220,9 @@ export async function proposeMachinesFromOrder(orderId: number): Promise<number>
 			productId: orderLine.productId,
 			productName: orderLine.productName,
 			quantity: orderLine.quantity,
+			serialNumber: orderLine.serialNumber,
 			customerId: order.customerId,
+			orderReference: order.reference,
 			brandName: product.brandId,
 			weightKg: product.weightKg
 		})
@@ -226,6 +232,45 @@ export async function proposeMachinesFromOrder(orderId: number): Promise<number>
 		.where(eq(orderLine.orderId, orderId));
 
 	let created = 0;
+	if (!lines.length) return created;
+
+	// Numéros des pièces sorties du stock pour cette commande, par produit.
+	const exits = await db
+		.select({ productId: stockMovement.productId, serial: stockMovement.serialNumber })
+		.from(stockMovement)
+		.where(
+			and(
+				eq(stockMovement.type, 'order'),
+				eq(stockMovement.reference, lines[0].orderReference),
+				isNotNull(stockMovement.serialNumber),
+				lt(stockMovement.quantity, 0)
+			)
+		)
+		.orderBy(asc(stockMovement.id));
+	// Un numéro déjà au parc du client n'y entre pas deux fois (R17).
+	const known = new Set(
+		(
+			await db
+				.select({ serial: clientMachine.serialNumber })
+				.from(clientMachine)
+				.where(
+					and(
+						eq(clientMachine.customerId, lines[0].customerId),
+						isNotNull(clientMachine.serialNumber)
+					)
+				)
+		).map((m) => m.serial!.toUpperCase())
+	);
+	const taken = new Set(
+		lines.flatMap((l) => (l.serialNumber ? [l.serialNumber.toUpperCase()] : []))
+	);
+	const nextSerial = (productId: number | null) => {
+		const hit = exits.find(
+			(e) => e.productId === productId && e.serial && !taken.has(e.serial.toUpperCase())
+		);
+		if (hit?.serial) taken.add(hit.serial.toUpperCase());
+		return hit?.serial ?? null;
+	};
 
 	for (const line of lines) {
 		const equipmentType = guessEquipmentType(line.productName);
@@ -240,18 +285,25 @@ export async function proposeMachinesFromOrder(orderId: number): Promise<number>
 			.limit(1);
 		if (existing) continue;
 
-		const rows: NewClientMachine[] = Array.from({ length: line.quantity }, () => ({
-			customerId: line.customerId,
-			// R9 — le nom d'usage reprend la désignation, modifiable ensuite.
-			name: line.productName,
-			equipmentType,
-			model: line.productName,
-			status: 'pending_confirmation',
-			source: 'order' satisfies MachineSource,
-			productId: line.productId,
-			orderId,
-			orderLineId: line.orderLineId
-		}));
+		const rows: NewClientMachine[] = Array.from({ length: line.quantity }, (_, i) => {
+			const candidate = (i === 0 ? line.serialNumber : null) ?? nextSerial(line.productId);
+			const serialNumber = candidate && !known.has(candidate.toUpperCase()) ? candidate : null;
+			if (serialNumber) known.add(serialNumber.toUpperCase());
+			return {
+				customerId: line.customerId,
+				// R9 — le nom d'usage reprend la désignation, modifiable ensuite.
+				name: line.productName,
+				equipmentType,
+				model: line.productName,
+				serialNumber,
+				status: serialNumber ? 'confirmed' : 'pending_confirmation',
+				confirmedAt: serialNumber ? new Date() : null,
+				source: 'order' satisfies MachineSource,
+				productId: line.productId,
+				orderId,
+				orderLineId: line.orderLineId
+			};
+		});
 
 		await db.insert(clientMachine).values(rows);
 		created += rows.length;

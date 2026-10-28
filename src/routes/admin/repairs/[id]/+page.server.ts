@@ -4,6 +4,7 @@ import {
 	addRepairPart,
 	changeRepairStatus,
 	getRepairOrder,
+	attachPartSerials,
 	nextStatuses,
 	RepairError,
 	removeRepairPart,
@@ -133,19 +134,21 @@ export const actions: Actions = {
 	stockExit: async ({ request, params, locals }) => {
 		const order = await getRepairOrder(idParam(params));
 		if (!order) return fail(404, { partError: 'Ordre introuvable.' });
-		const form = await request.formData();
+		const exit = parseDocumentExit(await request.formData());
 		try {
 			await exitDocumentStock({
 				lines: stockLines(order.parts),
 				type: 'repair',
 				reference: order.reference,
-				...parseDocumentExit(form),
+				...exit,
 				createdBy: locals.user?.id ?? null
 			});
 		} catch (err) {
 			if (err instanceof StockLocationError) return fail(400, { partError: err.message });
 			throw err;
 		}
+		// Les numéros sortis restent attachés à la pièce posée sur cette machine.
+		await attachPartSerials(order.id, exit.productId, exit.serials);
 		return { success: true };
 	},
 

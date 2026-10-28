@@ -14,7 +14,7 @@
  * la demande. C'est ce qui rend cette section autonome.
  */
 
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
 	boolean,
 	index,
@@ -160,6 +160,11 @@ export const repairOrderPart = pgTable(
 		quantity: integer('quantity').notNull().default(1),
 		unitPriceHt: numeric('unit_price_ht', { precision: 12, scale: 2 }).notNull().default('0'),
 		totalHt: numeric('total_ht', { precision: 12, scale: 2 }).notNull().default('0'),
+		/** Numéros de série des pièces posées, repris de leur sortie de stock. */
+		serialNumbers: text('serial_numbers')
+			.array()
+			.notNull()
+			.default(sql`'{}'::text[]`),
 
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},

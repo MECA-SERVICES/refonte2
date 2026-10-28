@@ -243,7 +243,8 @@ export async function getRepairOrder(id: number) {
 				partReference: repairOrderPart.partReference,
 				quantity: repairOrderPart.quantity,
 				unitPriceHt: repairOrderPart.unitPriceHt,
-				totalHt: repairOrderPart.totalHt
+				totalHt: repairOrderPart.totalHt,
+				serialNumbers: repairOrderPart.serialNumbers
 			})
 			.from(repairOrderPart)
 			.where(eq(repairOrderPart.repairOrderId, id))
@@ -493,6 +494,43 @@ export async function addRepairPart(
 
 	await recalculateTotals(repairOrderId);
 	return line;
+}
+
+/**
+ * Numéros de série des pièces sorties du stock pour un ordre : rangés sur les
+ * lignes du produit, sans dépasser la quantité de chaque ligne. La pièce reste
+ * ainsi rattachée à la machine réparée.
+ */
+export async function attachPartSerials(
+	repairOrderId: number,
+	productId: number,
+	serials: string[]
+) {
+	if (!serials.length) return;
+	const parts = await db
+		.select({
+			id: repairOrderPart.id,
+			quantity: repairOrderPart.quantity,
+			serialNumbers: repairOrderPart.serialNumbers
+		})
+		.from(repairOrderPart)
+		.where(
+			and(
+				eq(repairOrderPart.repairOrderId, repairOrderId),
+				eq(repairOrderPart.productId, productId)
+			)
+		)
+		.orderBy(repairOrderPart.id);
+	const pending = [...serials];
+	for (const part of parts) {
+		const room = Math.max(0, part.quantity - part.serialNumbers.length);
+		const added = pending.splice(0, room);
+		if (!added.length) continue;
+		await db
+			.update(repairOrderPart)
+			.set({ serialNumbers: [...part.serialNumbers, ...added] })
+			.where(eq(repairOrderPart.id, part.id));
+	}
 }
 
 /**

@@ -328,7 +328,13 @@
 									{part.partName}
 									{#if !part.productId}
 										<span class="ms-1 text-xs text-gray-400">(hors catalogue)</span>
-									{:else if data.partStock[part.productId]}
+									{/if}
+									{#if part.serialNumbers.length}
+										<span class="ms-1 font-mono text-xs text-gray-600">
+											N° {part.serialNumbers.join(', ')}
+										</span>
+									{/if}
+									{#if part.productId && data.partStock[part.productId]}
 										<DocumentLineStock
 											productId={part.productId}
 											stock={data.partStock[part.productId]}

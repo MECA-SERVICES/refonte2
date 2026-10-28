@@ -293,6 +293,30 @@ export async function setOrderLineSerial(orderId: number, lineId: number, serial
 	return true;
 }
 
+/**
+ * Numéros de série des pièces sorties du stock pour une commande : reportés
+ * sur les lignes du produit qui n'en ont pas encore, une pièce par ligne, et
+ * de là dans le parc du client (`setOrderLineSerial`). Le magasinier n'a plus
+ * à ressaisir le numéro qu'il vient de cocher.
+ */
+export async function attachExitSerials(orderId: number, productId: number, serials: string[]) {
+	if (!serials.length) return;
+	const lines = await db
+		.select({ id: orderLine.id })
+		.from(orderLine)
+		.where(
+			and(
+				eq(orderLine.orderId, orderId),
+				eq(orderLine.productId, productId),
+				isNull(orderLine.serialNumber)
+			)
+		)
+		.orderBy(asc(orderLine.id));
+	for (const [i, line] of lines.entries()) {
+		if (serials[i]) await setOrderLineSerial(orderId, line.id, serials[i]);
+	}
+}
+
 /** Change l'état d'une commande et journalise le changement. */
 export async function changeOrderState(input: {
 	orderId: number;
