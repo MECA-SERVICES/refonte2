@@ -55,6 +55,16 @@
 							"href": "/admin/stock-locations"
 						},
 						{
+							"id": "stock-receipts",
+							"label": "Réceptions fournisseur",
+							"href": "/admin/stock/vouchers/receipts"
+						},
+						{
+							"id": "stock-issues",
+							"label": "Sorties de stock",
+							"href": "/admin/stock/vouchers/issues"
+						},
+						{
 							"id": "inventories",
 							"label": "Inventaires",
 							"href": "/admin/inventories"

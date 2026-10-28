@@ -2,10 +2,13 @@
  * Produits : rattachement des produits Dolibarr au catalogue MSShop, puis
  * création de ceux qui n'existent que dans Dolibarr.
  *
- * Sont concernés les produits qui ont une ligne de stock (`llx_product_stock`)
- * ou qui figurent dans un inventaire (`utile_inventaire`). Chacun reçoit un
+ * Sont rattachés les produits qui ont une ligne de stock (`llx_product_stock`),
+ * figurent dans un inventaire (`utile_inventaire`) ou dans un bon d'entrée ou
+ * de sortie (`utile_bon_livraison`, `utile_bon_sortie`). Chacun reçoit un
  * `product.legacy_doli_id`, sur lequel s'appuient les tâches suivantes (stock,
- * numéros de série, inventaires).
+ * numéros de série, inventaires, historique des bons). Seuls ceux du stock et
+ * des inventaires sont créés s'ils manquent : un produit qui n'apparaît que
+ * dans l'historique n'a pas besoin de fiche.
  *
  * Les produits absents de MSShop ont été créés directement dans Dolibarr, ou
  * importés du catalogue fournisseur, sans jamais passer par le site. Ils sont
@@ -29,6 +32,8 @@ import { compactReference, matchProducts, partNumbers, type ShopProduct } from '
 
 interface SourceProduct {
 	rowid: number;
+	/** En stock ou inventorié : à créer s'il manque. */
+	stocked: number;
 	ref: string;
 	label: string | null;
 	barcode: string | null;
@@ -44,13 +49,33 @@ export const productsTask: Task = {
 	description: 'Produits (llx_product → product : rattachement, puis création des manquants)',
 
 	async run({ dryRun }) {
-		const doli = await sourceQuery<SourceProduct>(
-			`SELECT rowid, ref, label, barcode, ref_ext, price_ttc, tva_tx, cost_price, description
-			 FROM ${DOLI}.llx_product
-			 WHERE rowid IN (SELECT fk_product FROM ${DOLI}.llx_product_stock
-			                 UNION SELECT fk_product FROM ${DOLI}.utile_inventaire)`
+		// Identifiants d'abord, table par table, puis les fiches par lots : un IN
+		// sur une union de tables, évalué sur 887 000 produits, ne finit pas.
+		const idsOf = async (table: string, column: string) =>
+			(
+				await sourceQuery<{ id: number }>(`SELECT DISTINCT ${column} AS id FROM ${DOLI}.${table}`)
+			).map((r) => Number(r.id));
+		const stockedIds = new Set([
+			...(await idsOf('llx_product_stock', 'fk_product')),
+			...(await idsOf('utile_inventaire', 'fk_product'))
+		]);
+		const allIds = new Set([
+			...stockedIds,
+			...(await idsOf('utile_bon_livraison', 'id_product')),
+			...(await idsOf('utile_bon_sortie', 'id_product'))
+		]);
+		const doli: SourceProduct[] = [];
+		const ids = [...allIds];
+		for (let i = 0; i < ids.length; i += 2000) {
+			const rows = await sourceQuery<SourceProduct>(
+				`SELECT rowid, ref, label, barcode, ref_ext, price_ttc, tva_tx, cost_price, description
+				 FROM ${DOLI}.llx_product WHERE rowid IN (${ids.slice(i, i + 2000).join(',')})`
+			);
+			for (const r of rows) doli.push({ ...r, stocked: stockedIds.has(Number(r.rowid)) ? 1 : 0 });
+		}
+		log.muted(
+			`${count(doli.length)} produits Dolibarr en stock, inventoriés ou dans un bon (${count(doli.filter((d) => Number(d.stocked)).length)} en stock ou inventoriés)`
 		);
-		log.muted(`${count(doli.length)} produits Dolibarr en stock ou inventoriés`);
 
 		const sql = targetDb();
 		const linked = new Set(
@@ -66,15 +91,24 @@ export const productsTask: Task = {
 		const eans = pending.map((d) => (d.barcode ?? '').trim()).filter(Boolean);
 		const compacts = pending.map((d) => compactReference(d.ref)).filter(Boolean);
 		const parts = pending.flatMap((d) => partNumbers(d.ref));
+		// Une jointure par clé : la table produit (≈ 1 M lignes) n'est parcourue qu'une fois.
 		const shop = await sql<ShopProduct[]>`
-			SELECT id, reference, ean13, is_active AS "isActive", name, supplier_reference AS "supplierReference"
-			FROM product
-			WHERE legacy_doli_id IS NULL AND (
-				reference = ANY(${refs}) OR ean13 = ANY(${eans})
-				OR upper(regexp_replace(reference, '[\\s.\\-/_]', '', 'g')) = ANY(${compacts})
-				OR upper(regexp_replace(regexp_replace(reference, '^[A-Za-z]+-', ''), '[\\s.\\-/_]', '', 'g')) = ANY(${parts})
-				OR upper(regexp_replace(supplier_reference, '[\\s.\\-/_]', '', 'g')) = ANY(${parts})
-			)`;
+			WITH candidates AS MATERIALIZED (
+				SELECT p.id, p.reference, p.ean13, p.is_active, p.name, p.supplier_reference,
+					upper(regexp_replace(p.reference, '[\\s.\\-/_]', '', 'g')) AS compact,
+					upper(regexp_replace(regexp_replace(p.reference, '^[A-Za-z]+-', ''), '[\\s.\\-/_]', '', 'g')) AS part,
+					upper(regexp_replace(p.supplier_reference, '[\\s.\\-/_]', '', 'g')) AS supplier_part
+				FROM product p WHERE p.legacy_doli_id IS NULL
+			), hits AS (
+				SELECT c.id FROM candidates c JOIN unnest(${refs}::text[]) k(v) ON c.reference = k.v
+				UNION SELECT c.id FROM candidates c JOIN unnest(${eans}::text[]) k(v) ON c.ean13 = k.v
+				UNION SELECT c.id FROM candidates c JOIN unnest(${compacts}::text[]) k(v) ON c.compact = k.v
+				UNION SELECT c.id FROM candidates c JOIN unnest(${parts}::text[]) k(v) ON c.part = k.v
+				UNION SELECT c.id FROM candidates c JOIN unnest(${parts}::text[]) k(v) ON c.supplier_part = k.v
+			)
+			SELECT c.id, c.reference, c.ean13, c.is_active AS "isActive", c.name,
+				c.supplier_reference AS "supplierReference"
+			FROM candidates c JOIN hits h ON h.id = c.id`;
 		const matches = matchProducts(
 			pending.map((d) => ({
 				rowid: Number(d.rowid),
@@ -92,7 +126,7 @@ export const productsTask: Task = {
 		)
 			.map(([k, n]) => `${k} ${n}`)
 			.join(', ');
-		const missing = pending.filter((d) => !matches.has(Number(d.rowid)));
+		const missing = pending.filter((d) => !matches.has(Number(d.rowid)) && Number(d.stocked));
 		log.muted(
 			`${count(matches.size)} rattachés (${kinds || 'aucun'}), ${count(missing.length)} à créer`
 		);

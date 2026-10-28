@@ -30,9 +30,10 @@ import { productsTask } from './tasks/02-products.ts';
 import { stockTask } from './tasks/03-stock.ts';
 import { serialsTask } from './tasks/04-serials.ts';
 import { inventoriesTask } from './tasks/05-inventories.ts';
+import { vouchersTask } from './tasks/06-vouchers.ts';
 
 /** Ordre d'import, dicté par les dépendances : emplacements et produits avant le stock. */
-const tasks = [locationsTask, productsTask, stockTask, serialsTask, inventoriesTask];
+const tasks = [locationsTask, productsTask, stockTask, serialsTask, inventoriesTask, vouchersTask];
 
 if (!process.argv.includes('--list')) {
 	log.muted(`cible : ${targetLabel()}`);

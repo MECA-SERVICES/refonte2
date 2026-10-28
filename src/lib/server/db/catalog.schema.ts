@@ -561,6 +561,46 @@ export const stockMovementType = [
 ] as const;
 export type StockMovementType = (typeof stockMovementType)[number];
 
+/**
+ * Bon de stock, repris du module Dolibarr « UTILE » : un bon d'entrée
+ * (réception fournisseur, avec son n° de BL) ou un bon de sortie (avec son
+ * motif). Il regroupe les mouvements saisis ensemble et s'annule d'un bloc.
+ */
+export const stockVoucherKind = ['receipt', 'issue'] as const;
+export type StockVoucherKind = (typeof stockVoucherKind)[number];
+
+/** Motifs de sortie d'UTILE (`utile_bon_sortie.designation`). */
+export const stockIssueReason = ['normal', 'consumable', 'investment'] as const;
+export type StockIssueReason = (typeof stockIssueReason)[number];
+
+export const stockVoucher = pgTable(
+	'stock_voucher',
+	{
+		id: serial('id').primaryKey(),
+		kind: text('kind').notNull(),
+		/** N° du BL fournisseur (entrée) ou du bon (sortie). */
+		reference: text('reference'),
+		/** Fournisseur du BL (UTILE : `marque`). */
+		supplier: text('supplier'),
+		/** Motif d'une sortie (`stockIssueReason`). */
+		reason: text('reason'),
+		note: text('note'),
+		createdBy: text('created_by'),
+		cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+		/** Reprise Dolibarr : « bl:<clé> » ou « bs:<clé> » (clé = horodatage du bon). */
+		legacyDoliKey: text('legacy_doli_key'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		index('stock_voucher_kind_created_idx').on(t.kind, t.createdAt),
+		uniqueIndex('stock_voucher_legacy_doli_key_idx')
+			.on(t.legacyDoliKey)
+			.where(sql`${t.legacyDoliKey} IS NOT NULL`)
+	]
+);
+
+export type StockVoucher = typeof stockVoucher.$inferSelect;
+
 export const stockMovement = pgTable(
 	'stock_movement',
 	{
@@ -583,6 +623,10 @@ export const stockMovement = pgTable(
 		condition: text('condition').notNull().default('new'),
 		/** Numéro de série de l'unité, quand le produit en a un. */
 		serialNumber: text('serial_number'),
+		/** Bon d'entrée ou de sortie qui regroupe ce mouvement. */
+		voucherId: integer('voucher_id').references(() => stockVoucher.id, { onDelete: 'set null' }),
+		/** Reprise Dolibarr : « bl:<id> » ou « bs:<id> » (ligne de bon UTILE). */
+		legacyDoliId: text('legacy_doli_id'),
 		note: text('note'),
 		/** Utilisateur à l'origine du mouvement (id better-auth), si applicable. */
 		createdBy: text('created_by'),
@@ -592,7 +636,11 @@ export const stockMovement = pgTable(
 	(t) => [
 		index('stock_movement_product_idx').on(t.productId),
 		index('stock_movement_variant_idx').on(t.variantId),
-		index('stock_movement_location_idx').on(t.locationId)
+		index('stock_movement_location_idx').on(t.locationId),
+		index('stock_movement_voucher_idx').on(t.voucherId),
+		uniqueIndex('stock_movement_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
 	]
 );
 

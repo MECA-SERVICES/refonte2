@@ -14,6 +14,7 @@ import {
 	stockLocation,
 	stockMovement,
 	stockSerial,
+	stockVoucher,
 	type StockCondition,
 	type StockMovementType
 } from '$lib/server/db/catalog.schema';
@@ -456,6 +457,8 @@ export type MovementInput = {
 	reference?: string | null;
 	note?: string | null;
 	createdBy?: string | null;
+	/** Bon d'entrée ou de sortie qui regroupe le mouvement. */
+	voucherId?: number | null;
 };
 
 /** Libellés lisibles d'un produit et d'un emplacement, pour les messages. */
@@ -592,7 +595,8 @@ async function applyMovement(tx: Tx, m: MovementInput) {
 		serialNumber: serial,
 		reference: m.reference ?? null,
 		note: m.note ?? null,
-		createdBy: m.createdBy ?? null
+		createdBy: m.createdBy ?? null,
+		voucherId: m.voucherId ?? null
 	});
 }
 
@@ -604,6 +608,76 @@ export async function recordStockMovement(m: MovementInput) {
 	await db.transaction((tx) => applyMovement(tx, m));
 	// « En stock » est un filtre et un critère de classement de la recherche.
 	syncProducts([m.productId]);
+}
+
+/** Un bon et ses mouvements, enregistrés ensemble. */
+export type VoucherInput = {
+	voucher: {
+		kind: 'receipt' | 'issue';
+		reference: string | null;
+		supplier?: string | null;
+		reason?: string | null;
+		note?: string | null;
+		createdBy: string | null;
+	};
+	movements: Omit<MovementInput, 'voucherId'>[];
+};
+
+/**
+ * Enregistre des bons (réception, sortie) et leurs mouvements dans une seule
+ * transaction : tout passe, ou rien. Renvoie les identifiants des bons.
+ */
+export async function recordVouchers(vouchers: VoucherInput[]): Promise<number[]> {
+	const ids = await db.transaction(async (tx) => {
+		const created: number[] = [];
+		for (const v of vouchers) {
+			const [row] = await tx
+				.insert(stockVoucher)
+				.values(v.voucher)
+				.returning({ id: stockVoucher.id });
+			for (const m of v.movements) await applyMovement(tx, { ...m, voucherId: row.id });
+			created.push(row.id);
+		}
+		return created;
+	});
+	syncProducts([...new Set(vouchers.flatMap((v) => v.movements.map((m) => m.productId)))]);
+	return ids;
+}
+
+/**
+ * Annule un bon : chaque mouvement est contrepassé (même emplacement, état et
+ * numéro de série), puis le bon est marqué annulé. Refusé si le stock a déjà
+ * bougé depuis (la pièce reçue est sortie), et pour l'historique Dolibarr,
+ * qui n'a pas d'emplacement.
+ */
+export async function cancelVoucher(id: number, createdBy: string | null) {
+	const movements = await db.select().from(stockMovement).where(eq(stockMovement.voucherId, id));
+	const [voucher] = await db.select().from(stockVoucher).where(eq(stockVoucher.id, id));
+	if (!voucher) throw new StockLocationError('Bon introuvable.');
+	if (voucher.cancelledAt) throw new StockLocationError('Ce bon est déjà annulé.');
+	if (voucher.legacyDoliKey || movements.some((m) => m.locationId === null)) {
+		throw new StockLocationError(
+			"Un bon repris de Dolibarr ne s'annule pas : il n'a pas d'emplacement."
+		);
+	}
+	await db.transaction(async (tx) => {
+		for (const m of movements) {
+			await applyMovement(tx, {
+				productId: m.productId,
+				locationId: m.locationId!,
+				condition: m.condition as StockCondition,
+				quantity: -m.quantity,
+				type: m.type as StockMovementType,
+				serialNumber: m.serialNumber,
+				reference: m.reference,
+				note: `Annulation du bon n° ${id}`,
+				createdBy,
+				voucherId: id
+			});
+		}
+		await tx.update(stockVoucher).set({ cancelledAt: new Date() }).where(eq(stockVoucher.id, id));
+	});
+	syncProducts([...new Set(movements.map((m) => m.productId))]);
 }
 
 /**

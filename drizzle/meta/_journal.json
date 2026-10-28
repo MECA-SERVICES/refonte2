@@ -358,6 +358,13 @@
 			"when": 1793204535410,
 			"tag": "0052_series_pieces_reparation",
 			"breakpoints": true
+		},
+		{
+			"idx": 53,
+			"version": "7",
+			"when": 1793205114990,
+			"tag": "0053_bons_stock",
+			"breakpoints": true
 		}
 	]
 }
