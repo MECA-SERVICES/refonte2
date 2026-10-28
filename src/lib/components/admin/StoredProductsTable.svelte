@@ -13,9 +13,10 @@
 	import { isValidEan13, printableEan13 } from '$lib/ean13';
 	import type { SvelteMap } from 'svelte/reactivity';
 	import { formatNumber } from '$lib/money';
-	import { placementKey, type StoredRow } from '$lib/stock-locations';
+	import { conditionLabel, placementKey, type StoredRow } from '$lib/stock-locations';
 	import StateBadge from './StateBadge.svelte';
 	import Thumbnail from './Thumbnail.svelte';
+	import ConditionBadge from './ConditionBadge.svelte';
 
 	let {
 		rows,
@@ -138,6 +139,12 @@
 								{here.code}
 							</span>
 						{/if}
+						<ConditionBadge condition={row.condition} class="ms-1" />
+						{#if row.serials.length}
+							<p class="mt-1 font-mono text-xs text-gray-600" title="Numéros de série">
+								N° {row.serials.join(', ')}
+							</p>
+						{/if}
 					</td>
 					<!-- Couleurs Dolibarr : vert = en stock, rouge clair = vide. -->
 					<td
@@ -150,7 +157,7 @@
 						{formatNumber(row.shopStock)}
 					</td>
 					<td class="px-3 py-2">
-						{#each row.placements.filter((p) => p.locationId !== row.locationId) as p (p.locationId)}
+						{#each row.placements.filter((p) => p.locationId !== row.locationId || p.condition !== row.condition) as p (`${p.locationId}:${p.condition}`)}
 							{@const other = locationLabel(p.locationId)}
 							<a
 								href="?id={p.locationId}"
@@ -159,6 +166,7 @@
 							>
 								{other.code ?? other.path}
 								<span class="font-semibold">×{p.quantity}</span>
+								{#if p.condition !== 'new'}{conditionLabel(p.condition).toLowerCase()}{/if}
 							</a>
 						{:else}
 							<span class="text-xs text-gray-400">—</span>

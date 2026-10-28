@@ -55,6 +55,11 @@
 							"href": "/admin/stock-locations"
 						},
 						{
+							"id": "inventories",
+							"label": "Inventaires",
+							"href": "/admin/inventories"
+						},
+						{
 							"id": "categories",
 							"label": "Catégories",
 							"href": "/admin/categories"

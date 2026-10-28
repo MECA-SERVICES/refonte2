@@ -26,10 +26,13 @@ import { closeTargetDb, targetLabel } from '../../lib/target-db.ts';
 import { log } from '../../lib/logger.ts';
 
 import { locationsTask } from './tasks/01-locations.ts';
-import { stockTask } from './tasks/02-stock.ts';
+import { productsTask } from './tasks/02-products.ts';
+import { stockTask } from './tasks/03-stock.ts';
+import { serialsTask } from './tasks/04-serials.ts';
+import { inventoriesTask } from './tasks/05-inventories.ts';
 
-/** Ordre d'import, dicté par les dépendances : les emplacements avant le stock. */
-const tasks = [locationsTask, stockTask];
+/** Ordre d'import, dicté par les dépendances : emplacements et produits avant le stock. */
+const tasks = [locationsTask, productsTask, stockTask, serialsTask, inventoriesTask];
 
 if (!process.argv.includes('--list')) {
 	log.muted(`cible : ${targetLabel()}`);

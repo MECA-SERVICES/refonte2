@@ -114,15 +114,23 @@ export type StoredRow = {
 	/** Stock de la boutique (`product.stock`). */
 	shopStock: number;
 	purchasePrice: string | null;
-	/** Toutes les quantités rangées du produit, emplacement par emplacement. */
-	placements: { locationId: number; quantity: number }[];
+	/** Toutes les quantités rangées du produit, emplacement et état par emplacement et état. */
+	placements: { locationId: number; condition: string; quantity: number }[];
 	locationId: number;
+	/** `StockConditionValue` : neuf, occasion, garantie. */
+	condition: string;
 	quantity: number;
+	/** Numéros de série des unités de cette ligne. */
+	serials: string[];
 };
 
-/** Clé d'une ligne rangée : un produit dans un emplacement. */
-export function placementKey(row: { productId: number; locationId: number }): string {
-	return `${row.productId}:${row.locationId}`;
+/** Clé d'une ligne rangée : un produit, dans un emplacement, dans un état. */
+export function placementKey(row: {
+	productId: number;
+	locationId: number;
+	condition: string;
+}): string {
+	return `${row.productId}:${row.locationId}:${row.condition}`;
 }
 
 /**
@@ -152,4 +160,22 @@ export function deletionBlockerOf(location: {
 		return 'Il vient de Dolibarr, qui sert encore : désactivez-le, une nouvelle reprise le recréerait.';
 	}
 	return null;
+}
+
+/** États du stock, repris du module Dolibarr « UTILE » (types 1, 2, 3). */
+export const STOCK_CONDITIONS = [
+	{ value: 'new', name: 'Neuf' },
+	{ value: 'used', name: 'Occasion' },
+	{ value: 'warranty', name: 'Garantie' }
+] as const;
+
+export type StockConditionValue = (typeof STOCK_CONDITIONS)[number]['value'];
+
+export function isStockCondition(value: unknown): value is StockConditionValue {
+	return STOCK_CONDITIONS.some((c) => c.value === value);
+}
+
+/** Libellé d'un état : « Neuf », « Occasion », « Garantie ». */
+export function conditionLabel(condition: string): string {
+	return STOCK_CONDITIONS.find((c) => c.value === condition)?.name ?? condition;
 }

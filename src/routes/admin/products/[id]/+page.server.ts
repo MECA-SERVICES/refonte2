@@ -17,6 +17,7 @@ import {
 	removeProductRelation
 } from '$lib/server/catalog';
 import type { StockMovementType } from '$lib/server/db/catalog.schema';
+import { isStockCondition } from '$lib/stock-locations';
 import {
 	listProductPlacements,
 	listStockLocations,
@@ -106,11 +107,14 @@ export const actions: Actions = {
 			type === 'out' ? -Math.abs(quantity) : type === 'adjustment' ? quantity : Math.abs(quantity);
 
 		try {
+			const condition = String(form.get('condition') ?? 'new');
 			await recordStockMovement({
 				productId: id,
 				locationId,
+				condition: isStockCondition(condition) ? condition : 'new',
 				quantity: delta,
 				type,
+				serialNumber: form.get('serialNumber')?.toString().trim() || null,
 				reference: form.get('reference')?.toString().trim() || null,
 				note: form.get('note')?.toString().trim() || null,
 				createdBy: locals.user?.id ?? null

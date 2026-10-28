@@ -22,6 +22,7 @@ import { customerPaidStats } from '$lib/server/customers';
 import {
 	exitDocumentStock,
 	getDocumentStock,
+	parseDocumentExit,
 	StockLocationError,
 	type DocumentLine
 } from '$lib/server/stock-locations';
@@ -82,9 +83,7 @@ export const actions: Actions = {
 				lines: stockLines(order.lines),
 				type: 'order',
 				reference: order.reference,
-				productId: Number(form.get('productId')),
-				locationId: Number(form.get('locationId')),
-				quantity: Number(form.get('quantity')),
+				...parseDocumentExit(form),
 				createdBy: locals.user?.id ?? null
 			});
 		} catch (err) {

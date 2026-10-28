@@ -13,6 +13,7 @@
 	import { placementKey, type StoredRow } from '$lib/stock-locations';
 	import LocationPicker from './LocationPicker.svelte';
 	import Thumbnail from './Thumbnail.svelte';
+	import ConditionBadge from './ConditionBadge.svelte';
 
 	type PickerLocation = {
 		id: number;
@@ -45,6 +46,8 @@
 	let removed = $state<string[]>([]);
 	/** Quantités saisies, par ligne ; à défaut, tout ce qui est rangé. */
 	let quantities = $state<Record<string, number>>({});
+	/** Numéros de série cochés, par ligne. */
+	let pickedSerials = $state<Record<string, string[]>>({});
 
 	/** Chaque ouverture repart d'une saisie vierge. */
 	$effect(() => {
@@ -53,6 +56,7 @@
 			reference = '';
 			removed = [];
 			quantities = {};
+			pickedSerials = {};
 		}
 	});
 
@@ -60,7 +64,21 @@
 	const qty = (line: StoredRow) => quantities[placementKey(line)] ?? line.quantity;
 	const destination = $derived(toId === null ? null : locationLabel(toId));
 	const alreadyThere = $derived(kept.filter((l) => l.locationId === toId));
-	const invalid = $derived(kept.filter((l) => !(qty(l) >= 1 && qty(l) <= l.quantity)));
+	/**
+	 * Numéros à cocher : au-delà des pièces sans numéro de la ligne, chaque pièce
+	 * déplacée doit être désignée par son numéro de série.
+	 */
+	const serialsNeeded = (line: StoredRow) =>
+		Math.max(0, qty(line) - (line.quantity - line.serials.length));
+	const picked = (line: StoredRow) => pickedSerials[placementKey(line)] ?? [];
+	const invalid = $derived(
+		kept.filter(
+			(l) =>
+				!(qty(l) >= 1 && qty(l) <= l.quantity) ||
+				picked(l).length < serialsNeeded(l) ||
+				picked(l).length > qty(l)
+		)
+	);
 	const units = $derived(kept.reduce((sum, l) => sum + (qty(l) || 0), 0));
 	const ready = $derived(
 		toId !== null && kept.length > 0 && alreadyThere.length === 0 && invalid.length === 0
@@ -111,7 +129,7 @@
 				2. Vérifiez les produits et les quantités
 			</p>
 			<ul class="divide-y divide-gray-100 rounded-lg border border-gray-200">
-				{#each kept as line (placementKey(line))}
+				{#each kept as line, i (placementKey(line))}
 					{@const from = locationLabel(line.locationId)}
 					{@const key = placementKey(line)}
 					<li
@@ -122,6 +140,7 @@
 					>
 						<input type="hidden" name="productId" value={line.productId} />
 						<input type="hidden" name="fromId" value={line.locationId} />
+						<input type="hidden" name="condition" value={line.condition} />
 						<div class="flex min-w-0 items-center gap-3">
 							<Thumbnail src={line.imageUrl} alt={line.name} />
 							<div class="min-w-0">
@@ -135,7 +154,33 @@
 								{from.path}
 								{#if from.code}<span class="font-mono text-xs text-gray-600">({from.code})</span
 									>{/if}
+								<ConditionBadge condition={line.condition} class="ms-1" />
 							</p>
+							{#if line.serials.length}
+								<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+									<span class="text-gray-500">
+										N° de série{serialsNeeded(line) ? ` (cochez-en ${serialsNeeded(line)})` : ''} :
+									</span>
+									{#each line.serials as serial (serial)}
+										<label class="flex items-center gap-1 font-mono">
+											<input
+												type="checkbox"
+												name="serials"
+												value="{i}:{serial}"
+												checked={picked(line).includes(serial)}
+												onchange={(e) =>
+													(pickedSerials = {
+														...pickedSerials,
+														[key]: (e.currentTarget as HTMLInputElement).checked
+															? [...picked(line), serial]
+															: picked(line).filter((x) => x !== serial)
+													})}
+											/>
+											{serial}
+										</label>
+									{/each}
+								</div>
+							{/if}
 							{#if line.locationId === toId}
 								<p class="text-xs font-medium text-red-700">Déjà dans la destination.</p>
 							{/if}
@@ -192,7 +237,7 @@
 				</p>
 			{:else if invalid.length}
 				<p class="me-auto text-sm text-red-700">
-					Quantité à corriger : entre 1 et la quantité rangée.
+					Quantité à corriger, ou numéros de série à cocher pour les pièces numérotées.
 				</p>
 			{/if}
 			<Button color="alternative" onclick={() => (open = false)}>Annuler</Button>

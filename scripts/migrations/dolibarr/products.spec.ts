@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compactReference, matchProducts } from './products.ts';
+import { compactReference, matchProducts, nameSimilarity, partNumbers } from './products.ts';
 
 const shop = (id: number, reference: string, ean13: string | null = null, isActive = true) => ({
 	id,
@@ -50,5 +50,28 @@ describe('rapprochement des produits Dolibarr', () => {
 		);
 		expect(matches.get(1)?.productId).toBe(10);
 		expect(matches.has(2)).toBe(false);
+	});
+
+	it('rapproche par numéro de pièce quand les noms concordent', () => {
+		expect(partNumbers('ALK-AK474669')).toEqual(['AK474669', '474669']);
+		expect(partNumbers('HON-72613VA4000')).toEqual(['72613VA4000']);
+		expect(nameSimilarity('Serre-câble | AL-KO', 'Serre-câble | AL-KO')).toBe(1);
+
+		const matches = matchProducts(
+			[
+				{ rowid: 1, ref: 'HON-72613VA4000', barcode: null, label: 'Douille | HONDA' },
+				{ rowid: 2, ref: 'ALK-AK474669', barcode: null, label: 'Serre-câble | AL-KO' },
+				// Même numéro, produit sans rapport : pas de rattachement.
+				{ rowid: 3, ref: 'ALK-AK470922', barcode: null, label: 'Transformateur' }
+			],
+			[
+				{ ...shop(10, 'HOND-72613VA4000'), name: 'Douille | HONDA MACHINERY PARTS' },
+				{ ...shop(20, 'ALK-474669'), name: 'Serre-câble | AL-KO' },
+				{ ...shop(30, 'ALK-470922'), name: 'Plaque de réglage | AL-KO' }
+			]
+		);
+		expect(matches.get(1)).toEqual({ productId: 10, kind: 'part-number' });
+		expect(matches.get(2)).toEqual({ productId: 20, kind: 'part-number' });
+		expect(matches.has(3)).toBe(false);
 	});
 });

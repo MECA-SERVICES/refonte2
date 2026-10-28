@@ -28,6 +28,7 @@ export { default as LocationPicker } from './LocationPicker.svelte';
 export { default as StoredProductsTable } from './StoredProductsTable.svelte';
 export { default as StockTransferDialog } from './StockTransferDialog.svelte';
 export { default as DocumentLineStock } from './DocumentLineStock.svelte';
+export { default as ConditionBadge } from './ConditionBadge.svelte';
 export { default as SupportThreadsCard } from './SupportThreadsCard.svelte';
 export { default as AutosaveNote } from './AutosaveNote.svelte';
 

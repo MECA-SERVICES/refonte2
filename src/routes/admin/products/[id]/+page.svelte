@@ -11,11 +11,13 @@
 		PageHeader,
 		ProductForm,
 		ActiveBadge,
+		ConditionBadge,
 		ConfirmDialog,
 		LocationPicker,
 		ProductMediaGrid
 	} from '$lib/components/admin';
 	import { DOLIBARR_STOCK_COLORS } from '$lib/admin-colors';
+	import { conditionLabel, STOCK_CONDITIONS } from '$lib/stock-locations';
 	import { isValidEan13, printableEan13 } from '$lib/ean13';
 	import { shopProductPath } from '$lib/shop';
 	import type { PageProps } from './$types';
@@ -121,7 +123,7 @@
 				</p>
 			{:else}
 				<ul class="space-y-1 text-sm">
-					{#each data.placements as s (s.locationId)}
+					{#each data.placements as s (`${s.locationId}:${s.condition}`)}
 						<li class="flex justify-between gap-3">
 							<a href="/admin/stock-locations?id={s.locationId}" class="hover:underline">
 								{#if s.code}
@@ -133,9 +135,13 @@
 									>
 								{/if}
 								<span class="text-primary-700">{s.path}</span>
+								<ConditionBadge condition={s.condition} class="ms-1" />
 							</a>
 							<span class="font-semibold tabular-nums">{s.quantity}</span>
 						</li>
+						{#if s.serials.length}
+							<li class="-mt-1 ps-2 font-mono text-xs text-gray-600">N° {s.serials.join(', ')}</li>
+						{/if}
 					{/each}
 				</ul>
 			{/if}
@@ -206,8 +212,28 @@
 				/>
 			</div>
 			<div>
+				<Label for="sm-condition" class="mb-2">État</Label>
+				<Select
+					id="sm-condition"
+					name="condition"
+					form="stock-movement-form"
+					placeholder=""
+					items={[...STOCK_CONDITIONS]}
+					value={data.placements[0]?.condition ?? 'new'}
+				/>
+			</div>
+			<div>
 				<Label for="sm-qty" class="mb-2">Quantité</Label>
 				<Input id="sm-qty" name="quantity" form="stock-movement-form" type="number" value="1" />
+			</div>
+			<div>
+				<Label for="sm-serial" class="mb-2">N° de série</Label>
+				<Input
+					id="sm-serial"
+					name="serialNumber"
+					form="stock-movement-form"
+					placeholder="Une pièce à la fois"
+				/>
 			</div>
 			<div>
 				<Label for="sm-ref" class="mb-2">N° de pièce</Label>
@@ -246,6 +272,12 @@
 									class="ms-2 cursor-help font-mono text-xs text-gray-700"
 									title={at?.description ?? at?.path}>{at?.code ?? at?.name}</span
 								>
+							{/if}
+							{#if mv.condition !== 'new'}
+								<span class="ms-2 text-xs text-gray-600">{conditionLabel(mv.condition)}</span>
+							{/if}
+							{#if mv.serialNumber}
+								<span class="ms-2 font-mono text-xs text-gray-600">N° {mv.serialNumber}</span>
 							{/if}
 							{#if mv.reference}
 								<span class="ms-2 text-gray-500">{mv.reference}</span>

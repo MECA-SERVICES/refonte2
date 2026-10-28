@@ -484,15 +484,60 @@ export const productStock = pgTable(
 		locationId: integer('location_id')
 			.notNull()
 			.references(() => stockLocation.id, { onDelete: 'restrict' }),
+		/** État : neuf, occasion ou garantie (`stockCondition`, UTILE `utile_type_stock`). */
+		condition: text('condition').notNull().default('new'),
 		quantity: integer('quantity').notNull().default(0),
 
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
-		uniqueIndex('product_stock_product_location_idx').on(t.productId, t.locationId),
+		uniqueIndex('product_stock_product_location_condition_idx').on(
+			t.productId,
+			t.locationId,
+			t.condition
+		),
 		index('product_stock_location_idx').on(t.locationId)
 	]
 );
+
+/**
+ * État d'un stock, repris du module Dolibarr « UTILE » (types 1, 2, 3) : le
+ * stock d'un emplacement se répartit entre neuf, occasion et garantie.
+ */
+export const stockCondition = ['new', 'used', 'warranty'] as const;
+export type StockCondition = (typeof stockCondition)[number];
+
+/**
+ * Numéro de série d'une unité en stock (Dolibarr : `llx_product_batch`).
+ * `locationId` null : l'unité est sortie du stock (vendue, posée sur une machine).
+ */
+export const stockSerial = pgTable(
+	'stock_serial',
+	{
+		id: serial('id').primaryKey(),
+		productId: integer('product_id')
+			.notNull()
+			.references(() => product.id, { onDelete: 'cascade' }),
+		serialNumber: text('serial_number').notNull(),
+		locationId: integer('location_id').references(() => stockLocation.id, {
+			onDelete: 'restrict'
+		}),
+		condition: text('condition').notNull().default('new'),
+		/** Reprise Dolibarr : `llx_product_batch.rowid`. */
+		legacyDoliId: integer('legacy_doli_id'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		uniqueIndex('stock_serial_product_serial_idx').on(t.productId, sql`upper(${t.serialNumber})`),
+		index('stock_serial_location_idx').on(t.locationId),
+		uniqueIndex('stock_serial_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
+	]
+);
+
+export type StockSerial = typeof stockSerial.$inferSelect;
 
 // ---------------------------------------------------------------------------
 // Mouvements de stock (inventory) — historique traçable
@@ -534,6 +579,10 @@ export const stockMovement = pgTable(
 		}),
 		/** Pièce justificative : n° de BL fournisseur, n° de bon… (reprise Dolibarr). */
 		reference: text('reference'),
+		/** État du stock concerné (`stockCondition`). */
+		condition: text('condition').notNull().default('new'),
+		/** Numéro de série de l'unité, quand le produit en a un. */
+		serialNumber: text('serial_number'),
 		note: text('note'),
 		/** Utilisateur à l'origine du mouvement (id better-auth), si applicable. */
 		createdBy: text('created_by'),

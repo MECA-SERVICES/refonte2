@@ -13,12 +13,21 @@ import {
 	productStock,
 	stockLocation,
 	stockMovement,
+	stockSerial,
+	type StockCondition,
 	type StockMovementType
 } from '$lib/server/db/catalog.schema';
+import { inventoryCount } from '$lib/server/db/inventory.schema';
 import type { ParseResult } from '$lib/server/forms';
 import { syncProducts } from '$lib/server/meili';
 import { thumbnailWithBrandFallbackSql } from '$lib/server/pricing';
-import { deletionBlockerOf, flattenLocations, subtreeIds } from '$lib/stock-locations';
+import {
+	conditionLabel,
+	deletionBlockerOf,
+	flattenLocations,
+	isStockCondition,
+	subtreeIds
+} from '$lib/stock-locations';
 
 /** Règle métier non respectée : le message est destiné à l'utilisateur. */
 export class StockLocationError extends Error {}
@@ -38,7 +47,7 @@ export async function listStockLocations() {
 			legacyDoliId: stockLocation.legacyDoliId,
 			// Colonnes qualifiées à la main : sur une seule table, drizzle les écrit
 			// sans préfixe, et `id` désignerait alors la ligne de `product_stock`.
-			products: sql<number>`(select count(*)::int from ${productStock} s where s.location_id = ${stockLocation}.id and s.quantity <> 0)`,
+			products: sql<number>`(select count(distinct s.product_id)::int from ${productStock} s where s.location_id = ${stockLocation}.id and s.quantity <> 0)`,
 			quantity: sql<number>`(select coalesce(sum(s.quantity), 0)::int from ${productStock} s where s.location_id = ${stockLocation}.id)`,
 			/** Mouvements de stock passés par l'emplacement : son historique. */
 			movements: sql<number>`(select count(*)::int from ${stockMovement} m where m.location_id = ${stockLocation}.id)`
@@ -66,12 +75,20 @@ const storedProductFields = {
 	shopStock: product.stock,
 	purchasePrice: product.purchasePrice,
 	priceHt: product.priceHt,
-	/** Toutes les quantités rangées de ce produit, emplacement par emplacement. */
-	placements: sql<{ locationId: number; quantity: number }[]>`(
-		select coalesce(json_agg(json_build_object('locationId', s.location_id, 'quantity', s.quantity)
+	/** Toutes les quantités rangées de ce produit, par emplacement et par état. */
+	placements: sql<{ locationId: number; condition: string; quantity: number }[]>`(
+		select coalesce(json_agg(json_build_object(
+			'locationId', s.location_id, 'condition', s.condition, 'quantity', s.quantity)
 			order by s.quantity desc), '[]'::json)
 		from ${productStock} s where s.product_id = ${product}.id and s.quantity <> 0)`
 };
+
+/** Numéros de série en stock d'une ligne (produit × emplacement × état). */
+const lineSerialsSql = sql<string[]>`(
+	select coalesce(array_agg(z.serial_number order by z.serial_number), '{}')
+	from ${stockSerial} z
+	where z.product_id = ${productStock}.product_id and z.location_id = ${productStock}.location_id
+	  and z.condition = ${productStock}.condition)`;
 
 /**
  * Lignes « produit rangé dans un emplacement », la forme commune du contenu
@@ -82,14 +99,16 @@ function storedProductRows(where: SQL | undefined, limit?: number) {
 		.select({
 			...storedProductFields,
 			locationId: productStock.locationId,
+			condition: productStock.condition,
 			quantity: productStock.quantity,
+			serials: lineSerialsSql,
 			updatedAt: productStock.updatedAt
 		})
 		.from(productStock)
 		.innerJoin(product, eq(product.id, productStock.productId))
 		.leftJoin(brand, eq(brand.id, product.brandId))
 		.where(and(ne(productStock.quantity, 0), where))
-		.orderBy(asc(product.name), asc(productStock.locationId));
+		.orderBy(asc(product.name), asc(productStock.locationId), asc(productStock.condition));
 	return limit ? query.limit(limit) : query;
 }
 
@@ -120,7 +139,12 @@ export async function searchStoredProducts(term: string, limit = 100) {
 /** Emplacements d'un produit, pour sa fiche : le plus rempli d'abord. */
 export async function listProductPlacements(productId: number) {
 	const placed = await db
-		.select({ locationId: productStock.locationId, quantity: productStock.quantity })
+		.select({
+			locationId: productStock.locationId,
+			condition: productStock.condition,
+			quantity: productStock.quantity,
+			serials: lineSerialsSql
+		})
 		.from(productStock)
 		.where(and(eq(productStock.productId, productId), ne(productStock.quantity, 0)))
 		.orderBy(sql`${productStock.quantity} desc`);
@@ -279,7 +303,11 @@ export async function deletionBlocker(id: number): Promise<string | null> {
 			legacyDoliId: stockLocation.legacyDoliId,
 			children: sql<number>`(select count(*)::int from ${stockLocation} c where c.parent_id = ${stockLocation}.id)`,
 			units: sql<number>`(select coalesce(sum(s.quantity), 0)::int from ${productStock} s where s.location_id = ${stockLocation}.id)`,
-			movements: sql<number>`(select count(*)::int from ${stockMovement} m where m.location_id = ${stockLocation}.id)`
+			// Historique : mouvements, comptages d'inventaire et numéros de série.
+			movements: sql<number>`(
+				(select count(*) from ${stockMovement} m where m.location_id = ${stockLocation}.id)
+				+ (select count(*) from ${inventoryCount} c where c.location_id = ${stockLocation}.id)
+				+ (select count(*) from ${stockSerial} z where z.location_id = ${stockLocation}.id))::int`
 		})
 		.from(stockLocation)
 		.where(eq(stockLocation.id, id));
@@ -299,12 +327,21 @@ export async function deleteStockLocation(id: number) {
 
 // ----- Déplacement de produits -----
 
-export type TransferLine = { productId: number; fromId: number; quantity: number };
+export type TransferLine = {
+	productId: number;
+	fromId: number;
+	condition: StockCondition;
+	quantity: number;
+	/** Numéros de série des unités déplacées (le reste part sans numéro). */
+	serials: string[];
+};
 export type TransferInput = { toId: number; reference: string | null; lines: TransferLine[] };
 
 /**
  * Formulaire de déplacement : une destination, une pièce facultative (n° de
- * bon) et des lignes `productId` / `fromId` / `quantity` répétées dans l'ordre.
+ * bon) et des lignes `productId` / `fromId` / `condition` / `quantity` répétées
+ * dans l'ordre. Les numéros de série cochés arrivent en `serials` sous la forme
+ * « rang de la ligne:numéro ».
  */
 export function parseTransferForm(form: FormData): ParseResult<TransferInput> {
 	const toId = Number(form.get('toId'));
@@ -313,20 +350,38 @@ export function parseTransferForm(form: FormData): ParseResult<TransferInput> {
 	}
 	const products = form.getAll('productId').map(Number);
 	const froms = form.getAll('fromId').map(Number);
+	const conditions = form.getAll('condition').map(String);
 	const quantities = form.getAll('quantity').map(Number);
 	if (!products.length) return { ok: false, error: 'Aucun produit à déplacer.' };
+	const serialsOf = (i: number) =>
+		form
+			.getAll('serials')
+			.map(String)
+			.filter((v) => v.startsWith(`${i}:`))
+			.map((v) => v.slice(String(i).length + 1));
 
 	const lines: TransferLine[] = [];
 	const seen = new Set<string>();
 	for (const [i, productId] of products.entries()) {
-		const line = { productId, fromId: froms[i], quantity: quantities[i] };
+		const condition = conditions[i] ?? 'new';
+		if (!isStockCondition(condition)) return { ok: false, error: 'État du stock inconnu.' };
+		const line: TransferLine = {
+			productId,
+			fromId: froms[i],
+			condition,
+			quantity: quantities[i],
+			serials: serialsOf(i)
+		};
 		if (![line.productId, line.fromId, line.quantity].every((n) => Number.isInteger(n) && n > 0)) {
 			return { ok: false, error: 'Chaque quantité doit être un nombre entier positif.' };
+		}
+		if (line.serials.length > line.quantity) {
+			return { ok: false, error: 'Plus de numéros de série cochés que de pièces déplacées.' };
 		}
 		if (line.fromId === toId) {
 			return { ok: false, error: "Un produit est déjà dans l'emplacement de destination." };
 		}
-		const key = `${line.productId}:${line.fromId}`;
+		const key = `${line.productId}:${line.fromId}:${line.condition}`;
 		if (seen.has(key)) return { ok: false, error: 'Un produit figure deux fois.' };
 		seen.add(key);
 		lines.push(line);
@@ -337,9 +392,9 @@ export function parseTransferForm(form: FormData): ParseResult<TransferInput> {
 
 /**
  * Déplace des produits d'un emplacement à un autre, tout ou rien. Chaque ligne
- * laisse deux mouvements `transfer` (sortie de l'origine, entrée à la
- * destination), comme les déplacements du module Dolibarr « UTILE » ; le
- * stock total du produit ne change donc pas.
+ * laisse ses mouvements `transfer` (sortie de l'origine, entrée à la
+ * destination, un par numéro de série), comme les déplacements du module
+ * Dolibarr « UTILE » ; le stock total du produit ne change donc pas.
  */
 export async function transferStock(input: TransferInput, createdBy: string | null) {
 	await db.transaction(async (tx) => {
@@ -352,21 +407,35 @@ export async function transferStock(input: TransferInput, createdBy: string | nu
 			throw new StockLocationError("L'emplacement de destination est désactivé.");
 		}
 		for (const line of input.lines) {
-			const common = { productId: line.productId, type: 'transfer' as const, createdBy };
-			await applyMovement(tx, {
-				...common,
-				locationId: line.fromId,
-				quantity: -line.quantity,
-				reference: input.reference
-			});
-			await applyMovement(tx, {
-				...common,
-				locationId: input.toId,
-				quantity: line.quantity,
-				reference: input.reference
-			});
+			const common = {
+				productId: line.productId,
+				condition: line.condition,
+				type: 'transfer' as const,
+				reference: input.reference,
+				createdBy
+			};
+			for (const part of splitBySerial(line.quantity, line.serials)) {
+				await applyMovement(tx, {
+					...common,
+					...part,
+					locationId: line.fromId,
+					quantity: -part.quantity
+				});
+				await applyMovement(tx, { ...common, ...part, locationId: input.toId });
+			}
 		}
 	});
+}
+
+/** Une unité par numéro de série, puis le reste sans numéro. */
+function splitBySerial(quantity: number, serials: string[]) {
+	const parts: { quantity: number; serialNumber: string | null }[] = serials.map((s) => ({
+		quantity: 1,
+		serialNumber: s
+	}));
+	if (quantity > serials.length)
+		parts.push({ quantity: quantity - serials.length, serialNumber: null });
+	return parts;
 }
 
 // ----- Mouvements de stock -----
@@ -376,54 +445,140 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type MovementInput = {
 	productId: number;
 	locationId: number;
+	/** État du stock touché : neuf (par défaut), occasion, garantie. */
+	condition?: StockCondition;
 	/** Positif = entrée dans l'emplacement, négatif = sortie. */
 	quantity: number;
 	type: StockMovementType;
+	/** Numéro de série de l'unité (le mouvement porte alors sur 1 pièce). */
+	serialNumber?: string | null;
 	/** Pièce : n° de commande, d'ordre de réparation, de BL, de bon… */
 	reference?: string | null;
 	note?: string | null;
 	createdBy?: string | null;
 };
 
+/** Libellés lisibles d'un produit et d'un emplacement, pour les messages. */
+async function names(tx: Tx, productId: number, locationId: number) {
+	const [row] = await tx
+		.select({ product: product.name, code: stockLocation.code, name: stockLocation.name })
+		.from(product)
+		.innerJoin(stockLocation, eq(stockLocation.id, locationId))
+		.where(eq(product.id, productId));
+	return {
+		product: row?.product ?? 'Produit introuvable',
+		at: row?.code ?? row?.name ?? "l'emplacement"
+	};
+}
+
 /**
- * Le seul chemin qui modifie le stock : l'emplacement (`product_stock`) et le
- * stock du produit (`product.stock`) bougent ensemble, et le mouvement est
+ * Le seul chemin qui modifie le stock : la ligne d'emplacement et d'état
+ * (`product_stock`), le stock du produit (`product.stock`) et, le cas échéant,
+ * le numéro de série (`stock_serial`) bougent ensemble, et le mouvement est
  * tracé. `product.stock` reste ainsi la somme de ses emplacements, comme dans
  * Dolibarr, qui fait foi.
+ *
+ * Règle des numéros de série : une ligne ne compte jamais plus de numéros en
+ * stock que de pièces. Sortir une pièce d'une ligne dont toutes les pièces sont
+ * numérotées demande donc de dire laquelle.
  */
 async function applyMovement(tx: Tx, m: MovementInput) {
+	const condition = m.condition ?? 'new';
+	const serial = m.serialNumber?.trim() || null;
+	if (serial && Math.abs(m.quantity) !== 1) {
+		throw new StockLocationError('Un numéro de série désigne une seule pièce.');
+	}
+	const line = and(
+		eq(productStock.productId, m.productId),
+		eq(productStock.locationId, m.locationId),
+		eq(productStock.condition, condition)
+	);
 	if (m.quantity < 0) {
 		const [row] = await tx
 			.select({ quantity: productStock.quantity })
 			.from(productStock)
-			.where(
-				and(eq(productStock.productId, m.productId), eq(productStock.locationId, m.locationId))
-			)
+			.where(line)
 			.for('update');
 		if ((row?.quantity ?? 0) < -m.quantity) {
-			const [names] = await tx
-				.select({ product: product.name, code: stockLocation.code, name: stockLocation.name })
-				.from(product)
-				.innerJoin(stockLocation, eq(stockLocation.id, m.locationId))
-				.where(eq(product.id, m.productId));
+			const n = await names(tx, m.productId, m.locationId);
 			throw new StockLocationError(
-				`${names?.product ?? 'Produit introuvable'} : il n'en reste que ${row?.quantity ?? 0} en ${names?.code ?? names?.name ?? "l'emplacement choisi"}.`
+				`${n.product} : il n'en reste que ${row?.quantity ?? 0} (${conditionLabel(condition).toLowerCase()}) en ${n.at}.`
 			);
 		}
 	}
+
+	if (serial) {
+		const sameSerial = and(
+			eq(stockSerial.productId, m.productId),
+			sql`upper(${stockSerial.serialNumber}) = upper(${serial})`
+		);
+		if (m.quantity < 0) {
+			const moved = await tx
+				.update(stockSerial)
+				.set({ locationId: null, updatedAt: new Date() })
+				.where(
+					and(
+						sameSerial,
+						eq(stockSerial.locationId, m.locationId),
+						eq(stockSerial.condition, condition)
+					)
+				)
+				.returning({ id: stockSerial.id });
+			if (!moved.length) {
+				const n = await names(tx, m.productId, m.locationId);
+				throw new StockLocationError(
+					`${n.product} : le n° ${serial} n'est pas en stock en ${n.at}.`
+				);
+			}
+		} else {
+			const [known] = await tx
+				.select({ locationId: stockSerial.locationId })
+				.from(stockSerial)
+				.where(sameSerial);
+			if (known?.locationId) {
+				throw new StockLocationError(`Le n° de série ${serial} est déjà en stock.`);
+			}
+			// Index unique sur une expression (`upper`) : conflit écrit à la main.
+			await tx.execute(sql`
+				INSERT INTO ${stockSerial} (product_id, serial_number, location_id, condition)
+				VALUES (${m.productId}, ${serial}, ${m.locationId}, ${condition})
+				ON CONFLICT (product_id, upper(serial_number))
+				DO UPDATE SET location_id = excluded.location_id, condition = excluded.condition,
+					updated_at = now()`);
+		}
+	}
+
 	const now = new Date();
-	await tx
+	const [after] = await tx
 		.insert(productStock)
 		.values({
 			productId: m.productId,
 			locationId: m.locationId,
+			condition,
 			quantity: m.quantity,
 			updatedAt: now
 		})
 		.onConflictDoUpdate({
-			target: [productStock.productId, productStock.locationId],
+			target: [productStock.productId, productStock.locationId, productStock.condition],
 			set: { quantity: sql`${productStock.quantity} + ${m.quantity}`, updatedAt: now }
-		});
+		})
+		.returning({ quantity: productStock.quantity });
+	const [{ serials }] = await tx
+		.select({ serials: sql<number>`count(*)::int` })
+		.from(stockSerial)
+		.where(
+			and(
+				eq(stockSerial.productId, m.productId),
+				eq(stockSerial.locationId, m.locationId),
+				eq(stockSerial.condition, condition)
+			)
+		);
+	if (serials > after.quantity) {
+		const n = await names(tx, m.productId, m.locationId);
+		throw new StockLocationError(
+			`${n.product} : toutes les pièces en ${n.at} sont numérotées, indiquez le n° de série de celle qui sort.`
+		);
+	}
 	await tx
 		.update(product)
 		.set({ stock: sql`${product.stock} + ${m.quantity}`, updatedAt: now })
@@ -431,8 +586,10 @@ async function applyMovement(tx: Tx, m: MovementInput) {
 	await tx.insert(stockMovement).values({
 		productId: m.productId,
 		locationId: m.locationId,
+		condition,
 		quantity: m.quantity,
 		type: m.type,
+		serialNumber: serial,
 		reference: m.reference ?? null,
 		note: m.note ?? null,
 		createdBy: m.createdBy ?? null
@@ -447,6 +604,23 @@ export async function recordStockMovement(m: MovementInput) {
 	await db.transaction((tx) => applyMovement(tx, m));
 	// « En stock » est un filtre et un critère de classement de la recherche.
 	syncProducts([m.productId]);
+}
+
+/**
+ * Applique des mouvements dans une seule transaction (validation
+ * d'inventaire) : tout passe, ou rien.
+ */
+export async function recordStockMovements(
+	movements: MovementInput[],
+	before?: (tx: Tx) => Promise<void>,
+	after?: (tx: Tx) => Promise<void>
+) {
+	await db.transaction(async (tx) => {
+		await before?.(tx);
+		for (const m of movements) await applyMovement(tx, m);
+		await after?.(tx);
+	});
+	syncProducts([...new Set(movements.map((m) => m.productId))]);
 }
 
 // ----- Sortie de stock d'une commande ou d'un ordre de réparation -----
@@ -474,7 +648,9 @@ export async function getDocumentStock(
 			.select({
 				productId: productStock.productId,
 				locationId: productStock.locationId,
-				quantity: productStock.quantity
+				condition: productStock.condition,
+				quantity: productStock.quantity,
+				serials: lineSerialsSql
 			})
 			.from(productStock)
 			.where(and(inArray(productStock.productId, productIds), ne(productStock.quantity, 0)))
@@ -507,7 +683,9 @@ export async function getDocumentStock(
 					const l = byId.get(p.locationId);
 					return {
 						locationId: p.locationId,
+						condition: p.condition,
 						quantity: p.quantity,
+						serials: p.serials,
 						code: l?.code ?? null,
 						path: l?.path ?? '—',
 						description: l?.description ?? null
@@ -525,7 +703,9 @@ export type DocumentProductStock = {
 	exited: number;
 	placements: {
 		locationId: number;
+		condition: string;
 		quantity: number;
+		serials: string[];
 		code: string | null;
 		path: string;
 		description: string | null;
@@ -542,7 +722,10 @@ export async function exitDocumentStock(input: {
 	reference: string;
 	productId: number;
 	locationId: number;
+	condition: StockCondition;
 	quantity: number;
+	/** Numéros de série des pièces sorties. */
+	serials: string[];
 	createdBy: string | null;
 }) {
 	if (!Number.isInteger(input.quantity) || input.quantity <= 0) {
@@ -558,12 +741,31 @@ export async function exitDocumentStock(input: {
 				: 'Ce produit est déjà entièrement sorti du stock pour ce document.'
 		);
 	}
-	await recordStockMovement({
-		productId: input.productId,
-		locationId: input.locationId,
-		quantity: -input.quantity,
-		type: input.type,
-		reference: input.reference,
-		createdBy: input.createdBy
-	});
+	if (input.serials.length > input.quantity) {
+		throw new StockLocationError('Plus de numéros de série cochés que de pièces sorties.');
+	}
+	await recordStockMovements(
+		splitBySerial(input.quantity, input.serials).map((part) => ({
+			productId: input.productId,
+			locationId: input.locationId,
+			condition: input.condition,
+			quantity: -part.quantity,
+			serialNumber: part.serialNumber,
+			type: input.type,
+			reference: input.reference,
+			createdBy: input.createdBy
+		}))
+	);
+}
+
+/** Lit le formulaire de sortie d'une ligne de document (emplacement, état, quantité, n°). */
+export function parseDocumentExit(form: FormData) {
+	const condition = String(form.get('condition') ?? 'new');
+	return {
+		productId: Number(form.get('productId')),
+		locationId: Number(form.get('locationId')),
+		condition: isStockCondition(condition) ? condition : ('new' as const),
+		quantity: Number(form.get('quantity')),
+		serials: form.getAll('serials').map(String).filter(Boolean)
+	};
 }
