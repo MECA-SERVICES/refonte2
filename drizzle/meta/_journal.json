@@ -316,6 +316,34 @@
 			"when": 1793026839779,
 			"tag": "0046_page_accueil",
 			"breakpoints": true
+		},
+		{
+			"idx": 47,
+			"version": "7",
+			"when": 1793118225588,
+			"tag": "0047_fondations_dolibarr",
+			"breakpoints": true
+		},
+		{
+			"idx": 48,
+			"version": "7",
+			"when": 1793175358883,
+			"tag": "0048_code_emplacement_unique",
+			"breakpoints": true
+		},
+		{
+			"idx": 49,
+			"version": "7",
+			"when": 1793177013884,
+			"tag": "0049_description_emplacement",
+			"breakpoints": true
+		},
+		{
+			"idx": 50,
+			"version": "7",
+			"when": 1793178514583,
+			"tag": "0050_prix_etiquette_emplacement",
+			"breakpoints": true
 		}
 	]
 }

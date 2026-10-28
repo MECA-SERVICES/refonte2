@@ -10,7 +10,7 @@ function form(fields: Record<string, string>) {
 const base = { name: 'Test', reference: 'REF-1', priceHt: '10' };
 
 describe('parseProductForm — quantités', () => {
-	it('lit les quatre champs', () => {
+	it('lit les champs de quantité, sans le stock ni l’ancien emplacement libre', () => {
 		const out = parseProductForm(
 			form({
 				...base,
@@ -23,9 +23,10 @@ describe('parseProductForm — quantités', () => {
 		);
 		expect(out).toMatchObject({ ok: true });
 		if (!out.ok) return;
-		expect(out.values.stock).toBe(42);
+		// Le stock vient des mouvements, l'emplacement des emplacements de stock.
+		expect(out.values.stock).toBeUndefined();
 		expect(out.values.minOrderQuantity).toBe(10);
-		expect(out.values.stockLocation).toBe('Allée B');
+		expect(out.values.stockLocation).toBeUndefined();
 		expect(out.values.lowStockThreshold).toBe(5);
 		expect(out.values.availableDate?.toISOString().slice(0, 10)).toBe('2026-12-01');
 	});
@@ -51,6 +52,5 @@ describe('parseProductForm — quantités', () => {
 		const out = parseProductForm(form(base));
 		expect(out.ok && out.values.minOrderQuantity).toBe(1);
 		expect(out.ok && out.values.lowStockThreshold).toBe(0);
-		expect(out.ok && out.values.stockLocation).toBeNull();
 	});
 });

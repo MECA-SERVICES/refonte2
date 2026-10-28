@@ -21,6 +21,8 @@
 		"db:studio": "drizzle-kit studio",
 		"check:scripts": "tsc --noEmit -p scripts/tsconfig.json",
 		"migrate:ps": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts",
+		"migrate:doli": "node --experimental-strip-types --no-warnings scripts/migrations/dolibarr/index.ts",
+		"migrate:doli:dry": "node --experimental-strip-types --no-warnings scripts/migrations/dolibarr/index.ts --dry-run",
 		"migrate:ps:dry": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts --dry-run",
 		"migrate:ps:verify": "node --experimental-strip-types --no-warnings scripts/migrations/prestashop/index.ts --only=verify",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",

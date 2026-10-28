@@ -10,7 +10,6 @@ import {
 import { customer } from '$lib/server/db/customer.schema';
 import { product } from '$lib/server/db/catalog.schema';
 import { clientMachine } from '$lib/server/db/machine.schema';
-import { recordStockMovement } from '$lib/server/catalog';
 import { computeTax, effectiveTaxRate, resolveTaxRegime } from '$lib/tax';
 import { canTransition, isFrozen, REPAIR_STATUS_LABELS, REPAIRS_PER_PAGE } from '$lib/repairs';
 import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
@@ -426,9 +425,10 @@ async function requireEditable(id: number) {
 /**
  * Ajoute une pièce à un ordre (R5, R6).
  *
- * Rattachée au catalogue, la pièce reprend désignation, référence et prix, et
- * **décrémente directement le stock physique** — sans réservation préalable,
- * puisqu'elle est posée sur la machine sur-le-champ.
+ * Rattachée au catalogue, la pièce reprend désignation, référence et prix.
+ * Elle ne sort **pas** du stock d'elle-même : le magasinier la sort de son
+ * emplacement depuis l'ordre (`exitDocumentStock`), comme les bons de sortie
+ * du module Dolibarr « UTILE ».
  */
 export async function addRepairPart(
 	repairOrderId: number,
@@ -438,10 +438,9 @@ export async function addRepairPart(
 		partReference?: string | null;
 		quantity: number;
 		unitPriceHt?: number | null;
-	},
-	createdBy?: string | null
+	}
 ) {
-	const order = await requireEditable(repairOrderId);
+	await requireEditable(repairOrderId);
 
 	const quantity = Math.max(1, Math.trunc(input.quantity) || 1);
 	let partName = input.partName?.trim() || '';
@@ -492,16 +491,6 @@ export async function addRepairPart(
 		})
 		.returning();
 
-	if (input.productId) {
-		await recordStockMovement({
-			productId: input.productId,
-			quantity: -quantity,
-			type: 'repair',
-			note: `Ordre de réparation ${order.reference}`,
-			createdBy: createdBy ?? null
-		});
-	}
-
 	await recalculateTotals(repairOrderId);
 	return line;
 }
@@ -509,15 +498,11 @@ export async function addRepairPart(
 /**
  * Retire une pièce d'un ordre (R7).
  *
- * Une pièce du catalogue réintègre le stock : elle n'a finalement pas été
- * posée sur la machine.
+ * Le stock n'est pas touché : une pièce déjà sortie se remet en stock par une
+ * entrée, depuis la fiche produit.
  */
-export async function removeRepairPart(
-	repairOrderId: number,
-	partId: number,
-	createdBy?: string | null
-) {
-	const order = await requireEditable(repairOrderId);
+export async function removeRepairPart(repairOrderId: number, partId: number) {
+	await requireEditable(repairOrderId);
 
 	const [line] = await db
 		.select()
@@ -528,16 +513,6 @@ export async function removeRepairPart(
 	if (!line) throw new RepairError('Ligne introuvable.');
 
 	await db.delete(repairOrderPart).where(eq(repairOrderPart.id, partId));
-
-	if (line.productId) {
-		await recordStockMovement({
-			productId: line.productId,
-			quantity: line.quantity,
-			type: 'repair',
-			note: `Retrait de ligne — ordre ${order.reference}`,
-			createdBy: createdBy ?? null
-		});
-	}
 
 	await recalculateTotals(repairOrderId);
 }

@@ -18,6 +18,7 @@
 	import { FilePdfOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
 	import StateBadge from '$lib/components/admin/StateBadge.svelte';
+	import DocumentLineStock from '$lib/components/admin/DocumentLineStock.svelte';
 	import { REPAIR_STATUS_COLORS, REPAIR_STATUS_LABELS, REPAIR_TYPE_LABELS } from '$lib/repairs';
 	import {
 		remainingDue,
@@ -302,7 +303,8 @@
 				Pièces consommées ({o.parts.length})
 			</h2>
 			<p class="mb-4 text-xs text-gray-500">
-				Une pièce rattachée au catalogue sort immédiatement du stock. Son retrait la réintègre.
+				Rien ne sort du stock automatiquement : le magasinier sort chaque pièce du catalogue de son
+				emplacement, avec « Sortir du stock ».
 			</p>
 
 			{#if form && 'partError' in form && form.partError}
@@ -322,10 +324,15 @@
 					<TableBody>
 						{#each o.parts as part (part.id)}
 							<TableBodyRow>
-								<TableBodyCell>
+								<TableBodyCell class="whitespace-normal">
 									{part.partName}
 									{#if !part.productId}
 										<span class="ms-1 text-xs text-gray-400">(hors catalogue)</span>
+									{:else if data.partStock[part.productId]}
+										<DocumentLineStock
+											productId={part.productId}
+											stock={data.partStock[part.productId]}
+										/>
 									{/if}
 								</TableBodyCell>
 								<TableBodyCell>{part.partReference ?? '—'}</TableBodyCell>

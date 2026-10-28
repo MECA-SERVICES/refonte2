@@ -4,15 +4,19 @@
 	import {
 		TrashBinOutline,
 		PlusOutline,
-		ArrowUpRightFromSquareOutline
+		ArrowUpRightFromSquareOutline,
+		PrinterOutline
 	} from 'flowbite-svelte-icons';
 	import {
 		PageHeader,
 		ProductForm,
 		ActiveBadge,
 		ConfirmDialog,
+		LocationPicker,
 		ProductMediaGrid
 	} from '$lib/components/admin';
+	import { DOLIBARR_STOCK_COLORS } from '$lib/admin-colors';
+	import { isValidEan13, printableEan13 } from '$lib/ean13';
 	import { shopProductPath } from '$lib/shop';
 	import type { PageProps } from './$types';
 
@@ -20,6 +24,7 @@
 
 	const p = $derived(data.product);
 	let confirmOpen = $state(false);
+	let labelCopies = $state(1);
 	let deleteForm = $state<HTMLFormElement | null>(null);
 
 	const mediaTypes = [
@@ -31,7 +36,7 @@
 	const movementTypeOptions = [
 		{ value: 'in', name: 'Entrée (réappro)' },
 		{ value: 'out', name: 'Sortie' },
-		{ value: 'adjustment', name: 'Ajustement inventaire' },
+		{ value: 'adjustment', name: 'Ajustement inventaire (+ ou −)' },
 		{ value: 'return', name: 'Retour client' }
 	];
 
@@ -39,8 +44,10 @@
 		in: 'Entrée',
 		out: 'Sortie',
 		adjustment: 'Ajustement',
-		order: 'Commande',
-		return: 'Retour'
+		order: 'Sortie commande',
+		return: 'Retour',
+		repair: 'Sortie réparation',
+		transfer: 'Déplacement'
 	};
 
 	function attrText(attrs: Record<string, string> | null): string {
@@ -102,11 +109,91 @@
 			</span>
 		</div>
 
+		<!--
+			Rangement : le stock du produit est la somme de ses emplacements, comme
+			dans Dolibarr. Code au survol : la description de l'emplacement.
+		-->
+		<div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+			<h3 class="mb-2 text-sm font-semibold text-gray-900">Rangement</h3>
+			{#if data.placements.length === 0}
+				<p class="text-sm text-gray-500">
+					Rangé dans aucun emplacement : enregistrez une entrée ci-dessous pour le ranger.
+				</p>
+			{:else}
+				<ul class="space-y-1 text-sm">
+					{#each data.placements as s (s.locationId)}
+						<li class="flex justify-between gap-3">
+							<a href="/admin/stock-locations?id={s.locationId}" class="hover:underline">
+								{#if s.code}
+									<span
+										title={s.description ?? s.path}
+										style:background-color={DOLIBARR_STOCK_COLORS.inStock}
+										class="me-1 cursor-help rounded px-1.5 py-0.5 font-mono text-xs text-gray-900"
+										>{s.code}</span
+									>
+								{/if}
+								<span class="text-primary-700">{s.path}</span>
+							</a>
+							<span class="font-semibold tabular-nums">{s.quantity}</span>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+
+		<!-- Étiquette produit, au gabarit de la « Génération étiquette » Dolibarr (jaune comme dans UTILE). -->
+		<div
+			class="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 p-4"
+			style:background-color={DOLIBARR_STOCK_COLORS.label}
+		>
+			<div>
+				<Label for="label-copies" class="mb-2">Étiquettes à imprimer</Label>
+				<Input
+					id="label-copies"
+					type="number"
+					min={1}
+					max={100}
+					bind:value={labelCopies}
+					class="w-24"
+				/>
+			</div>
+			<Button
+				color="alternative"
+				href="/admin/products/labels?ids={Array(Math.min(100, Math.max(1, labelCopies || 1)))
+					.fill(p.id)
+					.join(',')}"
+				target="_blank"
+			>
+				<PrinterOutline class="me-2 h-4 w-4" /> Imprimer
+			</Button>
+			<p class="text-xs text-gray-700">
+				{data.onSaleFloor
+					? 'Prix TTC imprimé : le produit est rangé au magasin.'
+					: 'Sans prix : le produit n’est pas rangé au magasin.'}
+			</p>
+			{#if p.ean13 && !isValidEan13(p.ean13)}
+				<p class="text-xs text-red-700">
+					EAN-13 invalide : l'étiquette imprimera {printableEan13(p.ean13)}.
+				</p>
+			{/if}
+		</div>
+
 		{#if form?.stockError}
 			<p class="mb-3 text-sm text-red-600">{form.stockError}</p>
 		{/if}
 
 		<div class="mb-6 grid gap-3 sm:grid-cols-4">
+			<div class="sm:col-span-4">
+				<Label class="mb-2">Emplacement</Label>
+				<LocationPicker
+					locations={data.locations}
+					name="locationId"
+					form="stock-movement-form"
+					value={data.placements[0]?.locationId ?? null}
+					label="Emplacement du mouvement"
+					required
+				/>
+			</div>
 			<div>
 				<Label for="sm-type" class="mb-2">Type</Label>
 				<Select
@@ -122,7 +209,11 @@
 				<Label for="sm-qty" class="mb-2">Quantité</Label>
 				<Input id="sm-qty" name="quantity" form="stock-movement-form" type="number" value="1" />
 			</div>
-			<div class="sm:col-span-2">
+			<div>
+				<Label for="sm-ref" class="mb-2">N° de pièce</Label>
+				<Input id="sm-ref" name="reference" form="stock-movement-form" placeholder="BL, bon…" />
+			</div>
+			<div>
 				<Label for="sm-note" class="mb-2">Note</Label>
 				<Input
 					id="sm-note"
@@ -149,6 +240,16 @@
 							<span class={mv.quantity >= 0 ? 'ms-2 text-green-600' : 'ms-2 text-red-600'}>
 								{mv.quantity >= 0 ? '+' : ''}{mv.quantity}
 							</span>
+							{#if mv.locationId}
+								{@const at = data.locations.find((l) => l.id === mv.locationId)}
+								<span
+									class="ms-2 cursor-help font-mono text-xs text-gray-700"
+									title={at?.description ?? at?.path}>{at?.code ?? at?.name}</span
+								>
+							{/if}
+							{#if mv.reference}
+								<span class="ms-2 text-gray-500">{mv.reference}</span>
+							{/if}
 							{#if mv.note}
 								<span class="ms-2 text-gray-500">— {mv.note}</span>
 							{/if}

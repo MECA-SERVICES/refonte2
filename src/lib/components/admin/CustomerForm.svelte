@@ -27,6 +27,14 @@
 
 	let type = $derived(customer?.type ?? 'particulier');
 	const isCompany = $derived(type === 'entreprise' || type === 'collectivite');
+
+	/*
+	 * Client sans compte web (client du comptoir, forme reprise des tiers
+	 * Dolibarr) : l'e-mail devient facultatif. Le choix se fait à la création ;
+	 * un client existant sans compte le reste.
+	 */
+	const isNew = $derived(!customer?.id);
+	let withoutAccount = $derived(!isNew && !customer?.userId);
 </script>
 
 <form method="POST" use:enhance class="space-y-6">
@@ -46,12 +54,30 @@
 				<Input id="lastName" name="lastName" required value={customer?.lastName ?? ''} />
 			</div>
 			<div>
-				<Label for="email" class="mb-2">E-mail</Label>
-				<Input id="email" name="email" type="email" required value={customer?.email ?? ''} />
+				<Label for="email" class="mb-2">E-mail{withoutAccount ? ' (facultatif)' : ''}</Label>
+				<Input
+					id="email"
+					name="email"
+					type="email"
+					required={!withoutAccount}
+					value={customer?.email ?? ''}
+				/>
 			</div>
 			<div>
 				<Label for="phone" class="mb-2">Téléphone</Label>
 				<Input id="phone" name="phone" value={customer?.phone ?? ''} />
+			</div>
+			<div class="sm:col-span-2">
+				{#if isNew}
+					<Checkbox name="withoutAccount" bind:checked={withoutAccount}>
+						Client sans compte web (client du comptoir, sans connexion à la boutique)
+					</Checkbox>
+				{:else if withoutAccount}
+					<input type="hidden" name="withoutAccount" value="on" />
+					<p class="text-sm text-gray-500">
+						Client sans compte web : il ne se connecte pas à la boutique.
+					</p>
+				{/if}
 			</div>
 		</div>
 	</Card>

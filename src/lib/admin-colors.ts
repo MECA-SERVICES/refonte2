@@ -12,6 +12,19 @@ export const PS_COLORS = {
 	dark: '#363a41'
 } as const;
 
+/**
+ * Codes couleur des écrans de stock du module Dolibarr « UTILE », repris tels
+ * quels pour que le magasin garde ses repères (voir `MIGRATION-DOLIBARR.md`) :
+ * vert = en stock / reçu, rouge clair = rupture / sortie, rouge = prix à 0 ou
+ * EAN faux, jaune = étiquettes.
+ */
+export const DOLIBARR_STOCK_COLORS = {
+	inStock: '#90EE90',
+	outOfStock: '#FFCCCB',
+	alert: '#FF726F',
+	label: '#f9e79f'
+} as const;
+
 /** Couleurs nommées des badges (mêmes noms que ceux de Flowbite). */
 export type BadgeColor =
 	'primary' | 'secondary' | 'gray' | 'red' | 'green' | 'yellow' | 'blue' | 'indigo' | 'purple';

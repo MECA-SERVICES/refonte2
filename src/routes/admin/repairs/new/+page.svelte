@@ -1,6 +1,16 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
-	import { Alert, Button, Card, Input, Label, Radio, Select, Textarea } from 'flowbite-svelte';
+	import {
+		Alert,
+		Button,
+		Card,
+		Checkbox,
+		Input,
+		Label,
+		Radio,
+		Select,
+		Textarea
+	} from 'flowbite-svelte';
 	import { UserAddOutline } from 'flowbite-svelte-icons';
 	import PageHeader from '$lib/components/admin/PageHeader.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -17,6 +27,8 @@
 	/** Saisie d'un nouveau client, ouverte sur demande. */
 	let creatingCustomer = $state(false);
 	let newCustomerType = $state('particulier');
+	// Client du comptoir sans compte web : e-mail facultatif (forme des tiers Dolibarr).
+	let newWithoutAccount = $state(false);
 	/** Client tout juste créé : gardé dans la liste quoi que donne la recherche. */
 	let createdCustomer = $state<CustomerOption | null>(null);
 
@@ -128,8 +140,16 @@
 						<Input id="newLastName" name="lastName" form="new-customer" required />
 					</div>
 					<div>
-						<Label for="newEmail" class="mb-2">Adresse e-mail</Label>
-						<Input id="newEmail" name="email" type="email" form="new-customer" required />
+						<Label for="newEmail" class="mb-2">
+							Adresse e-mail{newWithoutAccount ? ' (facultative)' : ''}
+						</Label>
+						<Input
+							id="newEmail"
+							name="email"
+							type="email"
+							form="new-customer"
+							required={!newWithoutAccount}
+						/>
 					</div>
 					<div>
 						<Label for="newPhone" class="mb-2">Téléphone</Label>
@@ -157,9 +177,18 @@
 						</div>
 					{/if}
 				</div>
+				<div class="mt-3">
+					<Checkbox name="withoutAccount" form="new-customer" bind:checked={newWithoutAccount}>
+						Client sans compte web (pas de connexion à la boutique)
+					</Checkbox>
+				</div>
 				<p class="mt-3 text-xs text-gray-500">
-					L'adresse e-mail sert d'identifiant au compte client. Le client recevra ses identifiants
-					par e-mail dès que l'envoi sera en place.
+					{#if newWithoutAccount}
+						Aucun compte n'est créé : le client ne se connecte pas à la boutique.
+					{:else}
+						L'adresse e-mail sert d'identifiant au compte client. Le client recevra ses identifiants
+						par e-mail dès que l'envoi sera en place.
+					{/if}
 				</p>
 				<div class="mt-4 flex justify-end gap-2">
 					<Button

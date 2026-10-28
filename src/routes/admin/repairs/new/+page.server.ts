@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { createRepairOrder, RepairError } from '$lib/server/repairs';
-import { createCustomerWithAccount, parseCustomerForm } from '$lib/server/customers';
+import { createCustomerFromForm, parseCustomerForm } from '$lib/server/customers';
 import { activeEquipmentTypeNames } from '$lib/server/equipment-types';
 import { db } from '$lib/server/db';
 import { customer } from '$lib/server/db/customer.schema';
@@ -54,7 +54,7 @@ export const actions: Actions = {
 		const parsed = parseCustomerForm(form);
 		if (!parsed.ok) return fail(400, { customerError: parsed.error });
 
-		const created = await createCustomerWithAccount(parsed.values, request.headers);
+		const created = await createCustomerFromForm(parsed.values, form, request.headers);
 		if (!created.ok) return fail(400, { customerError: created.error });
 
 		const c = created.customer;

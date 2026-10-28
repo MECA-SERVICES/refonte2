@@ -134,7 +134,15 @@ export const productType = [
 	'part', // pièce détachée — ~99,7 % du catalogue
 	'machine', // machine ou produit fini (tondeuse, tronçonneuse…)
 	'consumable', // consommable (huile, filtre neuf, EPI…)
-	'service' // frais de port, main-d'œuvre, non physique
+	/*
+	 * Frais de port, main-d'œuvre : non physique, sans stock.
+	 *
+	 * Reprise Dolibarr : les services de main-d'œuvre facturés au comptoir
+	 * (`MO-T1`, `MO-T3`, `MO-AFFUT-CHAINE`…, `llx_product.fk_product_type = 1`)
+	 * deviennent des produits de ce type. Un service n'est pas vendu en ligne :
+	 * il est créé inactif (`isActive` règle la visibilité en boutique).
+	 */
+	'service'
 ] as const;
 export type ProductType = (typeof productType)[number];
 
@@ -261,6 +269,13 @@ export const product = pgTable(
 		// Traçabilité import
 		legacyPsId: integer('legacy_ps_id'),
 		/**
+		 * Reprise Dolibarr : `llx_product.rowid` du produit correspondant dans
+		 * `doli_bdd1`. Renseigné par `scripts/migrations/dolibarr/` quand le
+		 * produit est rapproché (référence, EAN) ou créé depuis Dolibarr.
+		 * Voir `MIGRATION-DOLIBARR.md`.
+		 */
+		legacyDoliId: integer('legacy_doli_id'),
+		/**
 		 * `ps_product.id_category_default` de la source.
 		 *
 		 * L'arbre PrestaShop n'étant plus importé verbatim (il portait les
@@ -308,7 +323,11 @@ export const product = pgTable(
 		index('product_name_trgm_idx').using('gin', t.name.op('gin_trgm_ops')),
 		index('product_reference_trgm_idx').using('gin', t.reference.op('gin_trgm_ops')),
 		index('product_supplier_ref_trgm_idx').using('gin', t.supplierReference.op('gin_trgm_ops')),
-		index('product_ean13_trgm_idx').using('gin', t.ean13.op('gin_trgm_ops'))
+		index('product_ean13_trgm_idx').using('gin', t.ean13.op('gin_trgm_ops')),
+		// Reprise Dolibarr : un produit Dolibarr ne se rattache qu'à une fiche.
+		uniqueIndex('product_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
 	]
 );
 
@@ -392,17 +411,108 @@ export const productSpec = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Emplacements de stock — reprise de Dolibarr
+// ---------------------------------------------------------------------------
+
+/**
+ * Emplacement physique : magasin, atelier, grenier, puis partie et étagère.
+ *
+ * Reprise Dolibarr : `llx_entrepot` (375 emplacements au 27/10/2026),
+ * arborescence par `fk_parent`. Dans Dolibarr, le module sur mesure « UTILE »
+ * gérait les entrées, sorties et déplacements entre ces emplacements ; MSShop
+ * les reprend sur ses propres produits (voir `MIGRATION-DOLIBARR.md`).
+ */
+export const stockLocation = pgTable(
+	'stock_location',
+	{
+		id: serial('id').primaryKey(),
+		/** Libellé court du nœud, ex. « Étagère 41 » (le chemin complet se déduit des parents). */
+		name: text('name').notNull(),
+		/**
+		 * Code affiché et saisi au magasin, ex. « 41 » (`llx_entrepot.ref`).
+		 * Unique, sans tenir compte de la casse : il désigne un seul emplacement.
+		 */
+		code: text('code'),
+		/**
+		 * Description, affichée au survol du code comme dans Dolibarr.
+		 * Reprise : `llx_entrepot.lieu`, ex. « MAGASIN PIECES DETACHEES / PARTIE DROITE / ETAGERE 43 ».
+		 */
+		description: text('description'),
+		parentId: integer('parent_id').references((): AnyPgColumn => stockLocation.id, {
+			onDelete: 'restrict'
+		}),
+		position: integer('position').notNull().default(0),
+		isActive: boolean('is_active').notNull().default(true),
+		/**
+		 * Emplacement de vente (le MAGASIN) : un produit qui y est rangé, ou dans
+		 * un sous-emplacement, porte son prix TTC sur l'étiquette.
+		 */
+		priceOnLabel: boolean('price_on_label').notNull().default(false),
+
+		/** Reprise Dolibarr : `llx_entrepot.rowid`. */
+		legacyDoliId: integer('legacy_doli_id'),
+
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		index('stock_location_parent_idx').on(t.parentId),
+		uniqueIndex('stock_location_code_idx')
+			.on(sql`upper(trim(${t.code}))`)
+			.where(sql`${t.code} IS NOT NULL`),
+		uniqueIndex('stock_location_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
+	]
+);
+
+/**
+ * Quantité d'un produit dans un emplacement.
+ *
+ * Reprise Dolibarr : `llx_product_stock` (`fk_product`, `fk_entrepot`, `reel`).
+ * Règle : `product.stock` est la somme des quantités de ses emplacements, dès
+ * qu'un produit en a. Le stock reste un seul chiffre, partagé par la boutique,
+ * l'atelier et le magasin.
+ */
+export const productStock = pgTable(
+	'product_stock',
+	{
+		id: serial('id').primaryKey(),
+		productId: integer('product_id')
+			.notNull()
+			.references(() => product.id, { onDelete: 'cascade' }),
+		locationId: integer('location_id')
+			.notNull()
+			.references(() => stockLocation.id, { onDelete: 'restrict' }),
+		quantity: integer('quantity').notNull().default(0),
+
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		uniqueIndex('product_stock_product_location_idx').on(t.productId, t.locationId),
+		index('product_stock_location_idx').on(t.locationId)
+	]
+);
+
+// ---------------------------------------------------------------------------
 // Mouvements de stock (inventory) — historique traçable
 // ---------------------------------------------------------------------------
 
-/** Nature d'un mouvement de stock. */
+/**
+ * Nature d'un mouvement de stock.
+ *
+ * Reprise Dolibarr (module « UTILE ») : un bon de livraison fournisseur
+ * devient une entrée `in`, un bon de sortie une sortie `out`, un déplacement
+ * entre étagères un `transfer`.
+ */
 export const stockMovementType = [
-	'in', // entrée (réapprovisionnement)
+	'in', // entrée (réapprovisionnement, réception fournisseur)
 	'out', // sortie manuelle
 	'adjustment', // ajustement d'inventaire (correction)
 	'order', // décrément suite à une commande
 	'return', // incrément suite à un retour
-	'repair' // pièce consommée sur un ordre de réparation (CDC 31, R6/R7)
+	'repair', // pièce consommée sur un ordre de réparation (CDC 31, R6/R7)
+	'transfer' // déplacement d'un emplacement à un autre, stock total inchangé
 ] as const;
 export type StockMovementType = (typeof stockMovementType)[number];
 
@@ -418,6 +528,12 @@ export const stockMovement = pgTable(
 		/** Quantité du mouvement (positive = entrée, négative = sortie). */
 		quantity: integer('quantity').notNull(),
 		type: text('type').notNull(),
+		/** Emplacement concerné (null = mouvement d'avant les emplacements). */
+		locationId: integer('location_id').references(() => stockLocation.id, {
+			onDelete: 'set null'
+		}),
+		/** Pièce justificative : n° de BL fournisseur, n° de bon… (reprise Dolibarr). */
+		reference: text('reference'),
 		note: text('note'),
 		/** Utilisateur à l'origine du mouvement (id better-auth), si applicable. */
 		createdBy: text('created_by'),
@@ -426,7 +542,8 @@ export const stockMovement = pgTable(
 	},
 	(t) => [
 		index('stock_movement_product_idx').on(t.productId),
-		index('stock_movement_variant_idx').on(t.variantId)
+		index('stock_movement_variant_idx').on(t.variantId),
+		index('stock_movement_location_idx').on(t.locationId)
 	]
 );
 
@@ -543,11 +660,33 @@ export const productRelations = relations(product, ({ one, many }) => ({
 	additionalCategories: many(productCategory)
 }));
 
+export const stockLocationRelations = relations(stockLocation, ({ one, many }) => ({
+	parent: one(stockLocation, {
+		fields: [stockLocation.parentId],
+		references: [stockLocation.id],
+		relationName: 'stockLocationParent'
+	}),
+	children: many(stockLocation, { relationName: 'stockLocationParent' }),
+	stocks: many(productStock)
+}));
+
+export const productStockRelations = relations(productStock, ({ one }) => ({
+	product: one(product, { fields: [productStock.productId], references: [product.id] }),
+	location: one(stockLocation, {
+		fields: [productStock.locationId],
+		references: [stockLocation.id]
+	})
+}));
+
 export const stockMovementRelations = relations(stockMovement, ({ one }) => ({
 	product: one(product, { fields: [stockMovement.productId], references: [product.id] }),
 	variant: one(productVariant, {
 		fields: [stockMovement.variantId],
 		references: [productVariant.id]
+	}),
+	location: one(stockLocation, {
+		fields: [stockMovement.locationId],
+		references: [stockLocation.id]
 	})
 }));
 
@@ -584,5 +723,8 @@ export type TaxRule = typeof taxRule.$inferSelect;
 export type NewTaxRule = typeof taxRule.$inferInsert;
 export type ProductSpec = typeof productSpec.$inferSelect;
 export type NewProductSpec = typeof productSpec.$inferInsert;
+export type StockLocation = typeof stockLocation.$inferSelect;
+export type NewStockLocation = typeof stockLocation.$inferInsert;
+export type ProductStock = typeof productStock.$inferSelect;
 export type StockMovement = typeof stockMovement.$inferSelect;
 export type NewStockMovement = typeof stockMovement.$inferInsert;

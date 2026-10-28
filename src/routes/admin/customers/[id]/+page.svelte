@@ -133,7 +133,15 @@
 					<span class="font-semibold">{fullName}</span>
 					<span class="text-gray-500">[{String(c.id).padStart(6, '0')}]</span>
 					—
-					<a href="mailto:{c.email}" class="text-primary-700 hover:underline">{c.email}</a>
+					{#if c.email}
+						<a href="mailto:{c.email}" class="text-primary-700 hover:underline">{c.email}</a>
+					{:else}
+						<span class="text-gray-500">sans e-mail</span>
+					{/if}
+					{#if !c.userId}
+						<!-- Client du comptoir, sans connexion à la boutique (forme reprise de Dolibarr). -->
+						<StateBadge color="gray" class="ms-2" label="Sans compte web" />
+					{/if}
 				</p>
 				<a
 					href={resolve('/admin/customers/[id]/edit', { id: String(c.id) })}

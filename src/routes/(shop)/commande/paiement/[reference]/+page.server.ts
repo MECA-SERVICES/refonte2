@@ -42,7 +42,8 @@ export const load: PageServerLoad = async ({ locals, params, url, getClientAddre
 	const form = buildPaymentForm(config, {
 		reference: found.reference,
 		amount: Number(found.totalTtc),
-		email: profile.email,
+		// Le client qui paie en ligne a un compte : son e-mail de connexion fait foi à défaut.
+		email: profile.email ?? locals.user.email,
 		successUrl: `${url.origin}/commande/retour/${found.reference}`,
 		errorUrl: `${url.origin}/commande/retour/${found.reference}`
 	});

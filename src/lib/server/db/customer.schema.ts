@@ -7,9 +7,10 @@ import {
 	boolean,
 	numeric,
 	timestamp,
-	index
+	index,
+	uniqueIndex
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { user } from './auth.schema';
 
 /**
@@ -19,6 +20,11 @@ import { user } from './auth.schema';
  * table `user` de better-auth. `customer` porte uniquement les informations
  * e-commerce, en relation 1-1 avec `user`. Seuls les clients ont une ligne ici ;
  * le personnel (role employee/admin) n'en a pas.
+ *
+ * Client sans compte web (`userId` null) : client du comptoir, sans connexion
+ * possible ni e-mail obligatoire. Reprise Dolibarr : sur les 423 tiers ayant
+ * une facture au 27/10/2026, 183 n'ont ni e-mail ni SIRET. Voir
+ * `MIGRATION-DOLIBARR.md`.
  */
 
 /*
@@ -39,16 +45,16 @@ export const customer = pgTable(
 	{
 		id: serial('id').primaryKey(),
 
-		// Lien 1-1 vers l'identité better-auth.
+		// Lien 1-1 vers l'identité better-auth ; null = client sans compte web.
 		userId: text('user_id')
-			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' })
 			.unique(),
 
 		// Identité
 		firstName: text('first_name').notNull(),
 		lastName: text('last_name').notNull(),
-		email: text('email').notNull(),
+		/** Obligatoire avec un compte web (c'est son identifiant), facultatif sans. */
+		email: text('email'),
 		phone: text('phone'),
 
 		// Type & statut de compte
@@ -101,6 +107,8 @@ export const customer = pgTable(
 
 		// Traçabilité de la reprise PrestaShop (renseignée par l'import des données).
 		legacyPsId: integer('legacy_ps_id'),
+		/** Reprise Dolibarr : `llx_societe.rowid` du tiers rapproché ou créé. */
+		legacyDoliId: integer('legacy_doli_id'),
 		/**
 		 * Couple `type/status` d'avant la normalisation du vocabulaire (CDC 08).
 		 *
@@ -123,7 +131,11 @@ export const customer = pgTable(
 		index('customer_phone_trgm_idx').using('gin', t.phone.op('gin_trgm_ops')),
 		index('customer_company_trgm_idx').using('gin', t.companyName.op('gin_trgm_ops')),
 		index('customer_siret_trgm_idx').using('gin', t.siret.op('gin_trgm_ops')),
-		index('customer_vat_trgm_idx').using('gin', t.vatNumber.op('gin_trgm_ops'))
+		index('customer_vat_trgm_idx').using('gin', t.vatNumber.op('gin_trgm_ops')),
+		// Reprise Dolibarr : un tiers ne se rattache qu'à un client.
+		uniqueIndex('customer_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
 	]
 );
 

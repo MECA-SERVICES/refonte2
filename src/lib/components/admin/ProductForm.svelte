@@ -383,18 +383,13 @@
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label for="stock" class="mb-2">Quantité</Label>
-							<Input
-								id="stock"
-								name="stock"
-								type="number"
-								value={val(product?.stock ?? 0)}
-								disabled={!!stockPanel}
-							/>
+							<!-- Jamais saisi : somme des emplacements, comme dans Dolibarr. -->
+							<Input id="stock" type="number" value={val(product?.stock ?? 0)} disabled />
 							<p class="mt-1 text-xs text-gray-500">
 								{#if stockPanel}
-									Piloté par les mouvements de stock ci-dessous.
+									Somme des emplacements, pilotée par les mouvements de stock ci-dessous.
 								{:else}
-									Ce que vous avez en réserve.
+									Le stock s'enregistre après la création, par une entrée dans un emplacement.
 								{/if}
 							</p>
 						</div>
@@ -418,18 +413,6 @@
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900">Stock</h2>
 					<div class="grid gap-4 sm:grid-cols-2">
-						<div>
-							<Label for="stockLocation" class="mb-2">Emplacement du stock</Label>
-							<Input
-								id="stockLocation"
-								name="stockLocation"
-								value={product?.stockLocation ?? ''}
-								placeholder="Allée B · étagère 3"
-							/>
-							<p class="mt-1 text-xs text-gray-500">
-								Repère interne à l'atelier, jamais affiché au client.
-							</p>
-						</div>
 						<div>
 							<Label for="lowStockThreshold" class="mb-2">Niveau de stock bas</Label>
 							<Input

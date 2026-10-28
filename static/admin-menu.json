@@ -50,6 +50,11 @@
 							"href": "/admin/purchase-prices"
 						},
 						{
+							"id": "stock-locations",
+							"label": "Emplacements de stock",
+							"href": "/admin/stock-locations"
+						},
+						{
 							"id": "categories",
 							"label": "Catégories",
 							"href": "/admin/categories"
@@ -169,6 +174,11 @@
 							"id": "order-states",
 							"label": "États de commande",
 							"href": "/admin/order-states"
+						},
+						{
+							"id": "stock-location-settings",
+							"label": "Emplacements de stock",
+							"href": "/admin/stock-locations/manage"
 						}
 					]
 				},

@@ -104,7 +104,7 @@ export async function createCustomer(values: NewCustomer) {
  * message que l'équipe comprend.
  */
 export async function createCustomerWithAccount(
-	values: Omit<NewCustomer, 'userId'>,
+	values: Omit<NewCustomer, 'userId'> & { email: string },
 	headers: Headers
 ): Promise<{ ok: false; error: string } | { ok: true; customer: typeof customer.$inferSelect }> {
 	const email = values.email.trim().toLowerCase();
@@ -137,6 +137,47 @@ export async function createCustomerWithAccount(
 	}
 
 	return { ok: true, customer: await createCustomer({ ...values, email, userId }) };
+}
+
+/**
+ * Crée le client depuis un formulaire : avec un compte web par défaut, sans
+ * compte si la case « Client sans compte web » est cochée.
+ */
+export function createCustomerFromForm(
+	values: Omit<NewCustomer, 'userId'>,
+	form: FormData,
+	headers: Headers
+) {
+	if (isWithoutAccount(form) || !values.email) return createCustomerWithoutAccount(values);
+	return createCustomerWithAccount({ ...values, email: values.email }, headers);
+}
+
+/**
+ * Crée un client sans compte web : client du comptoir, qui ne se connecte pas
+ * à la boutique. L'e-mail est facultatif ; s'il est donné, il ne doit pas
+ * déjà appartenir à un autre client.
+ *
+ * Reprise Dolibarr : c'est la forme des tiers facturés au comptoir dans
+ * Dolibarr (`llx_societe`), souvent sans e-mail ni SIRET.
+ */
+export async function createCustomerWithoutAccount(
+	values: Omit<NewCustomer, 'userId'>
+): Promise<{ ok: false; error: string } | { ok: true; customer: typeof customer.$inferSelect }> {
+	const email = values.email?.trim().toLowerCase() || null;
+	if (email) {
+		const [existing] = await db
+			.select({ id: customer.id })
+			.from(customer)
+			.where(sql`lower(${customer.email}) = ${email}`)
+			.limit(1);
+		if (existing) {
+			return {
+				ok: false,
+				error: 'Un client existe déjà avec cette adresse e-mail : recherchez-le.'
+			};
+		}
+	}
+	return { ok: true, customer: await createCustomer({ ...values, email, userId: null }) };
 }
 
 export async function updateCustomer(id: number, values: Partial<NewCustomer>) {
@@ -211,6 +252,15 @@ export async function deleteAddress(id: number) {
 
 // ----- Parsing des formulaires -----
 
+/**
+ * Case « Client sans compte web » des formulaires client : l'e-mail devient
+ * facultatif et aucun compte de connexion n'est créé (client du comptoir,
+ * forme reprise des tiers Dolibarr).
+ */
+export function isWithoutAccount(form: FormData): boolean {
+	return form.get('withoutAccount') === 'on';
+}
+
 /** Extrait les champs client d'un FormData (validation minimale). */
 // `userId` n'est pas saisi au formulaire : il est rattaché par l'appelant.
 export function parseCustomerForm(form: FormData): ParseResult<Omit<NewCustomer, 'userId'>> {
@@ -220,8 +270,14 @@ export function parseCustomerForm(form: FormData): ParseResult<Omit<NewCustomer,
 	const lastName = str('lastName');
 	const email = str('email');
 
-	if (!firstName || !lastName || !email) {
-		return { ok: false, error: 'Prénom, nom et email sont requis.' };
+	if (!firstName || !lastName) {
+		return { ok: false, error: 'Prénom et nom sont requis.' };
+	}
+	if (!email && !isWithoutAccount(form)) {
+		return {
+			ok: false,
+			error: "L'e-mail est requis pour un compte web. Cochez « Client sans compte web » sinon."
+		};
 	}
 
 	return {
@@ -253,7 +309,8 @@ export function parseCustomerForm(form: FormData): ParseResult<Omit<NewCustomer,
  * Une commande « valide » est une commande dont l'état est considéré payé ;
  * c'est aussi la base du classement des meilleurs clients.
  */
-export async function getCustomerOverview(customerId: number, userId: string) {
+/** `userId` null : client sans compte web, donc sans connexions à lister. */
+export async function getCustomerOverview(customerId: number, userId: string | null) {
 	const isPaid = sql<boolean>`coalesce(${orderState.isPaid}, false)`;
 
 	const [orders, carts, products, [rankRow], sessions] = await Promise.all([
@@ -323,17 +380,19 @@ export async function getCustomerOverview(customerId: number, userId: string) {
 				me.total::text AS spent
 			FROM (SELECT coalesce((SELECT total FROM spent WHERE customer_id = ${customerId}), 0) AS total) me
 		`),
-		db
-			.select({
-				createdAt: session.createdAt,
-				updatedAt: session.updatedAt,
-				ipAddress: session.ipAddress,
-				userAgent: session.userAgent
-			})
-			.from(session)
-			.where(eq(session.userId, userId))
-			.orderBy(desc(session.updatedAt))
-			.limit(10)
+		userId
+			? db
+					.select({
+						createdAt: session.createdAt,
+						updatedAt: session.updatedAt,
+						ipAddress: session.ipAddress,
+						userAgent: session.userAgent
+					})
+					.from(session)
+					.where(eq(session.userId, userId))
+					.orderBy(desc(session.updatedAt))
+					.limit(10)
+			: []
 	]);
 
 	const valid = orders.filter((o) => o.isPaid);

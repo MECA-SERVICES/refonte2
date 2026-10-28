@@ -12,12 +12,18 @@ import {
 	deleteVariant,
 	addMedia,
 	deleteMedia,
-	recordStockMovement,
 	setProductCategories,
 	addProductRelation,
 	removeProductRelation
 } from '$lib/server/catalog';
 import type { StockMovementType } from '$lib/server/db/catalog.schema';
+import {
+	listProductPlacements,
+	listStockLocations,
+	productsOnSaleFloor,
+	recordStockMovement,
+	StockLocationError
+} from '$lib/server/stock-locations';
 
 function idParam(params: { id: string }): number {
 	const id = Number(params.id);
@@ -25,20 +31,28 @@ function idParam(params: { id: string }): number {
 	return id;
 }
 
-const MOVEMENT_TYPES: StockMovementType[] = ['in', 'out', 'adjustment', 'order', 'return'];
+/** Mouvements saisis depuis la fiche ; les sorties de commande et d'ordre se font depuis ceux-ci. */
+const MOVEMENT_TYPES: StockMovementType[] = ['in', 'out', 'adjustment', 'return'];
 
 export const load: PageServerLoad = async ({ params }) => {
 	const id = idParam(params);
-	const [product, brands, cats, taxes] = await Promise.all([
+	const [product, brands, cats, taxes, placements, locations, onSale] = await Promise.all([
 		getProductFull(id),
 		activeBrands(),
 		allCategories(),
-		activeTaxRules()
+		activeTaxRules(),
+		listProductPlacements(id),
+		listStockLocations(),
+		productsOnSaleFloor([id])
 	]);
 	if (!product) throw error(404, 'Produit introuvable');
 
 	return {
 		product,
+		placements,
+		locations,
+		/** Rangé au magasin : son étiquette porte le prix TTC. */
+		onSaleFloor: onSale.has(id),
 		brandOptions: brands.map((b) => ({ value: String(b.id), name: b.name })),
 		categoryTree: cats,
 		taxOptions: taxes.map((t) => ({
@@ -56,8 +70,8 @@ export const actions: Actions = {
 		const parsed = parseProductForm(form);
 		if (!parsed.ok) return fail(400, { message: parsed.error });
 
-		// Le stock n'est pas modifiable ici : il est piloté par les mouvements de stock.
-		const { stock: _ignoredStock, ...values } = parsed.values;
+		// Le stock n'est pas dans le formulaire : il est piloté par les mouvements de stock.
+		const values = parsed.values;
 		await updateProduct(id, { ...values, priceUpdatedAt: new Date() });
 
 		// Catégories additionnelles : cases à cocher, donc absentes du FormData
@@ -77,20 +91,34 @@ export const actions: Actions = {
 		const type = form.get('type')?.toString() as StockMovementType;
 		const quantity = Number(form.get('quantity')?.toString());
 
+		const locationId = Number(form.get('locationId'));
+
 		if (!MOVEMENT_TYPES.includes(type) || !Number.isInteger(quantity) || quantity === 0) {
 			return fail(400, { stockError: 'Type et quantité (non nulle) requis.' });
 		}
+		if (!Number.isInteger(locationId) || locationId <= 0) {
+			return fail(400, { stockError: "Choisissez l'emplacement concerné." });
+		}
 
-		// Les sorties/commandes retirent du stock : quantité rendue négative.
-		const delta = type === 'out' || type === 'order' ? -Math.abs(quantity) : quantity;
+		// Une sortie retire du stock : quantité rendue négative. Un ajustement
+		// garde son signe (+ ou −), une entrée et un retour ajoutent.
+		const delta =
+			type === 'out' ? -Math.abs(quantity) : type === 'adjustment' ? quantity : Math.abs(quantity);
 
-		await recordStockMovement({
-			productId: id,
-			quantity: delta,
-			type,
-			note: form.get('note')?.toString().trim() || null,
-			createdBy: locals.user?.id ?? null
-		});
+		try {
+			await recordStockMovement({
+				productId: id,
+				locationId,
+				quantity: delta,
+				type,
+				reference: form.get('reference')?.toString().trim() || null,
+				note: form.get('note')?.toString().trim() || null,
+				createdBy: locals.user?.id ?? null
+			});
+		} catch (err) {
+			if (err instanceof StockLocationError) return fail(400, { stockError: err.message });
+			throw err;
+		}
 		return { success: true };
 	},
 

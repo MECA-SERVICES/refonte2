@@ -28,7 +28,6 @@ import type {
 	NewBrand,
 	NewCategory,
 	NewTaxRule,
-	StockMovementType,
 	NewProduct,
 	NewProductVariant,
 	NewProductMedia
@@ -463,11 +462,10 @@ export function parseProductForm(form: FormData): ParseResult<NewProduct> {
 			metaDescription: str('metaDescription'),
 			priceHtStrike: money('priceHtStrike'),
 			purchasePrice: money('purchasePrice'),
-			stock: int('stock'),
+			// `stock` n'est jamais saisi : il vient des mouvements de stock.
 			// Quantité minimale par commande : au moins 1, sinon le produit
 			// deviendrait inachetable.
 			minOrderQuantity: Math.max(1, int('minOrderQuantity', 1)),
-			stockLocation: str('stockLocation'),
 			// 0 désactive l'alerte de réapprovisionnement.
 			lowStockThreshold: Math.max(0, int('lowStockThreshold', 0)),
 			availableDate: date('availableDate'),
@@ -593,50 +591,8 @@ export function listStockMovements(productId: number) {
 		.orderBy(desc(stockMovement.createdAt));
 }
 
-/**
- * Enregistre un mouvement de stock ET ajuste la quantité du produit en conséquence.
- * La quantité passée est le delta (positif = entrée, négatif = sortie).
- */
-export async function recordStockMovement(input: {
-	productId: number;
-	variantId?: number | null;
-	quantity: number;
-	type: StockMovementType;
-	note?: string | null;
-	createdBy?: string | null;
-}) {
-	const result = await db.transaction(async (tx) => {
-		const [movement] = await tx
-			.insert(stockMovement)
-			.values({
-				productId: input.productId,
-				variantId: input.variantId ?? null,
-				quantity: input.quantity,
-				type: input.type,
-				note: input.note ?? null,
-				createdBy: input.createdBy ?? null
-			})
-			.returning();
-
-		// Ajuste le stock : de la variante si précisée, sinon du produit.
-		if (input.variantId) {
-			await tx
-				.update(productVariant)
-				.set({ stock: sql`${productVariant.stock} + ${input.quantity}` })
-				.where(eq(productVariant.id, input.variantId));
-		} else {
-			await tx
-				.update(product)
-				.set({ stock: sql`${product.stock} + ${input.quantity}` })
-				.where(eq(product.id, input.productId));
-		}
-
-		return movement;
-	});
-	// « En stock » est un filtre et un critère de classement de la recherche.
-	syncProducts([input.productId]);
-	return result;
-}
+// Les mouvements de stock passent par un emplacement : `recordStockMovement`
+// dans `$lib/server/stock-locations`.
 
 // ----- Produits associés -----
 

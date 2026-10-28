@@ -13,6 +13,19 @@ import {
 import { repairStatuses, type RepairStatus } from '$lib/server/db/repair.schema';
 import { activeEquipmentTypeNames } from '$lib/server/equipment-types';
 import {
+	exitDocumentStock,
+	getDocumentStock,
+	StockLocationError,
+	type DocumentLine
+} from '$lib/server/stock-locations';
+
+/** Pièces du catalogue d'un ordre : ce que le magasinier sort du stock. */
+function stockLines(parts: { productId: number | null; quantity: number }[]): DocumentLine[] {
+	return parts.flatMap((p) =>
+		p.productId ? [{ productId: p.productId, quantity: p.quantity }] : []
+	);
+}
+import {
 	listRepairSettlements,
 	parseSettlementForm,
 	recordRepairSettlement,
@@ -36,6 +49,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		order,
+		partStock: await getDocumentStock(stockLines(order.parts), 'repair', order.reference),
 		settlements,
 		transitions: nextStatuses(order.status),
 		equipmentTypes
@@ -94,25 +108,19 @@ export const actions: Actions = {
 	},
 
 	/** Ajoute une pièce consommée — du catalogue ou saisie librement. */
-	addPart: async ({ request, params, locals }) => {
+	addPart: async ({ request, params }) => {
 		const id = idParam(params);
 		const form = await request.formData();
 		const productRaw = form.get('productId')?.toString().trim();
 
 		try {
-			await addRepairPart(
-				id,
-				{
-					productId: productRaw ? Number(productRaw) || null : null,
-					partName: form.get('partName')?.toString() ?? null,
-					partReference: form.get('partReference')?.toString() ?? null,
-					quantity: Number(form.get('quantity')?.toString() ?? '1') || 1,
-					unitPriceHt: form.get('unitPriceHt')?.toString().trim()
-						? amount(form, 'unitPriceHt')
-						: null
-				},
-				locals.user?.email ?? null
-			);
+			await addRepairPart(id, {
+				productId: productRaw ? Number(productRaw) || null : null,
+				partName: form.get('partName')?.toString() ?? null,
+				partReference: form.get('partReference')?.toString() ?? null,
+				quantity: Number(form.get('quantity')?.toString() ?? '1') || 1,
+				unitPriceHt: form.get('unitPriceHt')?.toString().trim() ? amount(form, 'unitPriceHt') : null
+			});
 			return { success: true };
 		} catch (err) {
 			if (err instanceof RepairError) return fail(400, { partError: err.message });
@@ -120,14 +128,36 @@ export const actions: Actions = {
 		}
 	},
 
-	removePart: async ({ request, params, locals }) => {
+	/** Sortie manuelle du stock d'une pièce de l'ordre, par le magasinier. */
+	stockExit: async ({ request, params, locals }) => {
+		const order = await getRepairOrder(idParam(params));
+		if (!order) return fail(404, { partError: 'Ordre introuvable.' });
+		const form = await request.formData();
+		try {
+			await exitDocumentStock({
+				lines: stockLines(order.parts),
+				type: 'repair',
+				reference: order.reference,
+				productId: Number(form.get('productId')),
+				locationId: Number(form.get('locationId')),
+				quantity: Number(form.get('quantity')),
+				createdBy: locals.user?.id ?? null
+			});
+		} catch (err) {
+			if (err instanceof StockLocationError) return fail(400, { partError: err.message });
+			throw err;
+		}
+		return { success: true };
+	},
+
+	removePart: async ({ request, params }) => {
 		const id = idParam(params);
 		const form = await request.formData();
 		const partId = Number(form.get('partId')?.toString());
 		if (!Number.isInteger(partId)) return fail(400, { partError: 'Ligne introuvable.' });
 
 		try {
-			await removeRepairPart(id, partId, locals.user?.email ?? null);
+			await removeRepairPart(id, partId);
 			return { success: true };
 		} catch (err) {
 			if (err instanceof RepairError) return fail(400, { partError: err.message });

@@ -19,6 +19,19 @@ import {
 import { formatInvoiceNumber, getInvoiceForOrder } from '$lib/server/invoicing';
 import { listThreadsFor } from '$lib/server/support';
 import { customerPaidStats } from '$lib/server/customers';
+import {
+	exitDocumentStock,
+	getDocumentStock,
+	StockLocationError,
+	type DocumentLine
+} from '$lib/server/stock-locations';
+
+/** Lignes du catalogue d'une commande : ce que le magasinier sort du stock. */
+function stockLines(lines: { productId: number | null; quantity: number }[]): DocumentLine[] {
+	return lines.flatMap((l) =>
+		l.productId ? [{ productId: l.productId, quantity: l.quantity }] : []
+	);
+}
 
 export const load: PageServerLoad = async ({ params }) => {
 	const id = Number(params.id);
@@ -29,14 +42,16 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	// Facture déjà émise, s'il y en a une : le numéro n'est attribué qu'au
 	// premier téléchargement, pour ne pas consommer la séquence inutilement.
-	const [invoice, messages, customerStats] = await Promise.all([
+	const [invoice, messages, customerStats, lineStock] = await Promise.all([
 		getInvoiceForOrder(order.id),
 		listThreadsFor({ orderId: order.id }),
-		order.customer ? customerPaidStats(order.customer.id) : Promise.resolve(null)
+		order.customer ? customerPaidStats(order.customer.id) : Promise.resolve(null),
+		getDocumentStock(stockLines(order.lines), 'order', order.reference)
 	]);
 
 	return {
 		order,
+		lineStock,
 		messages,
 		customerStats,
 		invoiceNumber: invoice ? formatInvoiceNumber(invoice.number) : null,
@@ -57,6 +72,28 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
+	/** Sortie manuelle du stock d'un article de la commande, par le magasinier. */
+	stockExit: async ({ request, params, locals }) => {
+		const order = await getOrderFull(Number(params.id));
+		if (!order) return fail(404, { message: 'Commande introuvable.' });
+		const form = await request.formData();
+		try {
+			await exitDocumentStock({
+				lines: stockLines(order.lines),
+				type: 'order',
+				reference: order.reference,
+				productId: Number(form.get('productId')),
+				locationId: Number(form.get('locationId')),
+				quantity: Number(form.get('quantity')),
+				createdBy: locals.user?.id ?? null
+			});
+		} catch (err) {
+			if (err instanceof StockLocationError) return fail(400, { message: err.message });
+			throw err;
+		}
+		return { success: true };
+	},
+
 	changeState: async ({ request, params, locals }) => {
 		const id = Number(params.id);
 		if (!Number.isInteger(id)) throw error(404, 'Commande introuvable');

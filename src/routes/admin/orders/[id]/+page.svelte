@@ -28,6 +28,7 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import {
 		AutosaveNote,
+		DocumentLineStock,
 		PageHeader,
 		StateBadge,
 		SupportThreadsCard,
@@ -679,6 +680,9 @@
 									</span>
 								{/if}
 							</p>
+							{#if l.productId && data.lineStock[l.productId]}
+								<DocumentLineStock productId={l.productId} stock={data.lineStock[l.productId]} />
+							{/if}
 
 							<p class="mt-1.5 text-sm text-gray-600">
 								{l.quantity} × {formatPrice(Number(l.unitPriceHt))} HT
@@ -776,12 +780,14 @@
 					{o.customer.firstName}
 					{o.customer.lastName}
 				</p>
-				<a
-					href="mailto:{o.customer.email}"
-					class="text-sm break-all text-primary-700 hover:underline"
-				>
-					{o.customer.email}
-				</a>
+				{#if o.customer.email}
+					<a
+						href="mailto:{o.customer.email}"
+						class="text-sm break-all text-primary-700 hover:underline"
+					>
+						{o.customer.email}
+					</a>
+				{/if}
 				{#if o.customer.phone || shipping?.phone}
 					<a
 						href="tel:{(o.customer.phone || shipping?.phone || '').replace(/\s/g, '')}"
