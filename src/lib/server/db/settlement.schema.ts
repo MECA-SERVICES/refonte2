@@ -41,10 +41,17 @@ export const remittance = pgTable(
 		depositedOn: date('deposited_on', { mode: 'string' }).notNull(),
 		total: numeric('total', { precision: 12, scale: 2 }).notNull(),
 		settlementCount: integer('settlement_count').notNull(),
+		/** Reprise Dolibarr (`llx_bordereau_cheque.rowid`). */
+		legacyDoliId: integer('legacy_doli_id'),
 		createdBy: text('created_by'),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
-	(t) => [uniqueIndex('remittance_reference_idx').on(t.reference)]
+	(t) => [
+		uniqueIndex('remittance_reference_idx').on(t.reference),
+		uniqueIndex('remittance_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
+	]
 );
 
 export const settlement = pgTable(

@@ -85,7 +85,10 @@
 						<TableBodyCell>{r.bankAccount}</TableBodyCell>
 						<TableBodyCell class="text-right">{r.settlementCount}</TableBodyCell>
 						<TableBodyCell class="text-right">{formatPrice(r.total)}</TableBodyCell>
-						<TableBodyCell><StateBadge color="green" label="Validé" /></TableBodyCell>
+						<TableBodyCell>
+							<StateBadge color="green" label="Validé" />
+							{#if r.legacyDoliId}<StateBadge label="Dolibarr" class="ms-1" />{/if}
+						</TableBodyCell>
 					</TableBodyRow>
 				{/each}
 			</TableBody>

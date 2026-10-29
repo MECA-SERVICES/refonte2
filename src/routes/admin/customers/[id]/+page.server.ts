@@ -8,6 +8,7 @@ import {
 } from '$lib/server/customers';
 import { listMachines } from '$lib/server/machines';
 import { listCustomerCounterInvoices } from '$lib/server/counter-invoices';
+import { listCustomerQuotes } from '$lib/server/quotes';
 import { pendingRequestForCustomer } from '$lib/server/account-validation';
 import { listThreadsFor } from '$lib/server/support';
 
@@ -23,16 +24,17 @@ export const load: PageServerLoad = async ({ params }) => {
 	const customer = await getCustomerWithAddresses(id);
 	if (!customer) throw error(404, 'Client introuvable');
 
-	const [overview, machines, pendingRequest, messages, invoices] = await Promise.all([
+	const [overview, machines, pendingRequest, messages, invoices, quotes] = await Promise.all([
 		getCustomerOverview(id, customer.userId),
 		listMachines(id),
 		// Dossier en cours, pour renvoyer vers l'écran de décision (CDC 08).
 		pendingRequestForCustomer(id),
 		listThreadsFor({ customerId: id }, 5),
-		listCustomerCounterInvoices(id)
+		listCustomerCounterInvoices(id),
+		listCustomerQuotes(id)
 	]);
 
-	return { customer, overview, machines, pendingRequest, messages, invoices };
+	return { customer, overview, machines, pendingRequest, messages, invoices, quotes };
 };
 
 export const actions: Actions = {

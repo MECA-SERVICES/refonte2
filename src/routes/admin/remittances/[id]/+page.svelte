@@ -41,9 +41,11 @@
 		<Button href="/admin/remittances/{r.id}/pdf" target="_blank" rel="noopener" size="sm">
 			<FilePdfOutline class="me-2 h-4 w-4" /> Bordereau PDF
 		</Button>
-		<Button color="alternative" size="sm" onclick={() => (confirmOpen = true)}>
-			<TrashBinOutline class="me-2 h-4 w-4" /> Supprimer
-		</Button>
+		{#if !r.legacyDoliId}
+			<Button color="alternative" size="sm" onclick={() => (confirmOpen = true)}>
+				<TrashBinOutline class="me-2 h-4 w-4" /> Supprimer
+			</Button>
+		{/if}
 	{/snippet}
 </PageHeader>
 
@@ -71,7 +73,10 @@
 		</div>
 		<div>
 			<dt class="text-gray-500">Statut</dt>
-			<dd><StateBadge color="green" label="Validé" /></dd>
+			<dd class="flex flex-wrap gap-1">
+				<StateBadge color="green" label="Validé" />
+				{#if r.legacyDoliId}<StateBadge label="Repris de Dolibarr" />{/if}
+			</dd>
 		</div>
 	</dl>
 </Card>

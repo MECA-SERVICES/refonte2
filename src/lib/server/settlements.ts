@@ -364,9 +364,17 @@ export async function getRemittance(id: number) {
 /**
  * Supprime un bordereau saisi par erreur : ses règlements retournent en
  * caisse, prêts pour un nouveau bordereau. Les règlements eux-mêmes restent.
+ * Un bordereau repris de Dolibarr a été remis à la banque : il ne se supprime pas.
  */
 export async function deleteRemittance(id: number) {
 	await db.transaction(async (tx) => {
+		const [head] = await tx
+			.select({ legacyDoliId: remittance.legacyDoliId })
+			.from(remittance)
+			.where(eq(remittance.id, id));
+		if (head?.legacyDoliId) {
+			throw new SettlementError('Un bordereau repris de Dolibarr ne se supprime pas.');
+		}
 		await tx.update(settlement).set({ remittanceId: null }).where(eq(settlement.remittanceId, id));
 		await tx.delete(remittance).where(eq(remittance.id, id));
 	});

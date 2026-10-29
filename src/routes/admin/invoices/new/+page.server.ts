@@ -5,7 +5,7 @@ import {
 	createDraft,
 	searchInvoiceCustomers
 } from '$lib/server/counter-invoices';
-import { createCustomerWithoutAccount } from '$lib/server/customers';
+import { createWalkInCustomer } from '$lib/server/document-actions';
 
 /** `?client=` : recherche du client à facturer. */
 export const load: PageServerLoad = async ({ url }) => {
@@ -27,31 +27,11 @@ export const actions: Actions = {
 		redirect(303, `/admin/invoices/${id}`);
 	},
 
-	/**
-	 * Client de passage, créé sans compte web (e-mail facultatif), puis son
-	 * brouillon de facture.
-	 */
+	/** Client de passage, créé sans compte web, puis son brouillon de facture. */
 	createCustomer: async ({ request, locals }) => {
-		const form = await request.formData();
-		const str = (k: string) => form.get(k)?.toString().trim() || null;
-		const firstName = str('firstName');
-		const lastName = str('lastName');
-		const companyName = str('companyName');
-		if (!lastName && !companyName) {
-			return fail(400, { message: 'Indiquez au moins le nom du client ou sa société.' });
-		}
-		const created = await createCustomerWithoutAccount({
-			firstName: firstName ?? '',
-			lastName: lastName ?? companyName ?? '',
-			companyName,
-			email: str('email'),
-			phone: str('phone'),
-			type: companyName ? 'pro' : 'particulier',
-			status: 'validated',
-			source: 'comptoir'
-		});
+		const created = await createWalkInCustomer(await request.formData());
 		if (!created.ok) return fail(400, { message: created.error });
-		const id = await createDraft(created.customer.id, locals.user?.id ?? null);
+		const id = await createDraft(created.values.id, locals.user?.id ?? null);
 		redirect(303, `/admin/invoices/${id}`);
 	}
 };

@@ -1,6 +1,6 @@
 /**
- * Clients facturés au comptoir : tiers Dolibarr (`llx_societe`) qui ont au
- * moins une facture → `customer`.
+ * Clients du comptoir : tiers Dolibarr (`llx_societe`) qui ont au moins une
+ * facture ou un devis → `customer`.
  *
  * Un seul fichier client : un tiers se rattache au client MSShop de même
  * e-mail, puis de même SIRET. Sinon il est créé **sans compte web** (pas de
@@ -31,7 +31,7 @@ interface SourceThirdParty {
 
 export const customersTask: Task = {
 	name: 'customers',
-	description: 'Clients facturés (llx_societe → customer, sans compte web)',
+	description: 'Clients facturés ou chiffrés (llx_societe → customer, sans compte web)',
 
 	async run({ dryRun }) {
 		const rows = await sourceQuery<SourceThirdParty>(
@@ -39,9 +39,10 @@ export const customersTask: Task = {
 			        c.code AS country
 			 FROM ${DOLI}.llx_societe s
 			 LEFT JOIN ${DOLI}.llx_c_country c ON c.rowid = s.fk_pays
-			 WHERE s.rowid IN (SELECT DISTINCT fk_soc FROM ${DOLI}.llx_facture)`
+			 WHERE s.rowid IN (SELECT fk_soc FROM ${DOLI}.llx_facture)
+			    OR s.rowid IN (SELECT fk_soc FROM ${DOLI}.llx_propal)`
 		);
-		log.muted(`${count(rows.length)} tiers facturés en source`);
+		log.muted(`${count(rows.length)} tiers facturés ou chiffrés en source`);
 
 		const sql = targetDb();
 		const existing = await sql<

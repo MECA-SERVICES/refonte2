@@ -12,6 +12,7 @@ function fixture(kind: 'cheque' | 'cash') {
 		depositedOn: '2026-10-26',
 		total: '168.00',
 		settlementCount: 2,
+		legacyDoliId: null,
 		createdBy: 'davy@example.test',
 		createdAt: new Date('2026-10-26T10:00:00Z'),
 		lines: [

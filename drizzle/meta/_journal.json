@@ -372,6 +372,20 @@
 			"when": 1793259685278,
 			"tag": "0054_factures_comptoir",
 			"breakpoints": true
+		},
+		{
+			"idx": 55,
+			"version": "7",
+			"when": 1793263000000,
+			"tag": "0055_bordereaux_dolibarr",
+			"breakpoints": true
+		},
+		{
+			"idx": 56,
+			"version": "7",
+			"when": 1793264000000,
+			"tag": "0056_devis",
+			"breakpoints": true
 		}
 	]
 }

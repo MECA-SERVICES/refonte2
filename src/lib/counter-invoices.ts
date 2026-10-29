@@ -50,9 +50,13 @@ export function priceHtFromTtc(priceTtc: number, taxRate: number): number {
 /**
  * Numéro légal, au format de la série Dolibarr : préfixe, année et mois de
  * validation sur 4 chiffres, compteur continu sur 4 chiffres au moins
- * (`FA2611-1316`, `AV2611-0033`).
+ * (`FA2611-1316`, `AV2611-0033`, devis `PR2611-0322`).
  */
-export function formatCounterNumber(prefix: 'FA' | 'AV', date: Date, counter: number): string {
+export function formatCounterNumber(
+	prefix: 'FA' | 'AV' | 'PR',
+	date: Date,
+	counter: number
+): string {
 	const yy = String(date.getFullYear() % 100).padStart(2, '0');
 	const mm = String(date.getMonth() + 1).padStart(2, '0');
 	return `${prefix}${yy}${mm}-${String(counter).padStart(4, '0')}`;

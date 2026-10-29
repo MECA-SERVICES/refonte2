@@ -7,7 +7,8 @@
  * - `llx_facturedet` : lignes (produit, prestation ou ligne libre), remise,
  *   TVA, totaux tels qu'imprimés ;
  * - `llx_paiement` + `llx_paiement_facture` : règlements (chèque, virement,
- *   espèces), repris déjà en banque (`legacy_doli_id`, hors bordereau).
+ *   espèces), avec l'émetteur et la banque du chèque (`llx_bank`). Ils sont
+ *   déjà en banque : la tâche `remittances` les range sur leur bordereau.
  *
  * Enfin, les séquences de numérotation repartent après le dernier numéro
  * Dolibarr : la série continue dans MSShop (`FA2611-1316`…).
@@ -18,7 +19,7 @@
 import type { Task } from '../../../lib/runner.ts';
 import { DOLI, sourceQuery } from '../source.ts';
 import { targetDb } from '../../../lib/target-db.ts';
-import { text } from '../../../lib/transform.ts';
+import { htmlText as plain, isoDay as day, text } from '../../../lib/transform.ts';
 import { log, count } from '../../../lib/logger.ts';
 
 interface SourceInvoice {
@@ -64,30 +65,14 @@ interface SourcePayment {
 	ref: string;
 	datep: Date;
 	num_paiement: string | null;
+	issuer: string | null;
+	bank: string | null;
 	mode: string | null;
 }
 
 const KINDS: Record<number, string> = { 0: 'invoice', 2: 'credit_note', 3: 'deposit' };
 const STATUSES: Record<number, string> = { 0: 'draft', 1: 'validated', 2: 'paid', 3: 'abandoned' };
 const METHODS: Record<string, string> = { CHQ: 'cheque', VIR: 'transfer', LIQ: 'cash', CB: 'card' };
-
-/** Texte d'une ligne Dolibarr : HTML retiré, entités décodées. */
-function plain(html: string | null): string {
-	return (html ?? '')
-		.replace(/<br\s*\/?>/gi, ' ')
-		.replace(/<[^>]+>/g, '')
-		.replace(/&nbsp;/g, ' ')
-		.replace(/&agrave;/g, 'à')
-		.replace(/&eacute;/g, 'é')
-		.replace(/&egrave;/g, 'è')
-		.replace(/&amp;/g, '&')
-		.replace(/&#39;|&apos;/g, "'")
-		.replace(/&quot;/g, '"')
-		.replace(/\s+/g, ' ')
-		.trim();
-}
-
-const day = (d: Date | null) => (d ? new Date(d).toISOString().slice(0, 10) : null);
 
 export const invoicesTask: Task = {
 	name: 'invoices',
@@ -107,9 +92,12 @@ export const invoicesTask: Task = {
 			 FROM ${DOLI}.llx_facturedet d LEFT JOIN ${DOLI}.llx_product p ON p.rowid = d.fk_product`
 		);
 		const payments = await sourceQuery<SourcePayment>(
-			`SELECT pf.rowid, pf.fk_facture, pf.amount, p.ref, p.datep, p.num_paiement, c.code AS mode
+			`SELECT pf.rowid, pf.fk_facture, pf.amount, p.ref, p.datep,
+			        coalesce(nullif(b.num_chq, ''), p.num_paiement) AS num_paiement,
+			        b.emetteur AS issuer, b.banque AS bank, c.code AS mode
 			 FROM ${DOLI}.llx_paiement_facture pf
 			 JOIN ${DOLI}.llx_paiement p ON p.rowid = pf.fk_paiement
+			 LEFT JOIN ${DOLI}.llx_bank b ON b.rowid = p.fk_bank
 			 LEFT JOIN ${DOLI}.llx_c_paiement c ON c.id = p.fk_paiement`
 		);
 		log.muted(
@@ -238,7 +226,7 @@ export const invoicesTask: Task = {
 						total_ht numeric, total_tva numeric, total_ttc numeric, accounting_code text)`;
 			}
 
-			// Règlements : déjà en banque dans Dolibarr, donc hors bordereau.
+			// Règlements : déjà en banque dans Dolibarr, jamais en caisse.
 			const settlementRows = payments
 				.filter((p) => invoiceOf.has(Number(p.fk_facture)) && Number(p.amount) !== 0)
 				.map((p) => {
@@ -250,17 +238,23 @@ export const invoicesTask: Task = {
 						amount: Number(p.amount).toFixed(2),
 						received_on: day(p.datep),
 						cheque_number: method === 'cheque' ? text(p.num_paiement) : null,
+						cheque_issuer: method === 'cheque' ? text(p.issuer) : null,
+						cheque_bank: method === 'cheque' ? text(p.bank) : null,
 						counter_invoice_id: invoiceOf.get(Number(p.fk_facture))
 					};
 				});
 			await tx`
 				INSERT INTO settlement (legacy_doli_id, reference, method, amount, received_on,
-					cheque_number, counter_invoice_id)
-				SELECT legacy_doli_id, reference, method, amount, received_on, cheque_number, counter_invoice_id
+					cheque_number, cheque_issuer, cheque_bank, counter_invoice_id)
+				SELECT legacy_doli_id, reference, method, amount, received_on, cheque_number, cheque_issuer,
+					cheque_bank, counter_invoice_id
 				FROM jsonb_to_recordset(${tx.json(settlementRows)}) AS s(legacy_doli_id int, reference text,
-					method text, amount numeric, received_on date, cheque_number text, counter_invoice_id int)
+					method text, amount numeric, received_on date, cheque_number text, cheque_issuer text,
+					cheque_bank text, counter_invoice_id int)
 				ON CONFLICT (legacy_doli_id) WHERE legacy_doli_id IS NOT NULL DO UPDATE SET
-					amount = excluded.amount, received_on = excluded.received_on, method = excluded.method`;
+					amount = excluded.amount, received_on = excluded.received_on, method = excluded.method,
+					cheque_number = excluded.cheque_number, cheque_issuer = excluded.cheque_issuer,
+					cheque_bank = excluded.cheque_bank`;
 
 			// La série continue après le dernier numéro Dolibarr (et jamais en arrière).
 			for (const [seq, prefix] of [

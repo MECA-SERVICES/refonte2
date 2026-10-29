@@ -27,6 +27,7 @@
 		TruckSolid,
 		CreditCardSolid,
 		FileInvoiceSolid,
+		FilePenSolid,
 		GlobeSolid,
 		CogSolid,
 		ToolsOutline,
@@ -53,6 +54,7 @@
 		truck: TruckSolid,
 		'credit-card': CreditCardSolid,
 		'file-invoice': FileInvoiceSolid,
+		'file-pen': FilePenSolid,
 		globe: GlobeSolid,
 		cog: CogSolid,
 		tools: ToolsOutline

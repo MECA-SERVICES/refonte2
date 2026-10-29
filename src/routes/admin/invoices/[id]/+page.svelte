@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
-	import { goto } from '$app/navigation';
 	import { Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
-	import { FilePdfOutline, TrashBinOutline } from 'flowbite-svelte-icons';
+	import { FilePdfOutline } from 'flowbite-svelte-icons';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { formatPrice, round2 } from '$lib/money';
+	import { formatPrice } from '$lib/money';
 	import { COUNTER_STATUS } from '$lib/counter-invoices';
 	import { SETTLEMENT_METHOD_LABELS, settlementMethods } from '$lib/settlements';
 	import {
 		ConfirmDialog,
 		DocumentLineStock,
+		DocumentLines,
+		DocumentTotals,
 		PageHeader,
-		StateBadge,
-		listFilterHref
+		StateBadge
 	} from '$lib/components/admin';
 	import type { PageProps } from './$types';
 
@@ -34,41 +34,10 @@
 	);
 	const client = $derived(data.customer);
 	const today = new Date().toISOString().slice(0, 10);
-	const TAX_RATES = [20, 10, 5.5, 0].map((r) => ({ value: String(r), name: `${r} %` }));
-
-	/** Prix unitaire TTC d'une ligne, celui qu'on saisit au comptoir. */
-	const unitTtc = (l: { unitPriceHt: string; taxRate: string }) =>
-		round2(Number(l.unitPriceHt) * (1 + Number(l.taxRate) / 100));
-
-	let searchTimer: ReturnType<typeof setTimeout> | undefined;
-	function search(value: string) {
-		clearTimeout(searchTimer);
-		searchTimer = setTimeout(() => {
-			goto(listFilterHref(`/admin/invoices/${inv.id}`, [['q', value.trim()]]), {
-				keepFocus: true,
-				noScroll: true,
-				replaceState: true
-			});
-		}, 300);
-	}
-
 	const keepValues: SubmitFunction =
 		() =>
 		({ update }) =>
 			update({ reset: false });
-	const clearSearch: SubmitFunction =
-		() =>
-		async ({ result, update }) => {
-			await update();
-			if (result.type === 'success') {
-				await goto(`/admin/invoices/${inv.id}`, {
-					keepFocus: true,
-					noScroll: true,
-					replaceState: true
-				});
-			}
-		};
-
 	let method = $state<string>('cheque');
 	let confirm = $state<null | 'validate' | 'delete' | 'credit'>(null);
 	let forms = $state<Record<string, HTMLFormElement | null>>({
@@ -157,227 +126,19 @@
 
 <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
 	<div class="min-w-0 space-y-6">
-		<!-- ================= Lignes ================= -->
-		<Card class="max-w-none p-5">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900">Lignes</h2>
-			{#if data.lines.length === 0}
-				<p class="py-6 text-center text-sm text-gray-500">
-					Aucune ligne : ajoutez un produit, une prestation ou une ligne libre ci-dessous.
-				</p>
-			{:else}
-				<div class="overflow-x-auto">
-					<table class="w-full text-sm">
-						<thead class="border-b border-gray-200 text-xs text-gray-600 uppercase">
-							<tr>
-								<th scope="col" class="py-2 pe-3 text-start">Désignation</th>
-								<th scope="col" class="px-2 py-2 text-end">Qté</th>
-								<th scope="col" class="px-2 py-2 text-end">P.U. TTC</th>
-								<th scope="col" class="px-2 py-2 text-end">Remise</th>
-								<th scope="col" class="px-2 py-2 text-end">TVA</th>
-								<th scope="col" class="px-2 py-2 text-end">Total TTC</th>
-								{#if isDraft}<th scope="col" class="py-2 ps-2"
-										><span class="sr-only">Actions</span></th
-									>{/if}
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-gray-100">
-							{#each data.lines as line (line.id)}
-								{#if isDraft}
-									<tr class="align-top">
-										<td class="py-2 pe-3" colspan="7">
-											<form
-												method="POST"
-												action="?/updateLine"
-												use:enhance={keepValues}
-												data-success="Ligne enregistrée."
-												class="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_5rem_6.5rem_4.5rem_5.5rem_6rem_auto]"
-											>
-												<input type="hidden" name="lineId" value={line.id} />
-												<div class="min-w-0">
-													<Input
-														name="label"
-														value={line.label}
-														size="sm"
-														aria-label="Désignation"
-													/>
-													<p class="mt-0.5 text-xs text-gray-500">
-														{line.reference ?? 'Ligne libre'}{line.productType === 'service'
-															? ' · prestation'
-															: ''}
-													</p>
-												</div>
-												<Input
-													name="quantity"
-													value={String(Number(line.quantity))}
-													size="sm"
-													class="text-end"
-													aria-label="Quantité"
-												/>
-												<Input
-													name="priceTtc"
-													value={unitTtc(line).toFixed(2)}
-													size="sm"
-													class="text-end"
-													aria-label="Prix unitaire TTC"
-												/>
-												<Input
-													name="discountPercent"
-													value={String(Number(line.discountPercent))}
-													size="sm"
-													class="text-end"
-													aria-label="Remise en %"
-												/>
-												<Select
-													name="taxRate"
-													items={TAX_RATES}
-													value={String(Number(line.taxRate))}
-													size="sm"
-													placeholder=""
-													aria-label="Taux de TVA"
-												/>
-												<p class="pt-2 text-end font-semibold tabular-nums">
-													{formatPrice(line.totalTtc)}
-												</p>
-												<div class="flex gap-1">
-													<Button type="submit" size="xs" color="alternative">OK</Button>
-													<button
-														type="submit"
-														formaction="?/deleteLine"
-														aria-label="Supprimer la ligne {line.label}"
-														class="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-700"
-													>
-														<TrashBinOutline class="h-4 w-4" />
-													</button>
-												</div>
-											</form>
-										</td>
-									</tr>
-								{:else}
-									<tr class="align-top">
-										<td class="py-2 pe-3">
-											<p class="font-medium text-gray-900">
-												{#if line.productId}<a
-														href="/admin/products/{line.productId}"
-														class="hover:underline">{line.label}</a
-													>{:else}{line.label}{/if}
-											</p>
-											<p class="text-xs text-gray-500">
-												{line.reference ?? 'Ligne libre'}{line.productType === 'service'
-													? ' · prestation'
-													: ''}
-											</p>
-											{#if line.productId && data.lineStock[line.productId]}
-												<DocumentLineStock
-													productId={line.productId}
-													stock={data.lineStock[line.productId]}
-												/>
-											{/if}
-										</td>
-										<td class="px-2 py-2 text-end tabular-nums">{Number(line.quantity)}</td>
-										<td class="px-2 py-2 text-end tabular-nums">{formatPrice(unitTtc(line))}</td>
-										<td class="px-2 py-2 text-end tabular-nums"
-											>{Number(line.discountPercent) ? `${Number(line.discountPercent)} %` : ''}</td
-										>
-										<td class="px-2 py-2 text-end tabular-nums">{Number(line.taxRate)} %</td>
-										<td class="px-2 py-2 text-end font-semibold tabular-nums"
-											>{formatPrice(line.totalTtc)}</td
-										>
-									</tr>
-								{/if}
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			{/if}
-		</Card>
-
-		{#if isDraft}
-			<!-- ================= Ajouter ================= -->
-			<Card class="max-w-none p-5">
-				<label for="line-search" class="mb-2 block text-sm font-semibold text-gray-900">
-					Ajouter un produit ou une prestation (MO-T1, révision…)
-				</label>
-				<input
-					id="line-search"
-					type="search"
-					value={data.q}
-					oninput={(e) => search(e.currentTarget.value)}
-					autocomplete="off"
-					placeholder="Référence, nom ou EAN : « MO-T1 », « courroie mtd »"
-					class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
-				/>
-				{#if data.q}
-					<ul class="mt-3 divide-y divide-gray-100 rounded-lg border border-gray-200">
-						{#each data.products as p (p.id)}
-							<li class="flex items-center gap-3 p-2 text-sm">
-								<div class="min-w-0 flex-1">
-									<p class="truncate font-medium text-gray-900">{p.name}</p>
-									<p class="text-xs text-gray-500">
-										{p.reference} · {formatPrice(
-											round2(Number(p.priceHt) * (1 + Number(p.taxRate) / 100))
-										)} TTC
-										{p.type === 'service' ? '· prestation' : `· stock ${p.stock}`}
-									</p>
-								</div>
-								{#if p.type === 'service'}<StateBadge color="blue" label="Prestation" />{/if}
-								<form
-									method="POST"
-									action="?/addProduct"
-									use:enhance={clearSearch}
-									data-success="Ligne ajoutée."
-								>
-									<input type="hidden" name="productId" value={p.id} />
-									<Button type="submit" size="xs">Ajouter</Button>
-								</form>
-							</li>
-						{:else}
-							<li class="p-3 text-sm text-gray-500">
-								Rien ne correspond : ajoutez une ligne libre.
-							</li>
-						{/each}
-					</ul>
+		<DocumentLines
+			lines={data.lines}
+			editable={isDraft}
+			basePath="/admin/invoices/{inv.id}"
+			q={data.q}
+			products={data.products}
+		>
+			{#snippet lineExtra(line)}
+				{#if line.productId && data.lineStock[line.productId]}
+					<DocumentLineStock productId={line.productId} stock={data.lineStock[line.productId]} />
 				{/if}
-
-				<form
-					method="POST"
-					action="?/addFree"
-					use:enhance
-					data-success="Ligne ajoutée."
-					class="mt-5 grid gap-2 border-t border-gray-200 pt-4 sm:grid-cols-[minmax(0,1fr)_5rem_7rem_6rem_auto] sm:items-end"
-				>
-					<div>
-						<Label for="free-label" class="mb-1 text-xs">Ligne libre : désignation</Label>
-						<Input
-							id="free-label"
-							name="label"
-							size="sm"
-							placeholder="ex. Roue arrière réf. 122E87-3"
-							required
-						/>
-					</div>
-					<div>
-						<Label for="free-qty" class="mb-1 text-xs">Qté</Label>
-						<Input id="free-qty" name="quantity" value="1" size="sm" />
-					</div>
-					<div>
-						<Label for="free-price" class="mb-1 text-xs">P.U. TTC</Label>
-						<Input id="free-price" name="priceTtc" size="sm" required />
-					</div>
-					<div>
-						<Label for="free-tax" class="mb-1 text-xs">TVA</Label>
-						<Select
-							id="free-tax"
-							name="taxRate"
-							items={TAX_RATES}
-							value="20"
-							size="sm"
-							placeholder=""
-						/>
-					</div>
-					<Button type="submit" size="sm" color="alternative">Ajouter</Button>
-				</form>
-			</Card>
-		{/if}
+			{/snippet}
+		</DocumentLines>
 	</div>
 
 	<!-- ================= Côté : client, totaux, règlements ================= -->
@@ -396,6 +157,14 @@
 					Ordre de réparation <a
 						href="/admin/repairs/{data.repair.id}"
 						class="text-primary-700 hover:underline">{data.repair.reference}</a
+					>
+				</p>
+			{/if}
+			{#if data.quote}
+				<p class="mt-2 text-sm">
+					Issue du devis <a
+						href="/admin/quotes/{data.quote.id}"
+						class="text-primary-700 hover:underline">{data.quote.number}</a
 					>
 				</p>
 			{/if}
@@ -442,43 +211,31 @@
 			{/if}
 		</Card>
 
-		<Card class="max-w-none p-5">
-			<dl class="space-y-1.5 text-sm">
+		<DocumentTotals
+			totalHt={inv.totalHt}
+			totalTtc={inv.totalTtc}
+			taxBreakdown={inv.taxBreakdown ?? []}
+		>
+			{#if !isCredit && !isDraft}
 				<div class="flex justify-between">
-					<dt class="text-gray-600">Total HT</dt>
-					<dd class="tabular-nums">{formatPrice(inv.totalHt)}</dd>
+					<dt class="text-gray-600">Réglé</dt>
+					<dd class="tabular-nums">{formatPrice(data.paid)}</dd>
 				</div>
-				{#each inv.taxBreakdown ?? [] as t (t.rate)}
-					<div class="flex justify-between text-xs">
-						<dt class="text-gray-500">TVA {t.rate} % sur {formatPrice(t.baseHt)}</dt>
-						<dd class="tabular-nums">{formatPrice(t.taxAmount)}</dd>
-					</div>
-				{/each}
-				<div class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold">
-					<dt>Total TTC</dt>
-					<dd class="tabular-nums">{formatPrice(inv.totalTtc)}</dd>
+				{#if data.credited}<div class="flex justify-between">
+						<dt class="text-gray-600">Avoirs</dt>
+						<dd class="tabular-nums">{formatPrice(data.credited)}</dd>
+					</div>{/if}
+				<div class="flex justify-between text-base font-semibold">
+					<dt>Reste à payer</dt>
+					<dd class="tabular-nums {data.remaining > 0 ? 'text-red-700' : 'text-green-700'}">
+						{formatPrice(Math.max(0, data.remaining))}
+					</dd>
 				</div>
-				{#if !isCredit && !isDraft}
-					<div class="flex justify-between">
-						<dt class="text-gray-600">Réglé</dt>
-						<dd class="tabular-nums">{formatPrice(data.paid)}</dd>
-					</div>
-					{#if data.credited}<div class="flex justify-between">
-							<dt class="text-gray-600">Avoirs</dt>
-							<dd class="tabular-nums">{formatPrice(data.credited)}</dd>
-						</div>{/if}
-					<div class="flex justify-between text-base font-semibold">
-						<dt>Reste à payer</dt>
-						<dd class="tabular-nums {data.remaining > 0 ? 'text-red-700' : 'text-green-700'}">
-							{formatPrice(Math.max(0, data.remaining))}
-						</dd>
-					</div>
-				{/if}
-			</dl>
-			{#if inv.status === 'abandoned'}<p class="mt-3 text-sm text-gray-700">
+			{/if}
+			{#if inv.status === 'abandoned'}<p class="pt-2 text-sm text-gray-700">
 					Abandonnée : {inv.abandonReason}
 				</p>{/if}
-		</Card>
+		</DocumentTotals>
 
 		{#if !isCredit && !isDraft}
 			<Card class="max-w-none p-5">

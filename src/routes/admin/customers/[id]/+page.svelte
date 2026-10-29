@@ -24,6 +24,7 @@
 	} from '$lib/components/admin';
 	import { paymentMethodLabel } from '$lib/payment-methods';
 	import { COUNTER_STATUS } from '$lib/counter-invoices';
+	import { QUOTE_STATUS } from '$lib/quotes';
 	import type { PageProps } from './$types';
 
 	/**
@@ -352,6 +353,41 @@
 							<StateBadge
 								color={COUNTER_STATUS[inv.status].color}
 								label={COUNTER_STATUS[inv.status].label}
+							/>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</Card>
+
+		<!-- Devis (CDC 23), historique Dolibarr compris. -->
+		<Card class="max-w-none p-6">
+			<div class="flex items-center justify-between">
+				{@render cardTitle('Devis', data.quotes.length)}
+				<form method="POST" action="/admin/quotes/new?/create">
+					<input type="hidden" name="customerId" value={c.id} />
+					<Button type="submit" size="xs" color="alternative">Nouveau devis</Button>
+				</form>
+			</div>
+			{#if data.quotes.length === 0}
+				<p class="py-6 text-center text-sm text-gray-500">Aucun devis.</p>
+			{:else}
+				<ul class="mt-4 divide-y divide-gray-100 text-sm">
+					{#each data.quotes as q (q.id)}
+						<li class="flex items-center justify-between gap-3 py-2">
+							<a
+								href="/admin/quotes/{q.id}"
+								class="font-mono text-xs text-primary-700 hover:underline"
+							>
+								{q.number ?? `Brouillon n° ${q.id}`}
+							</a>
+							<span class="text-gray-500">
+								{q.issuedOn ? new Intl.DateTimeFormat('fr-FR').format(new Date(q.issuedOn)) : ''}
+							</span>
+							<span class="tabular-nums">{formatPrice(q.totalTtc)}</span>
+							<StateBadge
+								color={QUOTE_STATUS[q.displayStatus].color}
+								label={QUOTE_STATUS[q.displayStatus].label}
 							/>
 						</li>
 					{/each}

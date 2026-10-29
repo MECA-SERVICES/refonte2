@@ -4,12 +4,13 @@
  *
  * Sont rattachés les produits qui ont une ligne de stock (`llx_product_stock`),
  * figurent dans un inventaire (`utile_inventaire`) ou dans un bon d'entrée ou
- * de sortie (`utile_bon_livraison`, `utile_bon_sortie`). Chacun reçoit un
+ * de sortie (`utile_bon_livraison`, `utile_bon_sortie`), ou dans un devis
+ * (`llx_propaldet`). Chacun reçoit un
  * `product.legacy_doli_id`, sur lequel s'appuient les tâches suivantes (stock,
  * numéros de série, inventaires, historique des bons). Seuls ceux du stock et
  * des inventaires, et ceux qui ont été facturés (`llx_facturedet`), sont créés
- * s'ils manquent : un produit qui n'apparaît que dans l'historique des bons
- * n'a pas besoin de fiche. Les prestations de main-d'œuvre (`MO-T1`…,
+ * s'ils manquent : un produit qui n'apparaît que dans l'historique des bons ou
+ * dans un devis n'a pas besoin de fiche (la ligne garde sa référence). Les prestations de main-d'œuvre (`MO-T1`…,
  * `fk_product_type = 1`) deviennent des produits de type `service`. Le code
  * comptable de vente (`accountancy_code_sell`, demande 2.1) est repris.
  *
@@ -69,7 +70,8 @@ export const productsTask: Task = {
 		const allIds = new Set([
 			...stockedIds,
 			...(await idsOf('utile_bon_livraison', 'id_product')),
-			...(await idsOf('utile_bon_sortie', 'id_product'))
+			...(await idsOf('utile_bon_sortie', 'id_product')),
+			...(await idsOf('llx_propaldet', 'fk_product'))
 		]);
 		const doli: SourceProduct[] = [];
 		const ids = [...allIds];
@@ -82,7 +84,7 @@ export const productsTask: Task = {
 			for (const r of rows) doli.push({ ...r, stocked: stockedIds.has(Number(r.rowid)) ? 1 : 0 });
 		}
 		log.muted(
-			`${count(doli.length)} produits Dolibarr en stock, inventoriés, facturés ou dans un bon (${count(doli.filter((d) => Number(d.stocked)).length)} à créer s'ils manquent)`
+			`${count(doli.length)} produits Dolibarr en stock, inventoriés, facturés, dans un bon ou un devis (${count(doli.filter((d) => Number(d.stocked)).length)} à créer s'ils manquent)`
 		);
 
 		const sql = targetDb();

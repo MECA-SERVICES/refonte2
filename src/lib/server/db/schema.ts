@@ -15,3 +15,4 @@ export * from './settlement.schema';
 export * from './home.schema';
 export * from './inventory.schema';
 export * from './counter-invoice.schema';
+export * from './quote.schema';

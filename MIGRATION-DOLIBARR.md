@@ -144,7 +144,7 @@ Mesuré sur les données : volumes totaux, puis activité en 2026.
 
 ### Phase 2 — Facturation au comptoir
 
-**Fait le 29/10/2026 (code prêt, reprise à lancer).** `/admin/invoices` : facture comptoir et avoir (brouillon → validation → règlements → payée ; avoir pour corriger ; abandon motivé), lignes produit, prestation (`MO-T1`… en produits `service`) ou libre, prix saisis TTC, remise, TVA par ligne ; PDF ; règlements via `settlement` (bordereaux de remise compris) ; sortie de stock depuis la facture ; « Facturer » depuis un ordre de réparation. Numérotation : la série Dolibarr continue (`FA2611-1316`, `AV2611-0033`, séquences Postgres, migration 0054). Reprise : tâches `customers` (423 tiers facturés, 404 créés sans compte web) et `invoices` (1 385 factures, avoirs et acomptes, lignes, 1 355 règlements hors bordereau). Codes comptables repris sur les produits ; l'export comptable (2.2) reste à faire. ⚠ Pas de facture comptoir dans MSShop avant la bascule : les deux logiciels prendraient les mêmes numéros.
+**Fait le 29/10/2026 (code prêt, reprise à lancer).** `/admin/invoices` : facture comptoir et avoir (brouillon → validation → règlements → payée ; avoir pour corriger ; abandon motivé), lignes produit, prestation (`MO-T1`… en produits `service`) ou libre, prix saisis TTC, remise, TVA par ligne ; PDF ; règlements via `settlement` (bordereaux de remise compris) ; sortie de stock depuis la facture ; « Facturer » depuis un ordre de réparation. Numérotation : la série Dolibarr continue (`FA2611-1316`, `AV2611-0033`, séquences Postgres, migration 0054). Reprise : tâches `customers` (423 tiers facturés, 404 créés sans compte web) et `invoices` (1 385 factures, avoirs et acomptes, lignes, 1 355 règlements avec émetteur et banque du chèque), puis `remittances` (90 bordereaux de remise de chèques, 2021-2026, 810 règlements rangés dessus ; ils gardent leur numéro `CHK2610-0090` et la série continue à `…-0091` ; non supprimables). Correctif du 29/10/2026 : les dates DATE de Dolibarr (`datef`) étaient reprises la veille (`isoDay`). Codes comptables repris sur les produits ; l'export comptable (2.2) reste à faire. ⚠ Pas de facture comptoir dans MSShop avant la bascule : les deux logiciels prendraient les mêmes numéros.
 
 - **Facture directe** (comptoir ou ordre de réparation) :
   - client ;
@@ -158,7 +158,11 @@ Mesuré sur les données : volumes totaux, puis activité en 2026.
 
 ### Phase 3 — Devis
 
-- Devis en back-office (CDC 29), transformable en facture ou en commande. La signature électronique (6.2) viendra plus tard.
+**Fait le 29/10/2026 (code prêt, reprise à lancer).** `/admin/quotes` (CDC 23, côté back-office) : brouillon → envoi (numéro `PR2611-0322` dans la série Dolibarr, date limite = date + validité, 15 jours par défaut ; figé, R5) → décision du client enregistrée par l'équipe (accepté, refusé ; « expiré » se déduit de la date limite, R4) → « Créer la facture » : brouillon de facture comptoir avec toutes les lignes (R10, une seule fois, R11). « Dupliquer » pour corriger un devis envoyé. PDF sur la charte des factures, avec cadre « Bon pour accord » ; note interne jamais imprimée (R13). Mêmes lignes, même éditeur et même PDF que les factures (`DocumentLines`, `document-pdf.ts`). Devis listés sur la fiche client. Migration 0056.
+
+Reprise : tâche `quotes` (354 devis, 1 894 lignes ; 122 liés à leur facture, la première quand il y en a plusieurs). Les 115 tiers chiffrés jamais facturés sont créés par `customers` ; les produits des devis sont rattachés (68 de plus par référence), jamais créés : une ligne sans produit MSShop garde sa référence.
+
+Reste du CDC 23, hors remplacement de Dolibarr : demande de devis par le client, « Mes devis » dans l'espace client, envoi par e-mail, conversion en commande boutique. La signature électronique (6.2) viendra plus tard.
 
 ### Phase 4 — Inventaire annuel
 

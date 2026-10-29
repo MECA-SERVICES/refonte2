@@ -82,6 +82,33 @@ export function date(value: unknown, fallback: Date = new Date()): Date {
 	return fallback;
 }
 
+/**
+ * Jour `AAAA-MM-JJ` d'une colonne MySQL DATE. Le pilote la lit à minuit heure
+ * locale : `toISOString()` donnerait la veille (minuit à Paris = 22 h UTC).
+ */
+export function isoDay(value: Date | null): string | null {
+	if (!value) return null;
+	const d = new Date(value);
+	const pad = (n: number) => String(n).padStart(2, '0');
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Texte d'un champ HTML (lignes et notes Dolibarr) : balises retirées, entités décodées. */
+export function htmlText(html: string | null): string {
+	return (html ?? '')
+		.replace(/<br\s*\/?>/gi, ' ')
+		.replace(/<[^>]+>/g, '')
+		.replace(/&nbsp;/g, ' ')
+		.replace(/&agrave;/g, 'à')
+		.replace(/&eacute;/g, 'é')
+		.replace(/&egrave;/g, 'è')
+		.replace(/&amp;/g, '&')
+		.replace(/&#39;|&apos;/g, "'")
+		.replace(/&quot;/g, '"')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
 /** Tronque une chaîne à `max` caractères (colonnes contraintes, ex. ean13). */
 export function truncate(value: unknown, max: number): string | null {
 	const s = text(value);

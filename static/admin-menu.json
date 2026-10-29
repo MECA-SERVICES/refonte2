@@ -35,6 +35,12 @@
 					]
 				},
 				{
+					"id": "quotes",
+					"label": "Devis",
+					"icon": "file-pen",
+					"href": "/admin/quotes"
+				},
+				{
 					"id": "counter-invoices",
 					"label": "Factures comptoir",
 					"icon": "file-invoice",

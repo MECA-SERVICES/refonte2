@@ -38,7 +38,7 @@ import {
 /** Règle métier non respectée : le message est destiné à l'utilisateur. */
 export class CounterInvoiceError extends Error {}
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Règlements d'une facture : les siens, et ceux de l'ordre de réparation facturé. */
 function settlementsOf(invoiceId: SQL | number, repairOrderId: SQL | number | null) {
@@ -314,7 +314,8 @@ export async function createDraft(customerId: number, createdBy: string | null) 
 	return row.id;
 }
 
-type NewLine = {
+/** Ligne à créer, sur une facture ou un devis. */
+export type NewLine = {
 	productId: number | null;
 	label: string;
 	reference: string | null;
@@ -354,7 +355,7 @@ async function insertLines(tx: Tx, invoiceId: number, lines: NewLine[]) {
 }
 
 /** Ligne d'un produit ou d'une prestation du catalogue, au prix du catalogue. */
-async function catalogLine(
+export async function catalogLine(
 	tx: Tx | typeof db,
 	productId: number,
 	quantity: number
@@ -517,15 +518,6 @@ export async function createDraftFromRepair(repairOrderId: number, createdBy: st
 		.where(eq(repairOrderPart.repairOrderId, repairOrderId))
 		.orderBy(asc(repairOrderPart.id));
 	return db.transaction(async (tx) => {
-		const [row] = await tx
-			.insert(counterInvoice)
-			.values({
-				customerId: order.customerId,
-				repairOrderId,
-				createdBy,
-				note: `Ordre de réparation ${order.reference}`
-			})
-			.returning({ id: counterInvoice.id });
 		const lines: NewLine[] = [];
 		for (const part of parts) {
 			const base = part.productId ? await catalogLine(tx, part.productId, part.quantity) : null;
@@ -557,18 +549,40 @@ export async function createDraftFromRepair(repairOrderId: number, createdBy: st
 				});
 			}
 		}
-		await insertLines(tx, row.id, lines);
-		await refreshTotals(tx, row.id);
-		return row.id;
+		return createDraftWithLines(
+			tx,
+			{
+				customerId: order.customerId,
+				repairOrderId,
+				createdBy,
+				note: `Ordre de réparation ${order.reference}`
+			},
+			lines
+		);
 	});
+}
+
+/** Brouillon de facture et ses lignes, totaux calculés : depuis un ordre ou un devis. */
+export async function createDraftWithLines(
+	tx: Tx,
+	values: Pick<
+		typeof counterInvoice.$inferInsert,
+		'customerId' | 'repairOrderId' | 'createdBy' | 'note'
+	>,
+	lines: NewLine[]
+) {
+	const [row] = await tx.insert(counterInvoice).values(values).returning({ id: counterInvoice.id });
+	await insertLines(tx, row.id, lines);
+	await refreshTotals(tx, row.id);
+	return row.id;
 }
 
 // ===========================================================================
 // Validation, règlements, avoirs
 // ===========================================================================
 
-/** Adresse de facturation du client, figée sur la facture. */
-async function billingAddressOf(tx: Tx, customerId: number): Promise<CounterBillingAddress> {
+/** Adresse de facturation du client, figée sur la facture ou le devis. */
+export async function billingAddressOf(tx: Tx, customerId: number): Promise<CounterBillingAddress> {
 	const [c] = await tx.select().from(customer).where(eq(customer.id, customerId));
 	const [a] = await tx
 		.select()

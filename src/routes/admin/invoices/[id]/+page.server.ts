@@ -16,6 +16,8 @@ import {
 	validateInvoice
 } from '$lib/server/counter-invoices';
 import { parseSettlementForm } from '$lib/server/settlements';
+import { lineActions, runOrFail } from '$lib/server/document-actions';
+import { quoteOfInvoice } from '$lib/server/quotes';
 import {
 	exitDocumentStock,
 	getDocumentStock,
@@ -53,75 +55,22 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	// et pour une facture reprise de Dolibarr (ses pièces y sont déjà sorties).
 	const withStock =
 		invoice.kind === 'invoice' && invoice.number && !invoice.repairOrderId && !invoice.legacyDoliId;
-	const [products, lineStock] = await Promise.all([
+	const [products, lineStock, quote] = await Promise.all([
 		invoice.status === 'draft' ? searchBillableProducts(q) : [],
 		withStock
 			? getDocumentStock(stockLines(found.lines), 'sale', invoice.number!)
-			: Promise.resolve<Record<number, DocumentProductStock>>({})
+			: Promise.resolve<Record<number, DocumentProductStock>>({}),
+		quoteOfInvoice(invoice.id)
 	]);
-	return { ...found, q, products, lineStock };
+	return { ...found, q, products, lineStock, quote };
 };
 
-/** Exécute une action et traduit les refus métier en message. */
-async function run(task: () => Promise<unknown>) {
-	try {
-		await task();
-		return { success: true };
-	} catch (err) {
-		if (err instanceof CounterInvoiceError || err instanceof StockLocationError) {
-			return fail(400, { message: err.message });
-		}
-		throw err;
-	}
-}
-
-/** Nombre décimal saisi à la française (« 1,5 »). */
-const num = (form: FormData, key: string, fallback = 0) => {
-	const n = Number(String(form.get(key) ?? '').replace(',', '.'));
-	return Number.isFinite(n) ? n : fallback;
-};
+const isRefusal = (err: unknown) =>
+	err instanceof CounterInvoiceError || err instanceof StockLocationError;
+const run = (task: () => Promise<unknown>) => runOrFail(task, isRefusal);
 
 export const actions: Actions = {
-	addProduct: async ({ request, params }) => {
-		const form = await request.formData();
-		return run(() =>
-			addProductLine(
-				Number(params.id),
-				Number(form.get('productId')),
-				num(form, 'quantity', 1) || 1
-			)
-		);
-	},
-
-	addFree: async ({ request, params }) => {
-		const form = await request.formData();
-		return run(() =>
-			addFreeLine(Number(params.id), {
-				label: form.get('label')?.toString() ?? '',
-				quantity: num(form, 'quantity', 1) || 1,
-				priceTtc: num(form, 'priceTtc'),
-				taxRate: num(form, 'taxRate', 20)
-			})
-		);
-	},
-
-	updateLine: async ({ request, params }) => {
-		const form = await request.formData();
-		return run(() =>
-			updateLine(Number(params.id), Number(form.get('lineId')), {
-				label: form.get('label')?.toString() ?? '',
-				quantity: num(form, 'quantity', 1),
-				priceTtc: num(form, 'priceTtc'),
-				discountPercent: num(form, 'discountPercent'),
-				taxRate: num(form, 'taxRate', 20)
-			})
-		);
-	},
-
-	deleteLine: async ({ request, params }) => {
-		const form = await request.formData();
-		return run(() => deleteLine(Number(params.id), Number(form.get('lineId'))));
-	},
+	...lineActions({ addProductLine, addFreeLine, updateLine, deleteLine }, isRefusal),
 
 	header: async ({ request, params }) => {
 		const form = await request.formData();
