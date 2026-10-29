@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	addRepairPart,
@@ -13,6 +13,7 @@ import {
 } from '$lib/server/repairs';
 import { repairStatuses, type RepairStatus } from '$lib/server/db/repair.schema';
 import { activeEquipmentTypeNames } from '$lib/server/equipment-types';
+import { createDraftFromRepair, listRepairCounterInvoices } from '$lib/server/counter-invoices';
 import {
 	exitDocumentStock,
 	getDocumentStock,
@@ -52,6 +53,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		order,
 		partStock: await getDocumentStock(stockLines(order.parts), 'repair', order.reference),
+		invoices: await listRepairCounterInvoices(order.id),
 		settlements,
 		transitions: nextStatuses(order.status),
 		equipmentTypes
@@ -67,6 +69,12 @@ function amount(form: FormData, key: string): number {
 }
 
 export const actions: Actions = {
+	/** Facture comptoir de l'ordre : pièces, main-d'œuvre et diagnostic repris. */
+	invoice: async ({ params, locals }) => {
+		const id = await createDraftFromRepair(idParam(params), locals.user?.id ?? null);
+		redirect(303, `/admin/invoices/${id}`);
+	},
+
 	/** Met à jour l'en-tête : machine, travaux, montants, notes. */
 	update: async ({ request, params }) => {
 		const id = idParam(params);

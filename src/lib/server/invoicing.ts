@@ -4,6 +4,7 @@ import type { InvoiceTaxLine } from '$lib/server/db/order.schema';
 import { customer } from '$lib/server/db/customer.schema';
 import { TAX_MENTIONS, type TaxRegime } from '$lib/tax';
 import { round2 } from '$lib/money';
+import { COMPANY } from '$lib/company';
 import { desc, eq, sql } from 'drizzle-orm';
 
 /**
@@ -26,25 +27,8 @@ const NUMBER_PREFIX = 'FA';
 /** Largeur du numéro, zéros inclus : `25633` s'affiche `#FA025633`. */
 const NUMBER_WIDTH = 6;
 
-/**
- * Identité de l'entreprise imprimée en pied de facture.
- *
- * Valeurs reprises des factures PrestaShop en circulation. À déplacer vers le
- * paramétrage entreprise (CDC 41) quand il existera — d'où le regroupement ici
- * plutôt qu'une dispersion dans le gabarit.
- */
-export const COMPANY = {
-	name: 'MECA SERVICES',
-	legalName: 'Meca-Services',
-	addressLine: '4, La Merrerie',
-	postalCode: '50570',
-	city: 'CARANTILLY',
-	country: 'France Métropolitaine',
-	phone: '0950-922-336',
-	rcs: 'R.C.S Coutances',
-	siren: '878691294',
-	vatNumber: 'FR 51 878 691 294'
-} as const;
+// Identité de l'entreprise : `$lib/company`, partagée par tous les documents.
+export { COMPANY };
 
 /** Mise en forme d'un numéro de facture pour l'affichage et les documents. */
 export function formatInvoiceNumber(raw: string): string {

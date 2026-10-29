@@ -7,8 +7,11 @@
  * de sortie (`utile_bon_livraison`, `utile_bon_sortie`). Chacun reçoit un
  * `product.legacy_doli_id`, sur lequel s'appuient les tâches suivantes (stock,
  * numéros de série, inventaires, historique des bons). Seuls ceux du stock et
- * des inventaires sont créés s'ils manquent : un produit qui n'apparaît que
- * dans l'historique n'a pas besoin de fiche.
+ * des inventaires, et ceux qui ont été facturés (`llx_facturedet`), sont créés
+ * s'ils manquent : un produit qui n'apparaît que dans l'historique des bons
+ * n'a pas besoin de fiche. Les prestations de main-d'œuvre (`MO-T1`…,
+ * `fk_product_type = 1`) deviennent des produits de type `service`. Le code
+ * comptable de vente (`accountancy_code_sell`, demande 2.1) est repris.
  *
  * Les produits absents de MSShop ont été créés directement dans Dolibarr, ou
  * importés du catalogue fournisseur, sans jamais passer par le site. Ils sont
@@ -32,8 +35,11 @@ import { compactReference, matchProducts, partNumbers, type ShopProduct } from '
 
 interface SourceProduct {
 	rowid: number;
-	/** En stock ou inventorié : à créer s'il manque. */
+	/** En stock, inventorié ou facturé : à créer s'il manque. */
 	stocked: number;
+	/** 1 = prestation (service), 0 = produit. */
+	fk_product_type: number;
+	accountancy_code_sell: string | null;
 	ref: string;
 	label: string | null;
 	barcode: string | null;
@@ -57,7 +63,8 @@ export const productsTask: Task = {
 			).map((r) => Number(r.id));
 		const stockedIds = new Set([
 			...(await idsOf('llx_product_stock', 'fk_product')),
-			...(await idsOf('utile_inventaire', 'fk_product'))
+			...(await idsOf('utile_inventaire', 'fk_product')),
+			...(await idsOf('llx_facturedet', 'fk_product'))
 		]);
 		const allIds = new Set([
 			...stockedIds,
@@ -68,13 +75,14 @@ export const productsTask: Task = {
 		const ids = [...allIds];
 		for (let i = 0; i < ids.length; i += 2000) {
 			const rows = await sourceQuery<SourceProduct>(
-				`SELECT rowid, ref, label, barcode, ref_ext, price_ttc, tva_tx, cost_price, description
+				`SELECT rowid, ref, label, barcode, ref_ext, price_ttc, tva_tx, cost_price, description,
+				        fk_product_type, accountancy_code_sell
 				 FROM ${DOLI}.llx_product WHERE rowid IN (${ids.slice(i, i + 2000).join(',')})`
 			);
 			for (const r of rows) doli.push({ ...r, stocked: stockedIds.has(Number(r.rowid)) ? 1 : 0 });
 		}
 		log.muted(
-			`${count(doli.length)} produits Dolibarr en stock, inventoriés ou dans un bon (${count(doli.filter((d) => Number(d.stocked)).length)} en stock ou inventoriés)`
+			`${count(doli.length)} produits Dolibarr en stock, inventoriés, facturés ou dans un bon (${count(doli.filter((d) => Number(d.stocked)).length)} à créer s'ils manquent)`
 		);
 
 		const sql = targetDb();
@@ -177,10 +185,21 @@ export const productsTask: Task = {
 				tax_rule_id: taxRuleOf(rate),
 				category_id: unclassified?.id ?? null,
 				is_active: false,
+				type: Number(d.fk_product_type) === 1 ? 'service' : 'part',
+				accounting_code: text(d.accountancy_code_sell),
 				legacy_doli_id: Number(d.rowid)
 			};
 		});
 		const created = await insertBatched('product', rows);
+
+		// 3. Codes comptables de vente, sur les produits rattachés qui n'en ont pas.
+		const codes = doli
+			.filter((d) => text(d.accountancy_code_sell))
+			.map((d) => ({ doli: Number(d.rowid), code: text(d.accountancy_code_sell) }));
+		await sql`
+			UPDATE product AS p SET accounting_code = c.code
+			FROM jsonb_to_recordset(${sql.json(codes)}) AS c(doli int, code text)
+			WHERE p.legacy_doli_id = c.doli AND p.accounting_code IS NULL`;
 		const shopById = new Map(shop.map((p) => [p.id, p]));
 		const byPartNumber = pending.flatMap((d) => {
 			const m = matches.get(Number(d.rowid));

@@ -6,6 +6,7 @@
  * commandes viendra avec leur saisie. Les détails du chèque (numéro, émetteur,
  * banque) sont ceux qu'exige un bordereau de remise en banque.
  */
+import { sql } from 'drizzle-orm';
 import {
 	date,
 	index,
@@ -18,6 +19,7 @@ import {
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
 import { repairOrder } from './repair.schema';
+import { counterInvoice } from './counter-invoice.schema';
 import type { RemittanceKind, SettlementMethod } from '$lib/settlements';
 
 /**
@@ -65,6 +67,13 @@ export const settlement = pgTable(
 			onDelete: 'restrict'
 		}),
 
+		/** Facture comptoir réglée. */
+		counterInvoiceId: integer('counter_invoice_id').references(() => counterInvoice.id, {
+			onDelete: 'restrict'
+		}),
+		/** Reprise Dolibarr (`llx_paiement.rowid`) : déjà en banque, hors bordereau. */
+		legacyDoliId: integer('legacy_doli_id'),
+
 		/** Bordereau de remise qui l'a porté à la banque ; null tant qu'il est en caisse. */
 		remittanceId: integer('remittance_id').references(() => remittance.id, {
 			onDelete: 'set null'
@@ -79,7 +88,11 @@ export const settlement = pgTable(
 		uniqueIndex('settlement_reference_idx').on(t.reference),
 		index('settlement_repair_order_idx').on(t.repairOrderId),
 		index('settlement_method_received_idx').on(t.method, t.receivedOn),
-		index('settlement_remittance_idx').on(t.remittanceId)
+		index('settlement_remittance_idx').on(t.remittanceId),
+		index('settlement_counter_invoice_idx').on(t.counterInvoiceId),
+		uniqueIndex('settlement_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
 	]
 );
 

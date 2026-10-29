@@ -1,5 +1,5 @@
 import type { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
-import { COMPANY } from './invoicing';
+import { COMPANY } from '$lib/company';
 import { PDF_COLORS, pdfEuro as euro, pdfShortDate as shortDate, renderPdf } from './pdf';
 import { payerName } from '$lib/settlements';
 import type { getRemittance } from './settlements';
@@ -43,7 +43,10 @@ function buildDefinition(doc: RemittanceDocument): TDocumentDefinitions {
 				]
 			: [{ text: payerName(line), style: 'td' }]),
 		{
-			text: line.repairReference ? `${line.reference}\n${line.repairReference}` : line.reference,
+			text:
+				(line.repairReference ?? line.invoiceNumber)
+					? `${line.reference}\n${line.repairReference ?? line.invoiceNumber}`
+					: line.reference,
 			style: 'td'
 		},
 		{ text: euro(Number(line.amount)), style: 'td', alignment: 'right' }

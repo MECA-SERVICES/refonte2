@@ -144,6 +144,8 @@ Mesuré sur les données : volumes totaux, puis activité en 2026.
 
 ### Phase 2 — Facturation au comptoir
 
+**Fait le 29/10/2026 (code prêt, reprise à lancer).** `/admin/invoices` : facture comptoir et avoir (brouillon → validation → règlements → payée ; avoir pour corriger ; abandon motivé), lignes produit, prestation (`MO-T1`… en produits `service`) ou libre, prix saisis TTC, remise, TVA par ligne ; PDF ; règlements via `settlement` (bordereaux de remise compris) ; sortie de stock depuis la facture ; « Facturer » depuis un ordre de réparation. Numérotation : la série Dolibarr continue (`FA2611-1316`, `AV2611-0033`, séquences Postgres, migration 0054). Reprise : tâches `customers` (423 tiers facturés, 404 créés sans compte web) et `invoices` (1 385 factures, avoirs et acomptes, lignes, 1 355 règlements hors bordereau). Codes comptables repris sur les produits ; l'export comptable (2.2) reste à faire. ⚠ Pas de facture comptoir dans MSShop avant la bascule : les deux logiciels prendraient les mêmes numéros.
+
 - **Facture directe** (comptoir ou ordre de réparation) :
   - client ;
   - lignes de pièces et de main-d'œuvre (demande 3.1) ;

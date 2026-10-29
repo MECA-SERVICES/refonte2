@@ -49,7 +49,8 @@
 		order: 'Sortie commande',
 		return: 'Retour',
 		repair: 'Sortie réparation',
-		transfer: 'Déplacement'
+		transfer: 'Déplacement',
+		sale: 'Vente comptoir'
 	};
 
 	function attrText(attrs: Record<string, string> | null): string {

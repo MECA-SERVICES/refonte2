@@ -8,6 +8,7 @@ import { db } from '$lib/server/db';
 import { customer } from '$lib/server/db/customer.schema';
 import { repairOrder } from '$lib/server/db/repair.schema';
 import { remittance, settlement } from '$lib/server/db/settlement.schema';
+import { counterInvoice } from '$lib/server/db/counter-invoice.schema';
 import { formFields, type ParseResult } from '$lib/server/forms';
 import { formatPrice } from '$lib/money';
 import {
@@ -181,26 +182,44 @@ const remittanceLine = {
 	chequeBank: settlement.chequeBank,
 	repairOrderId: settlement.repairOrderId,
 	repairReference: repairOrder.reference,
+	counterInvoiceId: settlement.counterInvoiceId,
+	invoiceNumber: counterInvoice.number,
 	customerFirstName: customer.firstName,
 	customerLastName: customer.lastName,
 	customerCompany: customer.companyName
 };
 
 function remittanceLines() {
-	return db
-		.select(remittanceLine)
-		.from(settlement)
-		.leftJoin(repairOrder, eq(repairOrder.id, settlement.repairOrderId))
-		.leftJoin(customer, eq(customer.id, repairOrder.customerId));
+	return (
+		db
+			.select(remittanceLine)
+			.from(settlement)
+			.leftJoin(repairOrder, eq(repairOrder.id, settlement.repairOrderId))
+			.leftJoin(counterInvoice, eq(counterInvoice.id, settlement.counterInvoiceId))
+			// Le client : celui de l'ordre de réparation, à défaut celui de la facture comptoir.
+			.leftJoin(
+				customer,
+				eq(customer.id, sql`coalesce(${repairOrder.customerId}, ${counterInvoice.customerId})`)
+			)
+	);
 }
 
 export type RemittanceLine = Awaited<ReturnType<typeof listPendingSettlements>>[number];
 
 /** Règlements encore en caisse : pas encore portés sur un bordereau. */
 export function listPendingSettlements(kind: RemittanceKind) {
-	return remittanceLines()
-		.where(and(eq(settlement.method, kind), isNull(settlement.remittanceId)))
-		.orderBy(asc(settlement.receivedOn), asc(settlement.id));
+	return (
+		remittanceLines()
+			// Les règlements repris de Dolibarr sont déjà en banque.
+			.where(
+				and(
+					eq(settlement.method, kind),
+					isNull(settlement.remittanceId),
+					isNull(settlement.legacyDoliId)
+				)
+			)
+			.orderBy(asc(settlement.receivedOn), asc(settlement.id))
+	);
 }
 
 /** Nombre et montant des règlements en caisse, par nature de bordereau. */
@@ -212,7 +231,13 @@ export async function pendingRemittanceTotals() {
 			total: sql<string>`coalesce(sum(${settlement.amount}), 0)::text`
 		})
 		.from(settlement)
-		.where(and(inArray(settlement.method, [...remittanceKinds]), isNull(settlement.remittanceId)))
+		.where(
+			and(
+				inArray(settlement.method, [...remittanceKinds]),
+				isNull(settlement.remittanceId),
+				isNull(settlement.legacyDoliId)
+			)
+		)
 		.groupBy(settlement.method);
 
 	return Object.fromEntries(

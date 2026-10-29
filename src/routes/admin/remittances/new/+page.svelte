@@ -130,6 +130,13 @@
 									>
 										{s.repairReference}
 									</a>
+								{:else if s.counterInvoiceId}
+									<a
+										href="/admin/invoices/{s.counterInvoiceId}"
+										class="text-xs text-primary-700 hover:underline"
+									>
+										{s.invoiceNumber ?? 'Facture brouillon'}
+									</a>
 								{/if}
 							</TableBodyCell>
 							<TableBodyCell class="text-right">{formatPrice(s.amount)}</TableBodyCell>

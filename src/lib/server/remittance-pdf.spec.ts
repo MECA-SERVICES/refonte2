@@ -26,6 +26,8 @@ function fixture(kind: 'cheque' | 'cash') {
 				chequeBank: kind === 'cheque' ? 'Crédit Agricole' : null,
 				repairOrderId: 6,
 				repairReference: 'OR-2026-JLRCPK',
+				counterInvoiceId: null,
+				invoiceNumber: null,
 				customerFirstName: 'Jean',
 				customerLastName: 'Martin',
 				customerCompany: null
@@ -41,6 +43,8 @@ function fixture(kind: 'cheque' | 'cash') {
 				chequeBank: null,
 				repairOrderId: 7,
 				repairReference: 'OR-2026-ABCDEF',
+				counterInvoiceId: null,
+				invoiceNumber: null,
 				customerFirstName: null,
 				customerLastName: null,
 				customerCompany: 'Mairie de Carantilly'

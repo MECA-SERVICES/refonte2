@@ -26,6 +26,7 @@
 		PaletteSolid,
 		TruckSolid,
 		CreditCardSolid,
+		FileInvoiceSolid,
 		GlobeSolid,
 		CogSolid,
 		ToolsOutline,
@@ -51,6 +52,7 @@
 		palette: PaletteSolid,
 		truck: TruckSolid,
 		'credit-card': CreditCardSolid,
+		'file-invoice': FileInvoiceSolid,
 		globe: GlobeSolid,
 		cog: CogSolid,
 		tools: ToolsOutline

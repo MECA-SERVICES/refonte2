@@ -23,6 +23,7 @@
 		StateBadge
 	} from '$lib/components/admin';
 	import { paymentMethodLabel } from '$lib/payment-methods';
+	import { COUNTER_STATUS } from '$lib/counter-invoices';
 	import type { PageProps } from './$types';
 
 	/**
@@ -316,6 +317,45 @@
 						</tbody>
 					</table>
 				</div>
+			{/if}
+		</Card>
+
+		<!-- Factures comptoir (remplacement de Dolibarr), historique repris compris. -->
+		<Card class="max-w-none p-6">
+			<div class="flex items-center justify-between">
+				{@render cardTitle('Factures comptoir', data.invoices.length)}
+				<form method="POST" action="/admin/invoices/new?/create">
+					<input type="hidden" name="customerId" value={c.id} />
+					<Button type="submit" size="xs" color="alternative">Nouvelle facture</Button>
+				</form>
+			</div>
+			{#if data.invoices.length === 0}
+				<p class="py-6 text-center text-sm text-gray-500">Aucune facture comptoir.</p>
+			{:else}
+				<ul class="mt-4 divide-y divide-gray-100 text-sm">
+					{#each data.invoices as inv (inv.id)}
+						<li class="flex items-center justify-between gap-3 py-2">
+							<a
+								href="/admin/invoices/{inv.id}"
+								class="font-mono text-xs text-primary-700 hover:underline"
+							>
+								{inv.number ?? `Brouillon n° ${inv.id}`}{inv.kind === 'credit_note'
+									? ' (avoir)'
+									: ''}
+							</a>
+							<span class="text-gray-500">
+								{inv.issuedOn
+									? new Intl.DateTimeFormat('fr-FR').format(new Date(inv.issuedOn))
+									: ''}
+							</span>
+							<span class="tabular-nums">{formatPrice(inv.totalTtc)}</span>
+							<StateBadge
+								color={COUNTER_STATUS[inv.status].color}
+								label={COUNTER_STATUS[inv.status].label}
+							/>
+						</li>
+					{/each}
+				</ul>
 			{/if}
 		</Card>
 

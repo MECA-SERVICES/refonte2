@@ -1,5 +1,5 @@
 import type { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
-import { COMPANY } from './invoicing';
+import { COMPANY } from '$lib/company';
 import { PDF_COLORS, pdfEuro as euro, pdfShortDate as shortDate, renderPdf } from './pdf';
 import { REPAIR_STATUS_LABELS, REPAIR_TYPE_LABELS } from '$lib/repairs';
 import type { getRepairOrder } from './repairs';

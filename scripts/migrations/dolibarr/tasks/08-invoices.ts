@@ -1,0 +1,285 @@
+/**
+ * Factures Dolibarr → `counter_invoice`, `counter_invoice_line`, `settlement`.
+ *
+ * - `llx_facture` : factures (type 0), avoirs (2), acomptes (3) ; statut
+ *   brouillon (0), validée (1), payée (2), abandonnée (3). Les numéros
+ *   (`FA2610-1315`) sont repris tels quels ; un brouillon (`(PROV1003)`) n'en a pas ;
+ * - `llx_facturedet` : lignes (produit, prestation ou ligne libre), remise,
+ *   TVA, totaux tels qu'imprimés ;
+ * - `llx_paiement` + `llx_paiement_facture` : règlements (chèque, virement,
+ *   espèces), repris déjà en banque (`legacy_doli_id`, hors bordereau).
+ *
+ * Enfin, les séquences de numérotation repartent après le dernier numéro
+ * Dolibarr : la série continue dans MSShop (`FA2611-1316`…).
+ *
+ * À lancer après `customers` et `products`. Idempotent : factures et
+ * règlements repris sont mis à jour, les lignes remplacées.
+ */
+import type { Task } from '../../../lib/runner.ts';
+import { DOLI, sourceQuery } from '../source.ts';
+import { targetDb } from '../../../lib/target-db.ts';
+import { text } from '../../../lib/transform.ts';
+import { log, count } from '../../../lib/logger.ts';
+
+interface SourceInvoice {
+	rowid: number;
+	ref: string;
+	type: number;
+	fk_statut: number;
+	fk_soc: number;
+	fk_facture_source: number | null;
+	datef: Date | null;
+	date_valid: Date | null;
+	total: number;
+	tva: number;
+	total_ttc: number;
+	note_public: string | null;
+	note_private: string | null;
+	close_note: string | null;
+}
+
+interface SourceLine {
+	rowid: number;
+	fk_facture: number;
+	fk_product: number | null;
+	product_ref: string | null;
+	product_label: string | null;
+	label: string | null;
+	description: string | null;
+	qty: number;
+	subprice: number;
+	tva_tx: number;
+	remise_percent: number;
+	total_ht: number;
+	total_tva: number;
+	total_ttc: number;
+	rang: number;
+	accountancy_code_sell: string | null;
+}
+
+interface SourcePayment {
+	rowid: number;
+	fk_facture: number;
+	amount: number;
+	ref: string;
+	datep: Date;
+	num_paiement: string | null;
+	mode: string | null;
+}
+
+const KINDS: Record<number, string> = { 0: 'invoice', 2: 'credit_note', 3: 'deposit' };
+const STATUSES: Record<number, string> = { 0: 'draft', 1: 'validated', 2: 'paid', 3: 'abandoned' };
+const METHODS: Record<string, string> = { CHQ: 'cheque', VIR: 'transfer', LIQ: 'cash', CB: 'card' };
+
+/** Texte d'une ligne Dolibarr : HTML retiré, entités décodées. */
+function plain(html: string | null): string {
+	return (html ?? '')
+		.replace(/<br\s*\/?>/gi, ' ')
+		.replace(/<[^>]+>/g, '')
+		.replace(/&nbsp;/g, ' ')
+		.replace(/&agrave;/g, 'à')
+		.replace(/&eacute;/g, 'é')
+		.replace(/&egrave;/g, 'è')
+		.replace(/&amp;/g, '&')
+		.replace(/&#39;|&apos;/g, "'")
+		.replace(/&quot;/g, '"')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
+const day = (d: Date | null) => (d ? new Date(d).toISOString().slice(0, 10) : null);
+
+export const invoicesTask: Task = {
+	name: 'invoices',
+	description: 'Factures, avoirs et règlements (llx_facture → counter_invoice)',
+
+	async run({ dryRun }) {
+		// Lectures en série : la connexion Dolibarr s'ouvre à la première requête.
+		const invoices = await sourceQuery<SourceInvoice>(
+			`SELECT rowid, ref, type, fk_statut, fk_soc, fk_facture_source, datef, date_valid, total, tva,
+			        total_ttc, note_public, note_private, close_note
+			 FROM ${DOLI}.llx_facture ORDER BY rowid`
+		);
+		const lines = await sourceQuery<SourceLine>(
+			`SELECT d.rowid, d.fk_facture, d.fk_product, p.ref AS product_ref, p.label AS product_label,
+			        d.label, d.description, d.qty, d.subprice, d.tva_tx, d.remise_percent, d.total_ht,
+			        d.total_tva, d.total_ttc, d.rang, p.accountancy_code_sell
+			 FROM ${DOLI}.llx_facturedet d LEFT JOIN ${DOLI}.llx_product p ON p.rowid = d.fk_product`
+		);
+		const payments = await sourceQuery<SourcePayment>(
+			`SELECT pf.rowid, pf.fk_facture, pf.amount, p.ref, p.datep, p.num_paiement, c.code AS mode
+			 FROM ${DOLI}.llx_paiement_facture pf
+			 JOIN ${DOLI}.llx_paiement p ON p.rowid = pf.fk_paiement
+			 LEFT JOIN ${DOLI}.llx_c_paiement c ON c.id = p.fk_paiement`
+		);
+		log.muted(
+			`${count(invoices.length)} factures, ${count(lines.length)} lignes, ${count(payments.length)} règlements en source`
+		);
+
+		const sql = targetDb();
+		const [customers, products] = await Promise.all([
+			sql<{ id: number; doli: number }[]>`
+				SELECT id, legacy_doli_id AS doli FROM customer WHERE legacy_doli_id IS NOT NULL`,
+			sql<{ id: number; doli: number }[]>`
+				SELECT id, legacy_doli_id AS doli FROM product WHERE legacy_doli_id IS NOT NULL`
+		]);
+		const customerOf = new Map(customers.map((c) => [Number(c.doli), c.id]));
+		const productOf = new Map(products.map((p) => [Number(p.doli), p.id]));
+		const orphans = invoices.filter((i) => !customerOf.has(Number(i.fk_soc)));
+		if (orphans.length) {
+			log.warn(
+				`${count(orphans.length)} factures sans client MSShop : lancer d'abord --only=customers`
+			);
+		}
+
+		if (dryRun) {
+			log.warn(
+				`Simulation : ${count(invoices.length - orphans.length)} factures auraient été reprises.`
+			);
+			return { processed: 0, note: 'simulation' };
+		}
+
+		const kept = invoices.filter((i) => customerOf.has(Number(i.fk_soc)));
+		await sql.begin(async (tx) => {
+			const header = kept.map((i) => {
+				const breakdown = new Map<number, { rate: number; baseHt: number; taxAmount: number }>();
+				for (const l of lines.filter((l) => Number(l.fk_facture) === Number(i.rowid))) {
+					const rate = Number(l.tva_tx);
+					const row = breakdown.get(rate) ?? { rate, baseHt: 0, taxAmount: 0 };
+					row.baseHt = Math.round((row.baseHt + Number(l.total_ht)) * 100) / 100;
+					row.taxAmount = Math.round((row.taxAmount + Number(l.total_tva)) * 100) / 100;
+					breakdown.set(rate, row);
+				}
+				return {
+					legacy_doli_id: Number(i.rowid),
+					kind: KINDS[Number(i.type)] ?? 'invoice',
+					number: /^\(PROV/.test(i.ref) ? null : i.ref,
+					status: STATUSES[Number(i.fk_statut)] ?? 'validated',
+					customer_id: customerOf.get(Number(i.fk_soc)),
+					issued_on: day(i.datef),
+					total_ht: Number(i.total).toFixed(2),
+					total_tva: Number(i.tva).toFixed(2),
+					total_ttc: Number(i.total_ttc).toFixed(2),
+					tax_breakdown: [...breakdown.values()],
+					note: text(plain(i.note_public)),
+					private_note: text(plain(i.note_private)),
+					abandon_reason:
+						Number(i.fk_statut) === 3 ? (text(i.close_note) ?? 'Abandonnée dans Dolibarr') : null,
+					validated_at: i.date_valid ? new Date(i.date_valid).toISOString() : null,
+					created_at: (i.datef ? new Date(i.datef) : new Date()).toISOString()
+				};
+			});
+			const saved = await tx<{ id: number; legacy_doli_id: number }[]>`
+				INSERT INTO counter_invoice (legacy_doli_id, kind, number, status, customer_id, issued_on,
+					total_ht, total_tva, total_ttc, tax_breakdown, note, private_note, abandon_reason,
+					validated_at, created_at)
+				SELECT legacy_doli_id, kind, number, status, customer_id, issued_on, total_ht, total_tva,
+					total_ttc, tax_breakdown, note, private_note, abandon_reason, validated_at, created_at
+				FROM jsonb_to_recordset(${tx.json(header)}) AS i(legacy_doli_id int, kind text, number text,
+					status text, customer_id int, issued_on date, total_ht numeric, total_tva numeric,
+					total_ttc numeric, tax_breakdown jsonb, note text, private_note text, abandon_reason text,
+					validated_at timestamptz, created_at timestamptz)
+				ON CONFLICT (legacy_doli_id) WHERE legacy_doli_id IS NOT NULL DO UPDATE SET
+					number = excluded.number, status = excluded.status, issued_on = excluded.issued_on,
+					total_ht = excluded.total_ht, total_tva = excluded.total_tva,
+					total_ttc = excluded.total_ttc, tax_breakdown = excluded.tax_breakdown,
+					note = excluded.note, private_note = excluded.private_note,
+					abandon_reason = excluded.abandon_reason, validated_at = excluded.validated_at,
+					updated_at = now()
+				RETURNING id, legacy_doli_id`;
+			const invoiceOf = new Map(saved.map((s) => [Number(s.legacy_doli_id), s.id]));
+
+			// Avoirs : la facture qu'ils corrigent.
+			const credits = kept
+				.filter((i) => i.fk_facture_source && invoiceOf.has(Number(i.fk_facture_source)))
+				.map((i) => ({
+					id: invoiceOf.get(Number(i.rowid)),
+					source: invoiceOf.get(Number(i.fk_facture_source))
+				}));
+			await tx`
+				UPDATE counter_invoice AS c SET credited_invoice_id = l.source
+				FROM jsonb_to_recordset(${tx.json(credits)}) AS l(id int, source int)
+				WHERE c.id = l.id`;
+
+			// Lignes : remplacées d'un bloc.
+			await tx`DELETE FROM counter_invoice_line WHERE invoice_id = ANY(${[...invoiceOf.values()]})`;
+			const lineRows = lines
+				.filter((l) => invoiceOf.has(Number(l.fk_facture)))
+				.map((l) => ({
+					legacy_doli_id: Number(l.rowid),
+					invoice_id: invoiceOf.get(Number(l.fk_facture)),
+					position: Number(l.rang) || 0,
+					product_id: l.fk_product ? (productOf.get(Number(l.fk_product)) ?? null) : null,
+					label:
+						text(plain(l.label)) ??
+						text(plain(l.product_label)) ??
+						text(plain(l.description))?.slice(0, 200) ??
+						'Ligne',
+					reference: text(l.product_ref),
+					quantity: String(l.qty),
+					unit_price_ht: Number(l.subprice).toFixed(4),
+					tax_rate: String(l.tva_tx),
+					discount_percent: String(l.remise_percent ?? 0),
+					total_ht: Number(l.total_ht).toFixed(2),
+					total_tva: Number(l.total_tva).toFixed(2),
+					total_ttc: Number(l.total_ttc).toFixed(2),
+					accounting_code: text(l.accountancy_code_sell)
+				}));
+			for (let i = 0; i < lineRows.length; i += 2000) {
+				await tx`
+					INSERT INTO counter_invoice_line (legacy_doli_id, invoice_id, position, product_id, label,
+						reference, quantity, unit_price_ht, tax_rate, discount_percent, total_ht, total_tva,
+						total_ttc, accounting_code)
+					SELECT legacy_doli_id, invoice_id, position, product_id, label, reference, quantity,
+						unit_price_ht, tax_rate, discount_percent, total_ht, total_tva, total_ttc, accounting_code
+					FROM jsonb_to_recordset(${tx.json(lineRows.slice(i, i + 2000))}) AS l(legacy_doli_id int,
+						invoice_id int, position int, product_id int, label text, reference text,
+						quantity numeric, unit_price_ht numeric, tax_rate numeric, discount_percent numeric,
+						total_ht numeric, total_tva numeric, total_ttc numeric, accounting_code text)`;
+			}
+
+			// Règlements : déjà en banque dans Dolibarr, donc hors bordereau.
+			const settlementRows = payments
+				.filter((p) => invoiceOf.has(Number(p.fk_facture)) && Number(p.amount) !== 0)
+				.map((p) => {
+					const method = METHODS[p.mode ?? ''] ?? 'transfer';
+					return {
+						legacy_doli_id: Number(p.rowid),
+						reference: `DOLI-${p.ref}-${p.rowid}`,
+						method,
+						amount: Number(p.amount).toFixed(2),
+						received_on: day(p.datep),
+						cheque_number: method === 'cheque' ? text(p.num_paiement) : null,
+						counter_invoice_id: invoiceOf.get(Number(p.fk_facture))
+					};
+				});
+			await tx`
+				INSERT INTO settlement (legacy_doli_id, reference, method, amount, received_on,
+					cheque_number, counter_invoice_id)
+				SELECT legacy_doli_id, reference, method, amount, received_on, cheque_number, counter_invoice_id
+				FROM jsonb_to_recordset(${tx.json(settlementRows)}) AS s(legacy_doli_id int, reference text,
+					method text, amount numeric, received_on date, cheque_number text, counter_invoice_id int)
+				ON CONFLICT (legacy_doli_id) WHERE legacy_doli_id IS NOT NULL DO UPDATE SET
+					amount = excluded.amount, received_on = excluded.received_on, method = excluded.method`;
+
+			// La série continue après le dernier numéro Dolibarr (et jamais en arrière).
+			for (const [seq, prefix] of [
+				['counter_invoice_number_seq', 'FA'],
+				['counter_credit_note_number_seq', 'AV']
+			] as const) {
+				await tx.unsafe(
+					`SELECT setval('${seq}', greatest(
+						(SELECT last_value FROM ${seq}) - 1,
+						coalesce((SELECT max(substring(number from '-(\\d+)$')::int) FROM counter_invoice
+						          WHERE number LIKE '${prefix}%'), 0)
+					), true)`
+				);
+			}
+		});
+
+		return {
+			processed: kept.length,
+			note: `${count(kept.length)} factures, ${count(payments.length)} règlements`
+		};
+	}
+};

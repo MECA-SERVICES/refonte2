@@ -35,6 +35,12 @@
 					]
 				},
 				{
+					"id": "counter-invoices",
+					"label": "Factures comptoir",
+					"icon": "file-invoice",
+					"href": "/admin/invoices"
+				},
+				{
 					"id": "catalog",
 					"label": "Catalogue",
 					"icon": "grid",

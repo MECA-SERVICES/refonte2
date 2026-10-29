@@ -105,6 +105,17 @@
 		<Button size="sm" href="/admin/repairs/{o.id}/pdf" target="_blank" rel="noopener">
 			<FilePdfOutline class="me-2 h-4 w-4" /> Ordre PDF
 		</Button>
+		{#if o.orderType === 'paid'}
+			{#each data.invoices as inv (inv.id)}
+				<Button color="alternative" size="sm" href="/admin/invoices/{inv.id}">
+					Facture {inv.number ?? 'brouillon'}
+				</Button>
+			{:else}
+				<form method="POST" action="?/invoice" use:enhance data-feedback="errors">
+					<Button type="submit" size="sm" color="green">Facturer</Button>
+				</form>
+			{/each}
+		{/if}
 		<Button color="alternative" size="sm" href="/admin/repairs">Retour à la file</Button>
 	{/snippet}
 </PageHeader>

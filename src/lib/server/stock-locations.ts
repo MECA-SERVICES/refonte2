@@ -699,8 +699,8 @@ export async function recordStockMovements(
 
 // ----- Sortie de stock d'une commande ou d'un ordre de réparation -----
 
-/** Nature de la sortie : vente (commande) ou pièce posée (ordre de réparation). */
-export type DocumentStockType = 'order' | 'repair';
+/** Nature de la sortie : vente (commande, comptoir) ou pièce posée (ordre de réparation). */
+export type DocumentStockType = 'order' | 'repair' | 'sale';
 
 /** Une ligne de document : le produit et la quantité à sortir. */
 export type DocumentLine = { productId: number; quantity: number };
@@ -714,7 +714,7 @@ export async function getDocumentStock(
 	lines: DocumentLine[],
 	type: DocumentStockType,
 	reference: string
-) {
+): Promise<Record<number, DocumentProductStock>> {
 	const productIds = [...new Set(lines.map((l) => l.productId))];
 	if (!productIds.length) return {};
 	const [placed, exits, locations] = await Promise.all([

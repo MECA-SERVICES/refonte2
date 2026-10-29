@@ -209,6 +209,9 @@ export const product = pgTable(
 		/** Emplacement physique en atelier : allée, étagère, bac. */
 		stockLocation: text('stock_location'),
 
+		/** Code comptable de vente (Dolibarr : `accountancy_code_sell`, demande 2.1). */
+		accountingCode: text('accounting_code'),
+
 		/*
 		 * Seuil d'alerte de réapprovisionnement.
 		 *
@@ -557,7 +560,8 @@ export const stockMovementType = [
 	'order', // décrément suite à une commande
 	'return', // incrément suite à un retour
 	'repair', // pièce consommée sur un ordre de réparation (CDC 31, R6/R7)
-	'transfer' // déplacement d'un emplacement à un autre, stock total inchangé
+	'transfer', // déplacement d'un emplacement à un autre, stock total inchangé
+	'sale' // pièce vendue au comptoir, sortie depuis sa facture
 ] as const;
 export type StockMovementType = (typeof stockMovementType)[number];
 

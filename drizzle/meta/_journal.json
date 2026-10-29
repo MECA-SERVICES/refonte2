@@ -365,6 +365,13 @@
 			"when": 1793205114990,
 			"tag": "0053_bons_stock",
 			"breakpoints": true
+		},
+		{
+			"idx": 54,
+			"version": "7",
+			"when": 1793259685278,
+			"tag": "0054_factures_comptoir",
+			"breakpoints": true
 		}
 	]
 }
