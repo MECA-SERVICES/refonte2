@@ -57,6 +57,11 @@
 							"href": "/admin/products"
 						},
 						{
+							"id": "suppliers",
+							"label": "Fournisseurs",
+							"href": "/admin/suppliers"
+						},
+						{
 							"id": "purchase-prices",
 							"label": "Prix d'achat manquants",
 							"href": "/admin/purchase-prices"

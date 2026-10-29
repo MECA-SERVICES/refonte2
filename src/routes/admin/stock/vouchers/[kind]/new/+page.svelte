@@ -141,10 +141,12 @@
 			{#if isReceipt}
 				<div>
 					<Label for="voucher-supplier" class="mb-2">Fournisseur</Label>
-					<Input id="voucher-supplier" name="supplier" list="suppliers" placeholder="ex. KRAMP" />
-					<datalist id="suppliers">
-						{#each data.suppliers as s (s)}<option value={s}></option>{/each}
-					</datalist>
+					<Select
+						id="voucher-supplier"
+						name="supplierId"
+						placeholder="Choisir…"
+						items={data.suppliers.map((s) => ({ value: String(s.id), name: s.name }))}
+					/>
 				</div>
 			{:else}
 				<div>

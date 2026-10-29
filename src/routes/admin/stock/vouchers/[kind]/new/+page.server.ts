@@ -2,12 +2,8 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { searchCountableProducts } from '$lib/server/inventory';
 import { listStockLocations, StockLocationError } from '$lib/server/stock-locations';
-import {
-	createIssue,
-	createReceipt,
-	listSuppliers,
-	parseVoucherForm
-} from '$lib/server/stock-vouchers';
+import { createIssue, createReceipt, parseVoucherForm } from '$lib/server/stock-vouchers';
+import { supplierOptions } from '$lib/server/suppliers';
 import { isVoucherKindSlug, VOUCHER_KINDS } from '$lib/stock-vouchers';
 
 /** `?q=` : produit cherché (EAN à la douchette, référence ou nom). */
@@ -17,7 +13,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const [locations, found, suppliers] = await Promise.all([
 		listStockLocations(),
 		searchCountableProducts(q),
-		VOUCHER_KINDS[params.kind].kind === 'receipt' ? listSuppliers() : []
+		VOUCHER_KINDS[params.kind].kind === 'receipt' ? supplierOptions() : []
 	]);
 	return { slug: params.kind, q, locations, found, suppliers };
 };

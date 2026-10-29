@@ -118,6 +118,52 @@ export const taxRule = pgTable('tax_rule', {
 });
 
 // ---------------------------------------------------------------------------
+// Fournisseurs (CDC 11)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fournisseur, repris de PrestaShop (`ps_supplier`, adresse `ps_address`) et
+ * de Dolibarr (tiers fournisseurs : coordonnées, SIRET). Un fournisseur
+ * archivé n'est plus proposé (R4) ; rattaché à des produits, il ne se
+ * supprime pas (R5). Ses données ne sont jamais montrées au client (R6).
+ */
+export const supplier = pgTable(
+	'supplier',
+	{
+		id: serial('id').primaryKey(),
+		name: text('name').notNull(),
+		/** Code fournisseur Dolibarr (`SU2111-00019`). */
+		code: text('code'),
+		email: text('email'),
+		phone: text('phone'),
+		line1: text('line1'),
+		line2: text('line2'),
+		postalCode: text('postal_code'),
+		city: text('city'),
+		country: text('country').notNull().default('FR'),
+		siret: text('siret'),
+		vatNumber: text('vat_number'),
+		/** Notes internes. */
+		notes: text('notes'),
+		isActive: boolean('is_active').notNull().default(true),
+		/** Reprise PrestaShop : `ps_supplier.id_supplier`. */
+		legacyPsId: integer('legacy_ps_id'),
+		/** Reprise Dolibarr : `llx_societe.rowid`. */
+		legacyDoliId: integer('legacy_doli_id'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		uniqueIndex('supplier_legacy_ps_id_idx')
+			.on(t.legacyPsId)
+			.where(sql`${t.legacyPsId} IS NOT NULL`),
+		uniqueIndex('supplier_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
+	]
+);
+
+// ---------------------------------------------------------------------------
 // Produits
 // ---------------------------------------------------------------------------
 
@@ -262,8 +308,8 @@ export const product = pgTable(
 
 		/** Transporteur forcé — FK à brancher quand le domaine livraison existera. */
 		forcedCarrierId: integer('forced_carrier_id'),
-		/** Fournisseur — FK à brancher quand le domaine fournisseurs existera. */
-		supplierId: integer('supplier_id'),
+		/** Fournisseur principal (CDC 11, R2) : ses conditions sont dans `supplier_product`. */
+		supplierId: integer('supplier_id').references(() => supplier.id, { onDelete: 'set null' }),
 
 		// Catégorisation : catégorie principale (les catégories additionnelles
 		// passent par la table de liaison product_category).
@@ -327,10 +373,40 @@ export const product = pgTable(
 		index('product_reference_trgm_idx').using('gin', t.reference.op('gin_trgm_ops')),
 		index('product_supplier_ref_trgm_idx').using('gin', t.supplierReference.op('gin_trgm_ops')),
 		index('product_ean13_trgm_idx').using('gin', t.ean13.op('gin_trgm_ops')),
+		index('product_supplier_idx').on(t.supplierId),
 		// Reprise Dolibarr : un produit Dolibarr ne se rattache qu'à une fiche.
 		uniqueIndex('product_legacy_doli_id_idx')
 			.on(t.legacyDoliId)
 			.where(sql`${t.legacyDoliId} IS NOT NULL`)
+	]
+);
+
+/**
+ * Conditions d'un fournisseur pour un produit (CDC 11) : référence chez lui,
+ * prix d'achat négocié HT, délai, quantité minimale. Un produit peut avoir
+ * plusieurs fournisseurs (R1) ; le principal est `product.supplier_id` (R2).
+ * La même référence peut désigner deux produits chez deux fournisseurs (R8).
+ */
+export const supplierProduct = pgTable(
+	'supplier_product',
+	{
+		id: serial('id').primaryKey(),
+		supplierId: integer('supplier_id')
+			.notNull()
+			.references(() => supplier.id, { onDelete: 'restrict' }),
+		productId: integer('product_id')
+			.notNull()
+			.references(() => product.id, { onDelete: 'cascade' }),
+		supplierReference: text('supplier_reference'),
+		purchasePrice: numeric('purchase_price', { precision: 12, scale: 4 }),
+		deliveryDays: integer('delivery_days'),
+		minQuantity: integer('min_quantity'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		uniqueIndex('supplier_product_pair_idx').on(t.supplierId, t.productId),
+		index('supplier_product_product_idx').on(t.productId)
 	]
 );
 
@@ -584,8 +660,10 @@ export const stockVoucher = pgTable(
 		kind: text('kind').notNull(),
 		/** N° du BL fournisseur (entrée) ou du bon (sortie). */
 		reference: text('reference'),
-		/** Fournisseur du BL (UTILE : `marque`). */
+		/** Fournisseur du BL, tel que saisi (UTILE : `marque`). */
 		supplier: text('supplier'),
+		/** Fournisseur du BL, quand il est connu. */
+		supplierId: integer('supplier_id').references(() => supplier.id, { onDelete: 'set null' }),
 		/** Motif d'une sortie (`stockIssueReason`). */
 		reason: text('reason'),
 		note: text('note'),
@@ -809,6 +887,8 @@ export const productCategoryRelations = relations(productCategory, ({ one }) => 
 // ---------------------------------------------------------------------------
 
 export type Brand = typeof brand.$inferSelect;
+export type Supplier = typeof supplier.$inferSelect;
+export type SupplierProduct = typeof supplierProduct.$inferSelect;
 export type NewBrand = typeof brand.$inferInsert;
 export type Category = typeof category.$inferSelect;
 export type NewCategory = typeof category.$inferInsert;

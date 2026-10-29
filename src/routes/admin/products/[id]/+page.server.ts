@@ -25,6 +25,15 @@ import {
 	recordStockMovement,
 	StockLocationError
 } from '$lib/server/stock-locations';
+import {
+	listProductSupply,
+	parseSupplyForm,
+	removeProductSupply,
+	saveProductSupply,
+	setMainSupplier,
+	SupplierError,
+	supplierOptions
+} from '$lib/server/suppliers';
 
 function idParam(params: { id: string }): number {
 	const id = Number(params.id);
@@ -37,20 +46,26 @@ const MOVEMENT_TYPES: StockMovementType[] = ['in', 'out', 'adjustment', 'return'
 
 export const load: PageServerLoad = async ({ params }) => {
 	const id = idParam(params);
-	const [product, brands, cats, taxes, placements, locations, onSale] = await Promise.all([
-		getProductFull(id),
-		activeBrands(),
-		allCategories(),
-		activeTaxRules(),
-		listProductPlacements(id),
-		listStockLocations(),
-		productsOnSaleFloor([id])
-	]);
+	const [product, brands, cats, taxes, placements, locations, onSale, supply, suppliers] =
+		await Promise.all([
+			getProductFull(id),
+			activeBrands(),
+			allCategories(),
+			activeTaxRules(),
+			listProductPlacements(id),
+			listStockLocations(),
+			productsOnSaleFloor([id]),
+			listProductSupply(id),
+			supplierOptions()
+		]);
 	if (!product) throw error(404, 'Produit introuvable');
 
 	return {
 		product,
 		placements,
+		/** Fournisseurs du produit et leurs conditions (CDC 11). */
+		supply,
+		supplierOptions: suppliers.map((s) => ({ value: String(s.id), name: s.name })),
 		locations,
 		/** Rangé au magasin : son étiquette porte le prix TTC. */
 		onSaleFloor: onSale.has(id),
@@ -65,6 +80,31 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
+	/** Ajoute un fournisseur au produit, ou met à jour ses conditions. */
+	saveSupply: async ({ request, params }) => {
+		const parsed = parseSupplyForm(await request.formData());
+		if (!parsed.ok) return fail(400, { supplyError: parsed.error });
+		try {
+			await saveProductSupply(idParam(params), parsed.values);
+		} catch (err) {
+			if (err instanceof SupplierError) return fail(400, { supplyError: err.message });
+			throw err;
+		}
+		return { success: true };
+	},
+
+	mainSupply: async ({ request, params }) => {
+		const supplierId = Number((await request.formData()).get('supplierId'));
+		await setMainSupplier(idParam(params), supplierId);
+		return { success: true };
+	},
+
+	removeSupply: async ({ request, params }) => {
+		const supplierId = Number((await request.formData()).get('supplierId'));
+		await removeProductSupply(idParam(params), supplierId);
+		return { success: true };
+	},
+
 	update: async ({ request, params }) => {
 		const id = idParam(params);
 		const form = await request.formData();

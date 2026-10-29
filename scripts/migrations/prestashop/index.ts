@@ -56,6 +56,7 @@ import { customersTask } from './tasks/13-customers.ts';
 import { orderStatesTask } from './tasks/14-order-states.ts';
 import { ordersTask } from './tasks/15-orders.ts';
 import { supportTask } from './tasks/17-support.ts';
+import { suppliersTask } from './tasks/18-suppliers.ts';
 
 /**
  * Ordre d'import, dicté par les dépendances de clés étrangères :
@@ -106,6 +107,8 @@ const tasks = [
 	// remplaçant, pour que ces fiches ne soient pas des culs-de-sac (§7 n°10).
 	replacementsTask,
 	accessoriesTask,
+	// Fournisseurs et leurs conditions : pendent aux produits (CDC 11).
+	suppliersTask,
 	// ── Domaine commandes ─────────────────────────────────────────────────────
 	// Indépendant du catalogue : `orders` rattache les produits quand il les
 	// trouve, mais une ligne de commande garde son libellé et son prix même si

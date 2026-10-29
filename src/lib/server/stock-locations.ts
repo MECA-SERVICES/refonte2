@@ -616,6 +616,7 @@ export type VoucherInput = {
 		kind: 'receipt' | 'issue';
 		reference: string | null;
 		supplier?: string | null;
+		supplierId?: number | null;
 		reason?: string | null;
 		note?: string | null;
 		createdBy: string | null;

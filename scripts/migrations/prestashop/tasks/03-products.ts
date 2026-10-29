@@ -93,6 +93,13 @@ export const productsTask: Task = {
 		const brandRows = await sql<{ id: number; legacy_ps_id: number }[]>`
 			SELECT id, legacy_ps_id FROM brand WHERE legacy_ps_id IS NOT NULL`;
 		const brandByLegacy = new Map(brandRows.map((r) => [Number(r.legacy_ps_id), Number(r.id)]));
+		// Fournisseurs déjà repris (`suppliers`) ; sinon c'est cette tâche qui
+		// rattachera les nouveaux produits à leur fournisseur principal.
+		const supplierRows = await sql<{ id: number; legacy_ps_id: number }[]>`
+			SELECT id, legacy_ps_id FROM supplier WHERE legacy_ps_id IS NOT NULL`;
+		const supplierByLegacy = new Map(
+			supplierRows.map((r) => [Number(r.legacy_ps_id), Number(r.id)])
+		);
 
 		// Chemin fournisseur KRAMP, chargé une fois : c'est un signal de
 		// classement plus fiable que le premier mot pour ~30 000 produits, et le
@@ -233,7 +240,7 @@ export const productsTask: Task = {
 					// Commandable ou non — distinct de `is_active` (visibilité).
 					// 36 235 produits non commandables en source.
 					available_for_order: bool(r.available_for_order),
-					supplier_id: r.id_supplier ? Number(r.id_supplier) : null,
+					supplier_id: supplierByLegacy.get(Number(r.id_supplier)) ?? null,
 					is_active: bool(r.active),
 					legacy_ps_id: legacyId,
 					created_at: date(r.date_add),

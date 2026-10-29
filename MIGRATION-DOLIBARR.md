@@ -164,6 +164,16 @@ Reprise : tâche `quotes` (354 devis, 1 894 lignes ; 122 liés à leur facture, 
 
 Reste du CDC 23, hors remplacement de Dolibarr : demande de devis par le client, « Mes devis » dans l'espace client, envoi par e-mail, conversion en commande boutique. La signature électronique (6.2) viendra plus tard.
 
+### Fournisseurs (CDC 11)
+
+**Fait le 29/10/2026 (code prêt, reprise à lancer).** Catalogue › Fournisseurs (`/admin/suppliers`) : fiche (coordonnées, SIRET, notes internes, archivage ; suppression seulement sans produit, R5) et produits approvisionnés, par pages. Onglet Prix de la fiche produit : « Approvisionnement », plusieurs fournisseurs par produit avec référence, prix d'achat HT, délai et quantité minimale (R1) ; le principal (`product.supplier_id`, R2) alimente le prix d'achat et la référence fournisseur de la fiche (R3). Réception : le fournisseur se choisit dans la liste. Migration 0057 (`supplier`, `supplier_product`, clé étrangère sur `product.supplier_id`, qui portait l'id PrestaShop brut, et sur `stock_voucher.supplier_id`).
+
+Reprise, dans cet ordre :
+1. `migrate:ps -- --only=suppliers` : 30 fournisseurs PrestaShop, 1 082 408 conditions (`ps_product_supplier`, prix d'achat sur 800 000), fournisseur principal des 1 053 954 produits (`ps_product.id_supplier`). PrestaShop fait foi jusqu'à la bascule : la tâche se rejoue.
+2. `migrate:doli -- --only=suppliers` : les 51 tiers fournisseurs Dolibarr complètent les 15 fiches communes (table `SAME_AS_PS`) ou sont créés ; 69 prix d'achat ; le fournisseur des bons de réception UTILE d'après le texte saisi (`RECEIPT_SUPPLIERS`) ; un produit sans fournisseur principal prend celui de sa dernière réception.
+
+Reste du CDC 11 : l'aide au réapprovisionnement (§ 5.4, ruptures regroupées par fournisseur).
+
 ### Phase 4 — Inventaire annuel
 
 - **Campagne d'inventaire :** comptage par emplacement (à la douchette si possible), numéros de série, prix d'achat.

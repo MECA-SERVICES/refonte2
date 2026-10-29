@@ -25,7 +25,7 @@ describe('parseVoucherForm', () => {
 				[1, 10, 'new', 3, 1],
 				[2, 11, 'used', 1, 0]
 			],
-			{ reference: ' LCL2205 ', supplier: 'KRAMP' }
+			{ reference: ' LCL2205 ', supplierId: '4' }
 		);
 		data.append('serials', '1:SN-9');
 		const parsed = parseVoucherForm(data, 'receipt');
@@ -33,7 +33,7 @@ describe('parseVoucherForm', () => {
 			ok: true,
 			values: {
 				reference: 'LCL2205',
-				supplier: 'KRAMP',
+				supplierId: 4,
 				lines: [
 					{
 						productId: 1,

@@ -19,6 +19,7 @@ import {
 	product,
 	stockMovement,
 	stockVoucher,
+	supplier,
 	type StockCondition,
 	type StockIssueReason
 } from '$lib/server/db/catalog.schema';
@@ -75,17 +76,6 @@ export async function listVouchers(kind: VoucherKind, term: string) {
 		.limit(200);
 }
 
-/** Fournisseurs déjà saisis sur un BL, pour proposer le nom à la saisie. */
-export async function listSuppliers() {
-	const rows = await db
-		.selectDistinct({ supplier: stockVoucher.supplier })
-		.from(stockVoucher)
-		.where(
-			and(eq(stockVoucher.kind, 'receipt'), sql`coalesce(${stockVoucher.supplier}, '') <> ''`)
-		);
-	return rows.map((r) => r.supplier!).sort((a, b) => a.localeCompare(b, 'fr'));
-}
-
 /** Un bon et ses lignes (photo, emplacement, état, numéro de série). */
 export async function getVoucher(id: number) {
 	const [voucher] = await db.select().from(stockVoucher).where(eq(stockVoucher.id, id));
@@ -125,7 +115,8 @@ export type VoucherLine = {
 
 export type VoucherForm = {
 	reference: string | null;
-	supplier: string | null;
+	/** Fournisseur du BL (réception), parmi les fournisseurs actifs. */
+	supplierId: number | null;
 	reason: StockIssueReason;
 	note: string | null;
 	lines: VoucherLine[];
@@ -186,7 +177,7 @@ export function parseVoucherForm(form: FormData, kind: VoucherKind): ParseResult
 		ok: true,
 		values: {
 			reference: form.get('reference')?.toString().trim() || null,
-			supplier: form.get('supplier')?.toString().trim() || null,
+			supplierId: Number(form.get('supplierId')) || null,
 			reason: ISSUE_REASONS.some((r) => r.value === reason)
 				? (reason as StockIssueReason)
 				: 'normal',
@@ -221,6 +212,12 @@ function bySerial(line: VoucherLine, quantity: number, serials: string[]) {
  * numérotées sont celles qui repartent. Renvoie l'identifiant du bon d'entrée.
  */
 export async function createReceipt(form: VoucherForm, createdBy: string | null) {
+	const [found] = form.supplierId
+		? await db
+				.select({ name: supplier.name })
+				.from(supplier)
+				.where(eq(supplier.id, form.supplierId))
+		: [];
 	const entries: Omit<MovementInput, 'voucherId'>[] = form.lines.flatMap((l) =>
 		bySerial(l, l.quantity, l.serials).map((m) => ({
 			...m,
@@ -245,7 +242,8 @@ export async function createReceipt(form: VoucherForm, createdBy: string | null)
 			voucher: {
 				kind: 'receipt',
 				reference: form.reference,
-				supplier: form.supplier,
+				supplier: found?.name ?? null,
+				supplierId: found ? form.supplierId : null,
 				note: form.note,
 				createdBy
 			},

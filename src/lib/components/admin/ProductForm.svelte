@@ -51,7 +51,8 @@
 		stockPanel,
 		variantsPanel,
 		mediaPanel,
-		relationsPanel
+		relationsPanel,
+		supplyPanel
 	}: {
 		product?: Partial<Product>;
 		brandOptions: { value: string; name: string }[];
@@ -70,6 +71,8 @@
 		variantsPanel?: Snippet;
 		mediaPanel?: Snippet;
 		relationsPanel?: Snippet;
+		/** Fournisseurs et leurs conditions (onglet Prix, sous le prix d'achat). */
+		supplyPanel?: Snippet;
 	} = $props();
 
 	function val(n: number | string | null | undefined): string {
@@ -621,6 +624,10 @@
 						</div>
 					</div>
 				</Card>
+
+				{#if supplyPanel}
+					{@render supplyPanel()}
+				{/if}
 
 				<Card class="max-w-none p-6">
 					<h2 class="mb-4 text-lg font-semibold text-gray-900">Prix de vente</h2>

@@ -14,7 +14,8 @@
 		ConditionBadge,
 		ConfirmDialog,
 		LocationPicker,
-		ProductMediaGrid
+		ProductMediaGrid,
+		StateBadge
 	} from '$lib/components/admin';
 	import { DOLIBARR_STOCK_COLORS } from '$lib/admin-colors';
 	import { conditionLabel, STOCK_CONDITIONS } from '$lib/stock-locations';
@@ -297,6 +298,165 @@
 	</Card>
 {/snippet}
 
+{#snippet supplyPanel()}
+	<!--
+		Approvisionnement (CDC 11, § 5.2) : fournisseurs du produit et leurs
+		conditions. Le principal alimente le prix d'achat et la référence
+		fournisseur de la fiche (R3). Les champs se rattachent aux formulaires
+		déclarés plus bas (attribut form=…).
+	-->
+	<Card class="max-w-none p-6">
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">
+			Approvisionnement ({data.supply.length})
+		</h2>
+		{#if form?.supplyError}
+			<p class="mb-3 text-sm text-red-600">{form.supplyError}</p>
+		{/if}
+
+		{#if data.supply.length === 0}
+			<p class="mb-4 text-sm text-gray-500">Aucun fournisseur : ajoutez-en un ci-dessous.</p>
+		{:else}
+			<div class="mb-5 space-y-3">
+				{#each data.supply as s (s.supplierId)}
+					{@const f = `supply-${s.supplierId}`}
+					<div class="rounded-lg border border-gray-200 p-3">
+						<div class="mb-2 flex flex-wrap items-center gap-2">
+							<a href="/admin/suppliers/{s.supplierId}" class="font-medium hover:underline"
+								>{s.name}</a
+							>
+							{#if s.isMain}<StateBadge color="green" label="Principal" />{/if}
+							{#if !s.isActive}<StateBadge color="gray" label="Archivé" />{/if}
+							<div class="ms-auto flex gap-1">
+								{#if !s.isMain}
+									<Button
+										type="submit"
+										form="supply-main-form"
+										name="supplierId"
+										value={s.supplierId}
+										size="xs"
+										color="alternative">Principal</Button
+									>
+								{/if}
+								<Button
+									type="submit"
+									form="supply-remove-form"
+									name="supplierId"
+									value={s.supplierId}
+									size="xs"
+									color="red">Retirer</Button
+								>
+							</div>
+						</div>
+						<input type="hidden" form={f} name="supplierId" value={s.supplierId} />
+						<div class="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_5rem_5rem_auto]">
+							<div>
+								<Label for="{f}-ref" class="mb-1 text-xs">Réf. fournisseur</Label>
+								<Input
+									id="{f}-ref"
+									form={f}
+									name="supplierReference"
+									size="sm"
+									value={s.supplierReference ?? ''}
+								/>
+							</div>
+							<div>
+								<Label for="{f}-price" class="mb-1 text-xs">Prix d'achat HT</Label>
+								<Input
+									id="{f}-price"
+									form={f}
+									name="purchasePrice"
+									size="sm"
+									value={s.purchasePrice ? String(Number(s.purchasePrice)) : ''}
+								/>
+							</div>
+							<div>
+								<Label for="{f}-days" class="mb-1 text-xs">Délai (j)</Label>
+								<Input
+									id="{f}-days"
+									form={f}
+									name="deliveryDays"
+									size="sm"
+									type="number"
+									min="0"
+									value={s.deliveryDays ?? ''}
+								/>
+							</div>
+							<div>
+								<Label for="{f}-min" class="mb-1 text-xs">Qté min.</Label>
+								<Input
+									id="{f}-min"
+									form={f}
+									name="minQuantity"
+									size="sm"
+									type="number"
+									min="0"
+									value={s.minQuantity ?? ''}
+								/>
+							</div>
+							<Button type="submit" form={f} size="sm" color="alternative">Enregistrer</Button>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
+		<h3 class="mb-2 text-sm font-semibold text-gray-900">Ajouter un fournisseur</h3>
+		<div
+			class="grid items-start gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_7rem_5rem_5rem]"
+		>
+			<div>
+				<Label for="supply-new" class="mb-1 text-xs">Fournisseur</Label>
+				<Select
+					id="supply-new"
+					form="supply-add-form"
+					name="supplierId"
+					size="sm"
+					placeholder="Choisir…"
+					items={data.supplierOptions.filter(
+						(o) => !data.supply.some((s) => String(s.supplierId) === o.value)
+					)}
+				/>
+			</div>
+			<div>
+				<Label for="supply-new-ref" class="mb-1 text-xs">Réf. fournisseur</Label>
+				<Input id="supply-new-ref" form="supply-add-form" name="supplierReference" size="sm" />
+			</div>
+			<div>
+				<Label for="supply-new-price" class="mb-1 text-xs">Prix d'achat HT</Label>
+				<Input id="supply-new-price" form="supply-add-form" name="purchasePrice" size="sm" />
+			</div>
+			<div>
+				<Label for="supply-new-days" class="mb-1 text-xs">Délai (j)</Label>
+				<Input
+					id="supply-new-days"
+					form="supply-add-form"
+					name="deliveryDays"
+					type="number"
+					min="0"
+					size="sm"
+				/>
+			</div>
+			<div>
+				<Label for="supply-new-min" class="mb-1 text-xs">Qté min.</Label>
+				<Input
+					id="supply-new-min"
+					form="supply-add-form"
+					name="minQuantity"
+					type="number"
+					min="0"
+					size="sm"
+				/>
+			</div>
+		</div>
+		<div class="mt-3 flex items-center gap-3">
+			<Toggle form="supply-add-form" name="isMain">Fournisseur principal</Toggle>
+			<Button type="submit" form="supply-add-form" size="sm">
+				<PlusOutline class="me-1 h-4 w-4" /> Ajouter
+			</Button>
+		</div>
+	</Card>
+{/snippet}
+
 {#snippet variantsPanel()}
 	<Card class="max-w-none p-6">
 		<h2 class="mb-4 text-lg font-semibold text-gray-900">
@@ -501,6 +661,7 @@
 	{variantsPanel}
 	{mediaPanel}
 	{relationsPanel}
+	{supplyPanel}
 />
 
 <!--
@@ -515,6 +676,40 @@
 	class="hidden"
 ></form>
 <form id="variant-form" method="POST" action="?/addVariant" use:enhance class="hidden"></form>
+<form
+	id="supply-add-form"
+	method="POST"
+	action="?/saveSupply"
+	use:enhance
+	data-success="Fournisseur ajouté."
+	class="hidden"
+></form>
+{#each data.supply as s (s.supplierId)}
+	<form
+		id="supply-{s.supplierId}"
+		method="POST"
+		action="?/saveSupply"
+		use:enhance
+		data-success="Conditions enregistrées."
+		class="hidden"
+	></form>
+{/each}
+<form
+	id="supply-main-form"
+	method="POST"
+	action="?/mainSupply"
+	use:enhance
+	data-success="Fournisseur principal changé."
+	class="hidden"
+></form>
+<form
+	id="supply-remove-form"
+	method="POST"
+	action="?/removeSupply"
+	use:enhance
+	data-success="Fournisseur retiré."
+	class="hidden"
+></form>
 <form id="media-form" method="POST" action="?/addMedia" use:enhance class="hidden"></form>
 <form id="relation-form" method="POST" action="?/addRelation" use:enhance class="hidden"></form>
 <!-- Suppressions par ligne : le bouton porte l'identifiant (name/value). -->
