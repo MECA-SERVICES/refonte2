@@ -36,6 +36,7 @@ import { invoicesTask } from './tasks/08-invoices.ts';
 import { remittancesTask } from './tasks/09-remittances.ts';
 import { quotesTask } from './tasks/10-quotes.ts';
 import { suppliersTask } from './tasks/11-suppliers.ts';
+import { contactsTask } from './tasks/12-contacts.ts';
 
 /** Ordre d'import, dicté par les dépendances : emplacements et produits avant le stock. */
 const tasks = [
@@ -49,7 +50,8 @@ const tasks = [
 	invoicesTask,
 	remittancesTask,
 	quotesTask,
-	suppliersTask
+	suppliersTask,
+	contactsTask
 ];
 
 if (!process.argv.includes('--list')) {

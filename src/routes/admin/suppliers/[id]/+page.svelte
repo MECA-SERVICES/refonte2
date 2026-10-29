@@ -6,6 +6,7 @@
 	import {
 		ActiveBadge,
 		ConfirmDialog,
+		ContactsCard,
 		PageHeader,
 		Pagination,
 		StateBadge,
@@ -53,7 +54,10 @@
 </PageHeader>
 
 <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] xl:items-start">
-	<SupplierForm supplier={s} action="?/update" message={form?.message} />
+	<div class="space-y-6">
+		<SupplierForm supplier={s} action="?/update" message={form?.message} />
+		<ContactsCard contacts={data.contacts} />
+	</div>
 
 	<Card class="max-w-none p-5">
 		<div class="mb-4 flex flex-wrap items-center justify-between gap-3">

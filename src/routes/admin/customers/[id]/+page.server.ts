@@ -9,6 +9,7 @@ import {
 import { listMachines } from '$lib/server/machines';
 import { listCustomerCounterInvoices } from '$lib/server/counter-invoices';
 import { listCustomerQuotes } from '$lib/server/quotes';
+import { contactActions, listContacts } from '$lib/server/contacts';
 import { pendingRequestForCustomer } from '$lib/server/account-validation';
 import { listThreadsFor } from '$lib/server/support';
 
@@ -24,20 +25,24 @@ export const load: PageServerLoad = async ({ params }) => {
 	const customer = await getCustomerWithAddresses(id);
 	if (!customer) throw error(404, 'Client introuvable');
 
-	const [overview, machines, pendingRequest, messages, invoices, quotes] = await Promise.all([
-		getCustomerOverview(id, customer.userId),
-		listMachines(id),
-		// Dossier en cours, pour renvoyer vers l'écran de décision (CDC 08).
-		pendingRequestForCustomer(id),
-		listThreadsFor({ customerId: id }, 5),
-		listCustomerCounterInvoices(id),
-		listCustomerQuotes(id)
-	]);
+	const [overview, machines, pendingRequest, messages, invoices, quotes, contacts] =
+		await Promise.all([
+			getCustomerOverview(id, customer.userId),
+			listMachines(id),
+			// Dossier en cours, pour renvoyer vers l'écran de décision (CDC 08).
+			pendingRequestForCustomer(id),
+			listThreadsFor({ customerId: id }, 5),
+			listCustomerCounterInvoices(id),
+			listCustomerQuotes(id),
+			listContacts({ customerId: id })
+		]);
 
-	return { customer, overview, machines, pendingRequest, messages, invoices, quotes };
+	return { customer, overview, machines, pendingRequest, messages, invoices, quotes, contacts };
 };
 
 export const actions: Actions = {
+	...contactActions((params) => ({ customerId: idParam(params) })),
+
 	/** Note privée du client, enregistrée automatiquement pendant la saisie. */
 	saveNote: async ({ params, request }) => {
 		const id = idParam(params);

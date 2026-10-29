@@ -16,3 +16,4 @@ export * from './home.schema';
 export * from './inventory.schema';
 export * from './counter-invoice.schema';
 export * from './quote.schema';
+export * from './contact.schema';

@@ -1,12 +1,18 @@
 /**
- * Clients du comptoir : tiers Dolibarr (`llx_societe`) qui ont au moins une
- * facture ou un devis → `customer`.
+ * Clients : tous les tiers Dolibarr (`llx_societe`) sauf les fournisseurs
+ * seuls → `customer`. La plupart sont des clients PrestaShop recopiés par la
+ * synchronisation « MAJ BDD », déjà dans MSShop ; les autres sont des clients
+ * du comptoir.
  *
  * Un seul fichier client : un tiers se rattache au client MSShop de même
  * e-mail, puis de même SIRET. Sinon il est créé **sans compte web** (pas de
  * connexion à la boutique, e-mail facultatif), avec son adresse de
  * facturation. Le nom Dolibarr (« DUPONT JEAN », ou la raison sociale) est
  * repris tel quel dans le nom, et en société s'il a un SIRET ou un n° de TVA.
+ *
+ * Doublons Dolibarr : un tiers sans facture ni devis dont l'e-mail appartient
+ * déjà à un autre client repris n'est pas créé une seconde fois. Un tiers
+ * facturé, lui, l'est toujours (sans e-mail), pour garder ses factures.
  *
  * Idempotent par `customer.legacy_doli_id = llx_societe.rowid`.
  */
@@ -27,22 +33,26 @@ interface SourceThirdParty {
 	siret: string | null;
 	tva_intra: string | null;
 	country: string | null;
+	/** Au moins une facture ou un devis. */
+	active: number;
 }
 
 export const customersTask: Task = {
 	name: 'customers',
-	description: 'Clients facturés ou chiffrés (llx_societe → customer, sans compte web)',
+	description: 'Clients (llx_societe → customer : rattachés, sinon créés sans compte web)',
 
 	async run({ dryRun }) {
 		const rows = await sourceQuery<SourceThirdParty>(
 			`SELECT s.rowid, s.nom, s.email, s.phone, s.address, s.zip, s.town, s.siret, s.tva_intra,
-			        c.code AS country
+			        c.code AS country,
+			        (s.rowid IN (SELECT fk_soc FROM ${DOLI}.llx_facture)
+			         OR s.rowid IN (SELECT fk_soc FROM ${DOLI}.llx_propal)) AS active
 			 FROM ${DOLI}.llx_societe s
 			 LEFT JOIN ${DOLI}.llx_c_country c ON c.rowid = s.fk_pays
-			 WHERE s.rowid IN (SELECT fk_soc FROM ${DOLI}.llx_facture)
-			    OR s.rowid IN (SELECT fk_soc FROM ${DOLI}.llx_propal)`
+			 WHERE NOT (s.fournisseur = 1 AND s.client = 0)
+			 ORDER BY active DESC, s.rowid`
 		);
-		log.muted(`${count(rows.length)} tiers facturés ou chiffrés en source`);
+		log.muted(`${count(rows.length)} tiers clients en source`);
 
 		const sql = targetDb();
 		const existing = await sql<
@@ -57,8 +67,12 @@ export const customersTask: Task = {
 			existing.filter((c) => c.siret && !c.doli).map((c) => [c.siret!, c.id])
 		);
 
+		// E-mails déjà portés par un client repris : un tiers sans activité qui en
+		// porte un est un doublon Dolibarr.
+		const claimed = new Set(existing.filter((c) => c.email && c.doli).map((c) => c.email!));
 		const links: { id: number; doli: number }[] = [];
 		const creations: SourceThirdParty[] = [];
+		let duplicates = 0;
 		for (const r of rows) {
 			if (byDoli.has(Number(r.rowid))) continue;
 			const email = text(r.email)?.toLowerCase();
@@ -67,10 +81,15 @@ export const customersTask: Task = {
 			if (id) {
 				links.push({ id, doli: Number(r.rowid) });
 				if (email) byEmail.delete(email);
+				if (siret) bySiret.delete(siret);
+			} else if (email && claimed.has(email) && !Number(r.active)) {
+				duplicates++;
+				continue;
 			} else creations.push(r);
+			if (email) claimed.add(email);
 		}
 		log.muted(
-			`${count(byDoli.size)} déjà repris, ${count(links.length)} rattachés (e-mail ou SIRET), ${count(creations.length)} à créer sans compte web`
+			`${count(byDoli.size)} déjà repris, ${count(links.length)} rattachés (e-mail ou SIRET), ${count(creations.length)} à créer sans compte web, ${count(duplicates)} doublons Dolibarr ignorés`
 		);
 
 		if (dryRun) {

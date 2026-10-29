@@ -8,6 +8,7 @@ import {
 	SupplierError,
 	updateSupplier
 } from '$lib/server/suppliers';
+import { contactActions, listContacts } from '$lib/server/contacts';
 
 function idParam(params: { id: string }) {
 	const id = Number(params.id);
@@ -20,12 +21,18 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const id = idParam(params);
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	const page = Number(url.searchParams.get('page') ?? '1') || 1;
-	const [found, products] = await Promise.all([getSupplier(id), listSupplierProducts(id, q, page)]);
+	const [found, products, contacts] = await Promise.all([
+		getSupplier(id),
+		listSupplierProducts(id, q, page),
+		listContacts({ supplierId: id })
+	]);
 	if (!found) error(404, 'Fournisseur introuvable');
-	return { ...found, q, products };
+	return { ...found, q, products, contacts };
 };
 
 export const actions: Actions = {
+	...contactActions((params) => ({ supplierId: idParam(params) })),
+
 	update: async ({ request, params }) => {
 		const parsed = parseSupplierForm(await request.formData());
 		if (!parsed.ok) return fail(400, { message: parsed.error });

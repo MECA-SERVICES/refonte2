@@ -14,6 +14,7 @@
 	} from 'flowbite-svelte';
 	import { EditOutline, SearchOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import {
+		ContactsCard,
 		AutosaveNote,
 		PageHeader,
 		ConfirmDialog,
@@ -320,6 +321,9 @@
 				</div>
 			{/if}
 		</Card>
+
+		<!-- Interlocuteurs d'un client pro (repris de Dolibarr). -->
+		<ContactsCard contacts={data.contacts} />
 
 		<!-- Factures comptoir (remplacement de Dolibarr), historique repris compris. -->
 		<Card class="max-w-none p-6">

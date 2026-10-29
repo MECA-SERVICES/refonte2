@@ -187,7 +187,8 @@ Reste du CDC 11 : l'aide au réapprovisionnement (§ 5.4, ruptures regroupées p
   - **Pourquoi :** une facture se conserve **10 ans**.
   - **Où :** consultables depuis la fiche client.
 - **Historique** des factures, paiements, devis et inventaires : en lecture seule.
-- **Tiers :** rapprochement des 9 720 tiers de Dolibarr avec les clients de MSShop (e-mail, SIRET). Les clients du comptoir sans compte web sont à reprendre.
+- **Tiers : fait le 29/10/2026 (reprise à lancer).** La tâche `customers` couvre tous les tiers sauf les fournisseurs seuls (9 677) : 8 549 se rattachent par e-mail ou SIRET au client MSShop venu de PrestaShop, 559 sont créés sans compte web, 61 doublons Dolibarr sans activité sont ignorés.
+- **Contacts : fait le 29/10/2026 (reprise à lancer).** `llx_socpeople` (147) → `contact`, rattaché au fournisseur (100) ou au client ; bloc « Contacts » sur les fiches client et fournisseur. Migration 0058.
 - **Bascule finale :**
   1. geler Dolibarr ;
   2. faire la dernière reprise du stock ;
