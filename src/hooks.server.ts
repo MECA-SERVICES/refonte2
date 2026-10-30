@@ -6,6 +6,7 @@ import type { Handle } from '@sveltejs/kit';
 import { getTextDirection } from '$lib/paraglide/runtime';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import { isLockEnabled, isUnlocked, LOCK_PATH } from '$lib/server/site-lock';
+import { canAccess } from '$lib/roles';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -59,4 +60,27 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	return svelteKitHandler({ event, resolve, auth, building });
 };
 
-export const handle: Handle = sequence(handleSiteLock, handleParaglide, handleBetterAuth);
+/**
+ * Garde des écritures du back-office. Les pages vérifient le rôle dans leur
+ * `load` (`requireStaff`), mais une action de formulaire s'exécute **sans**
+ * ce `load` : toute requête qui modifie quelque chose sous `/admin` (POST…)
+ * est donc contrôlée ici, au niveau qu'exige la page (`canAccess`).
+ */
+const handleBackOffice: Handle = ({ event, resolve }) => {
+	const { pathname } = event.url;
+	const isBackOffice = pathname === '/admin' || pathname.startsWith('/admin/');
+	const isWrite = event.request.method !== 'GET' && event.request.method !== 'HEAD';
+	if (!isBackOffice || !isWrite || pathname === '/admin/login') return resolve(event);
+
+	const { user } = event.locals;
+	if (!user) return new Response('Connexion requise.', { status: 401 });
+	if (!canAccess(user.role, pathname)) return new Response('Accès refusé.', { status: 403 });
+	return resolve(event);
+};
+
+export const handle: Handle = sequence(
+	handleSiteLock,
+	handleParaglide,
+	handleBetterAuth,
+	handleBackOffice
+);

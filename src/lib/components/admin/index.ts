@@ -122,5 +122,6 @@ export const CUSTOMER_STATUS_BADGES: Record<string, { label: string; color: Badg
 
 export const ROLE_BADGES: Record<string, { label: string; color: BadgeColor }> = {
 	admin: { label: 'Administrateur', color: 'green' },
+	employee: { label: 'Employé', color: 'blue' },
 	customer: { label: 'Client', color: 'gray' }
 };

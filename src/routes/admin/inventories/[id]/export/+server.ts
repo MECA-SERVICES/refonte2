@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { requireAdmin } from '$lib/server/guard';
+import { requireStaff } from '$lib/server/guard';
 import { exportInventoryCsv, getInventory } from '$lib/server/inventory';
 import { slugify } from '$lib/server/slug';
 
@@ -9,7 +9,7 @@ import { slugify } from '$lib/server/slug';
  * `+layout.server.ts` ne s'applique pas aux routes serveur.
  */
 export const GET: RequestHandler = async (event) => {
-	requireAdmin(event);
+	requireStaff(event);
 	const id = Number(event.params.id);
 	const inv = Number.isInteger(id) ? await getInventory(id) : null;
 	if (!inv) error(404, 'Inventaire introuvable');

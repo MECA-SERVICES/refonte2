@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getInvoiceForOrder, getInvoiceDocument, issueInvoice } from '$lib/server/invoicing';
 import { invoiceFileName, renderInvoicePdf } from '$lib/server/invoice-pdf';
-import { requireAdmin } from '$lib/server/guard';
+import { requireStaff } from '$lib/server/guard';
 
 /**
  * Facture d'une commande, au format PDF (CDC 24).
@@ -15,7 +15,7 @@ import { requireAdmin } from '$lib/server/guard';
  * serveur, cet endpoint serait sinon ouvert à tous.
  */
 export const GET: RequestHandler = async (event) => {
-	requireAdmin(event);
+	requireStaff(event);
 
 	const orderId = Number(event.params.id);
 	if (!Number.isInteger(orderId)) error(404, 'Commande introuvable');

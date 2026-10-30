@@ -226,10 +226,11 @@
 					<Avatar id="avatar-menu" class="cursor-pointer" aria-label="Mon compte" />
 					<Dropdown simple triggeredBy="#avatar-menu" placement="bottom-end">
 						<DropdownHeader>
-							<span class="block text-sm">{adminUser?.name ?? 'Administrateur'}</span>
+							<span class="block text-sm">{adminUser?.name ?? 'Équipe'}</span>
 							<span class="block truncate text-sm font-medium">{adminUser?.email ?? ''}</span>
 						</DropdownHeader>
 						<DropdownItem href={resolve('/admin')}>Tableau de bord</DropdownItem>
+						<DropdownItem href={resolve('/admin/account')}>Mon compte</DropdownItem>
 						<DropdownDivider />
 						<DropdownItem onclick={logout}>Déconnexion</DropdownItem>
 					</Dropdown>

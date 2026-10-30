@@ -3,7 +3,7 @@ import { eq, inArray } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { product, taxRule } from '$lib/server/db/catalog.schema';
-import { requireAdmin } from '$lib/server/guard';
+import { requireStaff } from '$lib/server/guard';
 import { priceTtcSql } from '$lib/server/pricing';
 import { renderProductLabels } from '$lib/server/product-label-pdf';
 import { productsOnSaleFloor } from '$lib/server/stock-locations';
@@ -21,7 +21,7 @@ const MAX_LABELS = 500;
  * `+layout.server.ts` ne s'applique pas aux routes serveur.
  */
 export const GET: RequestHandler = async (event) => {
-	requireAdmin(event);
+	requireStaff(event);
 
 	const ids = (event.url.searchParams.get('ids') ?? '')
 		.split(',')

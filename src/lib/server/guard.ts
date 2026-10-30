@@ -1,19 +1,19 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { canAccess, hasBackOffice } from '$lib/roles';
 
-/** Rôles autorisés à accéder au back-office. */
-const ADMIN_ROLES = ['admin'];
-
-export function isAdmin(user: App.Locals['user']): boolean {
-	return !!user && ADMIN_ROLES.includes(user.role ?? '');
+/** Le compte accède-t-il au back-office (employé ou administrateur) ? */
+export function isStaff(user: App.Locals['user']): boolean {
+	return !!user && hasBackOffice(user.role);
 }
 
 /**
- * Garde du back-office : redirige les visiteurs non connectés vers le login
- * et bloque (403) les utilisateurs sans rôle admin.
- * Retourne l'utilisateur admin garanti non-nul pour un usage aval.
+ * Garde du back-office : redirige les visiteurs non connectés vers le login,
+ * et bloque (403) un compte sans accès au back-office ou sans le niveau
+ * qu'exige la page (`canAccess` : paramétrage et équipe réservés aux
+ * administrateurs). Retourne l'utilisateur, garanti non nul.
  */
-export function requireAdmin(event: RequestEvent) {
+export function requireStaff(event: RequestEvent) {
 	const { user } = event.locals;
 
 	if (!user) {
@@ -21,8 +21,11 @@ export function requireAdmin(event: RequestEvent) {
 		throw redirect(302, `/admin/login?redirectTo=${redirectTo}`);
 	}
 
-	if (!isAdmin(user)) {
-		throw error(403, "Accès réservé à l'administration.");
+	if (!hasBackOffice(user.role)) {
+		throw error(403, "Accès réservé à l'équipe.");
+	}
+	if (!canAccess(user.role, event.url.pathname)) {
+		throw error(403, 'Accès réservé aux administrateurs.');
 	}
 
 	return user;

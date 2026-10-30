@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { requireAdmin } from '$lib/server/guard';
+import { requireStaff } from '$lib/server/guard';
 import { exportMissingPrice, isMissingPriceScope } from '$lib/server/purchase-price-report';
 
 /** Cellule CSV : guillemets doublés, séparateur point-virgule (Excel français). */
@@ -13,7 +13,7 @@ const cell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
  * serveur, cet endpoint serait sinon ouvert à tous.
  */
 export const GET: RequestHandler = async (event) => {
-	requireAdmin(event);
+	requireStaff(event);
 
 	const param = event.url.searchParams.get('perimetre');
 	const scope = isMissingPriceScope(param) ? param : 'stock';

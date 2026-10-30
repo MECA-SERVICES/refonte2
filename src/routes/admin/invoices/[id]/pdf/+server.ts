@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { requireAdmin } from '$lib/server/guard';
+import { requireStaff } from '$lib/server/guard';
 import { getCounterInvoice } from '$lib/server/counter-invoices';
 import { renderCounterInvoicePdf } from '$lib/server/counter-invoice-pdf';
 
@@ -9,7 +9,7 @@ import { renderCounterInvoicePdf } from '$lib/server/counter-invoice-pdf';
  * `+layout.server.ts` ne s'applique pas aux routes serveur.
  */
 export const GET: RequestHandler = async (event) => {
-	requireAdmin(event);
+	requireStaff(event);
 	const id = Number(event.params.id);
 	const doc = Number.isInteger(id) ? await getCounterInvoice(id) : null;
 	if (!doc) error(404, 'Facture introuvable');

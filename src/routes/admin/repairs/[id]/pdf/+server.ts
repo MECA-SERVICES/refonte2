@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getRepairOrder } from '$lib/server/repairs';
 import { renderRepairOrderPdf } from '$lib/server/repair-order-pdf';
-import { requireAdmin } from '$lib/server/guard';
+import { requireStaff } from '$lib/server/guard';
 
 /**
  * Ordre de réparation en PDF (demande client 13.8).
@@ -11,7 +11,7 @@ import { requireAdmin } from '$lib/server/guard';
  * serveur, cet endpoint serait sinon ouvert à tous.
  */
 export const GET: RequestHandler = async (event) => {
-	requireAdmin(event);
+	requireStaff(event);
 
 	const id = Number(event.params.id);
 	if (!Number.isInteger(id)) error(404, 'Ordre introuvable');

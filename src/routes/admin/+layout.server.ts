@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import { requireAdmin } from '$lib/server/guard';
+import { requireStaff } from '$lib/server/guard';
 import { countUnreadForStaff } from '$lib/server/support';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -8,7 +8,7 @@ export const load: LayoutServerLoad = async (event) => {
 		return { adminUser: null, supportUnread: 0 };
 	}
 
-	const user = requireAdmin(event);
+	const user = requireStaff(event);
 	return {
 		adminUser: {
 			id: user.id,

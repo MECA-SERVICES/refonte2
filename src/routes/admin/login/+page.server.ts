@@ -1,15 +1,16 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { auth } from '$lib/server/auth';
-import { isAdmin } from '$lib/server/guard';
+import { isStaff } from '$lib/server/guard';
+import { hasBackOffice } from '$lib/roles';
 import { db } from '$lib/server/db';
 import { user } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { APIError } from 'better-auth/api';
 
 export const load: PageServerLoad = (event) => {
-	// Déjà connecté en admin → aller directement au back-office.
-	if (isAdmin(event.locals.user)) {
+	// Déjà connecté avec un rôle interne → aller directement au back-office.
+	if (isStaff(event.locals.user)) {
 		throw redirect(302, safeRedirect(event.url.searchParams.get('redirectTo')));
 	}
 	return {};
@@ -26,14 +27,14 @@ export const actions: Actions = {
 			return fail(400, { email, message: 'E-mail et mot de passe requis.' });
 		}
 
-		// Le rôle admin est requis pour le back-office. On le vérifie en base :
+		// Un rôle interne est requis pour le back-office. On le vérifie en base :
 		// getSession ne verrait pas encore la session créée dans cette même requête.
 		const [account] = await db
 			.select({ role: user.role })
 			.from(user)
 			.where(eq(user.email, email))
 			.limit(1);
-		if (account?.role !== 'admin') {
+		if (!hasBackOffice(account?.role)) {
 			return fail(403, { email, message: "Ce compte n'a pas accès à l'administration." });
 		}
 
