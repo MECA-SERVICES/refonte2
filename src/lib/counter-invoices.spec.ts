@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	counterOf,
+	dueDate,
 	formatCounterNumber,
 	invoiceTotals,
 	lineTotals,
@@ -58,5 +59,13 @@ describe('factures comptoir', () => {
 	it('calcule le reste à payer, avoirs compris', () => {
 		expect(remainingDue(179.95, 100, 0)).toBe(79.95);
 		expect(remainingDue(179.95, 100, 79.95)).toBe(0);
+	});
+
+	it('calcule la date limite de règlement', () => {
+		expect(dueDate('2022-04-26', 'receipt')).toBe('2022-04-26');
+		expect(dueDate('2026-10-30', '14d')).toBe('2026-11-13');
+		expect(dueDate('2026-10-30', '30d')).toBe('2026-11-29');
+		expect(dueDate('2026-10-30', '30d_end_month')).toBe('2026-11-30');
+		expect(dueDate('2026-01-31', '30d_end_month')).toBe('2026-03-31');
 	});
 });

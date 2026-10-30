@@ -4,8 +4,20 @@
 	import { FilePdfOutline } from 'flowbite-svelte-icons';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { formatPrice } from '$lib/money';
-	import { COUNTER_STATUS } from '$lib/counter-invoices';
-	import { SETTLEMENT_METHOD_LABELS, settlementMethods } from '$lib/settlements';
+	import {
+		COUNTER_STATUS,
+		counterKinds,
+		PAYMENT_TERMS_LABELS,
+		paymentTerms
+	} from '$lib/counter-invoices';
+	import {
+		BANK_ACCOUNTS,
+		bankAccountLabel,
+		SETTLEMENT_METHOD_LABELS,
+		settlementAccount,
+		settlementLabel,
+		settlementMethods
+	} from '$lib/settlements';
 	import {
 		ConfirmDialog,
 		DocumentLineStock,
@@ -21,6 +33,8 @@
 	 * prestations de main-d'œuvre et lignes libres, on ajuste quantités, prix
 	 * TTC et remises, puis on valide. Validée : elle est figée ; on enregistre
 	 * les règlements, on sort les pièces du stock, on la corrige par un avoir.
+	 * Les informations reprennent l'en-tête de Dolibarr : réf. client,
+	 * conditions et mode de règlement, échéance, compte, adresse, suivi.
 	 */
 
 	let { data }: PageProps = $props();
@@ -34,6 +48,19 @@
 	);
 	const client = $derived(data.customer);
 	const today = new Date().toISOString().slice(0, 10);
+	const dateFmt = new Intl.DateTimeFormat('fr-FR');
+	// Dolibarr ne garde que le jour : pas d'heure pour une facture reprise.
+	const stampFmt = $derived(
+		inv.legacyDoliId
+			? dateFmt
+			: new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+	);
+	const addr = $derived(data.address);
+	const creditTotal = $derived(data.credits.reduce((sum, c) => sum + Number(c.amountTtc), 0));
+	const methodOptions = [
+		{ value: '', name: 'Non précisé' },
+		...settlementMethods.map((m) => ({ value: m, name: SETTLEMENT_METHOD_LABELS[m] }))
+	];
 	const keepValues: SubmitFunction =
 		() =>
 		({ update }) =>
@@ -126,6 +153,159 @@
 
 <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
 	<div class="min-w-0 space-y-6">
+		<Card class="max-w-none p-5">
+			<h2 class="mb-4 text-lg font-semibold text-gray-900">Informations</h2>
+			{#if isDraft}
+				<form
+					method="POST"
+					action="?/header"
+					use:enhance={keepValues}
+					data-success="Enregistré."
+					class="grid gap-3 sm:grid-cols-2"
+				>
+					<input type="hidden" name="customerId" value={client.id} />
+					<div>
+						<Label for="issued-on" class="mb-1 text-xs">Date de facture</Label>
+						<Input
+							id="issued-on"
+							name="issuedOn"
+							type="date"
+							value={inv.issuedOn ?? ''}
+							size="sm"
+						/>
+						<p class="mt-1 text-xs text-gray-500">Vide : la date de validation.</p>
+					</div>
+					<div>
+						<Label for="customer-reference" class="mb-1 text-xs">Réf. client</Label>
+						<Input
+							id="customer-reference"
+							name="customerReference"
+							value={inv.customerReference ?? ''}
+							size="sm"
+							placeholder="N° de commande, chantier, machine…"
+						/>
+					</div>
+					{#if !isCredit}
+						<div>
+							<Label for="payment-terms" class="mb-1 text-xs">Conditions de règlement</Label>
+							<Select
+								id="payment-terms"
+								name="paymentTerms"
+								size="sm"
+								placeholder=""
+								value={inv.paymentTerms}
+								items={paymentTerms.map((t) => ({ value: t, name: PAYMENT_TERMS_LABELS[t] }))}
+							/>
+							<p class="mt-1 text-xs text-gray-500">L'échéance se calcule à la validation.</p>
+						</div>
+						<div>
+							<Label for="payment-method" class="mb-1 text-xs">Mode de règlement prévu</Label>
+							<Select
+								id="payment-method"
+								name="paymentMethod"
+								size="sm"
+								placeholder=""
+								value={inv.paymentMethod ?? ''}
+								items={methodOptions}
+							/>
+						</div>
+					{/if}
+					<div>
+						<Label for="bank-account" class="mb-1 text-xs">Compte bancaire</Label>
+						<Select
+							id="bank-account"
+							name="bankAccount"
+							size="sm"
+							placeholder=""
+							value={inv.bankAccount}
+							items={Object.entries(BANK_ACCOUNTS).map(([value, name]) => ({ value, name }))}
+						/>
+					</div>
+					<div class="sm:col-span-2">
+						<Label for="note" class="mb-1 text-xs">Note imprimée</Label>
+						<Textarea id="note" name="note" rows={2} value={inv.note ?? ''} />
+					</div>
+					<div class="sm:col-span-2">
+						<Label for="private-note" class="mb-1 text-xs">Note interne, jamais imprimée</Label>
+						<Textarea id="private-note" name="privateNote" rows={2} value={inv.privateNote ?? ''} />
+					</div>
+					<div class="sm:col-span-2">
+						<Button type="submit" size="xs" color="alternative">Enregistrer</Button>
+					</div>
+				</form>
+			{:else}
+				<dl
+					class="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]"
+				>
+					<dt class="text-gray-500">Type</dt>
+					<dd>{counterKinds[inv.kind]}</dd>
+					<dt class="text-gray-500">Réf. client</dt>
+					<dd>{inv.customerReference ?? '—'}</dd>
+					<dt class="text-gray-500">Date de facturation</dt>
+					<dd>{inv.issuedOn ? dateFmt.format(new Date(inv.issuedOn)) : '—'}</dd>
+					{#if !isCredit}
+						<dt class="text-gray-500">Conditions de règlement</dt>
+						<dd>{PAYMENT_TERMS_LABELS[inv.paymentTerms]}</dd>
+						<dt class="text-gray-500">Date limite de règlement</dt>
+						<dd>{inv.dueOn ? dateFmt.format(new Date(inv.dueOn)) : '—'}</dd>
+						<dt class="text-gray-500">Mode de règlement</dt>
+						<dd>{inv.paymentMethod ? SETTLEMENT_METHOD_LABELS[inv.paymentMethod] : '—'}</dd>
+					{/if}
+					<dt class="text-gray-500">Compte bancaire</dt>
+					<dd>{bankAccountLabel(inv.bankAccount)}</dd>
+					<dt class="text-gray-500">Remises</dt>
+					<dd>
+						{creditTotal
+							? `Ce client a ${formatPrice(creditTotal)} de crédit disponible.`
+							: 'Ce client n’a pas de crédit disponible.'}
+					</dd>
+				</dl>
+				{#if inv.note || inv.privateNote}
+					<div class="mt-4 grid gap-3 border-t border-gray-200 pt-4 text-sm sm:grid-cols-2">
+						{#if inv.note}
+							<div>
+								<p class="text-xs text-gray-500">Note imprimée</p>
+								<p class="whitespace-pre-line text-gray-800">{inv.note}</p>
+							</div>
+						{/if}
+						{#if inv.privateNote}
+							<div>
+								<p class="text-xs text-gray-500">Note interne</p>
+								<p class="whitespace-pre-line text-gray-800">{inv.privateNote}</p>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			{/if}
+		</Card>
+
+		{#if isDraft && !isCredit && data.credits.length}
+			<Card class="max-w-none p-5">
+				<h2 class="mb-2 text-sm font-semibold text-gray-900">
+					Crédits disponibles du client · {formatPrice(creditTotal)}
+				</h2>
+				<ul class="divide-y divide-gray-100 text-sm">
+					{#each data.credits as credit (credit.id)}
+						<li class="flex items-center justify-between gap-3 py-2">
+							<span class="min-w-0 text-gray-800">{credit.description}</span>
+							<span class="flex items-center gap-2">
+								<span class="tabular-nums">{formatPrice(credit.amountTtc)}</span>
+								<form
+									method="POST"
+									action="?/useCredit"
+									use:enhance
+									data-success="Crédit déduit de la facture."
+								>
+									<input type="hidden" name="creditId" value={credit.id} />
+									<Button type="submit" size="xs" color="alternative">Déduire</Button>
+								</form>
+							</span>
+						</li>
+					{/each}
+				</ul>
+			</Card>
+		{/if}
+
 		<DocumentLines
 			lines={data.lines}
 			editable={isDraft}
@@ -176,39 +356,22 @@
 					>
 				</p>
 			{/if}
-			{#if isDraft}
-				<form
-					method="POST"
-					action="?/header"
-					use:enhance={keepValues}
-					data-success="Enregistré."
-					class="mt-4 space-y-3 border-t border-gray-200 pt-4"
-				>
-					<input type="hidden" name="customerId" value={client.id} />
-					<div>
-						<Label for="issued-on" class="mb-1 text-xs">Date de facture</Label>
-						<Input
-							id="issued-on"
-							name="issuedOn"
-							type="date"
-							value={inv.issuedOn ?? ''}
-							size="sm"
-						/>
-						<p class="mt-1 text-xs text-gray-500">Vide : la date de validation.</p>
-					</div>
-					<div>
-						<Label for="note" class="mb-1 text-xs">Note imprimée</Label>
-						<Textarea id="note" name="note" rows={2} value={inv.note ?? ''} />
-					</div>
-					<div>
-						<Label for="private-note" class="mb-1 text-xs">Note interne</Label>
-						<Textarea id="private-note" name="privateNote" rows={2} value={inv.privateNote ?? ''} />
-					</div>
-					<Button type="submit" size="xs" color="alternative">Enregistrer</Button>
-				</form>
-			{:else if inv.note}
-				<p class="mt-3 text-sm text-gray-700">{inv.note}</p>
-			{/if}
+			<div class="mt-3 border-t border-gray-200 pt-3 text-sm text-gray-700">
+				<p class="mb-1 text-xs text-gray-500">
+					Adresse de facturation{inv.billingAddress ? '' : ' (fiche client)'}
+				</p>
+				<p class="whitespace-pre-line">
+					{[
+						addr.company,
+						addr.name,
+						addr.line1,
+						addr.line2,
+						[addr.postalCode, addr.city].filter(Boolean).join(' ')
+					]
+						.filter(Boolean)
+						.join('\n')}
+				</p>
+			</div>
 		</Card>
 
 		<DocumentTotals
@@ -245,7 +408,9 @@
 						<span>
 							{SETTLEMENT_METHOD_LABELS[s.method]}{s.chequeNumber ? ` n° ${s.chequeNumber}` : ''}
 							<span class="block text-xs text-gray-500"
-								>{new Intl.DateTimeFormat('fr-FR').format(new Date(s.receivedOn))} · {s.reference}</span
+								>{dateFmt.format(new Date(s.receivedOn))} · {settlementLabel(s.reference)} · {bankAccountLabel(
+									settlementAccount(s)
+								)}</span
 							>
 						</span>
 						<span class="font-semibold tabular-nums">{formatPrice(s.amount)}</span>
@@ -341,6 +506,25 @@
 				{/if}
 			</Card>
 		{/if}
+
+		<Card class="max-w-none p-5">
+			<h2 class="mb-2 text-sm font-semibold text-gray-900">Suivi</h2>
+			<ul class="space-y-1 text-sm text-gray-700">
+				<li>
+					Créée le {stampFmt.format(new Date(inv.createdAt))}{data.createdByName
+						? ` par ${data.createdByName}`
+						: ''}
+				</li>
+				{#if inv.validatedAt}
+					<li>
+						Validée le {stampFmt.format(new Date(inv.validatedAt))}{data.validatedByName
+							? ` par ${data.validatedByName}`
+							: ''}
+					</li>
+				{/if}
+				{#if inv.legacyDoliId}<li class="text-gray-500">Reprise de Dolibarr</li>{/if}
+			</ul>
+		</Card>
 
 		{#if data.creditNotes.length}
 			<Card class="max-w-none p-5">

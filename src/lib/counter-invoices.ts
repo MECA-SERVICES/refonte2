@@ -13,6 +13,20 @@ export type LineInput = {
 	discountPercent: number;
 };
 
+/**
+ * Détail saisi sous la désignation d'une ligne (n° de série, garantie) :
+ * retours à la ligne gardés, espaces de fin et lignes vides en trop retirés.
+ */
+export function lineDetail(value: string | null | undefined): string | null {
+	const detail = (value ?? '')
+		.split(/\r?\n/)
+		.map((line) => line.trimEnd())
+		.join('\n')
+		.replace(/\n{3,}/g, '\n\n')
+		.trim();
+	return detail || null;
+}
+
 /** Totaux d'une ligne : HT après remise, TVA et TTC, au centime. */
 export function lineTotals(l: LineInput) {
 	const totalHt = round2(l.quantity * l.unitPriceHt * (1 - l.discountPercent / 100));
@@ -79,4 +93,34 @@ export const COUNTER_STATUS = {
 export function remainingDue(totalTtc: number, paid: number, credited: number): number {
 	// `+ 0` : jamais de « −0 » à l'écran.
 	return round2(totalTtc - paid - credited) + 0;
+}
+
+export const counterKinds = {
+	invoice: 'Facture standard',
+	credit_note: 'Avoir',
+	deposit: 'Facture d’acompte'
+} as const;
+
+/** Conditions de règlement, celles de Dolibarr. */
+export const paymentTerms = ['receipt', '14d', '30d', '30d_end_month'] as const;
+export type PaymentTerms = (typeof paymentTerms)[number];
+
+export const PAYMENT_TERMS_LABELS: Record<PaymentTerms, string> = {
+	receipt: 'À réception',
+	'14d': '14 jours',
+	'30d': '30 jours',
+	'30d_end_month': '30 jours fin de mois'
+};
+
+export function isPaymentTerms(value: unknown): value is PaymentTerms {
+	return paymentTerms.includes(value as PaymentTerms);
+}
+
+/** Date limite de règlement (`AAAA-MM-JJ`) d'une facture datée du `issuedOn`. */
+export function dueDate(issuedOn: string, terms: PaymentTerms): string {
+	const d = new Date(`${issuedOn}T00:00:00Z`);
+	if (terms === '14d') d.setUTCDate(d.getUTCDate() + 14);
+	if (terms === '30d' || terms === '30d_end_month') d.setUTCDate(d.getUTCDate() + 30);
+	if (terms === '30d_end_month') d.setUTCMonth(d.getUTCMonth() + 1, 0);
+	return d.toISOString().slice(0, 10);
 }

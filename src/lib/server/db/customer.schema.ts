@@ -61,6 +61,11 @@ export const customer = pgTable(
 		type: text('type').notNull().default('particulier'),
 		status: text('status').notNull().default('validated'),
 
+		/** Autre nom du client (nom d'usage, enseigne), repris de Dolibarr. */
+		alias: text('alias'),
+		website: text('website'),
+		fax: text('fax'),
+
 		// Informations entreprise (B2B)
 		companyName: varchar('company_name', { length: 255 }),
 		siret: varchar('siret', { length: 14 }),

@@ -53,6 +53,32 @@ export function isRemittanceKind(value: unknown): value is RemittanceKind {
 /** Compte crédité par défaut, nommé comme dans Dolibarr. */
 export const DEFAULT_BANK_ACCOUNT = 'COMPTE-PRO';
 
+/** Comptes de Dolibarr : la banque et la caisse du magasin. */
+export const BANK_ACCOUNTS: Record<string, string> = {
+	'COMPTE-PRO': 'Crédit Mutuel Pro',
+	CAISSE: 'Caisse'
+};
+
+export const bankAccountLabel = (account: string) => BANK_ACCOUNTS[account] ?? account;
+
+/**
+ * Compte d'un règlement : celui noté par Dolibarr ; sinon la caisse tant
+ * qu'un chèque ou des espèces attendent leur bordereau, puis la banque.
+ */
+export function settlementAccount(s: {
+	bankAccount: string | null;
+	method: SettlementMethod;
+	remittanceId: number | null;
+}): string {
+	if (s.bankAccount) return s.bankAccount;
+	return (s.method === 'cheque' || s.method === 'cash') && !s.remittanceId
+		? 'CAISSE'
+		: DEFAULT_BANK_ACCOUNT;
+}
+
+/** Référence affichée : `PAY2204-0122`, sans le préfixe de la reprise Dolibarr. */
+export const settlementLabel = (reference: string) => reference.replace(/^DOLI-(.+)-\d+$/, '$1');
+
 /**
  * Référence d'un bordereau, à la manière de Dolibarr : `CHK2610-0001` pour
  * les chèques, `ESP2610-0001` pour les espèces. Mois du dépôt (`AAAA-MM-JJ`).

@@ -1,6 +1,8 @@
 import type { Content } from 'pdfmake/interfaces';
 import type { getCounterInvoice } from './counter-invoices';
 import { documentDefinition } from './document-pdf';
+import { PAYMENT_TERMS_LABELS } from '$lib/counter-invoices';
+import { SETTLEMENT_METHOD_LABELS } from '$lib/settlements';
 import { pdfEuro as euro, pdfShortDate as shortDate, renderPdf } from './pdf';
 
 /**
@@ -76,7 +78,13 @@ export function renderCounterInvoicePdf(doc: Doc): Promise<Buffer> {
 				...(doc.creditedInvoice?.number
 					? [`Avoir sur la facture ${doc.creditedInvoice.number}`]
 					: []),
-				...(doc.repair ? [`Ordre de réparation ${doc.repair.reference}`] : [])
+				...(doc.repair ? [`Ordre de réparation ${doc.repair.reference}`] : []),
+				...(invoice.customerReference ? [`Réf. client : ${invoice.customerReference}`] : []),
+				...(isCredit
+					? []
+					: [
+							`Règlement : ${PAYMENT_TERMS_LABELS[invoice.paymentTerms]}${invoice.dueOn ? `, au plus tard le ${shortDate(invoice.dueOn)}` : ''}${invoice.paymentMethod ? ` · ${SETTLEMENT_METHOD_LABELS[invoice.paymentMethod]}` : ''}`
+						])
 			],
 			billingAddress: invoice.billingAddress,
 			customer: doc.customer,

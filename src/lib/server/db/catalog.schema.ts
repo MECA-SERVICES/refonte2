@@ -143,6 +143,13 @@ export const supplier = pgTable(
 		country: text('country').notNull().default('FR'),
 		siret: text('siret'),
 		vatNumber: text('vat_number'),
+		/** Code NAF / APE (`2830Z`). */
+		nafCode: text('naf_code'),
+		/** Immatriculation au RCS (« Angers B 393 727 797 »). */
+		rcs: text('rcs'),
+		shareCapital: numeric('share_capital', { precision: 14, scale: 2 }),
+		website: text('website'),
+		fax: text('fax'),
 		/** Notes internes. */
 		notes: text('notes'),
 		isActive: boolean('is_active').notNull().default(true),
@@ -398,6 +405,8 @@ export const supplierProduct = pgTable(
 			.notNull()
 			.references(() => product.id, { onDelete: 'cascade' }),
 		supplierReference: text('supplier_reference'),
+		/** Désignation du produit chez le fournisseur (conditionnement, caractéristiques). */
+		description: text('description'),
 		purchasePrice: numeric('purchase_price', { precision: 12, scale: 4 }),
 		deliveryDays: integer('delivery_days'),
 		minQuantity: integer('min_quantity'),

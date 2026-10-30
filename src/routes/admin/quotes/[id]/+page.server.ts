@@ -48,6 +48,8 @@ export const actions: Actions = {
 		return run(() =>
 			updateHeader(Number(params.id), {
 				issuedOn: form.get('issuedOn')?.toString() || null,
+				customerReference: form.get('customerReference')?.toString().trim() || null,
+				deliveryOn: form.get('deliveryOn')?.toString() || null,
 				validityDays: num(form, 'validityDays', 15),
 				note: form.get('note')?.toString().trim() || null,
 				privateNote: form.get('privateNote')?.toString().trim() || null

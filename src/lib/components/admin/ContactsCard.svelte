@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$lib/components/admin/feedback.svelte';
-	import { Button, Card, Input, Label } from 'flowbite-svelte';
+	import { Button, Card, Input, Label, Select } from 'flowbite-svelte';
 	import { PlusOutline } from 'flowbite-svelte-icons';
 	import type { Contact } from '$lib/server/db/contact.schema';
 
@@ -12,12 +12,30 @@
 
 	let { contacts }: { contacts: Contact[] } = $props();
 
+	const CIVILITIES = [
+		{ value: '', name: '—' },
+		{ value: 'M.', name: 'M.' },
+		{ value: 'Mme', name: 'Mme' }
+	];
+
 	let editing = $state<number | null>(null);
 	let adding = $state(false);
 </script>
 
 {#snippet fields(c: Partial<Contact>, prefix: string)}
 	<div class="grid gap-2 sm:grid-cols-2">
+		<div class="sm:col-span-2">
+			<Label for="{prefix}-civility" class="mb-1 text-xs">Civilité</Label>
+			<Select
+				id="{prefix}-civility"
+				name="civility"
+				size="sm"
+				placeholder=""
+				items={CIVILITIES}
+				value={c.civility ?? ''}
+				class="w-28"
+			/>
+		</div>
 		<div>
 			<Label for="{prefix}-first" class="mb-1 text-xs">Prénom</Label>
 			<Input id="{prefix}-first" name="firstName" size="sm" value={c.firstName ?? ''} />
@@ -119,7 +137,7 @@
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
 								<p class="font-medium text-gray-900">
-									{[c.firstName, c.lastName].filter(Boolean).join(' ')}
+									{[c.civility, c.firstName, c.lastName].filter(Boolean).join(' ')}
 									{#if c.role}<span class="font-normal text-gray-500"> · {c.role}</span>{/if}
 								</p>
 								<p class="text-xs text-gray-600">

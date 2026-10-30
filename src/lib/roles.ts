@@ -46,6 +46,7 @@ export function hasBackOffice(role: string | null | undefined): boolean {
  */
 export const ADMIN_ONLY_PATHS = [
 	'/admin/team',
+	'/admin/leaves/team',
 	'/admin/stats',
 	'/admin/order-states',
 	'/admin/stock-locations/manage',

@@ -27,6 +27,7 @@ import type { ParseResult } from '$lib/server/forms';
 import { thumbnailWithBrandFallbackSql } from '$lib/server/pricing';
 import { recordVouchers, type MovementInput } from '$lib/server/stock-locations';
 import { isStockCondition } from '$lib/stock-locations';
+import { assetsFromInvestment } from '$lib/server/fixed-assets';
 
 export type VoucherKind = 'receipt' | 'issue';
 
@@ -266,7 +267,10 @@ export async function createReceipt(form: VoucherForm, createdBy: string | null)
 	return receiptId;
 }
 
-/** Enregistre une sortie libre (motif normal, consommable, investissement). */
+/**
+ * Enregistre une sortie libre (motif normal, consommable, investissement).
+ * Une sortie « Investissement » crée aussi les immobilisations.
+ */
 export async function createIssue(form: VoucherForm, createdBy: string | null) {
 	const [id] = await recordVouchers([
 		{
@@ -288,6 +292,10 @@ export async function createIssue(form: VoucherForm, createdBy: string | null) {
 			)
 		}
 	]);
+	// Comme UTILE : une pièce sortie pour l'entreprise devient une immobilisation.
+	if (form.reason === 'investment') {
+		await assetsFromInvestment(form.lines, new Date().toISOString().slice(0, 10));
+	}
 	return id;
 }
 

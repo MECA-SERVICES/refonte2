@@ -24,6 +24,8 @@ export const contact = pgTable(
 		id: serial('id').primaryKey(),
 		customerId: integer('customer_id').references(() => customer.id, { onDelete: 'cascade' }),
 		supplierId: integer('supplier_id').references(() => supplier.id, { onDelete: 'cascade' }),
+		/** « M. », « Mme »… */
+		civility: text('civility'),
 		firstName: text('first_name'),
 		lastName: text('last_name').notNull(),
 		/** Fonction ou rôle (« Facturation », « Commercial »…). */

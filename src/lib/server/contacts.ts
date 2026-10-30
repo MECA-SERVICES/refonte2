@@ -17,6 +17,7 @@ const ownedBy = (owner: ContactOwner): SQL =>
 		: eq(contact.supplierId, owner.supplierId);
 
 export type ContactInput = {
+	civility: string | null;
 	firstName: string | null;
 	lastName: string;
 	role: string | null;
@@ -33,6 +34,7 @@ export function parseContactForm(form: FormData): ParseResult<ContactInput> {
 	return {
 		ok: true,
 		values: {
+			civility: str('civility'),
 			firstName: str('firstName'),
 			lastName,
 			role: str('role'),

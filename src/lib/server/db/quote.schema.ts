@@ -54,6 +54,10 @@ export const quote = pgTable(
 		}),
 		/** Date d'émission (celle imprimée). */
 		issuedOn: date('issued_on', { mode: 'string' }),
+		/** Référence donnée par le client (chantier, machine), imprimée. */
+		customerReference: text('customer_reference'),
+		/** Date de livraison prévue, imprimée. */
+		deliveryOn: date('delivery_on', { mode: 'string' }),
 		validityDays: integer('validity_days').notNull().default(15),
 		/** Date limite de validité, fixée à l'envoi (R3). */
 		validUntil: date('valid_until', { mode: 'string' }),
@@ -101,6 +105,8 @@ export const quoteLine = pgTable(
 		/** Produit ou prestation du catalogue ; null pour une ligne libre (R6). */
 		productId: integer('product_id').references(() => product.id, { onDelete: 'set null' }),
 		label: text('label').notNull(),
+		/** Détail imprimé sous la désignation : n° de série, garantie, caractéristiques. */
+		description: text('description'),
 		reference: text('reference'),
 		quantity: numeric('quantity', { precision: 10, scale: 3 }).notNull().default('1'),
 		unitPriceHt: numeric('unit_price_ht', { precision: 12, scale: 4 }).notNull().default('0'),

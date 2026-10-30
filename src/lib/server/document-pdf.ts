@@ -15,6 +15,8 @@ const { blue: BLUE, ink: INK, muted: MUTED } = PDF_COLORS;
 export type DocumentLine = {
 	reference: string | null;
 	label: string;
+	/** Détail imprimé sous la désignation : n° de série, garantie. */
+	description: string | null;
 	taxRate: string;
 	unitPriceHt: string;
 	quantity: string;
@@ -130,7 +132,9 @@ export function documentDefinition(doc: CommercialDocument): TDocumentDefinition
 					],
 					...doc.lines.map((l) => [
 						{ text: l.reference ?? '', style: 'td' },
-						{ text: l.label, style: 'td' },
+						l.description
+							? { stack: [l.label, { text: l.description, style: 'detail' }], style: 'td' }
+							: { text: l.label, style: 'td' },
 						{ text: `${Number(l.taxRate)} %`, style: 'td', alignment: 'right' as const },
 						{ text: euro(Number(l.unitPriceHt)), style: 'td', alignment: 'right' as const },
 						{ text: quantity(Number(l.quantity)), style: 'td', alignment: 'right' as const },
@@ -213,6 +217,7 @@ export function documentDefinition(doc: CommercialDocument): TDocumentDefinition
 			address: { fontSize: 9, lineHeight: 1.25 },
 			th: { fontSize: 8, bold: true, color: INK },
 			td: { fontSize: 8.5 },
+			detail: { fontSize: 7.5, color: MUTED, margin: [0, 2, 0, 0] },
 			muted: { fontSize: 8.5, color: MUTED },
 			totalLabel: { fontSize: 9, alignment: 'right' as const, color: MUTED },
 			totalValue: { fontSize: 9, alignment: 'right' as const },

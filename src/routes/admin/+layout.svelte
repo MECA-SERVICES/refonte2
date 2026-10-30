@@ -28,6 +28,7 @@
 		CreditCardSolid,
 		FileInvoiceSolid,
 		FilePenSolid,
+		CalendarMonthSolid,
 		GlobeSolid,
 		CogSolid,
 		ToolsOutline,
@@ -55,6 +56,7 @@
 		'credit-card': CreditCardSolid,
 		'file-invoice': FileInvoiceSolid,
 		'file-pen': FilePenSolid,
+		calendar: CalendarMonthSolid,
 		globe: GlobeSolid,
 		cog: CogSolid,
 		tools: ToolsOutline

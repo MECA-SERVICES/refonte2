@@ -1,7 +1,12 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { inArray } from 'drizzle-orm';
+import { db } from '$lib/server/db';
+import { user } from '$lib/server/db/auth.schema';
 import {
 	abandonInvoice,
+	applyCustomerCredit,
+	billingAddressOf,
 	addFreeLine,
 	addProductLine,
 	CounterInvoiceError,
@@ -16,6 +21,9 @@ import {
 	validateInvoice
 } from '$lib/server/counter-invoices';
 import { parseSettlementForm } from '$lib/server/settlements';
+import { availableCredits } from '$lib/server/customer-credits';
+import { isPaymentTerms } from '$lib/counter-invoices';
+import { BANK_ACCOUNTS, DEFAULT_BANK_ACCOUNT, isSettlementMethod } from '$lib/settlements';
 import { lineActions, runOrFail } from '$lib/server/document-actions';
 import { quoteOfInvoice } from '$lib/server/quotes';
 import {
@@ -55,14 +63,32 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	// et pour une facture reprise de Dolibarr (ses pièces y sont déjà sorties).
 	const withStock =
 		invoice.kind === 'invoice' && invoice.number && !invoice.repairOrderId && !invoice.legacyDoliId;
-	const [products, lineStock, quote] = await Promise.all([
+	const people = [invoice.createdBy, invoice.validatedBy].filter((v): v is string => !!v);
+	const [products, lineStock, quote, address, users, credits] = await Promise.all([
 		invoice.status === 'draft' ? searchBillableProducts(q) : [],
 		withStock
 			? getDocumentStock(stockLines(found.lines), 'sale', invoice.number!)
 			: Promise.resolve<Record<number, DocumentProductStock>>({}),
-		quoteOfInvoice(invoice.id)
+		quoteOfInvoice(invoice.id),
+		// Adresse figée à la validation ; sinon celle du client (brouillon, reprise Dolibarr).
+		invoice.billingAddress ?? billingAddressOf(db, invoice.customerId),
+		people.length
+			? db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, people))
+			: [],
+		availableCredits(invoice.customerId)
 	]);
-	return { ...found, q, products, lineStock, quote };
+	const nameOf = (id: string | null) => users.find((u) => u.id === id)?.name ?? null;
+	return {
+		...found,
+		q,
+		products,
+		lineStock,
+		quote,
+		address,
+		credits,
+		createdByName: nameOf(invoice.createdBy),
+		validatedByName: nameOf(invoice.validatedBy)
+	};
 };
 
 const isRefusal = (err: unknown) =>
@@ -75,14 +101,27 @@ export const actions: Actions = {
 	header: async ({ request, params }) => {
 		const form = await request.formData();
 		const issuedOn = form.get('issuedOn')?.toString() || null;
+		const terms = form.get('paymentTerms')?.toString();
+		const method = form.get('paymentMethod')?.toString();
+		const account = form.get('bankAccount')?.toString();
 		return run(() =>
 			updateHeader(Number(params.id), {
 				customerId: Number(form.get('customerId')),
 				issuedOn,
+				customerReference: form.get('customerReference')?.toString().trim() || null,
+				paymentTerms: isPaymentTerms(terms) ? terms : 'receipt',
+				paymentMethod: isSettlementMethod(method) ? method : null,
+				bankAccount: account && account in BANK_ACCOUNTS ? account : DEFAULT_BANK_ACCOUNT,
 				note: form.get('note')?.toString().trim() || null,
 				privateNote: form.get('privateNote')?.toString().trim() || null
 			})
 		);
+	},
+
+	/** Déduit un crédit disponible du client (acompte, avoir, reprise…). */
+	useCredit: async ({ request, params }) => {
+		const creditId = Number((await request.formData()).get('creditId'));
+		return run(() => applyCustomerCredit(Number(params.id), creditId));
 	},
 
 	validate: async ({ params, locals }) =>

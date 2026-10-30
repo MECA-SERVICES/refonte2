@@ -5,7 +5,7 @@
 
 	/**
 	 * Fiche fournisseur (CDC 11, § 5.1) : raison sociale, coordonnées, adresse,
-	 * SIRET et notes internes. Un fournisseur archivé n'est plus proposé au
+	 * informations légales (SIRET, NAF, RCS, capital) et notes internes. Un fournisseur archivé n'est plus proposé au
 	 * rattachement d'un produit (R4).
 	 */
 
@@ -46,6 +46,33 @@
 				<Label for="vatNumber" class="mb-2">N° de TVA intracommunautaire</Label>
 				<Input id="vatNumber" name="vatNumber" value={supplier?.vatNumber ?? ''} />
 			</div>
+			<div>
+				<Label for="nafCode" class="mb-2">Code NAF / APE</Label>
+				<Input
+					id="nafCode"
+					name="nafCode"
+					value={supplier?.nafCode ?? ''}
+					placeholder="ex. 2830Z"
+				/>
+			</div>
+			<div>
+				<Label for="rcs" class="mb-2">RCS</Label>
+				<Input
+					id="rcs"
+					name="rcs"
+					value={supplier?.rcs ?? ''}
+					placeholder="ex. Angers B 393 727 797"
+				/>
+			</div>
+			<div>
+				<Label for="shareCapital" class="mb-2">Capital (€)</Label>
+				<Input
+					id="shareCapital"
+					name="shareCapital"
+					inputmode="decimal"
+					value={supplier?.shareCapital ? String(Number(supplier.shareCapital)) : ''}
+				/>
+			</div>
 		</div>
 	</Card>
 
@@ -59,6 +86,20 @@
 			<div>
 				<Label for="phone" class="mb-2">Téléphone</Label>
 				<Input id="phone" name="phone" value={supplier?.phone ?? ''} />
+			</div>
+			<div>
+				<Label for="fax" class="mb-2">Fax</Label>
+				<Input id="fax" name="fax" value={supplier?.fax ?? ''} />
+			</div>
+			<div>
+				<Label for="website" class="mb-2">Site web ou portail</Label>
+				<Input
+					id="website"
+					name="website"
+					type="url"
+					value={supplier?.website ?? ''}
+					placeholder="https://"
+				/>
 			</div>
 			<div class="sm:col-span-2">
 				<Label for="line1" class="mb-2">Adresse</Label>

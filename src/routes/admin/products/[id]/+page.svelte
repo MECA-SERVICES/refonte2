@@ -395,6 +395,18 @@
 							</div>
 							<Button type="submit" form={f} size="sm" color="alternative">Enregistrer</Button>
 						</div>
+						<div class="mt-2">
+							<Label for="{f}-desc" class="mb-1 text-xs">Désignation chez le fournisseur</Label>
+							<Textarea
+								id="{f}-desc"
+								form={f}
+								name="description"
+								rows={s.description ? Math.min(6, s.description.split('\n').length) : 1}
+								value={s.description ?? ''}
+								placeholder="Conditionnement, caractéristiques, prix au rouleau…"
+								class="text-xs"
+							/>
+						</div>
 					</div>
 				{/each}
 			</div>

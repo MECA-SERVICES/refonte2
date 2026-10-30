@@ -15,6 +15,7 @@
 	import { EditOutline, SearchOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import {
 		ContactsCard,
+		CustomerCreditsCard,
 		AutosaveNote,
 		PageHeader,
 		ConfirmDialog,
@@ -166,12 +167,34 @@
 					</dd>
 				{/if}
 
+				{#if c.alias}
+					<dt class="text-right text-gray-500">Autre nom</dt>
+					<dd class="text-gray-900">{c.alias}</dd>
+				{/if}
+
 				{#if c.phone}
 					<dt class="text-right text-gray-500">Téléphone</dt>
 					<dd>
 						<a href="tel:{c.phone}" class="text-gray-900 hover:underline">
 							{c.phone}
 						</a>
+					</dd>
+				{/if}
+
+				{#if c.fax}
+					<dt class="text-right text-gray-500">Fax</dt>
+					<dd class="text-gray-900">{c.fax}</dd>
+				{/if}
+
+				{#if c.website}
+					<dt class="text-right text-gray-500">Site web</dt>
+					<dd>
+						<a
+							href={c.website}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-primary-700 hover:underline">{c.website}</a
+						>
 					</dd>
 				{/if}
 
@@ -324,6 +347,9 @@
 
 		<!-- Interlocuteurs d'un client pro (repris de Dolibarr). -->
 		<ContactsCard contacts={data.contacts} />
+
+		<!-- Crédits du client (remises Dolibarr) : à déduire d'une facture. -->
+		<CustomerCreditsCard credits={data.credits} />
 
 		<!-- Factures comptoir (remplacement de Dolibarr), historique repris compris. -->
 		<Card class="max-w-none p-6">

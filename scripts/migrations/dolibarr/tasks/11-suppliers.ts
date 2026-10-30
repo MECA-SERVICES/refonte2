@@ -22,6 +22,7 @@ import { DOLI, sourceQuery } from '../source.ts';
 import { targetDb } from '../../../lib/target-db.ts';
 import { htmlText, text } from '../../../lib/transform.ts';
 import { log, count } from '../../../lib/logger.ts';
+import { htmlLines } from '../lines.ts';
 
 interface SourceSupplier {
 	rowid: number;
@@ -37,6 +38,12 @@ interface SourceSupplier {
 	tva_intra: string | null;
 	note_private: string | null;
 	status: number;
+	url: string | null;
+	fax: string | null;
+	siren: string | null;
+	ape: string | null;
+	idprof4: string | null;
+	capital: number | null;
 }
 
 interface SourcePrice {
@@ -46,6 +53,7 @@ interface SourcePrice {
 	unitprice: number | null;
 	quantity: number | null;
 	delivery_time_days: number | null;
+	desc_fourn: string | null;
 }
 
 /** Tiers Dolibarr (`llx_societe.rowid`) déjà repris de PrestaShop (`ps_supplier.id_supplier`). */
@@ -111,14 +119,15 @@ export const suppliersTask: Task = {
 		// Lectures en série : la connexion Dolibarr s'ouvre à la première requête.
 		const suppliers = await sourceQuery<SourceSupplier>(
 			`SELECT s.rowid, s.nom, s.code_fournisseur, s.email, s.phone, s.address, s.zip, s.town,
-			        c.code AS country, s.siret, s.tva_intra, s.note_private, s.status
+			        c.code AS country, s.siret, s.tva_intra, s.note_private, s.status, s.url, s.fax,
+			        s.siren, s.ape, s.idprof4, s.capital
 			 FROM ${DOLI}.llx_societe s
 			 LEFT JOIN ${DOLI}.llx_c_country c ON c.rowid = s.fk_pays
 			 WHERE s.fournisseur = 1
 			 ORDER BY s.rowid`
 		);
 		const prices = await sourceQuery<SourcePrice>(
-			`SELECT fk_product, fk_soc, ref_fourn, unitprice, quantity, delivery_time_days
+			`SELECT fk_product, fk_soc, ref_fourn, unitprice, quantity, delivery_time_days, desc_fourn
 			 FROM ${DOLI}.llx_product_fournisseur_price`
 		);
 		log.muted(
@@ -162,7 +171,13 @@ export const suppliersTask: Task = {
 				siret: siret && /^\d{14}$/.test(siret) ? siret : null,
 				vat_number: text(s.tva_intra),
 				notes: text(htmlText(s.note_private)),
-				is_active: Number(s.status) === 1
+				is_active: Number(s.status) === 1,
+				website: text(s.url),
+				fax: text(s.fax),
+				naf_code: text(s.ape)?.toUpperCase() ?? null,
+				// Le n° RCS, sinon le SIREN qui en tient lieu.
+				rcs: text(s.idprof4) ?? (text(s.siren) ? `SIREN ${text(s.siren)}` : null),
+				share_capital: s.capital ? Number(s.capital).toFixed(2) : null
 			};
 		});
 
@@ -197,6 +212,18 @@ export const suppliersTask: Task = {
 					phone = coalesce(supplier.phone, excluded.phone),
 					siret = coalesce(supplier.siret, excluded.siret), updated_at = now()`;
 
+			// Site, fax et informations légales, sans effacer une saisie MSShop.
+			await tx`
+				UPDATE supplier AS s SET
+					website = coalesce(s.website, r.website), fax = coalesce(s.fax, r.fax),
+					naf_code = coalesce(s.naf_code, r.naf_code), rcs = coalesce(s.rcs, r.rcs),
+					share_capital = coalesce(s.share_capital, r.share_capital), updated_at = now()
+				FROM jsonb_to_recordset(${tx.json(rows)}) AS r(legacy_doli_id int, website text, fax text,
+					naf_code text, rcs text, share_capital numeric)
+				WHERE s.legacy_doli_id = r.legacy_doli_id
+					AND (r.website, r.fax, r.naf_code, r.rcs, r.share_capital) IS DISTINCT FROM
+						(NULL, NULL, NULL, NULL, NULL)`;
+
 			// Fournisseurs nommés seulement sur des réceptions.
 			for (const target of Object.values(RECEIPT_SUPPLIERS)) {
 				if (!('name' in target)) continue;
@@ -220,14 +247,15 @@ export const suppliersTask: Task = {
 				ref: text(p.ref_fourn),
 				price: p.unitprice && Number(p.unitprice) > 0 ? Number(p.unitprice).toFixed(4) : null,
 				min: p.quantity && Number(p.quantity) > 1 ? Math.round(Number(p.quantity)) : null,
-				days: p.delivery_time_days ? Number(p.delivery_time_days) : null
+				days: p.delivery_time_days ? Number(p.delivery_time_days) : null,
+				description: htmlLines(p.desc_fourn) || null
 			}));
 			const priced = await tx`
 				INSERT INTO supplier_product (supplier_id, product_id, supplier_reference, purchase_price,
-					min_quantity, delivery_days)
-				SELECT s.id, p.id, r.ref, r.price, r.min, r.days
+					min_quantity, delivery_days, description)
+				SELECT s.id, p.id, r.ref, r.price, r.min, r.days, r.description
 				FROM jsonb_to_recordset(${tx.json(priceRows)}) AS r(doli_product int, doli_supplier int,
-					ref text, price numeric, min int, days int)
+					ref text, price numeric, min int, days int, description text)
 				JOIN supplier s ON s.legacy_doli_id = r.doli_supplier
 				JOIN product p ON p.legacy_doli_id = r.doli_product
 				ON CONFLICT (supplier_id, product_id) DO UPDATE SET
@@ -235,6 +263,7 @@ export const suppliersTask: Task = {
 					purchase_price = coalesce(excluded.purchase_price, supplier_product.purchase_price),
 					min_quantity = coalesce(excluded.min_quantity, supplier_product.min_quantity),
 					delivery_days = coalesce(excluded.delivery_days, supplier_product.delivery_days),
+					description = coalesce(supplier_product.description, excluded.description),
 					updated_at = now()`;
 
 			// Fournisseur des bons de réception, d'après le texte saisi.

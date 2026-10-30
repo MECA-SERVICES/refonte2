@@ -40,6 +40,10 @@ export function parseSupplierForm(form: FormData): ParseResult<SupplierInput> {
 	if (siret && !/^\d{14}$/.test(siret)) {
 		return { ok: false, error: 'Le SIRET compte 14 chiffres.' };
 	}
+	const capital = str('shareCapital')?.replace(/\s/g, '').replace(',', '.') ?? null;
+	if (capital && !Number.isFinite(Number(capital))) {
+		return { ok: false, error: 'Le capital est un montant en euros.' };
+	}
 	return {
 		ok: true,
 		values: {
@@ -54,6 +58,11 @@ export function parseSupplierForm(form: FormData): ParseResult<SupplierInput> {
 			country: (str('country') ?? 'FR').toUpperCase().slice(0, 2),
 			siret,
 			vatNumber: str('vatNumber'),
+			nafCode: str('nafCode')?.toUpperCase() ?? null,
+			rcs: str('rcs'),
+			shareCapital: capital ? Number(capital).toFixed(2) : null,
+			website: str('website'),
+			fax: str('fax'),
 			notes: str('notes'),
 			isActive: bool('isActive')
 		}
@@ -196,6 +205,7 @@ export function listProductSupply(productId: number) {
 			isActive: supplier.isActive,
 			isMain: sql<boolean>`coalesce(${product.supplierId} = ${supplier.id}, false)`,
 			supplierReference: supplierProduct.supplierReference,
+			description: supplierProduct.description,
 			purchasePrice: supplierProduct.purchasePrice,
 			deliveryDays: supplierProduct.deliveryDays,
 			minQuantity: supplierProduct.minQuantity
@@ -210,6 +220,8 @@ export function listProductSupply(productId: number) {
 export type SupplyInput = {
 	supplierId: number;
 	supplierReference: string | null;
+	/** Absente du formulaire d'ajout : `undefined` laisse la description en place. */
+	description?: string | null;
 	purchasePrice: string | null;
 	deliveryDays: number | null;
 	minQuantity: number | null;
@@ -245,6 +257,7 @@ export function parseSupplyForm(form: FormData): ParseResult<SupplyInput> {
 		values: {
 			supplierId,
 			supplierReference: str('supplierReference'),
+			...(form.has('description') ? { description: str('description') } : {}),
 			purchasePrice,
 			deliveryDays,
 			minQuantity,
@@ -304,6 +317,7 @@ export async function saveProductSupply(productId: number, input: SupplyInput) {
 		}
 		const values = {
 			supplierReference: input.supplierReference,
+			...(input.description !== undefined ? { description: input.description } : {}),
 			purchasePrice: input.purchasePrice,
 			deliveryDays: input.deliveryDays,
 			minQuantity: input.minQuantity,

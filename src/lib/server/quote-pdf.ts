@@ -51,6 +51,8 @@ export function renderQuotePdf(doc: Doc): Promise<Buffer> {
 				quote.validUntil
 					? `Valable jusqu’au ${shortDate(quote.validUntil)}`
 					: `Valable ${quote.validityDays} jours`,
+				...(quote.customerReference ? [`Réf. client : ${quote.customerReference}`] : []),
+				...(quote.deliveryOn ? [`Livraison prévue le ${shortDate(quote.deliveryOn)}`] : []),
 				...(doc.repair ? [`Ordre de réparation ${doc.repair.reference}`] : [])
 			],
 			billingAddress: quote.billingAddress,

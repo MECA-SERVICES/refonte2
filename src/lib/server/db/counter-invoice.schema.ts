@@ -22,6 +22,8 @@ import {
 	uniqueIndex,
 	type AnyPgColumn
 } from 'drizzle-orm/pg-core';
+import type { PaymentTerms } from '$lib/counter-invoices';
+import type { SettlementMethod } from '$lib/settlements';
 import { customer } from './customer.schema';
 import { product } from './catalog.schema';
 import { repairOrder } from './repair.schema';
@@ -78,6 +80,15 @@ export const counterInvoice = pgTable(
 		),
 		/** Date de facture (celle imprimée). */
 		issuedOn: date('issued_on', { mode: 'string' }),
+		/** Référence donnée par le client (n° de commande, chantier), imprimée. */
+		customerReference: text('customer_reference'),
+		paymentTerms: text('payment_terms').$type<PaymentTerms>().notNull().default('receipt'),
+		/** Date limite de règlement, fixée à la validation. */
+		dueOn: date('due_on', { mode: 'string' }),
+		/** Mode de règlement prévu (chèque, virement…), imprimé. */
+		paymentMethod: text('payment_method').$type<SettlementMethod>(),
+		/** Compte crédité : `COMPTE-PRO` ou `CAISSE` (`$lib/settlements`). */
+		bankAccount: text('bank_account').notNull().default('COMPTE-PRO'),
 		billingAddress: jsonb('billing_address').$type<CounterBillingAddress | null>(),
 		totalHt: numeric('total_ht', { precision: 12, scale: 2 }).notNull().default('0'),
 		totalTva: numeric('total_tva', { precision: 12, scale: 2 }).notNull().default('0'),
@@ -120,6 +131,8 @@ export const counterInvoiceLine = pgTable(
 		/** Produit ou prestation du catalogue ; null pour une ligne libre. */
 		productId: integer('product_id').references(() => product.id, { onDelete: 'set null' }),
 		label: text('label').notNull(),
+		/** Détail imprimé sous la désignation : n° de série, garantie, caractéristiques. */
+		description: text('description'),
 		reference: text('reference'),
 		/** Quantité, décimale pour la main-d'œuvre à l'heure (1,5 h). */
 		quantity: numeric('quantity', { precision: 10, scale: 3 }).notNull().default('1'),
@@ -144,3 +157,49 @@ export const counterInvoiceLine = pgTable(
 
 export type CounterInvoice = typeof counterInvoice.$inferSelect;
 export type CounterInvoiceLine = typeof counterInvoiceLine.$inferSelect;
+
+/**
+ * Crédit d'un client, comme les « remises » de Dolibarr : acompte, avoir,
+ * trop-perçu, reprise de machine, remise commerciale. Disponible tant qu'il
+ * n'est pas utilisé ; utilisé, il est déduit d'une facture par une ligne
+ * négative (`usedLineId`), ou il en a réglé une (`usedInvoiceId`, reprise).
+ */
+export const customerCredit = pgTable(
+	'customer_credit',
+	{
+		id: serial('id').primaryKey(),
+		customerId: integer('customer_id')
+			.notNull()
+			.references(() => customer.id, { onDelete: 'restrict' }),
+		description: text('description').notNull(),
+		amountHt: numeric('amount_ht', { precision: 12, scale: 2 }).notNull(),
+		amountTva: numeric('amount_tva', { precision: 12, scale: 2 }).notNull(),
+		amountTtc: numeric('amount_ttc', { precision: 12, scale: 2 }).notNull(),
+		taxRate: numeric('tax_rate', { precision: 6, scale: 3 }).notNull(),
+		/** Facture d'acompte, avoir ou facture trop payée d'où vient le crédit. */
+		sourceInvoiceId: integer('source_invoice_id').references(() => counterInvoice.id, {
+			onDelete: 'set null'
+		}),
+		/** Ligne qui le déduit ; supprimer la ligne du brouillon libère le crédit. */
+		usedLineId: integer('used_line_id').references(() => counterInvoiceLine.id, {
+			onDelete: 'set null'
+		}),
+		/** Facture où le crédit a servi, reprise de Dolibarr (ligne ou règlement). */
+		usedInvoiceId: integer('used_invoice_id').references(() => counterInvoice.id, {
+			onDelete: 'set null'
+		}),
+		createdBy: text('created_by'),
+		/** Reprise Dolibarr : `llx_societe_remise_except.rowid`. */
+		legacyDoliId: integer('legacy_doli_id'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		index('customer_credit_customer_idx').on(t.customerId),
+		index('customer_credit_used_line_idx').on(t.usedLineId),
+		uniqueIndex('customer_credit_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`)
+	]
+);
+
+export type CustomerCredit = typeof customerCredit.$inferSelect;

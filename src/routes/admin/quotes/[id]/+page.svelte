@@ -192,6 +192,26 @@
 					</div>
 					<p class="text-xs text-gray-500">Date vide : celle de l'envoi.</p>
 					<div>
+						<Label for="customer-reference" class="mb-1 text-xs">Réf. client</Label>
+						<Input
+							id="customer-reference"
+							name="customerReference"
+							value={q.customerReference ?? ''}
+							size="sm"
+							placeholder="Chantier, machine, n° de commande…"
+						/>
+					</div>
+					<div>
+						<Label for="delivery-on" class="mb-1 text-xs">Livraison prévue le</Label>
+						<Input
+							id="delivery-on"
+							name="deliveryOn"
+							type="date"
+							value={q.deliveryOn ?? ''}
+							size="sm"
+						/>
+					</div>
+					<div>
 						<Label for="note" class="mb-1 text-xs">Note imprimée (délai, conditions…)</Label>
 						<Textarea id="note" name="note" rows={2} value={q.note ?? ''} />
 					</div>
@@ -202,6 +222,12 @@
 					<Button type="submit" size="xs" color="alternative">Enregistrer</Button>
 				</form>
 			{:else}
+				{#if q.customerReference}<p class="mt-3 text-sm text-gray-700">
+						Réf. client : {q.customerReference}
+					</p>{/if}
+				{#if q.deliveryOn}<p class="mt-1 text-sm text-gray-700">
+						Livraison prévue le {dateFmt.format(new Date(q.deliveryOn))}
+					</p>{/if}
 				{#if q.note}<p class="mt-3 text-sm text-gray-700">{q.note}</p>{/if}
 				{#if q.privateNote}<p class="mt-2 text-xs text-gray-500">Interne : {q.privateNote}</p>{/if}
 			{/if}

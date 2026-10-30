@@ -67,6 +67,29 @@
 				<Label for="phone" class="mb-2">Téléphone</Label>
 				<Input id="phone" name="phone" value={customer?.phone ?? ''} />
 			</div>
+			<div>
+				<Label for="alias" class="mb-2">Autre nom (facultatif)</Label>
+				<Input
+					id="alias"
+					name="alias"
+					value={customer?.alias ?? ''}
+					placeholder="Nom d'usage, enseigne…"
+				/>
+			</div>
+			<div>
+				<Label for="fax" class="mb-2">Fax (facultatif)</Label>
+				<Input id="fax" name="fax" value={customer?.fax ?? ''} />
+			</div>
+			<div class="sm:col-span-2">
+				<Label for="website" class="mb-2">Site web (facultatif)</Label>
+				<Input
+					id="website"
+					name="website"
+					type="url"
+					value={customer?.website ?? ''}
+					placeholder="https://"
+				/>
+			</div>
 			<div class="sm:col-span-2">
 				{#if isNew}
 					<Checkbox name="withoutAccount" bind:checked={withoutAccount}>

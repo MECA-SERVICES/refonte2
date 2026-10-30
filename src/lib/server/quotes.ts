@@ -25,6 +25,7 @@ import { quote, quoteLine } from '$lib/server/db/quote.schema';
 import {
 	formatCounterNumber,
 	invoiceTotals,
+	lineDetail,
 	lineTotals,
 	priceHtFromTtc
 } from '$lib/counter-invoices';
@@ -220,6 +221,7 @@ async function insertLines(tx: Tx, quoteId: number, lines: NewLine[]) {
 				position: max + i + 1,
 				productId: l.productId,
 				label: l.label,
+				description: l.description ?? null,
 				reference: l.reference,
 				quantity: String(l.quantity),
 				unitPriceHt: l.unitPriceHt.toFixed(4),
@@ -244,6 +246,7 @@ async function linesOf(id: number): Promise<NewLine[]> {
 	return lines.map((l) => ({
 		productId: l.productId,
 		label: l.label,
+		description: l.description,
 		reference: l.reference,
 		quantity: Number(l.quantity),
 		unitPriceHt: Number(l.unitPriceHt),
@@ -307,6 +310,7 @@ export async function updateLine(
 	lineId: number,
 	input: {
 		label: string;
+		description: string;
 		quantity: number;
 		priceTtc: number;
 		discountPercent: number;
@@ -329,6 +333,7 @@ export async function updateLine(
 			.update(quoteLine)
 			.set({
 				label,
+				description: lineDetail(input.description),
 				quantity: String(input.quantity),
 				unitPriceHt: unitPriceHt.toFixed(4),
 				taxRate: String(input.taxRate),
@@ -355,6 +360,8 @@ export async function updateHeader(
 	quoteId: number,
 	input: {
 		issuedOn: string | null;
+		customerReference: string | null;
+		deliveryOn: string | null;
 		validityDays: number;
 		note: string | null;
 		privateNote: string | null;
@@ -489,7 +496,8 @@ export async function invoiceQuote(id: number, createdBy: string | null) {
 				customerId: head.customerId,
 				repairOrderId: head.repairOrderId,
 				createdBy,
-				note: `Devis ${head.number}`
+				note: `Devis ${head.number}`,
+				customerReference: head.customerReference
 			},
 			await linesOf(id)
 		);

@@ -10,6 +10,12 @@ import { listMachines } from '$lib/server/machines';
 import { listCustomerCounterInvoices } from '$lib/server/counter-invoices';
 import { listCustomerQuotes } from '$lib/server/quotes';
 import { contactActions, listContacts } from '$lib/server/contacts';
+import {
+	addCustomerCredit,
+	deleteCustomerCredit,
+	listCustomerCredits,
+	parseCreditForm
+} from '$lib/server/customer-credits';
 import { pendingRequestForCustomer } from '$lib/server/account-validation';
 import { listThreadsFor } from '$lib/server/support';
 
@@ -25,7 +31,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const customer = await getCustomerWithAddresses(id);
 	if (!customer) throw error(404, 'Client introuvable');
 
-	const [overview, machines, pendingRequest, messages, invoices, quotes, contacts] =
+	const [overview, machines, pendingRequest, messages, invoices, quotes, contacts, credits] =
 		await Promise.all([
 			getCustomerOverview(id, customer.userId),
 			listMachines(id),
@@ -34,14 +40,39 @@ export const load: PageServerLoad = async ({ params }) => {
 			listThreadsFor({ customerId: id }, 5),
 			listCustomerCounterInvoices(id),
 			listCustomerQuotes(id),
-			listContacts({ customerId: id })
+			listContacts({ customerId: id }),
+			listCustomerCredits(id)
 		]);
 
-	return { customer, overview, machines, pendingRequest, messages, invoices, quotes, contacts };
+	return {
+		customer,
+		overview,
+		machines,
+		pendingRequest,
+		messages,
+		invoices,
+		quotes,
+		contacts,
+		credits
+	};
 };
 
 export const actions: Actions = {
 	...contactActions((params) => ({ customerId: idParam(params) })),
+
+	/** Crédit saisi à la main : reprise de machine, remise commerciale. */
+	addCredit: async ({ params, request, locals }) => {
+		const parsed = parseCreditForm(await request.formData());
+		if (!parsed.ok) return fail(400, { message: parsed.error });
+		await addCustomerCredit(idParam(params), parsed.values, locals.user?.id ?? null);
+		return { success: true };
+	},
+
+	deleteCredit: async ({ params, request }) => {
+		const creditId = Number((await request.formData()).get('creditId'));
+		await deleteCustomerCredit(idParam(params), creditId);
+		return { success: true };
+	},
 
 	/** Note privée du client, enregistrée automatiquement pendant la saisie. */
 	saveNote: async ({ params, request }) => {

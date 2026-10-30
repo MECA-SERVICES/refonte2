@@ -21,18 +21,22 @@ import { settlement } from '$lib/server/db/settlement.schema';
 import {
 	counterInvoice,
 	counterInvoiceLine,
+	customerCredit,
 	type CounterBillingAddress,
 	type CounterInvoiceStatus
 } from '$lib/server/db/counter-invoice.schema';
-import { buildSettlementReference } from '$lib/settlements';
+import { buildSettlementReference, type SettlementMethod } from '$lib/settlements';
 import type { SettlementInput } from '$lib/server/settlements';
 import { formatPrice, round2 } from '$lib/money';
 import {
+	dueDate,
 	formatCounterNumber,
 	invoiceTotals,
+	lineDetail,
 	lineTotals,
 	priceHtFromTtc,
-	remainingDue
+	remainingDue,
+	type PaymentTerms
 } from '$lib/counter-invoices';
 
 /** Règle métier non respectée : le message est destiné à l'utilisateur. */
@@ -318,6 +322,8 @@ export async function createDraft(customerId: number, createdBy: string | null) 
 export type NewLine = {
 	productId: number | null;
 	label: string;
+	/** Détail sous la désignation (n° de série, garantie) ; aucun par défaut. */
+	description?: string | null;
 	reference: string | null;
 	quantity: number;
 	unitPriceHt: number;
@@ -340,6 +346,7 @@ async function insertLines(tx: Tx, invoiceId: number, lines: NewLine[]) {
 				position: max + i + 1,
 				productId: l.productId,
 				label: l.label,
+				description: l.description ?? null,
 				reference: l.reference,
 				quantity: String(l.quantity),
 				unitPriceHt: l.unitPriceHt.toFixed(4),
@@ -424,6 +431,7 @@ export async function updateLine(
 	lineId: number,
 	input: {
 		label: string;
+		description: string;
 		quantity: number;
 		priceTtc: number;
 		discountPercent: number;
@@ -446,6 +454,7 @@ export async function updateLine(
 			.update(counterInvoiceLine)
 			.set({
 				label,
+				description: lineDetail(input.description),
 				quantity: String(input.quantity),
 				unitPriceHt: unitPriceHt.toFixed(4),
 				taxRate: String(input.taxRate),
@@ -455,6 +464,66 @@ export async function updateLine(
 				totalTtc: t.totalTtc.toFixed(2)
 			})
 			.where(and(eq(counterInvoiceLine.id, lineId), eq(counterInvoiceLine.invoiceId, invoiceId)));
+		await refreshTotals(tx, invoiceId);
+	});
+}
+
+/**
+ * Déduit un crédit disponible du client sur le brouillon : une ligne négative
+ * à son montant et à son taux, comme Dolibarr. Supprimer la ligne le libère.
+ */
+export async function applyCustomerCredit(invoiceId: number, creditId: number) {
+	await db.transaction(async (tx) => {
+		await requireDraft(tx, invoiceId);
+		const [inv] = await tx
+			.select({ customerId: counterInvoice.customerId, kind: counterInvoice.kind })
+			.from(counterInvoice)
+			.where(eq(counterInvoice.id, invoiceId));
+		if (inv.kind === 'credit_note') {
+			throw new CounterInvoiceError('Un crédit se déduit d’une facture, pas d’un avoir.');
+		}
+		const [credit] = await tx
+			.select()
+			.from(customerCredit)
+			.where(eq(customerCredit.id, creditId))
+			.for('update');
+		if (!credit || credit.customerId !== inv.customerId) {
+			throw new CounterInvoiceError('Crédit introuvable pour ce client.');
+		}
+		if (credit.usedLineId || credit.usedInvoiceId) {
+			throw new CounterInvoiceError('Ce crédit a déjà été utilisé.');
+		}
+		const [{ max }] = await tx
+			.select({ max: sql<number>`coalesce(max(${counterInvoiceLine.position}), 0)::int` })
+			.from(counterInvoiceLine)
+			.where(eq(counterInvoiceLine.invoiceId, invoiceId));
+		const line = {
+			quantity: 1,
+			unitPriceHt: -Number(credit.amountHt),
+			taxRate: Number(credit.taxRate),
+			discountPercent: 0
+		};
+		const t = lineTotals(line);
+		const [row] = await tx
+			.insert(counterInvoiceLine)
+			.values({
+				invoiceId,
+				position: max + 1,
+				productId: null,
+				label: credit.description,
+				quantity: '1',
+				unitPriceHt: line.unitPriceHt.toFixed(4),
+				taxRate: String(line.taxRate),
+				discountPercent: '0',
+				totalHt: t.totalHt.toFixed(2),
+				totalTva: t.totalTva.toFixed(2),
+				totalTtc: t.totalTtc.toFixed(2)
+			})
+			.returning({ id: counterInvoiceLine.id });
+		await tx
+			.update(customerCredit)
+			.set({ usedLineId: row.id })
+			.where(eq(customerCredit.id, creditId));
 		await refreshTotals(tx, invoiceId);
 	});
 }
@@ -475,6 +544,10 @@ export async function updateHeader(
 	input: {
 		customerId: number;
 		issuedOn: string | null;
+		customerReference: string | null;
+		paymentTerms: PaymentTerms;
+		paymentMethod: SettlementMethod | null;
+		bankAccount: string;
 		note: string | null;
 		privateNote: string | null;
 	}
@@ -567,7 +640,7 @@ export async function createDraftWithLines(
 	tx: Tx,
 	values: Pick<
 		typeof counterInvoice.$inferInsert,
-		'customerId' | 'repairOrderId' | 'createdBy' | 'note'
+		'customerId' | 'repairOrderId' | 'createdBy' | 'note' | 'customerReference'
 	>,
 	lines: NewLine[]
 ) {
@@ -582,7 +655,10 @@ export async function createDraftWithLines(
 // ===========================================================================
 
 /** Adresse de facturation du client, figée sur la facture ou le devis. */
-export async function billingAddressOf(tx: Tx, customerId: number): Promise<CounterBillingAddress> {
+export async function billingAddressOf(
+	tx: Tx | typeof db,
+	customerId: number
+): Promise<CounterBillingAddress> {
 	const [c] = await tx.select().from(customer).where(eq(customer.id, customerId));
 	const [a] = await tx
 		.select()
@@ -628,6 +704,7 @@ export async function validateInvoice(id: number, userId: string | null) {
 		const seq = isCredit ? 'counter_credit_note_number_seq' : 'counter_invoice_number_seq';
 		const [{ n }] = await tx.execute<{ n: string }>(sql`select nextval(${seq})::text as n`);
 		const now = new Date();
+		const issuedOn = inv.issuedOn ?? now.toISOString().slice(0, 10);
 		await refreshTotals(tx, id);
 		await tx
 			.update(counterInvoice)
@@ -635,7 +712,8 @@ export async function validateInvoice(id: number, userId: string | null) {
 				number: formatCounterNumber(isCredit ? 'AV' : 'FA', now, Number(n)),
 				// Un avoir n'attend pas de règlement : il solde (en partie) sa facture.
 				status: isCredit ? 'paid' : 'validated',
-				issuedOn: inv.issuedOn ?? now.toISOString().slice(0, 10),
+				issuedOn,
+				dueOn: isCredit ? null : dueDate(issuedOn, inv.paymentTerms),
 				billingAddress: await billingAddressOf(tx, inv.customerId),
 				validatedAt: now,
 				validatedBy: userId,
@@ -731,6 +809,7 @@ export async function createCreditNote(invoiceId: number, createdBy: string | nu
 			found.lines.map((l) => ({
 				productId: l.productId,
 				label: l.label,
+				description: l.description,
 				reference: l.reference,
 				quantity: -Number(l.quantity),
 				unitPriceHt: Number(l.unitPriceHt),
@@ -780,6 +859,7 @@ export async function searchInvoiceCustomers(term: string) {
 				ilike(customer.firstName, like),
 				ilike(customer.email, like),
 				ilike(customer.companyName, like),
+				ilike(customer.alias, like),
 				ilike(customer.phone, like)
 			)
 		)

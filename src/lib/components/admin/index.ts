@@ -11,6 +11,7 @@ export { default as CustomerForm } from './CustomerForm.svelte';
 export { default as BrandForm } from './BrandForm.svelte';
 export { default as SupplierForm } from './SupplierForm.svelte';
 export { default as ContactsCard } from './ContactsCard.svelte';
+export { default as CustomerCreditsCard } from './CustomerCreditsCard.svelte';
 export { default as CategoryForm } from './CategoryForm.svelte';
 export { default as ProductForm } from './ProductForm.svelte';
 export { default as TaxRuleForm } from './TaxRuleForm.svelte';

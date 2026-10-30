@@ -5,11 +5,14 @@
 		productId: number | null;
 		productType: string | null;
 		label: string;
+		/** Détail sous la désignation : n° de série, garantie, caractéristiques. */
+		description: string | null;
 		reference: string | null;
 		quantity: string;
 		unitPriceHt: string;
 		taxRate: string;
 		discountPercent: string;
+		totalHt: string;
 		totalTtc: string;
 	};
 
@@ -31,15 +34,15 @@
 	import type { Snippet } from 'svelte';
 	import type { Pathname } from '$app/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { Button, Card, Input, Label, Select } from 'flowbite-svelte';
+	import { Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
 	import { TrashBinOutline } from 'flowbite-svelte-icons';
 	import { formatPrice, round2 } from '$lib/money';
 	import StateBadge from './StateBadge.svelte';
 
 	/**
 	 * Lignes d'une facture comptoir ou d'un devis. Brouillon : chaque ligne se
-	 * modifie sur place (désignation, quantité, prix TTC, remise, TVA), et on
-	 * ajoute un produit, une prestation (`MO-T1`…) ou une ligne libre. Sinon,
+	 * modifie sur place (désignation et son détail, quantité, prix TTC, remise,
+	 * TVA), et on ajoute un produit, une prestation (`MO-T1`…) ou une ligne libre. Sinon,
 	 * lecture seule, avec `lineExtra` sous chaque ligne (stock à sortir…).
 	 *
 	 * La page porte les actions `?/updateLine`, `?/deleteLine`, `?/addProduct`
@@ -108,9 +111,11 @@
 					<tr>
 						<th scope="col" class="py-2 pe-3 text-start">Désignation</th>
 						<th scope="col" class="px-2 py-2 text-end">Qté</th>
+						{#if !editable}<th scope="col" class="px-2 py-2 text-end">P.U. HT</th>{/if}
 						<th scope="col" class="px-2 py-2 text-end">P.U. TTC</th>
 						<th scope="col" class="px-2 py-2 text-end">Remise</th>
 						<th scope="col" class="px-2 py-2 text-end">TVA</th>
+						{#if !editable}<th scope="col" class="px-2 py-2 text-end">Total HT</th>{/if}
 						<th scope="col" class="px-2 py-2 text-end">Total TTC</th>
 						{#if editable}<th scope="col" class="py-2 ps-2"><span class="sr-only">Actions</span></th
 							>{/if}
@@ -131,6 +136,14 @@
 										<input type="hidden" name="lineId" value={line.id} />
 										<div class="min-w-0">
 											<Input name="label" value={line.label} size="sm" aria-label="Désignation" />
+											<Textarea
+												name="description"
+												value={line.description ?? ''}
+												rows={line.description ? line.description.split('\n').length : 1}
+												placeholder="Détail imprimé : n° de série, garantie…"
+												aria-label="Détail de la ligne"
+												class="mt-1 text-xs"
+											/>
 											<p class="mt-0.5 text-xs text-gray-500">
 												{line.reference ?? 'Ligne libre'}{line.productType === 'service'
 													? ' · prestation'
@@ -192,6 +205,11 @@
 												class="hover:underline">{line.label}</a
 											>{:else}{line.label}{/if}
 									</p>
+									{#if line.description}
+										<p class="mt-0.5 text-xs whitespace-pre-line text-gray-700">
+											{line.description}
+										</p>
+									{/if}
 									<p class="text-xs text-gray-500">
 										{line.reference ?? 'Ligne libre'}{line.productType === 'service'
 											? ' · prestation'
@@ -200,11 +218,21 @@
 									{@render lineExtra?.(line)}
 								</td>
 								<td class="px-2 py-2 text-end tabular-nums">{Number(line.quantity)}</td>
+								<td class="px-2 py-2 text-end tabular-nums">
+									{formatPrice(Number(line.unitPriceHt))}
+								</td>
 								<td class="px-2 py-2 text-end tabular-nums">{formatPrice(unitTtc(line))}</td>
-								<td class="px-2 py-2 text-end tabular-nums"
-									>{Number(line.discountPercent) ? `${Number(line.discountPercent)} %` : ''}</td
+								<td class="px-2 py-2 text-end tabular-nums">
+									{Number(line.discountPercent) === 100
+										? 'Offert'
+										: Number(line.discountPercent)
+											? `${Number(line.discountPercent)} %`
+											: ''}
+								</td>
+								<td class="px-2 py-2 text-end whitespace-nowrap tabular-nums"
+									>{Number(line.taxRate)} %</td
 								>
-								<td class="px-2 py-2 text-end tabular-nums">{Number(line.taxRate)} %</td>
+								<td class="px-2 py-2 text-end tabular-nums">{formatPrice(line.totalHt)}</td>
 								<td class="px-2 py-2 text-end font-semibold tabular-nums"
 									>{formatPrice(line.totalTtc)}</td
 								>

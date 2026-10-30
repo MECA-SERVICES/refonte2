@@ -10,6 +10,18 @@
 					"label": "Tableau de bord & statistiques",
 					"icon": "chart",
 					"href": "/admin"
+				},
+				{
+					"id": "leaves",
+					"label": "Congés",
+					"icon": "calendar",
+					"href": "/admin/leaves"
+				},
+				{
+					"id": "agenda",
+					"label": "Agenda Dolibarr (archive)",
+					"icon": "calendar",
+					"href": "/admin/agenda"
 				}
 			]
 		},
@@ -85,6 +97,11 @@
 							"id": "inventories",
 							"label": "Inventaires",
 							"href": "/admin/inventories"
+						},
+						{
+							"id": "fixed-assets",
+							"label": "Immobilisations",
+							"href": "/admin/fixed-assets"
 						},
 						{
 							"id": "categories",

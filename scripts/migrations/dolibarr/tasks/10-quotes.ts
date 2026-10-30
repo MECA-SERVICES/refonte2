@@ -20,6 +20,7 @@ import { DOLI, sourceQuery } from '../source.ts';
 import { targetDb } from '../../../lib/target-db.ts';
 import { htmlText as plain, isoDay, text } from '../../../lib/transform.ts';
 import { log, count } from '../../../lib/logger.ts';
+import { lineText } from '../lines.ts';
 
 interface SourceQuote {
 	rowid: number;
@@ -36,6 +37,8 @@ interface SourceQuote {
 	total: number;
 	note_public: string | null;
 	note_private: string | null;
+	ref_client: string | null;
+	date_livraison: Date | null;
 }
 
 interface SourceLine {
@@ -77,7 +80,7 @@ export const quotesTask: Task = {
 		// Lectures en série : la connexion Dolibarr s'ouvre à la première requête.
 		const quotes = await sourceQuery<SourceQuote>(
 			`SELECT rowid, ref, fk_soc, fk_statut, datep, datec, fin_validite, date_valid, date_cloture,
-			        total_ht, tva, total, note_public, note_private
+			        total_ht, tva, total, note_public, note_private, ref_client, date_livraison
 			 FROM ${DOLI}.llx_propal ORDER BY rowid`
 		);
 		const lines = await sourceQuery<SourceLine>(
@@ -149,6 +152,8 @@ export const quotesTask: Task = {
 					customer_id: customerOf.get(Number(q.fk_soc)),
 					invoice_id: invoiceId,
 					issued_on: issuedOn,
+					customer_reference: text(q.ref_client),
+					delivery_on: isoDay(q.date_livraison),
 					validity_days:
 						issuedOn && validUntil ? Math.max(1, daysBetween(issuedOn, validUntil)) : 15,
 					valid_until: Number(q.fk_statut) === 0 ? null : validUntil,
@@ -165,19 +170,23 @@ export const quotesTask: Task = {
 			});
 			const saved = await tx<{ id: number; legacy_doli_id: number }[]>`
 				INSERT INTO quote (legacy_doli_id, number, status, customer_id, invoice_id, issued_on,
-					validity_days, valid_until, total_ht, total_tva, total_ttc, tax_breakdown, note,
+					customer_reference, delivery_on, validity_days, valid_until, total_ht, total_tva, total_ttc, tax_breakdown, note,
 					private_note, sent_at, decided_at, created_at)
-				SELECT legacy_doli_id, number, status, customer_id, invoice_id, issued_on, validity_days,
+				SELECT legacy_doli_id, number, status, customer_id, invoice_id, issued_on,
+					customer_reference, delivery_on, validity_days,
 					valid_until, total_ht, total_tva, total_ttc, tax_breakdown, note, private_note, sent_at,
 					decided_at, created_at
 				FROM jsonb_to_recordset(${tx.json(header)}) AS q(legacy_doli_id int, number text,
-					status text, customer_id int, invoice_id int, issued_on date, validity_days int,
+					status text, customer_id int, invoice_id int, issued_on date,
+					customer_reference text, delivery_on date, validity_days int,
 					valid_until date, total_ht numeric, total_tva numeric, total_ttc numeric,
 					tax_breakdown jsonb, note text, private_note text, sent_at timestamptz,
 					decided_at timestamptz, created_at timestamptz)
 				ON CONFLICT (legacy_doli_id) WHERE legacy_doli_id IS NOT NULL DO UPDATE SET
 					number = excluded.number, status = excluded.status, invoice_id = excluded.invoice_id,
-					issued_on = excluded.issued_on, validity_days = excluded.validity_days,
+					issued_on = excluded.issued_on, customer_reference = excluded.customer_reference,
+					delivery_on = excluded.delivery_on,
+					validity_days = excluded.validity_days,
 					valid_until = excluded.valid_until, total_ht = excluded.total_ht,
 					total_tva = excluded.total_tva, total_ttc = excluded.total_ttc,
 					tax_breakdown = excluded.tax_breakdown, note = excluded.note,
@@ -191,15 +200,11 @@ export const quotesTask: Task = {
 			const lineRows = lines
 				.filter((l) => quoteOf.has(Number(l.fk_propal)))
 				.map((l) => ({
+					...lineText(l),
 					legacy_doli_id: Number(l.rowid),
 					quote_id: quoteOf.get(Number(l.fk_propal)),
 					position: Number(l.rang) || 0,
 					product_id: l.fk_product ? (productOf.get(Number(l.fk_product)) ?? null) : null,
-					label:
-						text(plain(l.label)) ??
-						text(plain(l.product_label)) ??
-						text(plain(l.description))?.slice(0, 200) ??
-						'Ligne',
 					reference: text(l.product_ref),
 					quantity: String(l.qty),
 					unit_price_ht: Number(l.subprice).toFixed(4),
@@ -212,13 +217,13 @@ export const quotesTask: Task = {
 				}));
 			for (let i = 0; i < lineRows.length; i += 2000) {
 				await tx`
-					INSERT INTO quote_line (legacy_doli_id, quote_id, position, product_id, label, reference,
-						quantity, unit_price_ht, tax_rate, discount_percent, total_ht, total_tva, total_ttc,
+					INSERT INTO quote_line (legacy_doli_id, quote_id, position, product_id, label, description,
+						reference, quantity, unit_price_ht, tax_rate, discount_percent, total_ht, total_tva, total_ttc,
 						accounting_code)
-					SELECT legacy_doli_id, quote_id, position, product_id, label, reference, quantity,
+					SELECT legacy_doli_id, quote_id, position, product_id, label, description, reference, quantity,
 						unit_price_ht, tax_rate, discount_percent, total_ht, total_tva, total_ttc, accounting_code
 					FROM jsonb_to_recordset(${tx.json(lineRows.slice(i, i + 2000))}) AS l(legacy_doli_id int,
-						quote_id int, position int, product_id int, label text, reference text,
+						quote_id int, position int, product_id int, label text, description text, reference text,
 						quantity numeric, unit_price_ht numeric, tax_rate numeric, discount_percent numeric,
 						total_ht numeric, total_tva numeric, total_ttc numeric, accounting_code text)`;
 			}

@@ -120,6 +120,9 @@ export const repairOrder = pgTable(
 		/** Note interne, jamais exposée ni portée sur un document (R23). */
 		privateNote: text('private_note'),
 
+		/** Reprise Dolibarr : `llx_fichinter.rowid` (fiche d'intervention). */
+		legacyDoliId: integer('legacy_doli_id'),
+
 		/** Machine versée au parc du client à la restitution (R21). */
 		machineAddedToFleet: boolean('machine_added_to_fleet').notNull().default(false),
 
@@ -132,6 +135,9 @@ export const repairOrder = pgTable(
 	},
 	(t) => [
 		uniqueIndex('repair_order_reference_idx').on(t.reference),
+		uniqueIndex('repair_order_legacy_doli_id_idx')
+			.on(t.legacyDoliId)
+			.where(sql`${t.legacyDoliId} IS NOT NULL`),
 		index('repair_order_customer_idx').on(t.customerId),
 		index('repair_order_status_idx').on(t.status)
 	]

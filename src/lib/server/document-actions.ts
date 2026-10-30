@@ -41,6 +41,7 @@ type LineOps = {
 		lineId: number,
 		input: {
 			label: string;
+			description: string;
 			quantity: number;
 			priceTtc: number;
 			discountPercent: number;
@@ -87,6 +88,7 @@ export function lineActions(
 				() =>
 					ops.updateLine(Number(params.id), Number(form.get('lineId')), {
 						label: form.get('label')?.toString() ?? '',
+						description: form.get('description')?.toString() ?? '',
 						quantity: num(form, 'quantity', 1),
 						priceTtc: num(form, 'priceTtc'),
 						discountPercent: num(form, 'discountPercent'),

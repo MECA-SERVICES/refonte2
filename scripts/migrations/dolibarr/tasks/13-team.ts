@@ -30,7 +30,7 @@ const TEAM: Record<string, 'admin' | 'employee'> = {
 };
 
 /** Adresse de connexion des utilisateurs qui n'ont pas d'e-mail dans Dolibarr. */
-const EMAILS: Record<string, string> = {
+export const EMAILS: Record<string, string> = {
 	'ABEL.H': 'abel.hue@msshop.fr'
 };
 

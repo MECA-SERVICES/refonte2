@@ -87,6 +87,8 @@ export const settlement = pgTable(
 		}),
 
 		note: text('note'),
+		/** Compte noté par Dolibarr (`COMPTE-PRO`, `CAISSE`) ; sinon déduit (`settlementAccount`). */
+		bankAccount: text('bank_account'),
 		/** Adresse de l'utilisateur back-office qui a saisi le règlement. */
 		createdBy: text('created_by'),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()

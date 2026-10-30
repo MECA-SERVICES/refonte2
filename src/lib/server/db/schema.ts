@@ -17,3 +17,6 @@ export * from './inventory.schema';
 export * from './counter-invoice.schema';
 export * from './quote.schema';
 export * from './contact.schema';
+export * from './fixed-asset.schema';
+export * from './leave.schema';
+export * from './agenda.schema';
